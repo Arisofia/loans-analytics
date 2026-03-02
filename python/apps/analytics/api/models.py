@@ -100,15 +100,22 @@ class LoanRecord(BaseModel):
     )
     # Enriched fields from CONTROL DE MORA new format (run 20260301_181356+)
     collections_eligible: Optional[str] = Field(
-        None, description="Y/N flag — whether this loan is eligible for active collection (procede_a_cobrar)"
+        None,
+        description="Y/N flag — whether this loan is eligible for active collection (procede_a_cobrar)",
     )
     government_sector: Optional[str] = Field(
         None, description="GOES flag — identifies government-sector employer"
     )
     ministry: Optional[str] = Field(None, description="Government ministry or institution name")
-    capital_collected: Optional[float] = Field(None, description="Principal already collected (capitalcobrado)")
-    total_payment_received: Optional[float] = Field(None, description="Total payments received (montototalabonado)")
-    mdsc_posted: Optional[float] = Field(None, description="1 if MDSC debit authorization posted, 0 otherwise")
+    capital_collected: Optional[float] = Field(
+        None, description="Principal already collected (capitalcobrado)"
+    )
+    total_payment_received: Optional[float] = Field(
+        None, description="Total payments received (montototalabonado)"
+    )
+    mdsc_posted: Optional[float] = Field(
+        None, description="1 if MDSC debit authorization posted, 0 otherwise"
+    )
 
 
 class LoanPortfolioRequest(BaseModel):
@@ -764,3 +771,25 @@ class DefaultPredictionResponse(BaseModel):
     probability: float = Field(..., description="Default probability (0-1)")
     risk_level: str = Field(..., description="Risk level: low, medium, high, critical")
     model_version: str = Field(..., description="Model version identifier")
+
+
+class NSMPeriodMetrics(BaseModel):
+    """Metrics for a single period in the NSM breakdown."""
+
+    period: str
+    tpv_total: float
+    tpv_recurrent: float
+    tpv_new: float
+    tpv_recovered: float
+    active_clients: int
+    new_clients: int
+    recurrent_clients: int
+    recovered_clients: int
+
+
+class NSMRecurrentTPVResponse(BaseModel):
+    """North Star Metric response: Recurrent TPV breakdown by period."""
+
+    latest_period: Optional[str] = None
+    latest: Optional[NSMPeriodMetrics] = None
+    by_period: Dict[str, NSMPeriodMetrics] = {}

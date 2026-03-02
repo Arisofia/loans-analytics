@@ -33,6 +33,7 @@ try:
         KpiResponse,
         KpiSingleResponse,
         LoanPortfolioRequest,
+        NSMRecurrentTPVResponse,
         RiskAlertsResponse,
         RiskLoan,
         RiskStratificationResponse,
@@ -118,7 +119,9 @@ def _build_kpi_response(
         PAR30=kpi_map.get("PAR30") or kpi_map.get("par_30"),
         PAR90=kpi_map.get("PAR90") or kpi_map.get("par_90"),
         PAR60=kpi_map.get("PAR60") or kpi_map.get("par_60"),
-        DPD1_30=kpi_map.get("DPD_1_30") or kpi_map.get("dpd_1_30") or kpi_map.get("delinq_1_30_rate"),
+        DPD1_30=kpi_map.get("DPD_1_30")
+        or kpi_map.get("dpd_1_30")
+        or kpi_map.get("delinq_1_30_rate"),
         DPD31_60=kpi_map.get("DPD_31_60")
         or kpi_map.get("dpd_31_60")
         or kpi_map.get("delinq_31_60_rate"),
@@ -138,7 +141,8 @@ def _build_kpi_response(
         CustomerLifetimeValue=kpi_map.get("CUSTOMER_LIFETIME_VALUE")
         or kpi_map.get("customer_lifetime_value"),
         ActiveBorrowers=kpi_map.get("ACTIVE_BORROWERS") or kpi_map.get("active_borrowers"),
-        RepeatBorrowerRate=kpi_map.get("REPEAT_BORROWER_RATE") or kpi_map.get("repeat_borrower_rate"),
+        RepeatBorrowerRate=kpi_map.get("REPEAT_BORROWER_RATE")
+        or kpi_map.get("repeat_borrower_rate"),
         AutomationRate=kpi_map.get("AUTOMATION_RATE") or kpi_map.get("automation_rate"),
         AverageLoanSize=kpi_map.get("AVERAGE_LOAN_SIZE") or kpi_map.get("average_loan_size"),
         ProcessingTimeAvg=kpi_map.get("PROCESSING_TIME_AVG") or kpi_map.get("processing_time_avg"),
@@ -152,7 +156,9 @@ def _build_kpi_response(
         LGD=kpi_map.get("LGD") or kpi_map.get("lgd_pct") or kpi_map.get("lgd"),
         CoR=kpi_map.get("COR") or kpi_map.get("cost_of_risk_pct") or kpi_map.get("cost_of_risk"),
         NIM=kpi_map.get("NIM") or kpi_map.get("nim_pct") or kpi_map.get("net_interest_margin"),
-        CureRate=kpi_map.get("CURERATE") or kpi_map.get("cure_rate_pct") or kpi_map.get("cure_rate"),
+        CureRate=kpi_map.get("CURERATE")
+        or kpi_map.get("cure_rate_pct")
+        or kpi_map.get("cure_rate"),
         # Enriched KPIs from CONTROL DE MORA format
         CollectionsEligibleRate=kpi_map.get("collections_eligible_rate"),
         GovernmentSectorExposureRate=kpi_map.get("government_sector_exposure_rate"),
@@ -163,7 +169,9 @@ def _build_kpi_response(
     )
 
 
-async def _resolve_analysis_kpis(request: "LoanPortfolioRequest", service: "KPIService") -> list[Any]:
+async def _resolve_analysis_kpis(
+    request: "LoanPortfolioRequest", service: "KPIService"
+) -> list[Any]:
     """Resolve KPI set for analysis, preferring request-scoped real-time calculations."""
     if request.loans:
         kpis = await service.calculate_kpis_for_portfolio(request.loans)
@@ -324,10 +332,14 @@ async def _run_local_full_analysis(
     dpd_31_60 = _get_kpi_value(kpis, ["dpd_31_60", "delinq_31_60_rate"], 0.0)
     par60 = _get_kpi_value(kpis, ["par_60", "par60"], advanced_risk.par60)
     risk_heatmap = (
-        f"1-30:{round(dpd_1_30, 2)}% | " f"31-60:{round(dpd_31_60, 2)}% | " f"60+:{round(par60, 2)}%"
+        f"1-30:{round(dpd_1_30, 2)}% | "
+        f"31-60:{round(dpd_31_60, 2)}% | "
+        f"60+:{round(par60, 2)}%"
     )
     transition_block = _format_transition_block(roll_rates)
-    strat_summary = " | ".join([f"{flag.flag}: {flag.status.upper()}" for flag in risk_strat.decision_flags])
+    strat_summary = " | ".join(
+        [f"{flag.flag}: {flag.status.upper()}" for flag in risk_strat.decision_flags]
+    )
     risk_status = "CRITICAL" if par30 > 10 or advanced_risk.par90 > 5 else "STABLE"
     mature_npl = _avg_mature_npl(vintage)
 
@@ -371,6 +383,7 @@ async def _resolve_full_analysis_summary(
     except Exception as orch_err:
         logger.info("Using High-Fidelity Local Analytical Engine: %s", orch_err)
         return await _run_local_full_analysis(request, service, kpis)
+
 
 # ---------------------------------------------------------------------------
 # Correlation-ID Middleware
@@ -907,11 +920,11 @@ if app is not None:
             # Use request-scoped real-time KPIs when available, fallback to latest snapshot.
             kpis = await _resolve_analysis_kpis(request, service)
             kpi_summary = _build_kpi_summary_text(kpis)
-            trace_id, summary = await _resolve_full_analysis_summary(request, service, kpis, kpi_summary)
-
-            return await _map_full_analysis_response(
-                request, service, kpis, trace_id, summary
+            trace_id, summary = await _resolve_full_analysis_summary(
+                request, service, kpis, kpi_summary
             )
+
+            return await _map_full_analysis_response(request, service, kpis, trace_id, summary)
         except Exception as e:
             logger.error("Error in get_full_analysis: %s", e)
             raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
@@ -1067,7 +1080,9 @@ if app is not None:
 
         return _risk_model_cache.get("model"), _risk_model_cache.get("model_version", "unknown")
 
-    def _map_default_request_to_model_features(request: DefaultPredictionRequest) -> dict[str, float]:
+    def _map_default_request_to_model_features(
+        request: DefaultPredictionRequest,
+    ) -> dict[str, float]:
         """
         Adapt API request fields to the feature schema expected by DefaultRiskModel.
         """
@@ -1133,6 +1148,15 @@ if app is not None:
             )
         except Exception as e:
             logger.error("Error in predict_default: %s", e)
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
+
+    @app.get("/analytics/nsm", response_model=NSMRecurrentTPVResponse)
+    async def get_nsm(service: KPIService = Depends(get_kpi_service)):
+        """Return North Star Metric (Recurrent TPV) and breakdowns by period."""
+        try:
+            return await service.get_nsm_recurrent_tpv()
+        except Exception as e:
+            logger.error("Error in get_nsm: %s", e)
             raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
 

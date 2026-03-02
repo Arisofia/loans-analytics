@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -26,6 +27,8 @@ from python.apps.analytics.api.models import (
     LoanRecord,
     NimMetrics,
     NplMetrics,
+    NSMPeriodMetrics,
+    NSMRecurrentTPVResponse,
     PaybackMetrics,
     RiskStratificationResponse,
     RollRateAnalyticsResponse,
@@ -1233,9 +1236,7 @@ class KPIService:
         else:
             status = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
             dpd = pd.Series([0.0] * len(df), index=df.index, dtype=float)
-            dpd = dpd.mask(
-                status.str.contains(STATUS_PATTERN_90_PLUS, regex=True, na=False), 100.0
-            )
+            dpd = dpd.mask(status.str.contains(STATUS_PATTERN_90_PLUS, regex=True, na=False), 100.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_60_89, regex=True, na=False), 75.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_30_59, regex=True, na=False), 45.0)
 
@@ -1506,9 +1507,7 @@ class KPIService:
         else:
             status = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
             dpd = pd.Series([0.0] * len(df), index=df.index, dtype=float)
-            dpd = dpd.mask(
-                status.str.contains(STATUS_PATTERN_90_PLUS, regex=True, na=False), 100.0
-            )
+            dpd = dpd.mask(status.str.contains(STATUS_PATTERN_90_PLUS, regex=True, na=False), 100.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_60_89, regex=True, na=False), 75.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_30_59, regex=True, na=False), 45.0)
 
@@ -1735,9 +1734,7 @@ class KPIService:
             )
         return transitions
 
-    def _build_roll_rate_bucket_summaries(
-        self, df: pd.DataFrame
-    ) -> list[RollRateBucketSummary]:
+    def _build_roll_rate_bucket_summaries(self, df: pd.DataFrame) -> list[RollRateBucketSummary]:
         summaries: list[RollRateBucketSummary] = []
         for bucket in self._bucket_order():
             from_mask = df["from_bucket"] == bucket
@@ -1796,7 +1793,9 @@ class KPIService:
             row for row in bucket_summaries if row.from_bucket != "current" and row.loan_count > 0
         ]
         if cure_candidates:
-            best_cure_row = max(cure_candidates, key=lambda row: (row.cure_rate_pct, row.loan_count))
+            best_cure_row = max(
+                cure_candidates, key=lambda row: (row.cure_rate_pct, row.loan_count)
+            )
             best_cure_source = (
                 best_cure_row.from_bucket if best_cure_row.cure_rate_pct > 0 else None
             )
@@ -2088,7 +2087,9 @@ class KPIService:
             for bucket in heatmap_summary["heatmap"]
             if bucket["risk_intensity"] == "high"
         ]
-        cure_rate = (await self.calculate_roll_rate_analytics(loans)).summary.portfolio_cure_rate_pct
+        cure_rate = (
+            await self.calculate_roll_rate_analytics(loans)
+        ).summary.portfolio_cure_rate_pct
 
         return [
             self._build_portfolio_risk_layer(metrics, critical_buckets),
@@ -2121,7 +2122,9 @@ class KPIService:
         metrics: dict[str, float], critical_buckets: list[str]
     ) -> AnalysisLayer:
         risk_status = "elevated" if metrics["par30"] > 10 or metrics["npl"] > 5 else "stable"
-        risk_driver = ", ".join(critical_buckets) if critical_buckets else "Normal migration patterns"
+        risk_driver = (
+            ", ".join(critical_buckets) if critical_buckets else "Normal migration patterns"
+        )
         return AnalysisLayer(
             layer="Portfolio Risk",
             what=f"Portfolio risk is currently {risk_status} with PAR30 at {metrics['par30']:.1f}%.",
@@ -2136,7 +2139,9 @@ class KPIService:
     @staticmethod
     def _build_growth_profitability_layer(metrics: dict[str, float]) -> AnalysisLayer:
         nim = metrics.get("gross_margin_pct", 0.0)  # Using gross margin as proxy for NIM
-        clv_cac = (metrics["customer_lifetime_value"] / metrics["cac"]) if metrics["cac"] > 0 else 0.0
+        clv_cac = (
+            (metrics["customer_lifetime_value"] / metrics["cac"]) if metrics["cac"] > 0 else 0.0
+        )
         return AnalysisLayer(
             layer="Growth & Profitability",
             what=f"Unit economics show a {clv_cac:.1f}x CLV/CAC ratio and {nim:.1f}% NIM.",
@@ -2163,10 +2168,30 @@ class KPIService:
     @staticmethod
     def _build_heatmap_buckets(metrics: dict[str, float]) -> list[dict[str, Any]]:
         return [
-            {"id": "1_30", "label": "Early (1-30 DPD)", "value": metrics["dpd_1_30"], "threshold": 8.0},
-            {"id": "31_60", "label": "Warning (31-60 DPD)", "value": metrics["dpd_31_60"], "threshold": 4.0},
-            {"id": "61_90", "label": "Severe (61-90 DPD)", "value": metrics["dpd_61_90"], "threshold": 2.0},
-            {"id": "90_plus", "label": "NPL (90+ DPD)", "value": metrics["dpd_90_plus"], "threshold": 1.0},
+            {
+                "id": "1_30",
+                "label": "Early (1-30 DPD)",
+                "value": metrics["dpd_1_30"],
+                "threshold": 8.0,
+            },
+            {
+                "id": "31_60",
+                "label": "Warning (31-60 DPD)",
+                "value": metrics["dpd_31_60"],
+                "threshold": 4.0,
+            },
+            {
+                "id": "61_90",
+                "label": "Severe (61-90 DPD)",
+                "value": metrics["dpd_61_90"],
+                "threshold": 2.0,
+            },
+            {
+                "id": "90_plus",
+                "label": "NPL (90+ DPD)",
+                "value": metrics["dpd_90_plus"],
+                "threshold": 1.0,
+            },
         ]
 
     @staticmethod
@@ -2183,7 +2208,9 @@ class KPIService:
         heatmap: list[dict[str, Any]] = []
         critical_buckets: list[str] = []
         for bucket in buckets:
-            intensity = self._bucket_risk_intensity(float(bucket["value"]), float(bucket["threshold"]))
+            intensity = self._bucket_risk_intensity(
+                float(bucket["value"]), float(bucket["threshold"])
+            )
             if intensity == "high":
                 critical_buckets.append(str(bucket["label"]))
             heatmap.append(
@@ -2324,7 +2351,11 @@ class KPIService:
         eligible_col = self._first_present_column(df, "collections_eligible", "procede_a_cobrar")
         if eligible_col is not None:
             eligible_mask = (
-                df[eligible_col].astype(str).str.strip().str.upper().isin({"Y", "YES", "SI", "S", "TRUE", "1"})
+                df[eligible_col]
+                .astype(str)
+                .str.strip()
+                .str.upper()
+                .isin({"Y", "YES", "SI", "S", "TRUE", "1"})
             )
             metrics["collections_eligible_rate"] = self._safe_pct(
                 float(balance[eligible_mask].sum()), denom
@@ -2393,7 +2424,10 @@ class KPIService:
 
     @staticmethod
     def _calculate_processing_time_avg(df: pd.DataFrame) -> float:
-        if "term_months" in df.columns and pd.to_numeric(df["term_months"], errors="coerce").notna().any():
+        if (
+            "term_months" in df.columns
+            and pd.to_numeric(df["term_months"], errors="coerce").notna().any()
+        ):
             return float(pd.to_numeric(df["term_months"], errors="coerce").dropna().mean())
         return 0.0
 
@@ -2401,9 +2435,9 @@ class KPIService:
     def _calculate_mtd_metrics(df: pd.DataFrame) -> tuple[float, float]:
         if "origination_date" not in df.columns:
             return 0.0, 0.0
-        origination_dates = pd.to_datetime(df["origination_date"], errors="coerce", utc=True).dt.tz_convert(
-            None
-        )
+        origination_dates = pd.to_datetime(
+            df["origination_date"], errors="coerce", utc=True
+        ).dt.tz_convert(None)
         month_start = pd.Timestamp.now().normalize().replace(day=1)
         mtd_mask = origination_dates >= month_start
         disbursement_volume_mtd = float(df.loc[mtd_mask, "loan_amount"].sum())
@@ -2487,9 +2521,13 @@ class KPIService:
             else pd.Series([0.0] * len(df), index=df.index)
         )
         total_scheduled = float(scheduled.sum())
-        collection_rate = (float(collected.sum()) / total_scheduled * 100) if total_scheduled > 0 else 0.0
+        collection_rate = (
+            (float(collected.sum()) / total_scheduled * 100) if total_scheduled > 0 else 0.0
+        )
         recovery_amount = float(collected[status_defaulted_mask].sum())
-        defaulted_balance_for_recovery = float(df.loc[status_defaulted_mask, "principal_balance"].sum())
+        defaulted_balance_for_recovery = float(
+            df.loc[status_defaulted_mask, "principal_balance"].sum()
+        )
         recovery_rate = (
             (recovery_amount / defaulted_balance_for_recovery * 100)
             if defaulted_balance_for_recovery > 0
@@ -2798,3 +2836,43 @@ class KPIService:
             "61_90": 3,
             "90_plus": 4,
         }
+
+    async def get_nsm_recurrent_tpv(self) -> NSMRecurrentTPVResponse:
+        """Return the North Star Metric (Recurrent TPV) from the latest pipeline run.
+
+        Loads ``nsm_recurrent_tpv.json`` from the most-recently-modified pipeline
+        run directory under ``logs/runs/``.  Returns an empty response when the
+        file does not yet exist.
+        """
+        runs_dir = Path("logs/runs")
+        if not runs_dir.is_dir():
+            return NSMRecurrentTPVResponse()
+
+        run_dirs = [p for p in runs_dir.iterdir() if p.is_dir()]
+        if not run_dirs:
+            return NSMRecurrentTPVResponse()
+
+        latest_run = max(run_dirs, key=lambda p: p.stat().st_mtime)
+        nsm_path = latest_run / "nsm_recurrent_tpv.json"
+        if not nsm_path.exists():
+            return NSMRecurrentTPVResponse()
+
+        with open(nsm_path) as f:
+            data = json.load(f)
+
+        by_period = {
+            period: NSMPeriodMetrics(period=period, **metrics)
+            for period, metrics in data.get("by_period", {}).items()
+        }
+        latest_period = data.get("latest_period")
+        latest_raw = data.get("latest")
+        latest = (
+            NSMPeriodMetrics(period=latest_period, **latest_raw)
+            if latest_period and latest_raw
+            else None
+        )
+        return NSMRecurrentTPVResponse(
+            latest_period=latest_period,
+            latest=latest,
+            by_period=by_period,
+        )
