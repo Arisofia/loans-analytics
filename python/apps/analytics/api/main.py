@@ -5,7 +5,7 @@ import re
 import sys
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 try:
     import jwt
@@ -75,21 +75,28 @@ except ImportError:  # pragma: no cover - fallback in tests/environments without
 
     class Depends:  # type: ignore[no-redef]
         def __init__(self, *args, **kwargs):
-            pass
+            # Placeholder shim for environments where FastAPI isn't installed.
+            self.args = args
+            self.kwargs = kwargs
 
     class Body:  # type: ignore[no-redef]
         def __init__(self, *args, **kwargs):
-            pass
+            # Placeholder shim for environments where FastAPI isn't installed.
+            self.args = args
+            self.kwargs = kwargs
 
     class Query:  # type: ignore[no-redef]
         def __init__(self, *args, **kwargs):
-            pass
+            # Placeholder shim for environments where FastAPI isn't installed.
+            self.args = args
+            self.kwargs = kwargs
 
     app = None
 
 logger = logging.getLogger("apps.analytics.api")
 # Directory that contains allowed data files (must be absolute)
 ALLOWED_DATA_DIR = Path("/data/archives").resolve()
+INTERNAL_SERVER_ERROR = "Internal server error"
 
 
 def get_kpi_service():
@@ -101,6 +108,269 @@ def get_monitoring_service():
     # In a real scenario, we'd extract the user/actor from the auth token
     return MonitoringService(actor="api_user")
 
+
+def _build_kpi_response(
+    kpis: list[Any] | None, source: str = "production-snapshot"
+) -> "KpiResponse":
+    """Map flat KPI list to strongly-typed KpiResponse payload."""
+    kpi_map = {k.id: k for k in kpis} if kpis else {}
+    return KpiResponse(
+        PAR30=kpi_map.get("PAR30") or kpi_map.get("par_30"),
+        PAR90=kpi_map.get("PAR90") or kpi_map.get("par_90"),
+        PAR60=kpi_map.get("PAR60") or kpi_map.get("par_60"),
+        DPD1_30=kpi_map.get("DPD_1_30") or kpi_map.get("dpd_1_30") or kpi_map.get("delinq_1_30_rate"),
+        DPD31_60=kpi_map.get("DPD_31_60")
+        or kpi_map.get("dpd_31_60")
+        or kpi_map.get("delinq_31_60_rate"),
+        DPD61_90=kpi_map.get("DPD_61_90") or kpi_map.get("dpd_61_90"),
+        DPD90Plus=kpi_map.get("DPD_90_PLUS") or kpi_map.get("dpd_90_plus"),
+        CollectionRate=kpi_map.get("COLLECTION_RATE") or kpi_map.get("collections_rate"),
+        DefaultRate=kpi_map.get("DEFAULT_RATE") or kpi_map.get("default_rate"),
+        TotalLoansCount=kpi_map.get("TOTAL_LOANS_COUNT") or kpi_map.get("total_loans_count"),
+        LossRate=kpi_map.get("LOSS_RATE") or kpi_map.get("loss_rate"),
+        RecoveryRate=kpi_map.get("RECOVERY_RATE") or kpi_map.get("recovery_rate"),
+        CashOnHand=kpi_map.get("CASH_ON_HAND") or kpi_map.get("cash_on_hand"),
+        CAC=kpi_map.get("CAC") or kpi_map.get("cac"),
+        GrossMarginPct=kpi_map.get("GROSS_MARGIN_PCT") or kpi_map.get("gross_margin_pct"),
+        RevenueForecast6M=kpi_map.get("REVENUE_FORECAST_6M") or kpi_map.get("revenue_forecast_6m"),
+        Churn90D=kpi_map.get("CHURN_90D") or kpi_map.get("churn_90d"),
+        PortfolioHealth=kpi_map.get("AUM") or kpi_map.get("portfolio_growth_rate"),
+        CustomerLifetimeValue=kpi_map.get("CUSTOMER_LIFETIME_VALUE")
+        or kpi_map.get("customer_lifetime_value"),
+        ActiveBorrowers=kpi_map.get("ACTIVE_BORROWERS") or kpi_map.get("active_borrowers"),
+        RepeatBorrowerRate=kpi_map.get("REPEAT_BORROWER_RATE") or kpi_map.get("repeat_borrower_rate"),
+        AutomationRate=kpi_map.get("AUTOMATION_RATE") or kpi_map.get("automation_rate"),
+        AverageLoanSize=kpi_map.get("AVERAGE_LOAN_SIZE") or kpi_map.get("average_loan_size"),
+        ProcessingTimeAvg=kpi_map.get("PROCESSING_TIME_AVG") or kpi_map.get("processing_time_avg"),
+        DisbursementVolumeMTD=kpi_map.get("DISBURSEMENT_VOLUME_MTD")
+        or kpi_map.get("disbursement_volume_mtd"),
+        NewLoansCountMTD=kpi_map.get("NEW_LOANS_COUNT_MTD") or kpi_map.get("new_loans_count_mtd"),
+        LTV=kpi_map.get("AVG_LTV") or kpi_map.get("avg_ltv"),
+        DTI=kpi_map.get("AVG_DTI") or kpi_map.get("avg_dti"),
+        PortfolioYield=kpi_map.get("PORTFOLIO_YIELD") or kpi_map.get("portfolio_yield"),
+        NPL=kpi_map.get("NPL") or kpi_map.get("npl_ratio"),
+        LGD=kpi_map.get("LGD") or kpi_map.get("lgd_pct") or kpi_map.get("lgd"),
+        CoR=kpi_map.get("COR") or kpi_map.get("cost_of_risk_pct") or kpi_map.get("cost_of_risk"),
+        NIM=kpi_map.get("NIM") or kpi_map.get("nim_pct") or kpi_map.get("net_interest_margin"),
+        CureRate=kpi_map.get("CURERATE") or kpi_map.get("cure_rate_pct") or kpi_map.get("cure_rate"),
+        # Enriched KPIs from CONTROL DE MORA format
+        CollectionsEligibleRate=kpi_map.get("collections_eligible_rate"),
+        GovernmentSectorExposureRate=kpi_map.get("government_sector_exposure_rate"),
+        AvgCreditLineUtilization=kpi_map.get("avg_credit_line_utilization"),
+        CapitalCollectionRate=kpi_map.get("capital_collection_rate"),
+        MdscPostedRate=kpi_map.get("mdsc_posted_rate"),
+        audit_trail=[{"kpi_count": len(kpis or []), "source": source}],
+    )
+
+
+async def _resolve_analysis_kpis(request: "LoanPortfolioRequest", service: "KPIService") -> list[Any]:
+    """Resolve KPI set for analysis, preferring request-scoped real-time calculations."""
+    if request.loans:
+        kpis = await service.calculate_kpis_for_portfolio(request.loans)
+        if kpis:
+            return kpis
+    return await service.get_latest_kpis()
+
+
+def _get_kpi_value(kpis: list[Any], candidates: list[str], default: float = 0.0) -> float:
+    candidate_set = {candidate.lower() for candidate in candidates}
+    for kpi in kpis:
+        if (kpi.id or "").lower() in candidate_set:
+            return float(kpi.value)
+    return default
+
+
+def _build_full_analysis_recommendations(
+    kpis: list[Any], roll_rates: "RollRateAnalyticsResponse"
+) -> list[str]:
+    recommendations: list[str] = []
+    par90 = _get_kpi_value(kpis, ["par_90", "par90"], 0.0)
+    collection_rate = _get_kpi_value(kpis, ["collections_rate", "collection_rate"], 0.0)
+    cac = _get_kpi_value(kpis, ["cac"], 0.0)
+    clv = _get_kpi_value(kpis, ["customer_lifetime_value"], 0.0)
+    gross_margin = _get_kpi_value(kpis, ["gross_margin_pct"], 0.0)
+    churn_90d = _get_kpi_value(kpis, ["churn_90d"], 0.0)
+    clv_cac_ratio = (clv / cac) if cac > 0 else 0.0
+
+    if par90 > 5:
+        recommendations.append("Activate focused recovery actions for the 90+ DPD cohort.")
+    if collection_rate < 90:
+        recommendations.append(
+            "Increase collection intensity for delinquent accounts to improve cash conversion."
+        )
+    if gross_margin < 20:
+        recommendations.append(
+            "Review pricing and direct cost controls to restore gross margin above 20%."
+        )
+    if cac > 0 and clv_cac_ratio < 3:
+        recommendations.append(
+            "Optimize acquisition channels to move CLV/CAC toward a 3x threshold."
+        )
+    if churn_90d > 10:
+        recommendations.append("Launch 90-day retention interventions for at-risk borrowers.")
+    if (
+        roll_rates.summary.historical_coverage_pct > 0
+        and roll_rates.summary.portfolio_roll_forward_rate_pct >= 20
+    ):
+        recommendations.append(
+            "Tighten early-stage collections and underwriting triggers to reduce roll-forward migration."
+        )
+    if (
+        roll_rates.summary.historical_coverage_pct > 0
+        and roll_rates.summary.portfolio_cure_rate_pct < 30
+    ):
+        recommendations.append(
+            "Deploy targeted cure campaigns for delinquent borrowers to improve rollback to current status."
+        )
+    if not recommendations:
+        return [
+            "Maintain underwriting and collections cadence with weekly KPI monitoring.",
+            "Track executive unit economics (CAC, margin, churn) as portfolio grows.",
+        ]
+    return recommendations
+
+
+def _build_kpi_summary_text(kpis: list[Any]) -> str:
+    return "\n".join([f"{k.name}: {k.value} {k.unit} | Formula: {k.context.formula}" for k in kpis])
+
+
+def _format_transition_block(roll_rates: "RollRateAnalyticsResponse") -> str:
+    if roll_rates.summary.historical_coverage_pct <= 0:
+        return ""
+    return (
+        f"Portfolio Cure Rate: {roll_rates.summary.portfolio_cure_rate_pct}%\n"
+        f"Portfolio Roll-Forward Rate: {roll_rates.summary.portfolio_roll_forward_rate_pct}%\n"
+        f"Worst Migration Path: {roll_rates.summary.worst_migration_path or 'n/a'}\n"
+        f"Best Cure Source: {roll_rates.summary.best_cure_source or 'n/a'}\n\n"
+    )
+
+
+def _avg_mature_npl(vintage: "VintageCurveResponse") -> float:
+    mature_ratios = [
+        point.npl_ratio for point in vintage.portfolio_average_curve if point.months_on_book >= 6
+    ]
+    if not mature_ratios:
+        return 0.0
+    return round(sum(mature_ratios) / len(mature_ratios), 2)
+
+
+async def _run_orchestrated_full_analysis(
+    request: "LoanPortfolioRequest",
+    service: "KPIService",
+    kpi_summary: str,
+) -> tuple[str, str]:
+    if not os.getenv("OPENAI_API_KEY") and not os.getenv("ANTHROPIC_API_KEY"):
+        raise ValueError("No LLM API keys configured")
+
+    orchestrator = MultiAgentOrchestrator()
+    trace_id = str(uuid.uuid4())
+    loan_ids_from_request = (
+        [loan.id for loan in request.loans if loan.id is not None] if request.loans else []
+    )
+
+    risk_stratification = await service.get_risk_stratification(request.loans)
+    vintage_curves = await service.calculate_vintage_curves(request.loans)
+    risk_heatmap = await service.get_risk_heatmap_summary(request.loans)
+
+    initial_context = {
+        "portfolio_data": (
+            "Recent KPI Snapshot:\n"
+            f"{kpi_summary}\n"
+            f"Target Loans: {', '.join(loan_ids_from_request)}"
+        ),
+        "risk_stratification": risk_stratification.model_dump_json(),
+        "vintage_data": vintage_curves.model_dump_json(),
+        "risk_heatmap": json.dumps(risk_heatmap),
+    }
+    results = orchestrator.run_scenario(
+        scenario_name="loan_risk_review",
+        initial_context=initial_context,
+        trace_id=trace_id,
+    )
+    summary = (
+        results.get("risk_analysis")
+        or results.get("risk_assessment")
+        or "Analysis completed successfully."
+    )
+    return trace_id, summary
+
+
+async def _run_local_full_analysis(
+    request: "LoanPortfolioRequest",
+    service: "KPIService",
+    kpis: list[Any],
+) -> tuple[str, str]:
+    trace_id = str(uuid.uuid4())
+    par30 = _get_kpi_value(kpis, ["par_30", "par30"], 0.0)
+    yield_val = _get_kpi_value(kpis, ["portfolio_yield"], 0.0)
+    loans_count = _get_kpi_value(
+        kpis,
+        ["total_loans_count"],
+        float(len(request.loans)) if request.loans else 0.0,
+    )
+    cac = _get_kpi_value(kpis, ["cac"], 0.0)
+    gross_margin = _get_kpi_value(kpis, ["gross_margin_pct"], 0.0)
+    forecast_6m = _get_kpi_value(kpis, ["revenue_forecast_6m"], 0.0)
+    churn_90d = _get_kpi_value(kpis, ["churn_90d"], 0.0)
+    clv = _get_kpi_value(kpis, ["customer_lifetime_value"], 0.0)
+    clv_cac_ratio = (clv / cac) if cac > 0 else 0.0
+
+    advanced_risk = await service.calculate_advanced_risk(request.loans)
+    risk_strat = await service.get_risk_stratification(request.loans)
+    vintage = await service.calculate_vintage_curves(request.loans)
+    roll_rates = await service.calculate_roll_rate_analytics(request.loans)
+
+    dpd_1_30 = _get_kpi_value(kpis, ["dpd_1_30", "delinq_1_30_rate"], 0.0)
+    dpd_31_60 = _get_kpi_value(kpis, ["dpd_31_60", "delinq_31_60_rate"], 0.0)
+    par60 = _get_kpi_value(kpis, ["par_60", "par60"], advanced_risk.par60)
+    risk_heatmap = (
+        f"1-30:{round(dpd_1_30, 2)}% | " f"31-60:{round(dpd_31_60, 2)}% | " f"60+:{round(par60, 2)}%"
+    )
+    transition_block = _format_transition_block(roll_rates)
+    strat_summary = " | ".join([f"{flag.flag}: {flag.status.upper()}" for flag in risk_strat.decision_flags])
+    risk_status = "CRITICAL" if par30 > 10 or advanced_risk.par90 > 5 else "STABLE"
+    mature_npl = _avg_mature_npl(vintage)
+
+    summary = (
+        f"PROPORTIONAL PORTFOLIO ANALYSIS ({risk_status})\n"
+        f"-------------------------------------------\n"
+        f"Portfolio Size: {loans_count} active loans\n"
+        f"Risk stratification: {strat_summary}\n"
+        f"Risk Heatmap: {risk_heatmap}\n"
+        f"Risk exposure (PAR30): {par30}%\n"
+        f"Risk exposure (PAR60): {advanced_risk.par60}%\n"
+        f"Severe delinquency (PAR90): {advanced_risk.par90}%\n"
+        f"Collections coverage: {advanced_risk.collections_coverage}%\n"
+        f"Projected Yield: {yield_val}%\n\n"
+        f"Total Yield (Interest + Fees): {advanced_risk.total_yield}%\n"
+        f"Borrower Concentration (HHI): {advanced_risk.concentration_hhi}\n"
+        f"Repeat Borrower Rate: {advanced_risk.repeat_borrower_rate}%\n"
+        f"Credit Quality Index: {advanced_risk.credit_quality_index}\n\n"
+        f"{transition_block}"
+        f"Customer Acquisition Cost (CAC): ${cac}\n"
+        f"Gross Margin: {gross_margin}%\n"
+        f"90-Day Churn: {churn_90d}%\n"
+        f"6-Month Revenue Forecast: ${forecast_6m}\n"
+        f"CLV/CAC Ratio: {round(clv_cac_ratio, 2)}x\n\n"
+        f"Lifecycle Analysis: Average NPL ratio for 6MoB+ loans is {mature_npl}%.\n\n"
+        f"The analytical engine has identified {risk_status.lower()} stability metrics "
+        "based on recent production data. Risk concentration is within acceptable "
+        "guardrails for the current AUM expansion phase."
+    )
+    return trace_id, summary
+
+
+async def _resolve_full_analysis_summary(
+    request: "LoanPortfolioRequest",
+    service: "KPIService",
+    kpis: list[Any],
+    kpi_summary: str,
+) -> tuple[str, str]:
+    try:
+        return await _run_orchestrated_full_analysis(request, service, kpi_summary)
+    except Exception as orch_err:
+        logger.info("Using High-Fidelity Local Analytical Engine: %s", orch_err)
+        return await _run_local_full_analysis(request, service, kpis)
 
 # ---------------------------------------------------------------------------
 # Correlation-ID Middleware
@@ -194,7 +464,7 @@ if app is not None:
             return EventsListResponse(events=[created], count=1)
         except Exception as e:
             logger.error("Error emitting event: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.get("/monitoring/events", response_model=EventsListResponse)
     async def list_events(
@@ -218,7 +488,7 @@ if app is not None:
             ) from exc
         except Exception as e:
             logger.error("Error listing events: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     async def _acknowledge_event_by_uuid(event_id: uuid.UUID, service: MonitoringService):
         result = await service.acknowledge_event(event_id)
@@ -238,7 +508,7 @@ if app is not None:
             raise
         except Exception as e:
             logger.error("Error acknowledging event %s: %s", request.event_id, e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post("/monitoring/events/{event_id}/ack")
     async def acknowledge_event(
@@ -257,7 +527,7 @@ if app is not None:
             raise
         except Exception as e:
             logger.error("Error acknowledging event %s: %s", event_id, e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post("/monitoring/commands", response_model=CommandsListResponse)
     async def create_command(
@@ -270,7 +540,7 @@ if app is not None:
             return CommandsListResponse(commands=[created], count=1)
         except Exception as e:
             logger.error("Error creating command: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.get("/monitoring/commands", response_model=CommandsListResponse)
     async def list_commands(
@@ -290,7 +560,7 @@ if app is not None:
             ) from exc
         except Exception as e:
             logger.error("Error listing commands: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.patch("/monitoring/commands/{cmd_id}")
     async def update_command(
@@ -313,7 +583,7 @@ if app is not None:
             raise
         except Exception as e:
             logger.error("Error updating command %s: %s", cmd_id, e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.get("/health")
     async def health_check():
@@ -332,69 +602,11 @@ if app is not None:
                 kpis = await service.calculate_kpis_for_portfolio(request.loans)
             else:
                 kpis = await service.get_latest_kpis()
-            # Map list of KpiSingleResponse to named fields
-            # Real-time IDs: PAR30, PORTFOLIO_YIELD, AUM, AVG_LTV, AVG_DTI
-            # DB snapshot IDs: par_30, par_90, portfolio_yield, collections_rate, etc.
-            kpi_map = {k.id: k for k in kpis} if kpis else {}
-            return KpiResponse(
-                PAR30=kpi_map.get("PAR30") or kpi_map.get("par_30"),
-                PAR90=kpi_map.get("PAR90") or kpi_map.get("par_90"),
-                PAR60=kpi_map.get("PAR60") or kpi_map.get("par_60"),
-                DPD1_30=kpi_map.get("DPD_1_30")
-                or kpi_map.get("dpd_1_30")
-                or kpi_map.get("delinq_1_30_rate"),
-                DPD31_60=kpi_map.get("DPD_31_60")
-                or kpi_map.get("dpd_31_60")
-                or kpi_map.get("delinq_31_60_rate"),
-                DPD61_90=kpi_map.get("DPD_61_90") or kpi_map.get("dpd_61_90"),
-                DPD90Plus=kpi_map.get("DPD_90_PLUS") or kpi_map.get("dpd_90_plus"),
-                CollectionRate=kpi_map.get("COLLECTION_RATE") or kpi_map.get("collections_rate"),
-                DefaultRate=kpi_map.get("DEFAULT_RATE") or kpi_map.get("default_rate"),
-                TotalLoansCount=kpi_map.get("TOTAL_LOANS_COUNT")
-                or kpi_map.get("total_loans_count"),
-                LossRate=kpi_map.get("LOSS_RATE") or kpi_map.get("loss_rate"),
-                RecoveryRate=kpi_map.get("RECOVERY_RATE") or kpi_map.get("recovery_rate"),
-                CashOnHand=kpi_map.get("CASH_ON_HAND") or kpi_map.get("cash_on_hand"),
-                CAC=kpi_map.get("CAC") or kpi_map.get("cac"),
-                GrossMarginPct=kpi_map.get("GROSS_MARGIN_PCT") or kpi_map.get("gross_margin_pct"),
-                RevenueForecast6M=kpi_map.get("REVENUE_FORECAST_6M")
-                or kpi_map.get("revenue_forecast_6m"),
-                Churn90D=kpi_map.get("CHURN_90D") or kpi_map.get("churn_90d"),
-                PortfolioHealth=kpi_map.get("AUM") or kpi_map.get("portfolio_growth_rate"),
-                CustomerLifetimeValue=kpi_map.get("CUSTOMER_LIFETIME_VALUE")
-                or kpi_map.get("customer_lifetime_value"),
-                ActiveBorrowers=kpi_map.get("ACTIVE_BORROWERS") or kpi_map.get("active_borrowers"),
-                RepeatBorrowerRate=kpi_map.get("REPEAT_BORROWER_RATE")
-                or kpi_map.get("repeat_borrower_rate"),
-                AutomationRate=kpi_map.get("AUTOMATION_RATE") or kpi_map.get("automation_rate"),
-                AverageLoanSize=kpi_map.get("AVERAGE_LOAN_SIZE")
-                or kpi_map.get("average_loan_size"),
-                ProcessingTimeAvg=kpi_map.get("PROCESSING_TIME_AVG")
-                or kpi_map.get("processing_time_avg"),
-                DisbursementVolumeMTD=kpi_map.get("DISBURSEMENT_VOLUME_MTD")
-                or kpi_map.get("disbursement_volume_mtd"),
-                NewLoansCountMTD=kpi_map.get("NEW_LOANS_COUNT_MTD")
-                or kpi_map.get("new_loans_count_mtd"),
-                LTV=kpi_map.get("AVG_LTV") or kpi_map.get("avg_ltv"),
-                DTI=kpi_map.get("AVG_DTI") or kpi_map.get("avg_dti"),
-                PortfolioYield=kpi_map.get("PORTFOLIO_YIELD") or kpi_map.get("portfolio_yield"),
-                # Next Generation KPIs
-                NPL=kpi_map.get("NPL") or kpi_map.get("npl_ratio"),
-                LGD=kpi_map.get("LGD") or kpi_map.get("lgd"),
-                CoR=kpi_map.get("COR") or kpi_map.get("cost_of_risk"),
-                NIM=kpi_map.get("NIM") or kpi_map.get("net_interest_margin"),
-                CureRate=kpi_map.get("CURERATE") or kpi_map.get("cure_rate"),
-                # Enriched KPIs from CONTROL DE MORA format
-                CollectionsEligibleRate=kpi_map.get("collections_eligible_rate"),
-                GovernmentSectorExposureRate=kpi_map.get("government_sector_exposure_rate"),
-                AvgCreditLineUtilization=kpi_map.get("avg_credit_line_utilization"),
-                CapitalCollectionRate=kpi_map.get("capital_collection_rate"),
-                MdscPostedRate=kpi_map.get("mdsc_posted_rate"),
-                audit_trail=[{"kpi_count": len(kpis), "source": "production-snapshot"}],
-            )
+            source = "realtime-request" if request.loans else "production-snapshot"
+            return _build_kpi_response(kpis, source=source)
         except Exception as e:
             logger.error("Error in calculate_all_kpis: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.get("/analytics/kpis/coverage", response_model=KpiCoverageResponse)
     async def get_kpi_coverage(service: KPIService = Depends(get_kpi_service)):
@@ -413,7 +625,7 @@ if app is not None:
             )
         except Exception as e:
             logger.error("Error in get_kpi_coverage: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post("/analytics/kpis/{kpi_id}", response_model=KpiSingleResponse)
     async def get_single_kpi(
@@ -490,7 +702,7 @@ if app is not None:
             raise
         except Exception as e:
             logger.error("Error in get_single_kpi: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post("/analytics/risk-alerts", response_model=RiskAlertsResponse)
     async def get_risk_alerts(
@@ -521,7 +733,7 @@ if app is not None:
             )
         except Exception as e:
             logger.error("Error in get_risk_alerts: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post(
         "/analytics/advanced-risk",
@@ -538,7 +750,7 @@ if app is not None:
             return await service.calculate_advanced_risk(request.loans)
         except Exception as e:
             logger.error("Error in get_advanced_risk: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post(
         "/analytics/cohorts",
@@ -555,7 +767,7 @@ if app is not None:
             return await service.calculate_cohort_analytics(request.loans)
         except Exception as e:
             logger.error("Error in get_cohort_analytics: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post(
         "/analytics/vintages",
@@ -572,7 +784,7 @@ if app is not None:
             return await service.calculate_vintage_curves(request.loans)
         except Exception as e:
             logger.error("Error in get_vintage_curves: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post(
         "/analytics/segments",
@@ -593,7 +805,7 @@ if app is not None:
             )
         except Exception as e:
             logger.error("Error in get_segment_analytics: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post(
         "/analytics/roll-rates",
@@ -610,7 +822,7 @@ if app is not None:
             return await service.calculate_roll_rate_analytics(request.loans)
         except Exception as e:
             logger.error("Error in get_roll_rate_analytics: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post(
         "/analytics/stress-test",
@@ -633,7 +845,7 @@ if app is not None:
             )
         except Exception as e:
             logger.error("Error in run_stress_test: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post(
         "/analytics/risk-stratification",
@@ -650,7 +862,7 @@ if app is not None:
             return await service.get_risk_stratification(request.loans)
         except Exception as e:
             logger.error("Error in get_risk_stratification: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post(
         "/analytics/unit-economics",
@@ -681,7 +893,7 @@ if app is not None:
             )
         except Exception as e:
             logger.error("Error in get_unit_economics: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post("/analytics/full-analysis", response_model=FullAnalysisResponse)
     async def get_full_analysis(
@@ -693,187 +905,13 @@ if app is not None:
         try:
             # 1. Fetch data context for the orchestrator
             # Use request-scoped real-time KPIs when available, fallback to latest snapshot.
-            if request.loans:
-                kpis = await service.calculate_kpis_for_portfolio(request.loans)
-                if not kpis:
-                    kpis = await service.get_latest_kpis()
-            else:
-                kpis = await service.get_latest_kpis()
-
-            kpi_summary = "\n".join(
-                [f"{k.name}: {k.value} {k.unit} | Formula: {k.context.formula}" for k in kpis]
-            )
-
-            def get_kpi_value(candidates: list[str], default: float = 0.0) -> float:
-                candidate_set = {candidate.lower() for candidate in candidates}
-                for kpi in kpis:
-                    kpi_id = (kpi.id or "").lower()
-                    if kpi_id in candidate_set:
-                        return float(kpi.value)
-                return float(default)
-
-            # 2. Initialize Orchestrator
-            try:
-                # Attempt real LLM run if keys exist
-                if not os.getenv("OPENAI_API_KEY") and not os.getenv("ANTHROPIC_API_KEY"):
-                    raise ValueError("No LLM API keys configured")
-
-                orchestrator = MultiAgentOrchestrator()
-
-                # 3. Run Scenario
-                trace_id = str(uuid.uuid4())
-                loan_ids_from_request = (
-                    [loan.id for loan in request.loans if loan.id is not None]
-                    if request.loans
-                    else []
-                )
-
-                # Fetch extra analytical layers for the context
-                risk_stratification = await service.get_risk_stratification(request.loans)
-                vintage_curves = await service.calculate_vintage_curves(request.loans)
-                risk_heatmap = await service.get_risk_heatmap_summary(request.loans)
-
-                initial_context = {
-                    "portfolio_data": (
-                        "Recent KPI Snapshot:\n"
-                        f"{kpi_summary}\n"
-                        f"Target Loans: {', '.join(loan_ids_from_request)}"
-                    ),
-                    "risk_stratification": risk_stratification.model_dump_json(),
-                    "vintage_data": vintage_curves.model_dump_json(),
-                    "risk_heatmap": json.dumps(risk_heatmap),
-                }
-
-                results = orchestrator.run_scenario(
-                    scenario_name="loan_risk_review",
-                    initial_context=initial_context,
-                    trace_id=trace_id,
-                )
-                summary = (
-                    results.get("risk_analysis")
-                    or results.get("risk_assessment")
-                    or "Analysis completed successfully."
-                )
-            except Exception as orch_err:
-                logger.info("Using High-Fidelity Local Analytical Engine: %s", orch_err)
-                trace_id = str(uuid.uuid4())
-
-                # High-fidelity deterministic analysis
-                par30 = get_kpi_value(["par_30", "par30"], 0.0)
-                yield_val = get_kpi_value(["portfolio_yield"], 0.0)
-                loans_count = get_kpi_value(
-                    ["total_loans_count"],
-                    float(len(request.loans)) if request.loans else 0.0,
-                )
-                cac = get_kpi_value(["cac"], 0.0)
-                gross_margin = get_kpi_value(["gross_margin_pct"], 0.0)
-                forecast_6m = get_kpi_value(["revenue_forecast_6m"], 0.0)
-                churn_90d = get_kpi_value(["churn_90d"], 0.0)
-                clv = get_kpi_value(["customer_lifetime_value"], 0.0)
-                clv_cac_ratio = (clv / cac) if cac > 0 else 0.0
-
-                advanced_risk = await service.calculate_advanced_risk(request.loans)
-                risk_strat = await service.get_risk_stratification(request.loans)
-                vintage = await service.calculate_vintage_curves(request.loans)
-                roll_rates = await service.calculate_roll_rate_analytics(request.loans)
-
-                dpd_1_30 = get_kpi_value(["dpd_1_30", "delinq_1_30_rate"], 0.0)
-                dpd_31_60 = get_kpi_value(["dpd_31_60", "delinq_31_60_rate"], 0.0)
-                par60 = get_kpi_value(["par_60", "par60"], advanced_risk.par60)
-                risk_heatmap = (
-                    f"1-30:{round(dpd_1_30, 2)}% | "
-                    f"31-60:{round(dpd_31_60, 2)}% | "
-                    f"60+:{round(par60, 2)}%"
-                )
-
-                has_transition_history = roll_rates.summary.historical_coverage_pct > 0
-                transition_block = (
-                    f"Portfolio Cure Rate: {roll_rates.summary.portfolio_cure_rate_pct}%\n"
-                    f"Portfolio Roll-Forward Rate: {roll_rates.summary.portfolio_roll_forward_rate_pct}%\n"
-                    f"Worst Migration Path: {roll_rates.summary.worst_migration_path or 'n/a'}\n"
-                    f"Best Cure Source: {roll_rates.summary.best_cure_source or 'n/a'}\n\n"
-                    if has_transition_history
-                    else ""
-                )
-
-                strat_summary = " | ".join([f"{f.flag}: {f.status.upper()}" for f in risk_strat.decision_flags])
-
-                risk_status = "CRITICAL" if par30 > 10 or advanced_risk.par90 > 5 else "STABLE"
-                summary = (
-                    f"PROPORTIONAL PORTFOLIO ANALYSIS ({risk_status})\n"
-                    f"-------------------------------------------\n"
-                    f"Portfolio Size: {loans_count} active loans\n"
-                    f"Risk stratification: {strat_summary}\n"
-                    f"Risk Heatmap: {risk_heatmap}\n"
-                    f"Risk exposure (PAR30): {par30}%\n"
-                    f"Risk exposure (PAR60): {advanced_risk.par60}%\n"
-                    f"Severe delinquency (PAR90): {advanced_risk.par90}%\n"
-                    f"Collections coverage: {advanced_risk.collections_coverage}%\n"
-                    f"Projected Yield: {yield_val}%\n\n"
-                    f"Total Yield (Interest + Fees): {advanced_risk.total_yield}%\n"
-                    f"Borrower Concentration (HHI): {advanced_risk.concentration_hhi}\n"
-                    f"Repeat Borrower Rate: {advanced_risk.repeat_borrower_rate}%\n"
-                    f"Credit Quality Index: {advanced_risk.credit_quality_index}\n\n"
-                    f"{transition_block}"
-                    f"Customer Acquisition Cost (CAC): ${cac}\n"
-                    f"Gross Margin: {gross_margin}%\n"
-                    f"90-Day Churn: {churn_90d}%\n"
-                    f"6-Month Revenue Forecast: ${forecast_6m}\n"
-                    f"CLV/CAC Ratio: {round(clv_cac_ratio, 2)}x\n\n"
-                    f"Lifecycle Analysis: Average NPL ratio for 6MoB+ loans is {round(sum(p.npl_ratio for p in vintage.portfolio_average_curve if p.months_on_book >= 6)/(len([p for p in vintage.portfolio_average_curve if p.months_on_book >= 6]) or 1), 2)}%.\n\n"
-                    f"The analytical engine has identified {risk_status.lower()} stability metrics "
-                    "based on recent production data. Risk concentration is within acceptable "
-                    "guardrails for the current AUM expansion phase."
-                )
+            kpis = await _resolve_analysis_kpis(request, service)
+            kpi_summary = _build_kpi_summary_text(kpis)
+            trace_id, summary = await _resolve_full_analysis_summary(request, service, kpis, kpi_summary)
 
             # 4. Map results to Response Model
-            recommendations: list[str] = []
-            par90 = get_kpi_value(["par_90", "par90"], 0.0)
-            collection_rate = get_kpi_value(["collections_rate", "collection_rate"], 0.0)
-            cac = get_kpi_value(["cac"], 0.0)
-            clv = get_kpi_value(["customer_lifetime_value"], 0.0)
-            gross_margin = get_kpi_value(["gross_margin_pct"], 0.0)
-            churn_90d = get_kpi_value(["churn_90d"], 0.0)
-            clv_cac_ratio = (clv / cac) if cac > 0 else 0.0
             roll_rates = await service.calculate_roll_rate_analytics(request.loans)
-
-            if par90 > 5:
-                recommendations.append("Activate focused recovery actions for the 90+ DPD cohort.")
-            if collection_rate < 90:
-                recommendations.append(
-                    "Increase collection intensity for delinquent accounts to improve cash conversion."
-                )
-            if gross_margin < 20:
-                recommendations.append(
-                    "Review pricing and direct cost controls to restore gross margin above 20%."
-                )
-            if cac > 0 and clv_cac_ratio < 3:
-                recommendations.append(
-                    "Optimize acquisition channels to move CLV/CAC toward a 3x threshold."
-                )
-            if churn_90d > 10:
-                recommendations.append(
-                    "Launch 90-day retention interventions for at-risk borrowers."
-                )
-            if (
-                roll_rates.summary.historical_coverage_pct > 0
-                and roll_rates.summary.portfolio_roll_forward_rate_pct >= 20
-            ):
-                recommendations.append(
-                    "Tighten early-stage collections and underwriting triggers to reduce roll-forward migration."
-                )
-            if (
-                roll_rates.summary.historical_coverage_pct > 0
-                and roll_rates.summary.portfolio_cure_rate_pct < 30
-            ):
-                recommendations.append(
-                    "Deploy targeted cure campaigns for delinquent borrowers to improve rollback to current status."
-                )
-            if not recommendations:
-                recommendations = [
-                    "Maintain underwriting and collections cadence with weekly KPI monitoring.",
-                    "Track executive unit economics (CAC, margin, churn) as portfolio grows.",
-                ]
+            recommendations = _build_full_analysis_recommendations(kpis, roll_rates)
 
             risk_stratification = await service.get_risk_stratification(request.loans)
             risk_heatmap_data = await service.get_risk_heatmap_summary(request.loans)
@@ -898,7 +936,7 @@ if app is not None:
             )
         except Exception as e:
             logger.error("Error in get_full_analysis: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post(
         "/analytics/executive-summary",
@@ -919,7 +957,7 @@ if app is not None:
             return ExecutiveAnalyticsResponse(**executive_data)
         except Exception as e:
             logger.error("Error in get_executive_summary: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post("/data-quality/profile", response_model=DataQualityResponse)
     async def get_data_quality_profile(
@@ -933,7 +971,7 @@ if app is not None:
             return dq_profile
         except Exception as e:
             logger.error("Error in get_data_quality_profile: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post(
         "/data-quality/validate",
@@ -951,7 +989,7 @@ if app is not None:
             return validation_result
         except Exception as e:
             logger.error("Error in validate_loan_data: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.get("/data/{file_path:path}")
     def get_data(file_path: str):
@@ -1084,7 +1122,7 @@ if app is not None:
             )
         except Exception as e:
             logger.error("Error in predict_default: %s", e)
-            raise HTTPException(status_code=500, detail="Internal server error") from e
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
 
 def _sanitize_for_logging(value: str, max_length: int = 200) -> str:

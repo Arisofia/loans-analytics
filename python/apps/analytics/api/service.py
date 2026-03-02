@@ -101,6 +101,11 @@ KPI_API_TO_CATALOG_ID = {
     "CHURN_90D": "churn_90d",
 }
 
+STATUS_PATTERN_90_PLUS = r"90\+|default|charged"
+STATUS_PATTERN_60_89 = r"60-89|60\+"
+STATUS_PATTERN_30_59 = r"30-59|30\+"
+STATUS_PATTERN_DEFAULT = r"default|charged"
+
 DEFAULT_KPI_METADATA = {
     "PAR30": {
         "formula": "SUM(principal_balance WHERE dpd >= 30) / SUM(principal_balance) * 100",
@@ -309,7 +314,7 @@ def _normalize_kpi_key(kpi_id: str) -> str:
     return (kpi_id or "").strip().replace("-", "_").replace(" ", "_").upper()
 
 
-def _extract_kpi_metadata(kpi_id: str, kpi_def: dict) -> dict[str, str]:
+def _extract_kpi_metadata(kpi_def: dict) -> dict[str, str]:
     """Helper to extract and format metadata from a single KPI definition."""
     thresholds = kpi_def.get("thresholds")
     threshold_note = ""
@@ -345,7 +350,7 @@ def _load_catalog_kpi_metadata() -> dict[str, dict[str, str]]:
 
         for kpi_id, kpi_def in section.items():
             if isinstance(kpi_def, dict):
-                metadata[kpi_id.lower()] = _extract_kpi_metadata(kpi_id, kpi_def)
+                metadata[kpi_id.lower()] = _extract_kpi_metadata(kpi_def)
 
     return metadata
 
@@ -1199,13 +1204,13 @@ class KPIService:
             status = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
             dpd = pd.Series([0.0] * len(df), index=df.index, dtype=float)
             dpd = dpd.mask(
-                status.str.contains(r"90\+|default|charged", regex=True, na=False), 100.0
+                status.str.contains(STATUS_PATTERN_90_PLUS, regex=True, na=False), 100.0
             )
-            dpd = dpd.mask(status.str.contains(r"60-89|60\+", regex=True, na=False), 75.0)
-            dpd = dpd.mask(status.str.contains(r"30-59|30\+", regex=True, na=False), 45.0)
+            dpd = dpd.mask(status.str.contains(STATUS_PATTERN_60_89, regex=True, na=False), 75.0)
+            dpd = dpd.mask(status.str.contains(STATUS_PATTERN_30_59, regex=True, na=False), 45.0)
 
         status_series = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
-        default_mask = status_series.str.contains(r"default|charged", regex=True, na=False)
+        default_mask = status_series.str.contains(STATUS_PATTERN_DEFAULT, regex=True, na=False)
 
         collected = (
             pd.to_numeric(df["last_payment_amount"], errors="coerce").fillna(0.0)
@@ -1328,12 +1333,13 @@ class KPIService:
             dpd = dpd.mask(status.str.contains(r"90\+|default", na=False), 100.0)
             dpd = dpd.mask(status.str.contains(r"30-89|30\+", na=False), 45.0)
 
-        df["is_npl"] = (dpd > 90) | df.get("loan_status", pd.Series([""])).str.contains(
-            "default", case=False, na=False
+        status_source = (
+            df["loan_status"]
+            if "loan_status" in df.columns
+            else pd.Series([""] * len(df), index=df.index)
         )
-        df["is_default"] = df.get("loan_status", pd.Series([""])).str.contains(
-            "default", case=False, na=False
-        )
+        df["is_npl"] = (dpd > 90) | status_source.str.contains("default", case=False, na=False)
+        df["is_default"] = status_source.str.contains("default", case=False, na=False)
 
         # 3. Build Curves
         curves: Dict[str, List[VintageCurvePoint]] = {}
@@ -1345,7 +1351,7 @@ class KPIService:
 
         for cohort, group in df.groupby("cohort"):
             # Calculate aggregate for this cohort at its specific current age
-            mob = int(group["mob"].iloc[0])
+            mob = self._safe_int(group["mob"].iloc[0])
             loan_count = len(group)
             npl_ratio = (group["is_npl"].sum() / loan_count * 100) if loan_count > 0 else 0.0
             cum_default = (group["is_default"].sum() / loan_count * 100) if loan_count > 0 else 0.0
@@ -1368,7 +1374,7 @@ class KPIService:
 
             avg_curve.append(
                 VintageCurvePoint(
-                    months_on_book=int(mob),
+                    months_on_book=self._safe_int(mob),
                     cumulative_default_rate=round(float(cum_default), 2),
                     npl_ratio=round(float(npl_ratio), 2),
                     loan_count=int(loan_count),
@@ -1471,15 +1477,15 @@ class KPIService:
             status = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
             dpd = pd.Series([0.0] * len(df), index=df.index, dtype=float)
             dpd = dpd.mask(
-                status.str.contains(r"90\+|default|charged", regex=True, na=False), 100.0
+                status.str.contains(STATUS_PATTERN_90_PLUS, regex=True, na=False), 100.0
             )
-            dpd = dpd.mask(status.str.contains(r"60-89|60\+", regex=True, na=False), 75.0)
-            dpd = dpd.mask(status.str.contains(r"30-59|30\+", regex=True, na=False), 45.0)
+            dpd = dpd.mask(status.str.contains(STATUS_PATTERN_60_89, regex=True, na=False), 75.0)
+            dpd = dpd.mask(status.str.contains(STATUS_PATTERN_30_59, regex=True, na=False), 45.0)
 
         default_mask = (
             df.get("loan_status", pd.Series([""] * len(df)))
             .astype(str)
-            .str.contains(r"default|charged", regex=True, case=False, na=False)
+            .str.contains(STATUS_PATTERN_DEFAULT, regex=True, case=False, na=False)
         )
 
         collected = (
@@ -1601,11 +1607,11 @@ class KPIService:
             status_column="previous_loan_status",
         )
 
-        explicit_previous_signal = (
-            pd.to_numeric(df.get("previous_days_past_due"), errors="coerce").notna()
-            if "previous_days_past_due" in df.columns
-            else pd.Series([False] * len(df), index=df.index)
-        )
+        if "previous_days_past_due" in df.columns:
+            previous_dpd_source = df["previous_days_past_due"]
+            explicit_previous_signal = pd.to_numeric(previous_dpd_source, errors="coerce").notna()
+        else:
+            explicit_previous_signal = pd.Series([False] * len(df), index=df.index)
         if "previous_loan_status" in df.columns:
             previous_status_present = (
                 df["previous_loan_status"].fillna("").astype(str).str.strip() != ""
@@ -2014,8 +2020,7 @@ class KPIService:
 
         df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
         metrics = self._calculate_portfolio_performance_metrics(df)
-        strat = await self.get_risk_stratification(loans)
-        
+
         layers = []
 
         # 1. Risk Layer
@@ -2035,9 +2040,9 @@ class KPIService:
         ))
 
         # 2. Growth & Profitability Layer
-        nim = metrics.get("gross_margin_pct", 0.0) # Using gross margin as proxy for NIM
+        nim = metrics.get("gross_margin_pct", 0.0)  # Using gross margin as proxy for NIM
         clv_cac = (metrics["customer_lifetime_value"] / metrics["cac"]) if metrics["cac"] > 0 else 0.0
-        
+
         layers.append(AnalysisLayer(
             layer="Growth & Profitability",
             what=f"Unit economics show a {clv_cac:.1f}x CLV/CAC ratio and {nim:.1f}% NIM.",
@@ -2048,7 +2053,7 @@ class KPIService:
 
         # 3. Operations Layer
         cure_rate = (await self.calculate_roll_rate_analytics(loans)).summary.portfolio_cure_rate_pct
-        
+
         layers.append(AnalysisLayer(
             layer="Operational Efficiency",
             what=f"Collections efficiency is at {metrics['collection_rate']:.1f}% with a {cure_rate:.1f}% cure rate.",
@@ -2172,7 +2177,7 @@ class KPIService:
 
         # Recovery-rate mask follows KPI catalog semantics: explicit defaulted status only.
         status_defaulted_mask = status_series.str.contains(
-            r"default|charged", case=False, na=False
+            STATUS_PATTERN_DEFAULT, case=False, na=False
         )
 
         # Yield
@@ -2442,6 +2447,16 @@ class KPIService:
             return 0.0
 
     @staticmethod
+    def _safe_int(value: Any, default: int = 0) -> int:
+        """Safely coerce scalar-like values to int for typed responses."""
+        try:
+            if value is None or pd.isna(value):
+                return default
+            return int(float(value))
+        except Exception:
+            return default
+
+    @staticmethod
     def _clamp_pct(value: float) -> float:
         """Clamp percentage-like values into [0, 100] range."""
         return max(0.0, min(100.0, float(value)))
@@ -2477,9 +2492,12 @@ class KPIService:
             result = result.mask(dpd > 90, "dpd_90_plus")
             return result
         if normalized == "ticket_size_band":
-            amounts = pd.to_numeric(
-                df.get("loan_amount", pd.Series([0] * len(df))), errors="coerce"
-            ).fillna(0)
+            amount_source = (
+                df["loan_amount"]
+                if "loan_amount" in df.columns
+                else pd.Series([0] * len(df), index=df.index)
+            )
+            amounts = pd.to_numeric(amount_source, errors="coerce").fillna(0)
             result = pd.Series(["ticket_<1k"] * len(df), index=df.index, dtype=object)
             result = result.mask((amounts >= 1000) & (amounts < 5000), "ticket_1k_5k")
             result = result.mask((amounts >= 5000) & (amounts < 10000), "ticket_5k_10k")
@@ -2510,16 +2528,29 @@ class KPIService:
         if normalized == "collections_eligible":
             return series_for(["collections_eligible", "procede_a_cobrar"])
         if normalized == "origination_month":
-            origination = pd.to_datetime(df.get("origination_date"), errors="coerce")
+            origination_source = (
+                df["origination_date"]
+                if "origination_date" in df.columns
+                else pd.Series([None] * len(df), index=df.index)
+            )
+            origination = pd.to_datetime(origination_source, errors="coerce")
             return origination.dt.to_period("M").astype(str).replace("NaT", "unknown")
         if normalized == "application_month":
-            application = pd.to_datetime(df.get("application_date"), errors="coerce")
+            application_source = (
+                df["application_date"]
+                if "application_date" in df.columns
+                else pd.Series([None] * len(df), index=df.index)
+            )
+            application = pd.to_datetime(application_source, errors="coerce")
             return application.dt.to_period("M").astype(str).replace("NaT", "unknown")
         if normalized == "utilization_band":
-            util = pd.to_numeric(
-                df.get("utilization_pct", df.get("porcentaje_utilizado", pd.Series([0] * len(df)))),
-                errors="coerce",
-            )
+            if "utilization_pct" in df.columns:
+                util_source = df["utilization_pct"]
+            elif "porcentaje_utilizado" in df.columns:
+                util_source = df["porcentaje_utilizado"]
+            else:
+                util_source = pd.Series([0] * len(df), index=df.index)
+            util = pd.to_numeric(util_source, errors="coerce")
             util = util.fillna(0.0)
             if (util <= 1.0).all():
                 util = util * 100.0
@@ -2546,9 +2577,9 @@ class KPIService:
             df.get(status_column, pd.Series([""] * len(df), index=df.index)).astype(str).str.lower()
         )
         dpd = pd.Series([0.0] * len(df), index=df.index, dtype=float)
-        dpd = dpd.mask(status.str.contains(r"90\+|default|charged", regex=True, na=False), 100.0)
-        dpd = dpd.mask(status.str.contains(r"60-89|60\+", regex=True, na=False), 75.0)
-        dpd = dpd.mask(status.str.contains(r"30-59|30\+", regex=True, na=False), 45.0)
+        dpd = dpd.mask(status.str.contains(STATUS_PATTERN_90_PLUS, regex=True, na=False), 100.0)
+        dpd = dpd.mask(status.str.contains(STATUS_PATTERN_60_89, regex=True, na=False), 75.0)
+        dpd = dpd.mask(status.str.contains(STATUS_PATTERN_30_59, regex=True, na=False), 45.0)
         return dpd
 
     @staticmethod
