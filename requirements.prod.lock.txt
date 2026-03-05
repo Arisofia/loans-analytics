@@ -438,7 +438,7 @@ packaging==25.0
     #   plotly
     #   prefect
     #   streamlit
-pandas==2.3.3
+pandas==3.0.1
     # via
     #   -r requirements.txt
     #   streamlit
