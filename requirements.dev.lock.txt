@@ -981,7 +981,7 @@ vulture==2.14
     # via -r requirements-dev.txt
 websocket-client==1.9.0
     # via python-socketio
-websockets==15.0.1
+websockets==16.0
     # via
     #   -r requirements.txt
     #   google-genai

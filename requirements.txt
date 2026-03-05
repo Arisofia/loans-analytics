@@ -32,8 +32,8 @@ pydantic-settings>=2.0
 packaging<25.1
 # pyiceberg 0.11.x requires cachetools<7.0
 cachetools<7.0
-# realtime 2.28.0 requires websockets<16
-websockets<16
+# realtime 2.28.0 requires websockets<17
+websockets<17
 jsonschema>=4.0
 pyarrow>=14.0
 polars>=0.20
