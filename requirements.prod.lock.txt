@@ -140,7 +140,7 @@ exceptiongroup==1.3.1
     # via prefect
 fakeredis[lua]==2.34.1
     # via pydocket
-fastapi==0.133.1
+fastapi==0.135.1
     # via
     #   -r requirements.txt
     #   prefect
@@ -158,7 +158,7 @@ google-auth[requests]==2.49.0.dev0
     # via
     #   google-api-core
     #   google-genai
-google-genai==1.65.0
+google-genai==1.66.0
     # via -r requirements.txt
 googleapis-common-protos==1.72.0
     # via
@@ -262,7 +262,7 @@ langchain==1.2.10
     # via -r requirements.txt
 langchain-anthropic==1.3.4
     # via -r requirements.txt
-langchain-core==1.2.16
+langchain-core==1.2.17
     # via
     #   -r requirements.txt
     #   langchain
@@ -273,9 +273,9 @@ langchain-core==1.2.16
     #   langgraph-prebuilt
 langchain-openai==1.1.10
     # via -r requirements.txt
-langgraph==1.0.9
+langgraph==1.0.10
     # via langchain
-langgraph-checkpoint==4.0.0
+langgraph-checkpoint==4.0.1
     # via
     #   langgraph
     #   langgraph-prebuilt
@@ -283,7 +283,7 @@ langgraph-prebuilt==1.0.8
     # via langgraph
 langgraph-sdk==0.3.9
     # via langgraph
-langsmith==0.7.7
+langsmith==0.7.12
     # via langchain-core
 lupa==2.6
     # via fakeredis
@@ -301,7 +301,7 @@ mdurl==0.1.2
     # via markdown-it-py
 mmh3==5.2.0
     # via pyiceberg
-msal==1.35.0
+msal==1.35.1
     # via
     #   azure-identity
     #   msal-extensions
@@ -346,7 +346,7 @@ opencensus-ext-logging==0.1.1
     # via -r requirements.txt
 openpyxl==3.1.5
     # via -r requirements.txt
-opentelemetry-api==1.39.1
+opentelemetry-api==1.40.0
     # via
     #   -r requirements.txt
     #   azure-monitor-opentelemetry-exporter
@@ -363,17 +363,17 @@ opentelemetry-api==1.39.1
     #   opentelemetry-semantic-conventions
     #   prefect
     #   pydocket
-opentelemetry-exporter-otlp==1.39.1
+opentelemetry-exporter-otlp==1.40.0
     # via -r requirements.txt
-opentelemetry-exporter-otlp-proto-common==1.39.1
+opentelemetry-exporter-otlp-proto-common==1.40.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-grpc==1.39.1
+opentelemetry-exporter-otlp-proto-grpc==1.40.0
     # via opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.39.1
+opentelemetry-exporter-otlp-proto-http==1.40.0
     # via opentelemetry-exporter-otlp
-opentelemetry-instrumentation==0.60b1
+opentelemetry-instrumentation==0.61b0
     # via
     #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-httpx
@@ -381,32 +381,32 @@ opentelemetry-instrumentation==0.60b1
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-instrumentation-sqlite3
     #   opentelemetry-instrumentation-urllib3
-opentelemetry-instrumentation-dbapi==0.60b1
+opentelemetry-instrumentation-dbapi==0.61b0
     # via
     #   opentelemetry-instrumentation-psycopg
     #   opentelemetry-instrumentation-sqlite3
-opentelemetry-instrumentation-httpx==0.60b1
+opentelemetry-instrumentation-httpx==0.61b0
     # via -r requirements.txt
-opentelemetry-instrumentation-psycopg==0.60b1
+opentelemetry-instrumentation-psycopg==0.61b0
     # via -r requirements.txt
-opentelemetry-instrumentation-requests==0.60b1
+opentelemetry-instrumentation-requests==0.61b0
     # via -r requirements.txt
-opentelemetry-instrumentation-sqlite3==0.60b1
+opentelemetry-instrumentation-sqlite3==0.61b0
     # via -r requirements.txt
-opentelemetry-instrumentation-urllib3==0.60b1
+opentelemetry-instrumentation-urllib3==0.61b0
     # via -r requirements.txt
-opentelemetry-proto==1.39.1
+opentelemetry-proto==1.40.0
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.39.1
+opentelemetry-sdk==1.40.0
     # via
     #   -r requirements.txt
     #   azure-monitor-opentelemetry-exporter
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.60b1
+opentelemetry-semantic-conventions==0.61b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-dbapi
@@ -414,7 +414,7 @@ opentelemetry-semantic-conventions==0.60b1
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-instrumentation-urllib3
     #   opentelemetry-sdk
-opentelemetry-util-http==0.60b1
+opentelemetry-util-http==0.61b0
     # via
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
@@ -448,7 +448,7 @@ pathspec==1.0.4
     # via prefect
 pillow==12.1.1
     # via streamlit
-plotly==6.5.2
+plotly==6.6.0
     # via -r requirements.txt
 pluggy==1.6.0
     # via prefect
@@ -458,7 +458,7 @@ polars-runtime-32==1.38.1
     # via polars
 postgrest==2.28.0
     # via supabase
-prefect==3.6.19
+prefect==3.6.20
     # via -r requirements.txt
 prometheus-client==0.24.1
     # via
@@ -521,7 +521,7 @@ pydantic==2.12.5
     #   realtime
     #   storage3
     #   supabase-auth
-pydantic-core==2.41.5
+pydantic-core==2.42.0
     # via
     #   prefect
     #   pydantic
@@ -533,11 +533,11 @@ pydantic-settings==2.13.1
     #   prefect
 pydeck==0.9.1
     # via streamlit
-pydocket==0.17.9
+pydocket==0.18.0
     # via prefect
 pygments==2.19.2
     # via rich
-pyiceberg==0.11.0
+pyiceberg==0.11.1
     # via storage3
 pyjwt[crypto]==2.11.0
     # via
@@ -555,7 +555,7 @@ python-dateutil==2.9.0.post0
     #   pandas
     #   prefect
     #   strictyaml
-python-dotenv==1.2.1
+python-dotenv==1.2.2
     # via
     #   -r requirements.txt
     #   pydantic-settings
@@ -588,7 +588,7 @@ referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-regex==2026.2.19
+regex==2026.2.28
     # via
     #   dateparser
     #   tiktoken
@@ -642,7 +642,7 @@ scipy==1.17.1
     #   xgboost
 semver==3.0.4
     # via prefect
-sentry-sdk==2.53.0
+sentry-sdk==2.54.0
     # via -r requirements.txt
 shellingham==1.5.4
     # via typer
@@ -664,7 +664,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis
-sqlalchemy[asyncio]==2.0.47
+sqlalchemy[asyncio]==2.0.48
     # via
     #   alembic
     #   prefect
@@ -674,7 +674,7 @@ starlette==0.52.1
     #   prometheus-fastapi-instrumentator
 storage3==2.28.0
     # via supabase
-streamlit==1.54.0
+streamlit==1.55.0
     # via -r requirements.txt
 strenum==0.4.15
     # via supabase-functions
@@ -789,7 +789,7 @@ xxhash==3.6.0
     # via
     #   langgraph
     #   langsmith
-yarl==1.22.0
+yarl==1.23.0
     # via
     #   postgrest
     #   storage3

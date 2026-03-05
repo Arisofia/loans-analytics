@@ -13,7 +13,7 @@ flake8>=7.0.0
 mypy>=1.8.0
 pylint>=3.0.0
 # Pylint 4.0.x requires astroid <=4.1.dev0
-astroid<4.1
+astroid<4.2
 types-PyYAML>=6.0.12
 
 # Testing
