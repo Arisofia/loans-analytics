@@ -904,7 +904,7 @@ toml==0.10.2
     #   streamlit
 tomlkit==0.14.0
     # via pylint
-tornado==6.5.4
+tornado==6.5.5
     # via streamlit
 tqdm==4.67.3
     # via openai
