@@ -768,7 +768,7 @@ uvicorn==0.41.0
     # via
     #   -r requirements.txt
     #   prefect
-websockets==15.0.1
+websockets==16.0
     # via
     #   -r requirements.txt
     #   google-genai
