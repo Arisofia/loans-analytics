@@ -163,7 +163,12 @@ class LocalMonthlySnapshotETL:
         dim_loan["original_principal"] = pd.to_numeric(
             dim_loan["original_principal"], errors="coerce"
         ).fillna(0.0)
-        dim_loan["interest_rate"] = pd.to_numeric(dim_loan.get("interest_rate"), errors="coerce").fillna(0.0)
+        if "interest_rate" in dim_loan.columns:
+            dim_loan["interest_rate"] = pd.to_numeric(
+                dim_loan["interest_rate"], errors="coerce"
+            ).fillna(0.0)
+        else:
+            dim_loan["interest_rate"] = 0.0
 
         snapshots = self.dpd_calculator.build_snapshots(
             dim_loan,
