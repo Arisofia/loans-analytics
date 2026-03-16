@@ -76,7 +76,9 @@ _WEIGHTS: dict[str, float] = {
 }
 
 
-def _score_lower_is_better(value: float, thresholds: dict[str, float], weight: float) -> tuple[float, str]:
+def _score_lower_is_better(
+    value: float, thresholds: dict[str, float], weight: float
+) -> tuple[float, str]:
     """Score a metric where lower values are better (PAR30, NPL, CoR, default rate)."""
     exc = thresholds["excellent"]
     good = thresholds["good"]
@@ -102,7 +104,9 @@ def _score_lower_is_better(value: float, thresholds: dict[str, float], weight: f
     return round(pts, 2), status
 
 
-def _score_higher_is_better(value: float, thresholds: dict[str, float], weight: float) -> tuple[float, str]:
+def _score_higher_is_better(
+    value: float, thresholds: dict[str, float], weight: float
+) -> tuple[float, str]:
     """Score a metric where higher values are better (Collection Rate)."""
     exc = thresholds["excellent"]
     good = thresholds["good"]
@@ -161,10 +165,16 @@ def calculate_portfolio_health_score(
             interpretation: plain-language summary
     """
     par30_pts, par30_status = _score_lower_is_better(par30, _THRESHOLDS["par30"], _WEIGHTS["par30"])
-    cr_pts, cr_status = _score_higher_is_better(collection_rate, _THRESHOLDS["collection_rate"], _WEIGHTS["collection_rate"])
+    cr_pts, cr_status = _score_higher_is_better(
+        collection_rate, _THRESHOLDS["collection_rate"], _WEIGHTS["collection_rate"]
+    )
     npl_pts, npl_status = _score_lower_is_better(npl, _THRESHOLDS["npl"], _WEIGHTS["npl"])
-    cor_pts, cor_status = _score_lower_is_better(cost_of_risk, _THRESHOLDS["cost_of_risk"], _WEIGHTS["cost_of_risk"])
-    dr_pts, dr_status = _score_lower_is_better(default_rate, _THRESHOLDS["default_rate"], _WEIGHTS["default_rate"])
+    cor_pts, cor_status = _score_lower_is_better(
+        cost_of_risk, _THRESHOLDS["cost_of_risk"], _WEIGHTS["cost_of_risk"]
+    )
+    dr_pts, dr_status = _score_lower_is_better(
+        default_rate, _THRESHOLDS["default_rate"], _WEIGHTS["default_rate"]
+    )
 
     score = round(par30_pts + cr_pts + npl_pts + cor_pts + dr_pts, 2)
     light = _traffic_light(score)
@@ -223,7 +233,9 @@ def calculate_portfolio_health_score(
     ]
 
     critical_components = [c["dimension"] for c in components if c["status"] == "critical"]
-    at_risk_components = [c["dimension"] for c in components if c["status"] in ("at_risk", "warning")]
+    at_risk_components = [
+        c["dimension"] for c in components if c["status"] in ("at_risk", "warning")
+    ]
 
     if critical_components:
         interpretation = (

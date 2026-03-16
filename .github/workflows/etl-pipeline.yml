@@ -1,0 +1,314 @@
+# =============================================================================
+# ETL Pipeline — Zero-cost GitHub Actions workflow
+# Replaces: Azure Functions / Azure Data Factory pipelines
+# Runs on: GitHub Actions free tier (2 000 min/month public repos, 500 MB cache)
+#
+# Triggers
+#   - Push to main/develop (auto)
+#   - Manual dispatch (with optional input CSV path)
+#   - Daily ingest:    06:00 UTC  (loan_tape ingestion)
+#   - Monthly snapshot: 08:00 UTC on the 1st of each month
+#
+# Required secrets (fail-fast guard in 'preflight' job):
+#   SUPABASE_URL              — Supabase project URL
+#   SUPABASE_SERVICE_ROLE_KEY — Supabase service-role key (write access)
+#   SUPABASE_ANON_KEY         — Supabase anon/public key (read access)
+#
+# Optional secrets (used when available; silently skipped if absent):
+#   RENDER_API_KEY / RENDER_SERVICE_ID  — Render.com deployment
+#   RAILWAY_TOKEN / RAILWAY_PROJECT_ID  — Railway deployment
+#   FLY_API_TOKEN                       — Fly.io deployment
+# =============================================================================
+
+name: ETL Pipeline (Zero-Cost)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "src/**"
+      - "scripts/data/**"
+      - "config/**"
+      - "data/raw/**"
+  schedule:
+    # Daily ingest at 06:00 UTC
+    - cron: "0 6 * * *"
+    # Monthly snapshot at 08:00 UTC on the 1st of each month
+    - cron: "0 8 1 * *"
+  workflow_dispatch:
+    inputs:
+      input_csv:
+        description: "Path to input CSV (relative to repo root)"
+        required: false
+        default: "data/raw/abaco_real_data_20260202.csv"
+      mode:
+        description: "Pipeline mode"
+        required: false
+        default: "full"
+        type: choice
+        options: [full, validate, dry-run]
+      snapshot_month:
+        description: "Snapshot month (YYYY-MM-DD), leave blank for today"
+        required: false
+        default: ""
+      run_type:
+        description: "Run type"
+        required: false
+        default: "ingest"
+        type: choice
+        options: [ingest, snapshot, both]
+
+concurrency:
+  group: etl-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Validate inputs & environment — fail fast if required secrets are absent
+  # ---------------------------------------------------------------------------
+  preflight:
+    name: Preflight checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      input_csv: ${{ steps.resolve.outputs.input_csv }}
+      mode: ${{ steps.resolve.outputs.mode }}
+      run_type: ${{ steps.resolve.outputs.run_type }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5
+
+      - name: Check required secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          MISSING=""
+          [ -z "$SUPABASE_URL" ]              && MISSING="$MISSING SUPABASE_URL"
+          [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && MISSING="$MISSING SUPABASE_SERVICE_ROLE_KEY"
+          [ -z "$SUPABASE_ANON_KEY" ]         && MISSING="$MISSING SUPABASE_ANON_KEY"
+          if [ -n "$MISSING" ]; then
+            echo "❌ Missing required secrets:$MISSING"
+            echo "   Add them in Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "✅ All required secrets present"
+
+      - name: Resolve pipeline inputs and verify files
+        id: resolve
+        run: |
+          CSV="${{ github.event.inputs.input_csv }}"
+          MODE="${{ github.event.inputs.mode }}"
+          RTYPE="${{ github.event.inputs.run_type }}"
+
+          # Scheduled runs: monthly cron (08:00) = snapshot, daily (06:00) = ingest
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            HOUR=$(date -u +%H)
+            [ "$HOUR" = "08" ] && RTYPE="snapshot" || RTYPE="ingest"
+          fi
+
+          # Default values
+          CSV="${CSV:-data/raw/abaco_real_data_20260202.csv}"
+          MODE="${MODE:-full}"
+          RTYPE="${RTYPE:-ingest}"
+
+          # If the input file is missing, fall back to dry-run to avoid a hard failure.
+          # This is done in the same step so the output is always consistent.
+          if [ "$MODE" != "dry-run" ] && [ ! -f "$CSV" ]; then
+            echo "⚠️  Input CSV '$CSV' not found — switching to dry-run mode"
+            MODE="dry-run"
+          else
+            [ "$MODE" != "dry-run" ] && echo "✅ Input file found: $CSV"
+          fi
+
+          echo "input_csv=${CSV}" >> "$GITHUB_OUTPUT"
+          echo "mode=${MODE}"     >> "$GITHUB_OUTPUT"
+          echo "run_type=${RTYPE}" >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------
+  # 2. Run tests
+  # ---------------------------------------------------------------------------
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt duckdb rapidfuzz pyarrow
+
+      - name: Run tests
+        run: make test
+
+  # ---------------------------------------------------------------------------
+  # 3. Daily ingest (loan tape / control mora)
+  # ---------------------------------------------------------------------------
+  run-pipeline:
+    name: Run ETL Pipeline
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [preflight, test]
+    if: |
+      needs.preflight.outputs.run_type == 'ingest' ||
+      needs.preflight.outputs.run_type == 'both'
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # actions/checkout@v5
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SNAPSHOT_MONTH: ${{ github.event.inputs.snapshot_month }}
+          INPUT: ${{ needs.preflight.outputs.input_csv }}
+          MODE: ${{ needs.preflight.outputs.mode }}
+        run: make etl-local
+
+      - name: Validate pipeline outputs
+        if: success()
+        run: |
+          # Fail if unmatched_records.csv exists but has rows missing reason_code
+          UNMATCHED="exports/unmatched_records.csv"
+          if [ -f "$UNMATCHED" ]; then
+            HDR=$(head -1 "$UNMATCHED")
+            COL=$(echo "$HDR" | tr ',' '\n' | grep -n "^reason_code$" | cut -d: -f1)
+            if [ -n "$COL" ]; then
+              MISSING=$(tail -n +2 "$UNMATCHED" | awk -F',' -v c="$COL" '($c=="" || $c~/^ *$/){n++} END{print n+0}')
+            else
+              MISSING=0
+            fi
+            if [ "$MISSING" -gt 0 ]; then
+              echo "::error::$MISSING rows in $UNMATCHED have no reason_code. Review crosswalk output."
+              exit 1
+            fi
+            echo "✅ All unmatched records have reason_code"
+          fi
+
+          # Warn (do not fail) if dim_loan export is empty
+          DIM_LOAN="exports/dim_loan.csv"
+          if [ -f "$DIM_LOAN" ]; then
+            ROWS=$(tail -n +2 "$DIM_LOAN" | wc -l | tr -d ' ')
+            if [ "$ROWS" -eq 0 ]; then
+              echo "::warning file=$DIM_LOAN::dim_loan.csv is empty — verify control_mora_path was provided"
+            else
+              echo "✅ dim_loan.csv has $ROWS rows"
+            fi
+          fi
+
+      - name: Upload pipeline artifacts
+        if: always()
+        uses: actions/upload-artifact@5349c256476b7a460d23bde9dc17a612d42fbaa4 # actions/upload-artifact@v4.3.6
+        with:
+          name: pipeline-output-${{ github.run_number }}
+          path: |
+            data/processed/
+            exports/
+            logs/
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # 4. Monthly snapshot (1st of month cron or manual)
+  # ---------------------------------------------------------------------------
+  build-star-schema:
+    name: Build DuckDB star schema + snapshot
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [preflight, test]
+    if: |
+      needs.preflight.outputs.run_type == 'snapshot' ||
+      needs.preflight.outputs.run_type == 'both'
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # actions/checkout@v5
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt duckdb rapidfuzz pyarrow
+
+      - name: Initialize DuckDB star schema
+        run: python scripts/data/init_duckdb_schema.py
+
+      - name: Build monthly snapshot
+        env:
+          MONTH: ${{ github.event.inputs.snapshot_month }}
+          INPUT: ${{ needs.preflight.outputs.input_csv }}
+          MODE: ${{ needs.preflight.outputs.mode }}
+        run: make snapshot-build
+
+      - name: Upload snapshot artifacts
+        if: always()
+        uses: actions/upload-artifact@5349c256476b7a460d23bde9dc17a612d42fbaa4 # actions/upload-artifact@v4.3.6
+        with:
+          name: snapshot-${{ github.run_number }}
+          path: |
+            data/duckdb/
+            exports/
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # 5. Post summary
+  # ---------------------------------------------------------------------------
+  summary:
+    name: Pipeline summary
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: [preflight, test, run-pipeline, build-star-schema]
+    if: always()
+    steps:
+      - name: Write job summary
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ## ETL Pipeline Run Summary
+
+          | Step                | Status |
+          |---------------------|--------|
+          | Preflight + secrets | ${{ needs.preflight.result }} |
+          | Tests               | ${{ needs.test.result }} |
+          | Daily ingest        | ${{ needs.run-pipeline.result }} |
+          | Monthly snapshot    | ${{ needs.build-star-schema.result }} |
+
+          **Run:** #${{ github.run_number }}
+          **Trigger:** ${{ github.event_name }}
+          **Branch:** ${{ github.ref_name }}
+          **Run type:** ${{ needs.preflight.outputs.run_type }}
+
+          ### Required Environment Variables (set in GitHub Secrets)
+          | Variable | Purpose |
+          |----------|---------|
+          | `SUPABASE_URL` | Supabase project URL |
+          | `SUPABASE_SERVICE_ROLE_KEY` | Write access to Supabase |
+          | `SUPABASE_ANON_KEY` | Read access to Supabase |
+          EOF

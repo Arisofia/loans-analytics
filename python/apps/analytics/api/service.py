@@ -897,11 +897,11 @@ class KPIService:
             recommendations.append(
                 "Prioritize remediation on the weakest health-score components this week."
             )
-        red_flags = [flag.flag for flag in risk_stratification.decision_flags if flag.status == "red"]
+        red_flags = [
+            flag.flag for flag in risk_stratification.decision_flags if flag.status == "red"
+        ]
         if red_flags:
-            recommendations.append(
-                f"Escalate red risk flags to committee: {', '.join(red_flags)}."
-            )
+            recommendations.append(f"Escalate red risk flags to committee: {', '.join(red_flags)}.")
         if not recommendations:
             recommendations.append(
                 "Maintain current strategy and monitor trend deltas in PAR and collections."

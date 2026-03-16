@@ -72,7 +72,12 @@ def test_decision_dashboard_endpoint_contract():
     body = response.json()
     assert body["portfolio_health"]["score"] >= 0.0
     assert body["portfolio_health"]["score"] <= 100.0
-    assert body["portfolio_health"]["traffic_light"] in {"healthy", "at_risk", "warning", "critical"}
+    assert body["portfolio_health"]["traffic_light"] in {
+        "healthy",
+        "at_risk",
+        "warning",
+        "critical",
+    }
     assert len(body["risk_stratification"]["decision_flags"]) > 0
     assert body["risk_heatmap"]["status"] in {"success", "no_data"}
     assert "npl" in body["unit_economics"]
@@ -90,7 +95,12 @@ def test_executive_summary_includes_risk_kpis_and_portfolio_health():
     assert len(body["risk_kpis"]) > 0
     assert body["risk_kpis"][0]["id"] is not None
     assert "portfolio_health" in body
-    assert body["portfolio_health"]["traffic_light"] in {"healthy", "at_risk", "warning", "critical"}
+    assert body["portfolio_health"]["traffic_light"] in {
+        "healthy",
+        "at_risk",
+        "warning",
+        "critical",
+    }
 
 
 def test_full_analysis_includes_unit_economics_and_portfolio_health():

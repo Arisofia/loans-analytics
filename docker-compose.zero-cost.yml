@@ -1,0 +1,179 @@
+###############################################################################
+# Zero-cost local development stack
+#
+# Replaces Azure services with free-tier / open-source alternatives:
+#   Azure SQL / Cosmos DB  →  Supabase (PostgreSQL) or local PostgreSQL
+#   Azure Blob Storage     →  Local Parquet files via DuckDB
+#   Azure App Insights     →  Prometheus + Grafana (already present)
+#   Azure Container Apps   →  Local Docker containers
+#
+# Usage
+#   docker compose -f docker-compose.zero-cost.yml up api dashboard
+#   docker compose -f docker-compose.zero-cost.yml --profile monitoring up
+#   docker compose -f docker-compose.zero-cost.yml --profile db up
+###############################################################################
+
+version: "3.9"
+
+x-common-env: &common-env
+  # Supabase project REST endpoint (override with your project credentials)
+  # Example: https://<project-ref>.supabase.co
+  SUPABASE_URL: ${SUPABASE_URL:-}
+  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+  # Local PostgreSQL (backing store for analytics; uses the `db` service)
+  # Adjust credentials/database name to match the `db` service configuration.
+  DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/postgres}
+  # DuckDB / Parquet storage paths
+  DUCKDB_PATH: /app/data/duckdb/analytics.duckdb
+  PARQUET_BASE_DIR: /app/data/duckdb
+  # Pipeline
+  PIPELINE_INPUT: /app/data/raw/abaco_real_data_20260202.csv
+  PIPELINE_MODE: full
+  # Observability
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  PROMETHEUS_MULTIPROC_DIR: /tmp/prometheus
+
+services:
+  # ---------------------------------------------------------------------------
+  # Analytics API (FastAPI) — replaces Azure Container Apps
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/arisofia/abaco-loans-analytics-api:local
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./logs:/app/logs
+    environment:
+      <<: *common-env
+      API_HOST: 0.0.0.0
+      API_PORT: "8000"
+      RELOAD: "true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Streamlit Dashboard — replaces Azure Static Web Apps
+  # ---------------------------------------------------------------------------
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    image: ghcr.io/arisofia/abaco-loans-analytics-dashboard:local
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      <<: *common-env
+      STREAMLIT_SERVER_PORT: "8501"
+      STREAMLIT_SERVER_ADDRESS: 0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # ETL Pipeline runner (one-shot)
+  # ---------------------------------------------------------------------------
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile.pipeline
+    image: ghcr.io/arisofia/abaco-loans-analytics-pipeline:local
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./logs:/app/logs
+    environment:
+      <<: *common-env
+    command: >
+      python scripts/data/run_data_pipeline.py
+        --input ${PIPELINE_INPUT:-data/raw/abaco_real_data_20260202.csv}
+        --mode  ${PIPELINE_MODE:-full}
+        --verbose
+    profiles:
+      - pipeline
+
+  # ---------------------------------------------------------------------------
+  # Local PostgreSQL — mirrors Supabase schema for offline dev
+  # Profile: db
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: abaco
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-localdev}
+      POSTGRES_DB: abaco_analytics
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/star_schema/create_star_schema.sql:/docker-entrypoint-initdb.d/01_star_schema.sql:ro
+      - ./db/star_schema/views/kpi_views.sql:/docker-entrypoint-initdb.d/02_kpi_views.sql:ro
+      - ./db/migrations:/docker-entrypoint-initdb.d/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abaco -d abaco_analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - db
+
+  # ---------------------------------------------------------------------------
+  # Prometheus — metrics collection (replaces Azure Monitor)
+  # Profile: monitoring
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.54.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=90d"
+      - "--web.enable-lifecycle"
+    profiles:
+      - monitoring
+
+  # ---------------------------------------------------------------------------
+  # Grafana — dashboards (replaces Azure Workbooks / Application Insights)
+  # Profile: monitoring
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
