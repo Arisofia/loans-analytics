@@ -179,7 +179,10 @@ class LocalMonthlySnapshotETL:
         )
 
         dim_loan["contractual_apr"] = dim_loan["interest_rate"].apply(contractual_apr)
-        loan_xirr_series = portfolio_xirr(dim_loan, fact_real_payment)
+
+        # Only compute XIRR for loans with a valid disbursement_date and positive principal
+        valid_xirr_mask = dim_loan["disbursement_date"].notna() & (dim_loan["original_principal"] > 0)
+        loan_xirr_series = portfolio_xirr(dim_loan[valid_xirr_mask], fact_real_payment)
 
         fact_monthly_snapshot = snapshots.merge(
             dim_loan[["loan_id", "contractual_apr"]],
