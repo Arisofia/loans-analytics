@@ -9,7 +9,7 @@ Includes:
 
 Can be run directly as a CLI script::
 
-    python src/zero_cost/local_migration_etl.py \\
+    python scripts/data/local_monthly_etl.py \\
         --loan-tape-dir data/raw \\
         --snapshot-month 2026-01-31 \\
         --output-dir exports/local_star
@@ -18,8 +18,8 @@ Can be run directly as a CLI script::
 from __future__ import annotations
 
 import argparse
+import csv
 import logging
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -56,11 +56,7 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
     """Build reason_code logs for fields with not specified values."""
     records: list[dict[str, object]] = []
     for col in df.columns:
-        if not (
-            pd.api.types.is_object_dtype(df[col])
-            or pd.api.types.is_string_dtype(df[col])
-        ):
-            continue
+        # Apply unified "not specified" logic to all columns, regardless of dtype.
         mask = df[col].apply(_normalize_not_specified)
         if not mask.any():
             continue
@@ -70,7 +66,7 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
                     "table_name": table_name,
                     "record_ref": str(idx),
                     "field_name": col,
-                    "reason_code": "no_especificado",
+                    "reason_code": "not_specified",
                     "reason_detail": f"Field '{col}' has no especificado/blank value",
                 }
             )
@@ -101,9 +97,13 @@ def reconcile_payments(
     paid["paid_total"] = pd.to_numeric(paid["paid_total"], errors="coerce").fillna(0.0)
 
     sched_agg = (
-        schedule.groupby(["loan_id", "scheduled_date"], as_index=False)["scheduled_total"].sum()
+        schedule.groupby(["loan_id", "scheduled_date"], as_index=False, dropna=False)[
+            "scheduled_total"
+        ].sum()
     )
-    paid_agg = paid.groupby(["loan_id", "payment_date"], as_index=False)["paid_total"].sum()
+    paid_agg = paid.groupby(["loan_id", "payment_date"], as_index=False, dropna=False)[
+        "paid_total"
+    ].sum()
 
     merged = sched_agg.merge(
         paid_agg,
@@ -146,7 +146,8 @@ class LocalMonthlySnapshotETL:
     """Generate monthly star-schema snapshot from local raw CSV files."""
 
     def __init__(self, snapshot_month: str) -> None:
-        self.snapshot_month = pd.Timestamp(snapshot_month)
+        snapshot_ts = pd.Timestamp(snapshot_month)
+        self.snapshot_month = snapshot_ts + pd.offsets.MonthEnd(0)
         self.loader = LoanTapeLoader(data_dir="data/raw")
         self.dpd_calculator = DPDCalculator()
 
@@ -166,7 +167,12 @@ class LocalMonthlySnapshotETL:
         dim_loan["original_principal"] = pd.to_numeric(
             dim_loan["original_principal"], errors="coerce"
         ).fillna(0.0)
-        dim_loan["interest_rate"] = pd.to_numeric(dim_loan.get("interest_rate"), errors="coerce").fillna(0.0)
+        if "interest_rate" in dim_loan.columns:
+            dim_loan["interest_rate"] = pd.to_numeric(
+                dim_loan["interest_rate"], errors="coerce"
+            ).fillna(0.0)
+        else:
+            dim_loan["interest_rate"] = 0.0
 
         snapshots = self.dpd_calculator.build_snapshots(
             dim_loan,
@@ -176,7 +182,10 @@ class LocalMonthlySnapshotETL:
         )
 
         dim_loan["contractual_apr"] = dim_loan["interest_rate"].apply(contractual_apr)
-        loan_xirr_series = portfolio_xirr(dim_loan, fact_real_payment)
+
+        # Only compute XIRR for loans with a valid disbursement_date and positive principal
+        valid_xirr_mask = dim_loan["disbursement_date"].notna() & (dim_loan["original_principal"] > 0)
+        loan_xirr_series = portfolio_xirr(dim_loan[valid_xirr_mask], fact_real_payment)
 
         fact_monthly_snapshot = snapshots.merge(
             dim_loan[["loan_id", "contractual_apr"]],
@@ -203,7 +212,18 @@ class LocalMonthlySnapshotETL:
         )
 
         if control_mora_path:
-            control_mora_df = pd.read_csv(control_mora_path, dtype=str, encoding="utf-8-sig")
+            # Auto-detect delimiter to match ControlMoraAdapter behavior and handle Excel-style exports.
+            control_mora_path = Path(control_mora_path)
+            with control_mora_path.open("r", encoding="utf-8-sig", newline="") as f:
+                sample = f.read(4096)
+                f.seek(0)
+                try:
+                    dialect = csv.Sniffer().sniff(sample, delimiters=[",", ";", "\t", "|"])
+                    delimiter = dialect.delimiter
+                except csv.Error:
+                    # Fallback to comma if sniffing fails.
+                    delimiter = ","
+                control_mora_df = pd.read_csv(f, dtype=str, sep=delimiter)
             unmatched_records = pd.concat(
                 [unmatched_records, build_not_specified_log(control_mora_df, "control_mora")],
                 ignore_index=True,
