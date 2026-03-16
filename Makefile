@@ -74,9 +74,9 @@ lint:
 type-check:
 	$(BIN)/mypy --check-untyped-defs src
 test:
-	"$(PYTHON)" -m pytest tests/ -v --override-ini="addopts="
+	"$(PYTHON)" -m pytest
 test-zero-cost:
-	"$(PYTHON)" -m pytest tests/zero_cost/ -v --override-ini="addopts="
+	"$(PYTHON)" -m pytest tests/zero_cost/ -v
 e2e:
 	RUN_E2E=1 "$(PYTHON)" -m pytest tests/e2e -m e2e
 security-check:
