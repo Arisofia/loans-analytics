@@ -6,7 +6,18 @@
 # Triggers
 #   - Push to main/develop (auto)
 #   - Manual dispatch (with optional input CSV path)
-#   - Scheduled: every day at 06:00 UTC
+#   - Daily ingest:    06:00 UTC  (loan_tape ingestion)
+#   - Monthly snapshot: 08:00 UTC on the 1st of each month
+#
+# Required secrets (fail-fast guard in 'preflight' job):
+#   SUPABASE_URL              — Supabase project URL
+#   SUPABASE_SERVICE_ROLE_KEY — Supabase service-role key (write access)
+#   SUPABASE_ANON_KEY         — Supabase anon/public key (read access)
+#
+# Optional secrets (used when available; silently skipped if absent):
+#   RENDER_API_KEY / RENDER_SERVICE_ID  — Render.com deployment
+#   RAILWAY_TOKEN / RAILWAY_PROJECT_ID  — Railway deployment
+#   FLY_API_TOKEN                       — Fly.io deployment
 # =============================================================================
 
 name: ETL Pipeline (Zero-Cost)
@@ -20,7 +31,10 @@ on:
       - "config/**"
       - "data/raw/**"
   schedule:
+    # Daily ingest at 06:00 UTC
     - cron: "0 6 * * *"
+    # Monthly snapshot at 08:00 UTC on the 1st of each month
+    - cron: "0 8 1 * *"
   workflow_dispatch:
     inputs:
       input_csv:
@@ -37,6 +51,12 @@ on:
         description: "Snapshot month (YYYY-MM-DD), leave blank for today"
         required: false
         default: ""
+      run_type:
+        description: "Run type"
+        required: false
+        default: "ingest"
+        type: choice
+        options: [ingest, snapshot, both]
 
 concurrency:
   group: etl-${{ github.ref }}
@@ -47,7 +67,7 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # 1. Validate inputs & environment
+  # 1. Validate inputs & environment — fail fast if required secrets are absent
   # ---------------------------------------------------------------------------
   preflight:
     name: Preflight checks
@@ -57,16 +77,41 @@ jobs:
     outputs:
       input_csv: ${{ steps.resolve.outputs.input_csv }}
       mode: ${{ steps.resolve.outputs.mode }}
+      run_type: ${{ steps.resolve.outputs.run_type }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          MISSING=""
+          [ -z "$SUPABASE_URL" ]              && MISSING="$MISSING SUPABASE_URL"
+          [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && MISSING="$MISSING SUPABASE_SERVICE_ROLE_KEY"
+          if [ -n "$MISSING" ]; then
+            echo "❌ Missing required secrets:$MISSING"
+            echo "   Add them in Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "✅ All required secrets present"
 
       - name: Resolve pipeline inputs
         id: resolve
         run: |
           CSV="${{ github.event.inputs.input_csv }}"
           MODE="${{ github.event.inputs.mode }}"
+          RTYPE="${{ github.event.inputs.run_type }}"
+
+          # Scheduled runs: monthly cron = snapshot, daily cron = ingest
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            HOUR=$(date -u +%H)
+            [ "$HOUR" = "08" ] && RTYPE="snapshot" || RTYPE="ingest"
+          fi
+
           echo "input_csv=${CSV:-data/raw/abaco_real_data_20260202.csv}" >> "$GITHUB_OUTPUT"
-          echo "mode=${MODE:-full}" >> "$GITHUB_OUTPUT"
+          echo "mode=${MODE:-full}"                                       >> "$GITHUB_OUTPUT"
+          echo "run_type=${RTYPE:-ingest}"                               >> "$GITHUB_OUTPUT"
 
       - name: Verify input file exists (if not dry-run)
         if: steps.resolve.outputs.mode != 'dry-run'
@@ -80,14 +125,42 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
-  # 2. Run the unified pipeline
+  # 2. Run tests
+  # ---------------------------------------------------------------------------
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt duckdb rapidfuzz pyarrow
+
+      - name: Run tests
+        run: make test
+
+  # ---------------------------------------------------------------------------
+  # 3. Daily ingest (loan tape / control mora)
   # ---------------------------------------------------------------------------
   run-pipeline:
     name: Run ETL Pipeline
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    needs: preflight
+    needs: [preflight, test]
+    if: |
+      needs.preflight.outputs.run_type == 'ingest' ||
+      needs.preflight.outputs.run_type == 'both'
     steps:
       - uses: actions/checkout@v4
 
@@ -108,11 +181,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SNAPSHOT_MONTH: ${{ github.event.inputs.snapshot_month }}
-        run: |
-          python scripts/data/run_data_pipeline.py \
-            --input "${{ needs.preflight.outputs.input_csv }}" \
-            --mode  "${{ needs.preflight.outputs.mode }}" \
-            --verbose
+        run: make run
 
       - name: Upload pipeline artifacts
         if: always()
@@ -121,19 +190,22 @@ jobs:
           name: pipeline-output-${{ github.run_number }}
           path: |
             data/processed/
+            exports/
             logs/
           retention-days: 30
 
   # ---------------------------------------------------------------------------
-  # 3. Build zero-cost star schema (DuckDB)
+  # 4. Monthly snapshot (1st of month cron or manual)
   # ---------------------------------------------------------------------------
   build-star-schema:
-    name: Build DuckDB star schema
+    name: Build DuckDB star schema + snapshot
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    needs: run-pipeline
-    if: needs.run-pipeline.result == 'success'
+    needs: [preflight, test]
+    if: |
+      needs.preflight.outputs.run_type == 'snapshot' ||
+      needs.preflight.outputs.run_type == 'both'
     steps:
       - uses: actions/checkout@v4
 
@@ -148,42 +220,31 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt duckdb rapidfuzz pyarrow
 
-      - name: Download pipeline output
-        uses: actions/download-artifact@v4
-        with:
-          name: pipeline-output-${{ github.run_number }}
-          path: data/
-
       - name: Initialize DuckDB star schema
-        run: |
-          python - <<'EOF'
-          import duckdb, pathlib
+        run: python scripts/data/init_duckdb_schema.py
 
-          db_path = "data/duckdb/analytics.duckdb"
-          pathlib.Path("data/duckdb").mkdir(parents=True, exist_ok=True)
-          con = duckdb.connect(db_path)
+      - name: Build monthly snapshot
+        env:
+          MONTH: ${{ github.event.inputs.snapshot_month }}
+        run: make snapshot-build
 
-          # Execute star-schema DDL
-          ddl_file = pathlib.Path("db/star_schema/duckdb/create_star_schema_duckdb.sql")
-          con.execute(ddl_file.read_text())
-          print("✅ DuckDB star schema initialised:", db_path)
-          EOF
-
-      - name: Upload DuckDB artifact
+      - name: Upload snapshot artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: duckdb-star-schema-${{ github.run_number }}
-          path: data/duckdb/
-          retention-days: 7
+          name: snapshot-${{ github.run_number }}
+          path: |
+            data/duckdb/
+            exports/
+          retention-days: 30
 
   # ---------------------------------------------------------------------------
-  # 4. Post summary
+  # 5. Post summary
   # ---------------------------------------------------------------------------
   summary:
     name: Pipeline summary
     runs-on: ubuntu-latest
     permissions: {}
-    needs: [run-pipeline, build-star-schema]
+    needs: [preflight, test, run-pipeline, build-star-schema]
     if: always()
     steps:
       - name: Write job summary
@@ -193,10 +254,20 @@ jobs:
 
           | Step                | Status |
           |---------------------|--------|
-          | Pipeline            | ${{ needs.run-pipeline.result }} |
-          | DuckDB star schema  | ${{ needs.build-star-schema.result }} |
+          | Preflight + secrets | ${{ needs.preflight.result }} |
+          | Tests               | ${{ needs.test.result }} |
+          | Daily ingest        | ${{ needs.run-pipeline.result }} |
+          | Monthly snapshot    | ${{ needs.build-star-schema.result }} |
 
           **Run:** #${{ github.run_number }}
           **Trigger:** ${{ github.event_name }}
           **Branch:** ${{ github.ref_name }}
+          **Run type:** ${{ needs.preflight.outputs.run_type }}
+
+          ### Required Environment Variables (set in GitHub Secrets)
+          | Variable | Purpose |
+          |----------|---------|
+          | `SUPABASE_URL` | Supabase project URL |
+          | `SUPABASE_SERVICE_ROLE_KEY` | Write access to Supabase |
+          | `SUPABASE_ANON_KEY` | Read access to Supabase |
           EOF

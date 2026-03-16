@@ -76,6 +76,7 @@ data/archives/
 data/agent_outputs/
 data/usage_metrics/
 exports/
+!exports/.gitkeep
 outputs/
 reports/
 .streamlit/

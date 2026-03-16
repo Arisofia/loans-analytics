@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic zero-cost-up zero-cost-down zero-cost-pipeline zero-cost-db zero-cost-schema etl-local snapshot-build
+.PHONY: help setup format lint type-check test e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic zero-cost-up zero-cost-down zero-cost-pipeline zero-cost-db zero-cost-schema etl-local snapshot-build run
 PYTHON ?= $(shell \
 	for p in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do \
 		if command -v $$p >/dev/null 2>&1 && $$p -c "import pytest" >/dev/null 2>&1; then \
@@ -74,7 +74,7 @@ lint:
 type-check:
 	$(BIN)/mypy --check-untyped-defs src
 test:
-	"$(PYTHON)" -m pytest
+	"$(PYTHON)" -m pytest tests/zero_cost/ -v --override-ini="addopts="
 e2e:
 	RUN_E2E=1 "$(PYTHON)" -m pytest tests/e2e -m e2e
 security-check:
@@ -179,3 +179,11 @@ snapshot-build:
 	INPUT=$(or $(INPUT), data/raw/abaco_real_data_20260202.csv) \
 	MONTH=$(or $(MONTH),) \
 	"$(PYTHON)" scripts/data/build_snapshot.py
+
+## Run the full zero-cost ETL pipeline (ingest + snapshot)
+## Equivalent to what GitHub Actions runs on every push to main
+run:
+	@echo "Running zero-cost ETL pipeline (ingest + snapshot)..."
+	$(MAKE) etl-local
+	$(MAKE) zero-cost-schema
+	$(MAKE) snapshot-build
