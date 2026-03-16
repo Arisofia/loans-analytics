@@ -776,7 +776,7 @@ websockets==16.0
     #   realtime
 whenever==0.9.5
     # via prefect
-wrapt==1.17.3
+wrapt==2.1.2
     # via
     #   -r requirements.txt
     #   opentelemetry-instrumentation
