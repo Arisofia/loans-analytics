@@ -162,10 +162,10 @@ jobs:
       needs.preflight.outputs.run_type == 'ingest' ||
       needs.preflight.outputs.run_type == 'both'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # actions/checkout@v4.1.7
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # actions/setup-python@v5.1.1
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -187,7 +187,7 @@ jobs:
 
       - name: Upload pipeline artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@5349c256476b7a460d23bde9dc17a612d42fbaa4 # actions/upload-artifact@v4.3.6
         with:
           name: pipeline-output-${{ github.run_number }}
           path: |
@@ -209,10 +209,10 @@ jobs:
       needs.preflight.outputs.run_type == 'snapshot' ||
       needs.preflight.outputs.run_type == 'both'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # actions/checkout@v4.1.7
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # actions/setup-python@v5.1.1
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -231,7 +231,7 @@ jobs:
         run: make snapshot-build
 
       - name: Upload snapshot artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@5349c256476b7a460d23bde9dc17a612d42fbaa4 # actions/upload-artifact@v4.3.6
         with:
           name: snapshot-${{ github.run_number }}
           path: |
