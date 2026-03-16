@@ -108,7 +108,7 @@ Loans are then assigned to five DPD buckets:
 | `1_30` | 1–30 | Low-Medium |
 | `31_60` | 31–60 | Medium |
 | `61_90` | 61–90 | Medium-High |
-| `90_plus` | >90 | Critical |
+| `90_plus` | 91+ | Critical |
 
 **Implementation**: `python/kpis/advanced_risk.py`
 
@@ -120,24 +120,27 @@ The risk stratification layer produces two outputs:
 
 ### 1. DPD Bucket Breakdown
 
-A percentage distribution of portfolio balance across all five DPD buckets, plus a `risk_heatmap` summarizing risk intensity per bucket:
+The `/analytics/risk-stratification` endpoint returns a `buckets` list (same `DPDBucketBreakdown` objects as `AdvancedRiskResponse.dpd_buckets`), `decision_flags`, and a `summary` string. The `/analytics/full-analysis` endpoint additionally includes a `risk_heatmap` field.
 
-| Intensity | Definition |
-|-----------|------------|
-| `low` | Bucket exposure is below the configured threshold for that DPD bucket |
-| `medium` | Bucket exposure is between the threshold and `2 × threshold` |
-| `high` | Bucket exposure exceeds `2 × threshold` |
+The `risk_heatmap` is built separately via `get_risk_heatmap_summary()` and covers the four delinquent buckets only (current loans are excluded). Each bucket has a per-bucket threshold; intensity is classified as follows:
 
-Current per-bucket exposure thresholds (as a share of total portfolio balance) are: `8%`, `4%`, `2%`, and `1%` for progressively more delinquent DPD buckets (e.g. 0–30, 31–60, 61–90, and >90 days past due). `get_risk_heatmap_summary` returns only these three intensity levels (`low`, `medium`, `high`) based on the rules above.
+| Bucket | Threshold (%) | `medium` when | `high` when |
+|--------|--------------|---------------|-------------|
+| Early (1–30 DPD) | 8.0 | exposure > 8% | exposure > 16% |
+| Warning (31–60 DPD) | 4.0 | exposure > 4% | exposure > 8% |
+| Severe (61–90 DPD) | 2.0 | exposure > 2% | exposure > 4% |
+| NPL (91+ DPD) | 1.0 | exposure > 1% | exposure > 2% |
+
+`risk_intensity` values are `low`, `medium`, or `high`. Buckets with `high` intensity are listed in `critical_buckets`.
 
 ### 2. Decision Flags (4-flag Assessment)
 
 | Flag | Signal | Status |
 |------|--------|--------|
 | **Concentration** | HHI-based borrower exposure concentration | 🟢 Green / 🟡 Yellow / 🔴 Red |
+| **Asset Quality** | PAR90 / NPL-based delinquency severity | 🟢 / 🟡 / 🔴 |
 | **Liquidity** | Collections coverage vs. scheduled collections | 🟢 / 🟡 / 🔴 |
-| **Recovery** | Recovery rate trend on defaulted balance | 🟢 / 🟡 / 🔴 |
-| **Collections Effectiveness** | Collections coverage velocity | 🟢 / 🟡 / 🔴 |
+| **Recovery** | Cure rate on delinquent loans | 🟢 / 🟡 / 🔴 |
 
 **Implementation**: `python/apps/analytics/api/main.py` → `POST /analytics/risk-stratification`
 
@@ -149,7 +152,9 @@ All endpoints accept `Content-Type: application/json` and require a list of loan
 
 ### `POST /analytics/advanced-risk`
 
-Returns PAR30/60/90, default rate, collections coverage, yield metrics, recovery rate, concentration, repeat borrower rate, credit quality index, and DPD bucket breakdown.
+Returns PAR30/60/90, default rate, collections coverage, yield metrics, recovery rate, concentration, repeat borrower rate, credit quality index, and a `dpd_buckets` list.
+
+The required `LoanRecord` fields are `loan_amount`, `principal_balance`, `interest_rate`, and `loan_status`. `id` is optional.
 
 Request (abridged):
 
@@ -160,34 +165,40 @@ Request (abridged):
       "id": "L001",
       "loan_amount": 60000,
       "principal_balance": 50000,
-      "interest_rate": 0.12,
+      "interest_rate": 12.0,
       "loan_status": "current",
-      "days_past_due": 35,
-      "scheduled_payment": 2000,
-      "actual_payment": 1800,
-      "equifax_score": 680
+      "days_past_due": 35
     }
   ]
 }
 ```
 
-Response (abridged):
+Response (abridged — all percentage values are 0–100):
 
 ```json
 {
-  "par30": 15.0,
-  "par60": 8.0,
-  "par90": 3.0,
-  "default_rate": 2.0,
-  "collections_coverage": 90.0,
-  "credit_quality_index": 69.1,
-  "dpd_buckets": [55.0, 22.0, 15.0, 5.0, 3.0]
+  "par30": 18.42,
+  "par60": 11.77,
+  "par90": 6.31,
+  "default_rate": 4.82,
+  "collections_coverage": 93.44,
+  "fee_yield": 1.25,
+  "total_yield": 29.81,
+  "recovery_rate": 22.17,
+  "concentration_hhi": 846.32,
+  "repeat_borrower_rate": 27.9,
+  "credit_quality_index": 64.55,
+  "total_loans": 1247,
+  "dpd_buckets": [
+    {"bucket": "current", "loan_count": 1066, "balance": 7421000.54, "balance_share_pct": 83.11},
+    {"bucket": "90_plus", "loan_count": 31,   "balance":  563122.11, "balance_share_pct": 6.31}
+  ]
 }
 ```
 
 ### `POST /analytics/risk-stratification`
 
-Returns DPD bucket percentages plus the 4-flag decision assessment. Response includes `buckets`, `decision_flags`, and `summary`.
+Returns `buckets` (same `DPDBucketBreakdown` objects as above), `decision_flags` (the 4-flag assessment), and a `summary` string.
 
 ### `POST /analytics/risk-alerts`
 
