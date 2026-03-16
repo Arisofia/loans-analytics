@@ -167,10 +167,10 @@ jobs:
       needs.preflight.outputs.run_type == 'ingest' ||
       needs.preflight.outputs.run_type == 'both'
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # actions/checkout@v4.1.7
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # actions/checkout@v5
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # actions/setup-python@v5.1.1
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -189,6 +189,37 @@ jobs:
           INPUT: ${{ needs.preflight.outputs.input_csv }}
           MODE: ${{ needs.preflight.outputs.mode }}
         run: make etl-local
+
+      - name: Validate pipeline outputs
+        if: success()
+        run: |
+          # Fail if unmatched_records.csv exists but has rows missing reason_code
+          UNMATCHED="exports/unmatched_records.csv"
+          if [ -f "$UNMATCHED" ]; then
+            HDR=$(head -1 "$UNMATCHED")
+            COL=$(echo "$HDR" | tr ',' '\n' | grep -n "^reason_code$" | cut -d: -f1)
+            if [ -n "$COL" ]; then
+              MISSING=$(tail -n +2 "$UNMATCHED" | awk -F',' -v c="$COL" '($c=="" || $c~/^ *$/){n++} END{print n+0}')
+            else
+              MISSING=0
+            fi
+            if [ "$MISSING" -gt 0 ]; then
+              echo "::error::$MISSING rows in $UNMATCHED have no reason_code. Review crosswalk output."
+              exit 1
+            fi
+            echo "✅ All unmatched records have reason_code"
+          fi
+
+          # Warn (do not fail) if dim_loan export is empty
+          DIM_LOAN="exports/dim_loan.csv"
+          if [ -f "$DIM_LOAN" ]; then
+            ROWS=$(tail -n +2 "$DIM_LOAN" | wc -l | tr -d ' ')
+            if [ "$ROWS" -eq 0 ]; then
+              echo "::warning file=$DIM_LOAN::dim_loan.csv is empty — verify control_mora_path was provided"
+            else
+              echo "✅ dim_loan.csv has $ROWS rows"
+            fi
+          fi
 
       - name: Upload pipeline artifacts
         if: always()
@@ -214,10 +245,10 @@ jobs:
       needs.preflight.outputs.run_type == 'snapshot' ||
       needs.preflight.outputs.run_type == 'both'
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # actions/checkout@v4.1.7
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # actions/checkout@v5
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # actions/setup-python@v5.1.1
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -238,6 +269,7 @@ jobs:
         run: make snapshot-build
 
       - name: Upload snapshot artifacts
+        if: always()
         uses: actions/upload-artifact@5349c256476b7a460d23bde9dc17a612d42fbaa4 # actions/upload-artifact@v4.3.6
         with:
           name: snapshot-${{ github.run_number }}

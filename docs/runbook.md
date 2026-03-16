@@ -424,6 +424,84 @@ The adapters use column alias maps. If a new column name is encountered:
 2. Fields with no alias are passed through unchanged.
 3. Fields marked `"no especificado"` will have `reason_code` set automatically by the Crosswalk.
 
+### Troubleshooting firewall / DNS blocks in GitHub Actions
+
+GitHub Actions runners have full internet access by default, but some environments or security policies may block outbound DNS lookups or HTTPS connections. If the `test` or `run-pipeline` jobs fail with connection errors, timeouts, or `socket.gaierror`, follow these steps:
+
+**Symptoms**
+
+```
+socket.gaierror: [Errno -2] Name or service not known
+requests.exceptions.ConnectionError: HTTPSConnectionPool(host='...', port=443)
+urllib3.exceptions.NewConnectionError: Failed to establish a new connection
+```
+
+**Diagnosis**
+
+The most common causes are:
+
+1. **Test code makes live network calls** — A test imports a module that eagerly connects to Supabase or an external API on import or fixture setup.
+2. **DNS resolver is rate-limited or slow** — GitHub-hosted runners use shared DNS resolvers; transient failures are possible.
+3. **Corporate runner / self-hosted runner with egress filtering** — If you use self-hosted runners behind a firewall, outbound HTTPS may be blocked.
+
+**Fix A — Ensure tests are self-contained (recommended)**
+
+All `src/zero_cost/` tests use local DataFrames only — no live network calls are made.  If you see DNS errors in the test job, verify that no new test imports a module that connects to Supabase at import time:
+
+```bash
+# Scan for suspicious imports in tests
+grep -r "supabase\|requests\.get\|urllib.*open" tests/ --include="*.py"
+```
+
+If a live-call test is identified, either:
+- Mock the network call with `unittest.mock.patch`, or
+- Mark it `@pytest.mark.integration` and exclude it with `pytest -m "not integration"` (the current `Makefile` target already does this).
+
+**Fix B — Add connection timeout to pytest (defensive)**
+
+In `pytest.ini` or `conftest.py`:
+
+```ini
+# pytest.ini — add socket timeout so DNS failures surface quickly
+[pytest]
+timeout = 30
+```
+
+Install `pytest-timeout` and add it to `requirements.txt`:
+
+```bash
+pip install pytest-timeout
+```
+
+**Fix C — Self-hosted runner egress allow-list**
+
+If you run on a self-hosted runner behind a firewall, ensure the following hostnames are reachable:
+
+| Destination | Port | Purpose |
+|-------------|------|---------|
+| `pypi.org`, `files.pythonhosted.org` | 443 | `pip install` |
+| `github.com`, `api.github.com` | 443 | Actions checkout, artifact upload |
+| `*.supabase.co` | 443 | Supabase API (production pipeline only) |
+| `objects.githubusercontent.com` | 443 | Actions cache |
+
+**Fix D — Skip network-sensitive steps in dry-run mode**
+
+The preflight job automatically switches to `dry-run` mode when the input CSV is absent.  In `dry-run` mode, no Supabase calls are made.  You can also force this manually:
+
+```bash
+# Trigger a dry-run via workflow_dispatch
+gh workflow run etl-pipeline.yml -f mode=dry-run
+```
+
+**Artifact validation failures**
+
+If the `Validate pipeline outputs` step fails with `rows in unmatched_records.csv have no reason_code`:
+
+1. Check crosswalk output: `exports/unmatched_records.csv`
+2. Each unmatched row must have a non-empty `reason_code` column explaining why it could not be matched.
+3. Common reason codes: `no_match_found`, `ambiguous_match`, `date_out_of_range`.
+4. Re-run with lower fuzzy threshold: `Crosswalk(fuzzy_name_threshold=70)`.
+
 ---
 
 ## 12. Rollback Procedure
