@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic zero-cost-up zero-cost-down zero-cost-pipeline zero-cost-db zero-cost-schema etl-local snapshot-build run
+.PHONY: help setup format lint type-check test test-zero-cost e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic zero-cost-up zero-cost-down zero-cost-pipeline zero-cost-db zero-cost-schema etl-local snapshot-build run
 PYTHON ?= $(shell \
 	for p in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do \
 		if command -v $$p >/dev/null 2>&1 && $$p -c "import pytest" >/dev/null 2>&1; then \
@@ -74,6 +74,8 @@ lint:
 type-check:
 	$(BIN)/mypy --check-untyped-defs src
 test:
+	"$(PYTHON)" -m pytest tests/ -v --override-ini="addopts="
+test-zero-cost:
 	"$(PYTHON)" -m pytest tests/zero_cost/ -v --override-ini="addopts="
 e2e:
 	RUN_E2E=1 "$(PYTHON)" -m pytest tests/e2e -m e2e
