@@ -156,6 +156,46 @@ class PipelineRouter:
         tables["_source"] = "loan_tape"
         return tables
 
+    def _empty_fact_schedule(self) -> pd.DataFrame:
+        """Return an empty fact_schedule with the canonical schema.
+
+        This ensures downstream components (e.g., DPDCalculator) can rely on
+        expected columns like ``scheduled_date`` even when Control de Mora
+        does not provide a full schedule.
+        """
+        return pd.DataFrame(
+            {
+                # Identifier columns kept generic as object; downstream may
+                # cast or join as needed.
+                "loan_id": pd.Series(dtype="object"),
+                "installment_number": pd.Series(dtype="Int64"),
+                # Dates are explicitly typed as datetime64 for consistency.
+                "scheduled_date": pd.Series(dtype="datetime64[ns]"),
+                # Amounts are left as object to avoid imposing float on
+                # financial values; calculators can cast to Decimal.
+                "scheduled_principal": pd.Series(dtype="object"),
+                "scheduled_interest": pd.Series(dtype="object"),
+                "scheduled_fees": pd.Series(dtype="object"),
+            }
+        )
+
+    def _empty_fact_real_payment(self) -> pd.DataFrame:
+        """Return an empty fact_real_payment with the canonical schema.
+
+        Provides ``payment_date`` and related columns so downstream code can
+        operate safely even when no real payments are present.
+        """
+        return pd.DataFrame(
+            {
+                "loan_id": pd.Series(dtype="object"),
+                "payment_id": pd.Series(dtype="object"),
+                "payment_date": pd.Series(dtype="datetime64[ns]"),
+                "paid_principal": pd.Series(dtype="object"),
+                "paid_interest": pd.Series(dtype="object"),
+                "paid_fees": pd.Series(dtype="object"),
+            }
+        )
+
     def _load_control_mora(
         self,
         snapshot_month: pd.Timestamp,
@@ -169,8 +209,8 @@ class PipelineRouter:
             )
             return {
                 "dim_loan": pd.DataFrame(),
-                "fact_schedule": pd.DataFrame(),
-                "fact_real_payment": pd.DataFrame(),
+                "fact_schedule": self._empty_fact_schedule(),
+                "fact_real_payment": self._empty_fact_real_payment(),
                 "_source": "control_mora",
             }
 
@@ -194,7 +234,10 @@ class PipelineRouter:
 
         return {
             "dim_loan": dim_loan,
-            "fact_schedule": pd.DataFrame(),   # not available from Control de Mora
-            "fact_real_payment": pd.DataFrame(),  # not available from Control de Mora
+            # Control de Mora does not currently provide schedule or payment
+            # tables, but we return canonical-schema empties to keep
+            # downstream components stable.
+            "fact_schedule": self._empty_fact_schedule(),
+            "fact_real_payment": self._empty_fact_real_payment(),
             "_source": "control_mora",
         }
