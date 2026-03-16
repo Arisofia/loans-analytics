@@ -194,7 +194,9 @@ class PipelineRouter:
                 "payment_date": pd.Series(dtype="datetime64[ns]"),
                 "paid_principal": pd.Series(dtype="object"),
                 "paid_interest": pd.Series(dtype="object"),
-                "paid_fees": pd.Series(dtype="object"),
+                "paid_fee": pd.Series(dtype="object"),
+                "paid_total": pd.Series(dtype="object"),
+                "paid_other": pd.Series(dtype="object"),
             }
         )
 
