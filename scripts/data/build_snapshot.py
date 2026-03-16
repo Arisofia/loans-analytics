@@ -69,10 +69,13 @@ def main() -> None:
         base_dir=args.parquet_dir,
         db_path=args.duckdb,
     )
-    print("💾  Writing star-schema tables...")
-    tables = builder.to_star_schema(snap_df, storage)
-    for name, df in tables.items():
-        print(f"   {name}: {len(df)} rows")
+    try:
+        print("💾  Writing star-schema tables...")
+        tables = builder.to_star_schema(snap_df, storage)
+        for name, df in tables.items():
+            print(f"   {name}: {len(df)} rows")
+    finally:
+        storage.close()
 
     # Print KPIs
     kpis = builder.compute_portfolio_kpis(snap_df)
