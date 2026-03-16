@@ -178,7 +178,8 @@ class ZeroCostStorage:
         table_dir = self.base_dir / table_name
         if not table_dir.exists():
             raise FileNotFoundError(f"No data found for table '{table_name}' at {table_dir}")
-        return self.query(f"SELECT * FROM read_parquet('{table_dir}/*.parquet')")
+        # Use a recursive glob so both flat and partitioned (Hive-style) layouts are supported.
+        return self.query(f"SELECT * FROM read_parquet('{table_dir}/**/*.parquet')")
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -197,7 +198,8 @@ class ZeroCostStorage:
     def _register_table(self, table_name: str, table_dir: Path) -> None:
         """Register all Parquet files in *table_dir* as a DuckDB view."""
         conn = self._get_conn()
-        glob_path = str(table_dir / "*.parquet")
+        # Use a recursive glob so views include data from partitioned subdirectories.
+        glob_path = str(table_dir / "**" / "*.parquet")
         safe_name = self._validate_identifier(table_name)
         conn.execute(
             f'CREATE OR REPLACE VIEW "{safe_name}" AS '
