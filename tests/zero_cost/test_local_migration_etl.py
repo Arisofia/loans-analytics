@@ -5,7 +5,11 @@ import math
 import pandas as pd
 import pytest
 
-from src.zero_cost.local_migration_etl import reconcile_payments
+from src.zero_cost.local_migration_etl import (
+    MAX_NOT_SPECIFIED_LOG_ROWS,
+    build_not_specified_log,
+    reconcile_payments,
+)
 from src.zero_cost.xirr import xirr
 
 
@@ -54,3 +58,41 @@ def test_reconcile_payments_marks_missing_and_mismatch_reason_codes():
     }
     assert not unmatched["reason_code"].isna().any()
     assert (unmatched["reason_code"].str.strip() != "").all()
+
+
+def test_build_not_specified_log_caps_at_max_rows(caplog):
+    """build_not_specified_log should cap output at MAX_NOT_SPECIFIED_LOG_ROWS."""
+    import logging
+
+    n_rows = MAX_NOT_SPECIFIED_LOG_ROWS + 50
+    df = pd.DataFrame({"col_a": [None] * n_rows, "col_b": [""] * n_rows})
+    with caplog.at_level(logging.WARNING, logger="src.zero_cost.local_migration_etl"):
+        result = build_not_specified_log(df, "test_table")
+
+    assert len(result) == MAX_NOT_SPECIFIED_LOG_ROWS
+    assert any("Truncated" in m for m in caplog.messages)
+
+
+def test_reconcile_payments_captures_null_loan_id():
+    """Rows with null loan_id should appear in unmatched with explicit reason_code."""
+    fact_schedule = pd.DataFrame(
+        {
+            "loan_id": ["L1", None],
+            "scheduled_date": ["2025-02-01", "2025-02-01"],
+            "scheduled_total": [100.0, 50.0],
+        }
+    )
+    fact_real_payment = pd.DataFrame(
+        {
+            "loan_id": ["L1", None],
+            "payment_date": ["2025-02-01", "2025-02-01"],
+            "paid_total": [100.0, 50.0],
+        }
+    )
+
+    _, unmatched = reconcile_payments(fact_schedule, fact_real_payment)
+
+    null_sched = unmatched[unmatched["reason_code"] == "missing_loan_id_schedule"]
+    null_paid = unmatched[unmatched["reason_code"] == "missing_loan_id_payment"]
+    assert len(null_sched) == 1, "Null loan_id schedule row should be captured"
+    assert len(null_paid) == 1, "Null loan_id payment row should be captured"
