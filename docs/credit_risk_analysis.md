@@ -317,18 +317,18 @@ A Polars-native vectorised engine that assigns recourse strategies to delinquent
 
 **File**: `sql/models/v_loan_risk_drivers.sql`
 
-Surfaces risk drivers aggregated by product and segment:
+Surfaces risk drivers aggregated by product (`analytics.v_loan_risk_drivers` grouped by `product_id`):
 
 | Column | Description |
 |--------|-------------|
-| `loan_count` | Number of loans in segment |
-| `total_balance` | Total outstanding balance |
-| `par_30_balance` | Balance with DPD ≥ 30 |
-| `par_90_balance` | Balance with DPD ≥ 90 |
-| `avg_dpd` | Average DPD across segment |
-| `max_dpd` | Maximum DPD in segment |
-| `pct_roll_30` | % of loans rolling to 30+ DPD |
-| `pct_roll_90` | % of loans rolling to 90+ DPD |
+| `loan_count` | Number of loans for the product |
+| `total_balance` | Total outstanding balance for the product |
+| `par_30_balance` | Balance with DPD ≥ 30 for the product |
+| `par_90_balance` | Balance with DPD ≥ 90 for the product |
+| `avg_days_past_due` | Average days past due across loans for the product |
+| `max_days_past_due` | Maximum days past due for any loan in the product |
+| `pct_roll_30` | % of loans for the product rolling to 30+ DPD |
+| `pct_roll_90` | % of loans for the product rolling to 90+ DPD |
 
 ---
 
