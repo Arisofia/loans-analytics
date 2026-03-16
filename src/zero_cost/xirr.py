@@ -122,8 +122,12 @@ def xirr(
             if result is not None:
                 return result
         except (ZeroDivisionError, OverflowError, FloatingPointError):
-            pass
-
+        except (ZeroDivisionError, OverflowError, FloatingPointError) as exc:
+            logger.debug(
+                "Newton-Raphson failed for starting guess %s due to numerical error: %s",
+                g,
+                exc,
+            )
     # Bisection fallback
     result = _bisect(_npv)
     if result is not None:
