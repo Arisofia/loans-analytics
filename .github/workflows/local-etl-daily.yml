@@ -1,0 +1,112 @@
+name: Local ETL Daily Snapshot
+
+on:
+  schedule:
+    - cron: "15 5 * * *"
+  workflow_dispatch:
+    inputs:
+      snapshot_month:
+        description: "Snapshot date (YYYY-MM-DD). Defaults to today UTC."
+        required: false
+        default: ""
+      loan_tape_dir:
+        description: "Directory containing loan tape CSV files"
+        required: false
+        default: "data/raw"
+      control_mora_path:
+        description: "Optional control mora CSV file path"
+        required: false
+        default: ""
+
+jobs:
+  run-local-etl:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PYTHON_VERSION: "3.12"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+
+      - name: Set snapshot month
+        id: date
+        run: |
+          SNAPSHOT="${{ github.event.inputs.snapshot_month }}"
+          if [ -z "$SNAPSHOT" ]; then
+            SNAPSHOT=$(date -u +%F)
+          fi
+          echo "snapshot_month=$SNAPSHOT" >> "$GITHUB_OUTPUT"
+
+      - name: Preflight check for loan tape data
+        id: preflight
+        run: |
+          LOAN_TAPE_DIR="${{ github.event.inputs.loan_tape_dir || 'data/raw' }}"
+          echo "Using loan tape directory: $LOAN_TAPE_DIR"
+          if [ ! -d "$LOAN_TAPE_DIR" ]; then
+            echo "Loan tape directory '$LOAN_TAPE_DIR' does not exist; skipping local ETL run."
+            echo "has_data=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! ls "$LOAN_TAPE_DIR"/*.csv >/dev/null 2>&1; then
+            echo "No CSV files found in '$LOAN_TAPE_DIR'; skipping local ETL run."
+            echo "has_data=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Loan tape data found in '$LOAN_TAPE_DIR'; proceeding with local ETL."
+          echo "has_data=true" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Python
+        if: steps.preflight.outputs.has_data == 'true'
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        if: steps.preflight.outputs.has_data == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run local ETL
+        if: steps.preflight.outputs.has_data == 'true'
+        run: |
+          python scripts/data/local_star_snapshot_etl.py \
+            --loan-tape-dir "${{ github.event.inputs.loan_tape_dir || 'data/raw' }}" \
+            --control-mora "${{ github.event.inputs.control_mora_path }}" \
+            --snapshot-month "${{ steps.date.outputs.snapshot_month }}" \
+            --output-dir exports/local_star
+
+      - name: Validate unmatched records reason_code
+        if: steps.preflight.outputs.has_data == 'true'
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          from pathlib import Path
+
+          path = Path("exports/local_star/unmatched_records.csv")
+          if not path.exists():
+              raise SystemExit("unmatched_records.csv is missing")
+
+          df = pd.read_csv(path)
+          if "reason_code" not in df.columns:
+              raise SystemExit("unmatched_records.csv missing reason_code column")
+
+          invalid = df["reason_code"].fillna("").astype(str).str.strip().eq("").sum()
+          if invalid > 0:
+              raise SystemExit(f"{invalid} unmatched_records rows missing reason_code")
+
+          print(f"Validation OK: {len(df)} unmatched rows with reason_code")
+          PY
+
+      - name: Upload artifacts
+        if: always() && steps.preflight.outputs.has_data == 'true'
+        uses: actions/upload-artifact@5349c256476b7a460d23bde9dc17a612d42fbaa4
+        with:
+          name: local-etl-${{ github.run_number }}
+          path: |
+            exports/local_star/
+          retention-days: 14
