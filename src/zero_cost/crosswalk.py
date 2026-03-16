@@ -342,17 +342,24 @@ class Crosswalk:
         for _, row in tape_subset.iterrows():
             tid = str(row[tape_id_col])
             t_name = str(row.get(tape_name_col, ""))
-            t_date = pd.Timestamp(row[tape_date_col]) if tape_date_col and tape_date_col in row else None
+            t_date_raw = row[tape_date_col] if tape_date_col and tape_date_col in row else None
+            if t_date_raw is not None and not pd.isna(t_date_raw):
+                # Normalize to pandas Timestamp; invalid parses will raise upstream
+                t_date = pd.to_datetime(t_date_raw)
+            else:
+                t_date = None
 
             best_score, best_idx = 0.0, -1
             for i, m_name in enumerate(mora_names):
                 score = _name_score(t_name, m_name)
                 if score > best_score:
-                    # Check date proximity
+                    # Check date proximity when both tape and mora dates are available
                     if t_date is not None and mora_date_col and mora_date_col in mora_candidates.columns:
-                        m_date = pd.Timestamp(mora_candidates.iloc[i][mora_date_col])
-                        if abs((t_date - m_date).days) > self.date_tolerance_days:
-                            continue
+                        m_date_raw = mora_candidates.iloc[i][mora_date_col]
+                        if m_date_raw is not None and not pd.isna(m_date_raw):
+                            m_date = pd.to_datetime(m_date_raw)
+                            if abs((t_date - m_date).days) > self.date_tolerance_days:
+                                continue
                     best_score = score
                     best_idx = i
 
