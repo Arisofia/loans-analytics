@@ -30,10 +30,10 @@ jobs:
     name: Build documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@0b93645e9fea7318a46acaf0b59204b243c754df # v5.1.0
         with:
           python-version: "3.12"
           cache: pip
@@ -63,7 +63,7 @@ jobs:
           fi
 
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@03e9f750edc27cdf99a7df64e669b201a9f41a58 # v3
         with:
           path: _site
 
@@ -77,4 +77,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@77413cd29b4b8b197349b40a301c768c71a99e1d # v4
