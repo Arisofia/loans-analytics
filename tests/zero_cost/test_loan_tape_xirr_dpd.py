@@ -171,9 +171,7 @@ class TestCrosswalk:
             {
                 "loan_id": ["L-001", "L-002", "L-003"],
                 "client_name": ["Juan Perez", "Maria Lopez", "No Match Person"],
-                "disbursement_date": pd.to_datetime(
-                    ["2025-01-15", "2025-03-01", "2025-05-10"]
-                ),
+                "disbursement_date": pd.to_datetime(["2025-01-15", "2025-03-01", "2025-05-10"]),
                 "original_principal": [10000, 20000, 5000],
             }
         )
@@ -301,9 +299,9 @@ class TestXIRR:
 
         rate_fwd = xirr(cashflows, dates_forward)
         rate_rev = xirr(cashflows_reversed, dates_reversed)
-        assert abs(rate_fwd - rate_rev) < 1e-6, (
-            f"Rate should be order-independent: {rate_fwd} vs {rate_rev}"
-        )
+        assert (
+            abs(rate_fwd - rate_rev) < 1e-6
+        ), f"Rate should be order-independent: {rate_fwd} vs {rate_rev}"
 
     def test_contractual_apr_monthly_compounding(self):
         """EAR for 24% nominal monthly = (1+0.02)^12 - 1 ≈ 26.82%."""
@@ -343,8 +341,13 @@ class TestXIRR:
     def test_loan_xirr_missing_loan_returns_nan(self):
         from src.zero_cost.xirr import loan_xirr
 
-        disb = pd.DataFrame({"loan_id": ["L-001"], "disbursement_date": ["2025-01-01"],
-                              "original_principal": [1000.0]})
+        disb = pd.DataFrame(
+            {
+                "loan_id": ["L-001"],
+                "disbursement_date": ["2025-01-01"],
+                "original_principal": [1000.0],
+            }
+        )
         pays = pd.DataFrame({"loan_id": [], "payment_date": [], "paid_total": []})
         rate = loan_xirr(disb, pays, "NONEXISTENT")
         assert math.isnan(rate)
@@ -500,9 +503,7 @@ class TestDPDCalculator:
         fact_schedule = pd.DataFrame(
             {
                 "loan_id": ["L-001", "L-001", "L-002"],
-                "scheduled_date": pd.to_datetime(
-                    ["2026-01-31", "2026-02-28", "2026-01-31"]
-                ),
+                "scheduled_date": pd.to_datetime(["2026-01-31", "2026-02-28", "2026-01-31"]),
                 "scheduled_principal": [1000.0, 1000.0, 1000.0],
             }
         )
@@ -555,9 +556,9 @@ class TestDPDCalculator:
         snap = calc.build_snapshots(dim_loan, sched, pays, ["2026-03-15"])
         l1_row = snap[snap["loan_id"] == "L-001"].iloc[0]
         l2_row = snap[snap["loan_id"] == "L-002"].iloc[0]
-        assert l1_row["par_1"]       # L-001 is overdue (15 DPD ≥ 1)
+        assert l1_row["par_1"]  # L-001 is overdue (15 DPD ≥ 1)
         assert not l1_row["par_30"]  # 15 DPD < 30
-        assert not l2_row["par_1"]   # L-002 is current
+        assert not l2_row["par_1"]  # L-002 is current
 
     def test_mora_bucket_is_populated(self):
         from src.zero_cost.dpd_calculator import DPDCalculator

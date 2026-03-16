@@ -130,9 +130,7 @@ class TestLendIdMapper:
         mapper = LendIdMapper()
         mapper.load_from_csv(self._make_csv(tmp_path))
         df = pd.DataFrame({"NumeroDesembolso": ["NDE-001", "NDE-002", "NDE-999"]})
-        enriched = mapper.enrich_dataframe(
-            df, source_col="NumeroDesembolso", target_col="lend_id"
-        )
+        enriched = mapper.enrich_dataframe(df, source_col="NumeroDesembolso", target_col="lend_id")
         assert enriched["lend_id"].iloc[0] == "L-100"
         assert pd.isna(enriched["lend_id"].iloc[2])
 
@@ -244,9 +242,7 @@ class TestControlMoraAdapter:
         # Create a second CSV in a subdir
         (tmp_path / "m2").mkdir(exist_ok=True)
         csv2 = self._make_mora_csv(tmp_path / "m2")
-        df = ControlMoraAdapter.load_many(
-            [csv1, csv2], snapshot_month="2026-01-31"
-        )
+        df = ControlMoraAdapter.load_many([csv1, csv2], snapshot_month="2026-01-31")
         assert len(df) == 3  # deduped
 
 
@@ -283,10 +279,10 @@ class TestMonthlySnapshotBuilder:
 
         builder = MonthlySnapshotBuilder()
         snap = builder.build(self._loans_df()).set_index("lend_id")
-        assert not snap.loc["L-1", "par_1"]      # dpd=0 → not in PAR-1
-        assert snap.loc["L-2", "par_30"]          # dpd=35 >= 30
-        assert snap.loc["L-3", "par_90"]          # dpd=92 >= 90
-        assert not snap.loc["L-4", "par_90"]      # dpd=0 → not in PAR-90
+        assert not snap.loc["L-1", "par_1"]  # dpd=0 → not in PAR-1
+        assert snap.loc["L-2", "par_30"]  # dpd=35 >= 30
+        assert snap.loc["L-3", "par_90"]  # dpd=92 >= 90
+        assert not snap.loc["L-4", "par_90"]  # dpd=0 → not in PAR-90
 
     def test_compute_portfolio_kpis(self):
         from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder

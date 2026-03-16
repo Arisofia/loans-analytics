@@ -38,8 +38,7 @@ except ImportError:
 
     RAPIDFUZZ_AVAILABLE = False
     logger.warning(
-        "rapidfuzz not installed — falling back to difflib (slower). "
-        "pip install rapidfuzz"
+        "rapidfuzz not installed — falling back to difflib (slower). " "pip install rapidfuzz"
     )
 
 

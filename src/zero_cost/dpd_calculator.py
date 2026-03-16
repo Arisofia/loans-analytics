@@ -285,9 +285,7 @@ class DPDCalculator:
         # Base: all loans from dim_loan
         base = dim_loan[[loan_id_col]].copy()
         if disb_col in dim_loan.columns:
-            base["original_principal"] = pd.to_numeric(
-                dim_loan[disb_col], errors="coerce"
-            ).values
+            base["original_principal"] = pd.to_numeric(dim_loan[disb_col], errors="coerce").values
 
         base = base.join(cum_sched, on=loan_id_col, how="left")
         base = base.join(cum_paid, on=loan_id_col, how="left")

@@ -263,7 +263,9 @@ class Crosswalk:
         n_unmatched = (self._df["match_type"] == "unmatched").sum()
         logger.info(
             "Crosswalk: %d exact, %d fuzzy, %d unmatched",
-            n_exact, n_fuzzy, n_unmatched,
+            n_exact,
+            n_fuzzy,
+            n_unmatched,
         )
         return self
 
@@ -384,7 +386,11 @@ class Crosswalk:
                 score = _name_score(t_name, m_name)
                 if score > best_score:
                     # Check date proximity when both tape and mora dates are available
-                    if t_date is not None and mora_date_col and mora_date_col in mora_candidates.columns:
+                    if (
+                        t_date is not None
+                        and mora_date_col
+                        and mora_date_col in mora_candidates.columns
+                    ):
                         m_date_raw = mora_candidates.iloc[i][mora_date_col]
                         if m_date_raw is not None and not pd.isna(m_date_raw):
                             m_date = pd.to_datetime(m_date_raw)

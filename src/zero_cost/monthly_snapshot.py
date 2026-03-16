@@ -183,9 +183,7 @@ class MonthlySnapshotBuilder:
         if loan_cols:
             dim_loan = (
                 snapshot_df[loan_cols]
-                .drop_duplicates(
-                    subset=["lend_id"] if "lend_id" in loan_cols else loan_cols[:1]
-                )
+                .drop_duplicates(subset=["lend_id"] if "lend_id" in loan_cols else loan_cols[:1])
                 .reset_index(drop=True)
             )
             # Surrogate key for loans
@@ -197,22 +195,14 @@ class MonthlySnapshotBuilder:
             c for c in ["lend_id", "client_id", "client_name"] if c in snapshot_df.columns
         ]
         if len(client_cols) > 1:
-            dim_client = (
-                snapshot_df[client_cols]
-                .drop_duplicates()
-                .reset_index(drop=True)
-            )
+            dim_client = snapshot_df[client_cols].drop_duplicates().reset_index(drop=True)
             # Surrogate key for clients
             dim_client["client_sk"] = range(1, len(dim_client) + 1)
             tables["dim_client"] = dim_client
 
         # dim_time
         if "snapshot_month" in snapshot_df.columns:
-            time_df = (
-                snapshot_df[["snapshot_month"]]
-                .drop_duplicates()
-                .copy()
-            )
+            time_df = snapshot_df[["snapshot_month"]].drop_duplicates().copy()
             time_df["snapshot_month"] = pd.to_datetime(time_df["snapshot_month"])
             time_df["year"] = time_df["snapshot_month"].dt.year
             time_df["month"] = time_df["snapshot_month"].dt.month
@@ -238,7 +228,11 @@ class MonthlySnapshotBuilder:
         if "dim_client" in tables:
             # Use the intersection of columns used to build dim_client as join keys
             dim_client = tables["dim_client"]
-            join_keys = [c for c in ["lend_id", "client_id"] if c in fact_df.columns and c in dim_client.columns]
+            join_keys = [
+                c
+                for c in ["lend_id", "client_id"]
+                if c in fact_df.columns and c in dim_client.columns
+            ]
             if join_keys:
                 fact_df = fact_df.merge(
                     dim_client[join_keys + ["client_sk"]],
@@ -352,9 +346,7 @@ class MonthlySnapshotBuilder:
     # Internal
     # ------------------------------------------------------------------
 
-    def _set_snapshot_month(
-        self, df: pd.DataFrame, as_of_month: str | date | None
-    ) -> pd.DataFrame:
+    def _set_snapshot_month(self, df: pd.DataFrame, as_of_month: str | date | None) -> pd.DataFrame:
         if as_of_month is not None:
             # Normalize to month-end so all code paths use the same semantics.
             raw = pd.to_datetime(str(as_of_month))
@@ -370,22 +362,16 @@ class MonthlySnapshotBuilder:
             )
         else:
             # Normalize existing column values to month-end.
-            df["snapshot_month"] = (
-                pd.to_datetime(df["snapshot_month"], errors="coerce")
-                + pd.offsets.MonthEnd(0)
-            )
+            df["snapshot_month"] = pd.to_datetime(
+                df["snapshot_month"], errors="coerce"
+            ) + pd.offsets.MonthEnd(0)
         return df
 
-    def _join_monthly_income(
-        self, df: pd.DataFrame, payments_df: pd.DataFrame
-    ) -> pd.DataFrame:
+    def _join_monthly_income(self, df: pd.DataFrame, payments_df: pd.DataFrame) -> pd.DataFrame:
         """Aggregate monthly payments and join to *df*."""
         if "lend_id" not in payments_df.columns or "amount" not in payments_df.columns:
             return df
         monthly_income = (
-            payments_df.groupby("lend_id")["amount"]
-            .sum()
-            .rename("monthly_income")
-            .reset_index()
+            payments_df.groupby("lend_id")["amount"].sum().rename("monthly_income").reset_index()
         )
         return df.merge(monthly_income, on="lend_id", how="left")

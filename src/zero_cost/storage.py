@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import duckdb  # type: ignore[import]
+
     _ = duckdb
     DUCKDB_AVAILABLE = True
 except ImportError:
@@ -201,8 +202,7 @@ class ZeroCostStorage:
         glob_path = str(table_dir / "**" / "*.parquet")
         safe_name = self._validate_identifier(table_name)
         conn.execute(
-            f'CREATE OR REPLACE VIEW "{safe_name}" AS '
-            f"SELECT * FROM read_parquet('{glob_path}')"
+            f'CREATE OR REPLACE VIEW "{safe_name}" AS ' f"SELECT * FROM read_parquet('{glob_path}')"
         )
 
     def _compute_file_sha256(self, path: Path, chunk_size: int = 1024 * 1024) -> str:
@@ -217,9 +217,7 @@ class ZeroCostStorage:
                 hasher.update(chunk)
         return hasher.hexdigest()
 
-    def _write_manifest(
-        self, df: pd.DataFrame, parquet_path: Path, table_name: str
-    ) -> None:
+    def _write_manifest(self, df: pd.DataFrame, parquet_path: Path, table_name: str) -> None:
         """Write a JSON audit manifest alongside the Parquet file."""
         content_hash = self._compute_file_sha256(parquet_path)
         manifest = {

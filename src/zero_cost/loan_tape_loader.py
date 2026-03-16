@@ -393,8 +393,13 @@ class LoanTapeLoader:
     def _coerce_schedule(self, df: pd.DataFrame) -> pd.DataFrame:
         if "scheduled_date" in df.columns:
             df["scheduled_date"] = pd.to_datetime(df["scheduled_date"], errors="coerce")
-        for col in ["scheduled_total", "scheduled_principal", "scheduled_interest",
-                    "scheduled_fee", "scheduled_other"]:
+        for col in [
+            "scheduled_total",
+            "scheduled_principal",
+            "scheduled_interest",
+            "scheduled_fee",
+            "scheduled_other",
+        ]:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
         if "installment_number" in df.columns:

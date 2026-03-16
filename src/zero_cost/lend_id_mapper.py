@@ -201,9 +201,7 @@ class LendIdMapper:
                 else "to_numero_desembolso"
             )
         resolve_fn = self.to_lend_id if direction == "to_lend_id" else self.to_numero_desembolso
-        df[target_col] = df[source_col].apply(
-            lambda v: resolve_fn(str(v)) if pd.notna(v) else None
-        )
+        df[target_col] = df[source_col].apply(lambda v: resolve_fn(str(v)) if pd.notna(v) else None)
         return df
 
     # ------------------------------------------------------------------

@@ -222,10 +222,9 @@ class ControlMoraAdapter:
             df["snapshot_month"] = (raw + pd.offsets.MonthEnd(0)).normalize()
         elif "snapshot_month" in df.columns:
             # Normalize existing column values to month-end.
-            df["snapshot_month"] = (
-                pd.to_datetime(df["snapshot_month"], errors="coerce")
-                + pd.offsets.MonthEnd(0)
-            )
+            df["snapshot_month"] = pd.to_datetime(
+                df["snapshot_month"], errors="coerce"
+            ) + pd.offsets.MonthEnd(0)
         else:
             # Infer from filename pattern like "control_mora_ene2026.csv"
             match = re.search(r"(\d{4}[-_]\d{2}|\d{6}|\w{3}\d{4})", path.stem)
@@ -243,9 +242,7 @@ class ControlMoraAdapter:
                     )
                 elif re.fullmatch(r"\d{6}", token):
                     # Compact year-month: YYYYMM
-                    df["snapshot_month"] = pd.to_datetime(
-                        token, format="%Y%m", errors="coerce"
-                    )
+                    df["snapshot_month"] = pd.to_datetime(token, format="%Y%m", errors="coerce")
                 else:
                     # Assume 3-letter month + 4-digit year, e.g. ene2026 / jan2026
                     month_token = token[:3].lower()
@@ -326,7 +323,9 @@ class ControlMoraAdapter:
             return pd.DataFrame(columns=_CANONICAL_COLUMNS)
         combined = pd.concat(dfs, ignore_index=True)
         # Drop exact duplicates across (lend_id / numero_desembolso + snapshot_month)
-        key_cols = [c for c in ["lend_id", "numero_desembolso", "snapshot_month"] if c in combined.columns]
+        key_cols = [
+            c for c in ["lend_id", "numero_desembolso", "snapshot_month"] if c in combined.columns
+        ]
         if key_cols:
             combined = combined.drop_duplicates(subset=key_cols)
         return combined.reset_index(drop=True)

@@ -125,11 +125,7 @@ class PipelineRouter:
 
     def source_for(self, snapshot_month: str | pd.Timestamp) -> str:
         """Return ``"control_mora"`` or ``"loan_tape"`` for *snapshot_month*."""
-        return (
-            "control_mora"
-            if pd.Timestamp(snapshot_month) >= self.pivot_month
-            else "loan_tape"
-        )
+        return "control_mora" if pd.Timestamp(snapshot_month) >= self.pivot_month else "loan_tape"
 
     # ------------------------------------------------------------------
     # Internal loaders
@@ -207,8 +203,7 @@ class PipelineRouter:
     ) -> dict[str, pd.DataFrame]:
         if control_mora_path is None:
             logger.warning(
-                "PipelineRouter: control_mora_path not provided for %s — "
-                "returning empty tables",
+                "PipelineRouter: control_mora_path not provided for %s — " "returning empty tables",
                 snapshot_month.date(),
             )
             return {
@@ -229,10 +224,18 @@ class PipelineRouter:
 
         # Map Control-de-Mora flat structure to the canonical tables
         dim_loan_cols = [
-            c for c in [
-                "lend_id", "numero_desembolso", "client_id", "client_name",
-                "disbursement_date", "currency", "principal_outstanding",
-                "product_type", "branch_code", "snapshot_month",
+            c
+            for c in [
+                "lend_id",
+                "numero_desembolso",
+                "client_id",
+                "client_name",
+                "disbursement_date",
+                "currency",
+                "principal_outstanding",
+                "product_type",
+                "branch_code",
+                "snapshot_month",
             ]
             if c in mora_df.columns
         ]
