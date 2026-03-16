@@ -96,3 +96,37 @@ def test_reconcile_payments_captures_null_loan_id():
     null_paid = unmatched[unmatched["reason_code"] == "missing_loan_id_payment"]
     assert len(null_sched) == 1, "Null loan_id schedule row should be captured"
     assert len(null_paid) == 1, "Null loan_id payment row should be captured"
+
+
+def test_reconcile_payments_captures_invalid_dates_no_duplicates():
+    """Rows with invalid dates should appear in unmatched; rows with both invalid
+    date AND null loan_id should only be captured once (invalid date takes priority)."""
+    fact_schedule = pd.DataFrame(
+        {
+            "loan_id": ["L1", None, "L2"],
+            "scheduled_date": ["not-a-date", "not-a-date", "2025-02-01"],
+            "scheduled_total": [100.0, 50.0, 75.0],
+        }
+    )
+    fact_real_payment = pd.DataFrame(
+        {
+            "loan_id": ["L1", "L2"],
+            "payment_date": ["2025-02-01", "not-a-date"],
+            "paid_total": [100.0, 75.0],
+        }
+    )
+
+    _, unmatched = reconcile_payments(fact_schedule, fact_real_payment)
+
+    invalid_sched = unmatched[unmatched["reason_code"] == "invalid_scheduled_date"]
+    invalid_paid = unmatched[unmatched["reason_code"] == "invalid_payment_date"]
+
+    # Both schedule rows with invalid date (including the null loan_id one) are captured
+    assert len(invalid_sched) == 2
+    assert len(invalid_paid) == 1
+
+    # The row with both null loan_id AND invalid date should not appear in missing_loan_id_*
+    # — it should only appear once under invalid_scheduled_date (no duplicates)
+    missing_loan = unmatched[unmatched["reason_code"] == "missing_loan_id_schedule"]
+    all_refs = list(invalid_sched.index) + list(missing_loan.index)
+    assert len(all_refs) == len(set(all_refs)), "No row should be logged twice"

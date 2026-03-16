@@ -70,9 +70,11 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
             break
         if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_string_dtype(df[col]):
             mask = df[col].apply(_normalize_not_specified)
+            detail_suffix = "no especificado/blank value"
         else:
             # For numeric/datetime columns flag null/NaT values
             mask = df[col].isna()
+            detail_suffix = "null/NaT value"
         if not mask.any():
             continue
         for idx in df.index[mask]:
@@ -85,7 +87,7 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
                     "record_ref": str(idx),
                     "field_name": col,
                     "reason_code": "not_specified",
-                    "reason_detail": f"Field '{col}' has no especificado/blank value",
+                    "reason_detail": f"Field '{col}' is not specified / {detail_suffix}",
                 }
             )
     if truncated:
@@ -124,6 +126,8 @@ def reconcile_payments(
 
     # Capture rows with invalid/blank dates before aggregation so they are not
     # silently dropped by groupby (which uses dropna=True by default for NaT keys).
+    # Priority: invalid date takes precedence over missing loan_id to avoid double-logging
+    # a row that has both conditions.
     invalid_date_unmatched: list[pd.DataFrame] = []
     sched_invalid = schedule[schedule["scheduled_date"].isna()].copy()
     if not sched_invalid.empty:
@@ -152,9 +156,11 @@ def reconcile_payments(
             paid_invalid[["loan_id", "reason_code", "reason_detail", "status"]]
         )
 
-    # Capture rows with missing loan_id before aggregation so they are not
-    # silently dropped by groupby (which drops NA keys by default).
-    sched_missing_loan = schedule[schedule["loan_id"].isna()].copy()
+    # Capture rows with missing loan_id that were NOT already captured by the
+    # invalid-date check above (mutually exclusive: invalid date takes priority).
+    sched_missing_loan = schedule[
+        schedule["loan_id"].isna() & schedule["scheduled_date"].notna()
+    ].copy()
     if not sched_missing_loan.empty:
         sched_missing_loan = sched_missing_loan.assign(
             status="invalid_key",
@@ -167,7 +173,7 @@ def reconcile_payments(
         invalid_date_unmatched.append(
             sched_missing_loan[["loan_id", "reason_code", "reason_detail", "status"]]
         )
-    paid_missing_loan = paid[paid["loan_id"].isna()].copy()
+    paid_missing_loan = paid[paid["loan_id"].isna() & paid["payment_date"].notna()].copy()
     if not paid_missing_loan.empty:
         paid_missing_loan = paid_missing_loan.assign(
             status="invalid_key",
