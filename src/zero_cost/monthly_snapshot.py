@@ -299,6 +299,8 @@ class MonthlySnapshotBuilder:
                 kpis["total_overdue"] = float(total_overdue)
             else:
                 kpis["total_overdue"] = 0.0
+        else:
+            kpis["total_overdue"] = 0.0
 
         for threshold in self.par_thresholds:
             par_col = f"par_{threshold}"
