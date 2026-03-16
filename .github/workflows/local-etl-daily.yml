@@ -49,7 +49,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Check input files exist
+        id: preflight
+        run: |
+          DIR="${{ github.event.inputs.loan_tape_dir || 'data/raw' }}"
+          if [ ! -d "$DIR" ] || [ -z "$(ls -A "$DIR" 2>/dev/null)" ]; then
+            echo "::warning::Loan tape directory '$DIR' is missing or empty — skipping ETL run"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run local ETL
+        if: steps.preflight.outputs.skip != 'true'
         run: |
           python scripts/data/local_star_snapshot_etl.py \
             --loan-tape-dir "${{ github.event.inputs.loan_tape_dir || 'data/raw' }}" \
@@ -58,6 +70,7 @@ jobs:
             --output-dir exports/local_star
 
       - name: Validate unmatched records reason_code
+        if: steps.preflight.outputs.skip != 'true'
         run: |
           python - <<'PY'
           import pandas as pd
@@ -79,7 +92,7 @@ jobs:
           PY
 
       - name: Upload artifacts
-        if: always()
+        if: always() && steps.preflight.outputs.skip != 'true'
         uses: actions/upload-artifact@5349c256476b7a460d23bde9dc17a612d42fbaa4
         with:
           name: local-etl-${{ github.run_number }}

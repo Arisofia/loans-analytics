@@ -44,16 +44,18 @@ def _normalize_not_specified(value: object) -> bool:
 
 
 def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
-    """Build reason_code logs for fields with not specified values."""
+    """Build reason_code logs for fields with not-specified / null / NaT values.
+
+    Checks every column regardless of dtype so that dates/numerics coerced to
+    NaT/NaN by upstream loaders are also captured.
+    """
     records: list[dict[str, object]] = []
     for col in df.columns:
-        # Consider all logical string-like columns (object, pandas string, pyarrow string, etc.)
-        if not (
-            pd.api.types.is_object_dtype(df[col])
-            or pd.api.types.is_string_dtype(df[col])
-        ):
-            continue
-        mask = df[col].apply(_normalize_not_specified)
+        if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_string_dtype(df[col]):
+            mask = df[col].apply(_normalize_not_specified)
+        else:
+            # For numeric/datetime columns flag null/NaT values
+            mask = df[col].isna()
         if not mask.any():
             continue
         for idx in df.index[mask]:
@@ -62,8 +64,8 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
                     "table_name": table_name,
                     "record_ref": str(idx),
                     "field_name": col,
-                    "reason_code": "no_especificado",
-                    "reason_detail": f"Field '{col}' has no especificado/blank value",
+                    "reason_code": "not_specified",
+                    "reason_detail": f"Field '{col}' has not-specified/blank value",
                 }
             )
     return pd.DataFrame(records)
@@ -92,10 +94,43 @@ def reconcile_payments(
     schedule["scheduled_total"] = pd.to_numeric(schedule["scheduled_total"], errors="coerce").fillna(0.0)
     paid["paid_total"] = pd.to_numeric(paid["paid_total"], errors="coerce").fillna(0.0)
 
+    # Capture rows with invalid/blank dates before aggregation so they are not
+    # silently dropped by groupby (which uses dropna=True by default for NaT keys).
+    invalid_date_unmatched: list[pd.DataFrame] = []
+    sched_invalid = schedule[schedule["scheduled_date"].isna()].copy()
+    if not sched_invalid.empty:
+        sched_invalid = sched_invalid.assign(
+            status="invalid_date",
+            reason_code="invalid_scheduled_date",
+            reason_detail="loan_id="
+            + sched_invalid["loan_id"].astype(str)
+            + ", scheduled_total="
+            + sched_invalid["scheduled_total"].round(2).astype(str),
+        )
+        invalid_date_unmatched.append(sched_invalid[["loan_id", "reason_code", "reason_detail", "status"]])
+    paid_invalid = paid[paid["payment_date"].isna()].copy()
+    if not paid_invalid.empty:
+        paid_invalid = paid_invalid.assign(
+            status="invalid_date",
+            reason_code="invalid_payment_date",
+            reason_detail="loan_id="
+            + paid_invalid["loan_id"].astype(str)
+            + ", paid_total="
+            + paid_invalid["paid_total"].round(2).astype(str),
+        )
+        invalid_date_unmatched.append(paid_invalid[["loan_id", "reason_code", "reason_detail", "status"]])
+
+    # Aggregate only rows with valid dates
     sched_agg = (
-        schedule.groupby(["loan_id", "scheduled_date"], as_index=False)["scheduled_total"].sum()
+        schedule.dropna(subset=["scheduled_date"])
+        .groupby(["loan_id", "scheduled_date"], as_index=False)["scheduled_total"]
+        .sum()
     )
-    paid_agg = paid.groupby(["loan_id", "payment_date"], as_index=False)["paid_total"].sum()
+    paid_agg = (
+        paid.dropna(subset=["payment_date"])
+        .groupby(["loan_id", "payment_date"], as_index=False)["paid_total"]
+        .sum()
+    )
 
     merged = sched_agg.merge(
         paid_agg,
@@ -131,6 +166,10 @@ def reconcile_payments(
         + unmatched["amount_diff"].round(2).astype(str)
     )
 
+    # Append any rows that were excluded due to invalid/blank dates
+    if invalid_date_unmatched:
+        unmatched = pd.concat([unmatched, *invalid_date_unmatched], ignore_index=True)
+
     return merged.drop(columns=["_merge"]), unmatched
 
 
@@ -138,7 +177,8 @@ class LocalMonthlySnapshotETL:
     """Generate monthly star-schema snapshot from local raw CSV files."""
 
     def __init__(self, snapshot_month: str) -> None:
-        self.snapshot_month = pd.Timestamp(snapshot_month)
+        # Normalize to month-end to match MonthlySnapshotBuilder semantics
+        self.snapshot_month = pd.Timestamp(snapshot_month) + pd.offsets.MonthEnd(0)
         self.loader = LoanTapeLoader(data_dir="data/raw")
         self.dpd_calculator = DPDCalculator()
 
@@ -158,7 +198,13 @@ class LocalMonthlySnapshotETL:
         dim_loan["original_principal"] = pd.to_numeric(
             dim_loan["original_principal"], errors="coerce"
         ).fillna(0.0)
-        dim_loan["interest_rate"] = pd.to_numeric(dim_loan.get("interest_rate"), errors="coerce").fillna(0.0)
+        # Guard: interest_rate column may not exist in all loan tape variants
+        if "interest_rate" not in dim_loan.columns:
+            dim_loan["interest_rate"] = 0.0
+        else:
+            dim_loan["interest_rate"] = pd.to_numeric(
+                dim_loan["interest_rate"], errors="coerce"
+            ).fillna(0.0)
 
         snapshots = self.dpd_calculator.build_snapshots(
             dim_loan,
@@ -168,7 +214,13 @@ class LocalMonthlySnapshotETL:
         )
 
         dim_loan["contractual_apr"] = dim_loan["interest_rate"].apply(contractual_apr)
-        loan_xirr_series = portfolio_xirr(dim_loan, fact_real_payment)
+
+        # Filter out loans that would cause XIRR to crash: NaT disbursement_date
+        # or non-positive principal (no valid cash flow sign change).
+        xirr_eligible = dim_loan[
+            dim_loan["disbursement_date"].notna() & (dim_loan["original_principal"] > 0)
+        ]
+        loan_xirr_series = portfolio_xirr(xirr_eligible, fact_real_payment)
 
         fact_monthly_snapshot = snapshots.merge(
             dim_loan[["loan_id", "contractual_apr"]],
@@ -195,7 +247,19 @@ class LocalMonthlySnapshotETL:
         )
 
         if control_mora_path:
-            control_mora_df = pd.read_csv(control_mora_path, dtype=str, encoding="utf-8-sig")
+            control_mora_path = Path(control_mora_path)
+            # Sniff delimiter (Control de Mora exports are often `;`-delimited from Excel)
+            # Read only the first 2048 bytes to avoid loading the full file into memory.
+            with control_mora_path.open("rb") as _fh:
+                raw_header = _fh.read(2048)
+            delimiter = ";" if b";" in raw_header else ","
+            control_mora_df = pd.read_csv(
+                control_mora_path,
+                dtype=str,
+                encoding="utf-8-sig",
+                sep=delimiter,
+                low_memory=False,
+            )
             unmatched_records = pd.concat(
                 [unmatched_records, build_not_specified_log(control_mora_df, "control_mora")],
                 ignore_index=True,
