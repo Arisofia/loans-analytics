@@ -212,8 +212,20 @@ class FuzzyIncomeMatcher:
             left_tagged = left_df.copy()
             left_tagged["_pos"] = range(len(left_tagged))
 
+            # Enforce uniqueness of the exact_key on the right-hand side to avoid
+            # duplicating left rows when performing the exact merge.
+            if right_df[exact_key].duplicated().any():
+                logger.warning(
+                    "Duplicate values detected for exact_key '%s' in right_df; "
+                    "dropping duplicates to enforce one-to-one exact matching.",
+                    exact_key,
+                )
+                right_exact = right_df.drop_duplicates(subset=[exact_key])
+            else:
+                right_exact = right_df
+
             exact_merge = left_tagged.merge(
-                right_df, on=exact_key, how="inner", suffixes=("", "_right")
+                right_exact, on=exact_key, how="inner", suffixes=("", "_right")
             )
             if not exact_merge.empty:
                 exact_merge[score_col] = 100.0
