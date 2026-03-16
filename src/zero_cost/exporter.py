@@ -167,6 +167,10 @@ class Exporter:
 
     @staticmethod
     def _file_hash(path: Path) -> str:
+        """Compute SHA-256 hash of *path* using a streaming, bounded-memory approach."""
         h = hashlib.sha256()
-        h.update(path.read_bytes())
+        # Read the file in chunks to avoid loading large files entirely into memory
+        with path.open("rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                h.update(chunk)
         return h.hexdigest()
