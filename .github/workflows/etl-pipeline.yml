@@ -1,0 +1,202 @@
+# =============================================================================
+# ETL Pipeline — Zero-cost GitHub Actions workflow
+# Replaces: Azure Functions / Azure Data Factory pipelines
+# Runs on: GitHub Actions free tier (2 000 min/month public repos, 500 MB cache)
+#
+# Triggers
+#   - Push to main/develop (auto)
+#   - Manual dispatch (with optional input CSV path)
+#   - Scheduled: every day at 06:00 UTC
+# =============================================================================
+
+name: ETL Pipeline (Zero-Cost)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "src/**"
+      - "scripts/data/**"
+      - "config/**"
+      - "data/raw/**"
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      input_csv:
+        description: "Path to input CSV (relative to repo root)"
+        required: false
+        default: "data/raw/abaco_real_data_20260202.csv"
+      mode:
+        description: "Pipeline mode"
+        required: false
+        default: "full"
+        type: choice
+        options: [full, validate, dry-run]
+      snapshot_month:
+        description: "Snapshot month (YYYY-MM-DD), leave blank for today"
+        required: false
+        default: ""
+
+concurrency:
+  group: etl-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Validate inputs & environment
+  # ---------------------------------------------------------------------------
+  preflight:
+    name: Preflight checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      input_csv: ${{ steps.resolve.outputs.input_csv }}
+      mode: ${{ steps.resolve.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve pipeline inputs
+        id: resolve
+        run: |
+          CSV="${{ github.event.inputs.input_csv }}"
+          MODE="${{ github.event.inputs.mode }}"
+          echo "input_csv=${CSV:-data/raw/abaco_real_data_20260202.csv}" >> "$GITHUB_OUTPUT"
+          echo "mode=${MODE:-full}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify input file exists (if not dry-run)
+        if: steps.resolve.outputs.mode != 'dry-run'
+        run: |
+          CSV="${{ steps.resolve.outputs.input_csv }}"
+          if [ ! -f "$CSV" ]; then
+            echo "⚠️  Input CSV '$CSV' not found — switching to dry-run mode"
+            echo "mode=dry-run" >> "$GITHUB_OUTPUT"
+          else
+            echo "✅ Input file found: $CSV"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 2. Run the unified pipeline
+  # ---------------------------------------------------------------------------
+  run-pipeline:
+    name: Run ETL Pipeline
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: preflight
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SNAPSHOT_MONTH: ${{ github.event.inputs.snapshot_month }}
+        run: |
+          python scripts/data/run_data_pipeline.py \
+            --input "${{ needs.preflight.outputs.input_csv }}" \
+            --mode  "${{ needs.preflight.outputs.mode }}" \
+            --verbose
+
+      - name: Upload pipeline artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-output-${{ github.run_number }}
+          path: |
+            data/processed/
+            logs/
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # 3. Build zero-cost star schema (DuckDB)
+  # ---------------------------------------------------------------------------
+  build-star-schema:
+    name: Build DuckDB star schema
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: run-pipeline
+    if: needs.run-pipeline.result == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt duckdb rapidfuzz pyarrow
+
+      - name: Download pipeline output
+        uses: actions/download-artifact@v4
+        with:
+          name: pipeline-output-${{ github.run_number }}
+          path: data/
+
+      - name: Initialize DuckDB star schema
+        run: |
+          python - <<'EOF'
+          import duckdb, pathlib
+
+          db_path = "data/duckdb/analytics.duckdb"
+          pathlib.Path("data/duckdb").mkdir(parents=True, exist_ok=True)
+          con = duckdb.connect(db_path)
+
+          # Execute star-schema DDL
+          ddl_file = pathlib.Path("db/star_schema/duckdb/create_star_schema_duckdb.sql")
+          con.execute(ddl_file.read_text())
+          print("✅ DuckDB star schema initialised:", db_path)
+          EOF
+
+      - name: Upload DuckDB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: duckdb-star-schema-${{ github.run_number }}
+          path: data/duckdb/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # 4. Post summary
+  # ---------------------------------------------------------------------------
+  summary:
+    name: Pipeline summary
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: [run-pipeline, build-star-schema]
+    if: always()
+    steps:
+      - name: Write job summary
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ## ETL Pipeline Run Summary
+
+          | Step                | Status |
+          |---------------------|--------|
+          | Pipeline            | ${{ needs.run-pipeline.result }} |
+          | DuckDB star schema  | ${{ needs.build-star-schema.result }} |
+
+          **Run:** #${{ github.run_number }}
+          **Trigger:** ${{ github.event_name }}
+          **Branch:** ${{ github.ref_name }}
+          EOF

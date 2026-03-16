@@ -1,0 +1,214 @@
+# =============================================================================
+# Deploy to Free Tier — Zero-cost deployment workflow
+# Replaces: Azure Container Apps / Azure App Service deployments
+#
+# Supported targets (choose one or more via workflow_dispatch):
+#   - render     : Render.com free web service
+#   - railway    : Railway.app (500 h/month free)
+#   - fly        : Fly.io (3 shared VMs free)
+#   - ghcr       : Push container to GitHub Container Registry (always)
+#
+# Secrets required (only set the ones for your chosen target):
+#   RENDER_API_KEY + RENDER_SERVICE_ID
+#   RAILWAY_TOKEN  + RAILWAY_PROJECT_ID
+#   FLY_API_TOKEN
+# =============================================================================
+
+name: Deploy (Zero-Cost Free Tier)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "python/**"
+      - "streamlit_app/**"
+      - "Dockerfile*"
+      - "requirements*.txt"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deployment target"
+        required: true
+        default: "ghcr"
+        type: choice
+        options: [ghcr, render, railway, fly, all]
+      service:
+        description: "Service to deploy"
+        required: true
+        default: "api"
+        type: choice
+        options: [api, dashboard, pipeline]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BASE: ghcr.io/${{ github.repository_owner }}/abaco-loans-analytics
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Build and push to GHCR (always)
+  # ---------------------------------------------------------------------------
+  build-and-push:
+    name: Build & push to GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      api_image: ${{ steps.meta-api.outputs.tags }}
+      dashboard_image: ${{ steps.meta-dash.outputs.tags }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ---- API image ----
+      - name: Docker metadata (API)
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_BASE }}-api
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ---- Dashboard image ----
+      - name: Docker metadata (Dashboard)
+        id: meta-dash
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_BASE }}-dashboard
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Dashboard image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.dashboard
+          push: true
+          tags: ${{ steps.meta-dash.outputs.tags }}
+          labels: ${{ steps.meta-dash.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ---------------------------------------------------------------------------
+  # 2. Deploy to Render.com
+  # ---------------------------------------------------------------------------
+  deploy-render:
+    name: Deploy → Render
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: build-and-push
+    if: |
+      github.event.inputs.target == 'render' ||
+      github.event.inputs.target == 'all' ||
+      github.event_name == 'push'
+    steps:
+      - name: Trigger Render deploy hook
+        run: |
+          curl -s -X POST \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache": false}' | jq '.id'
+          echo "✅ Render deploy triggered"
+
+  # ---------------------------------------------------------------------------
+  # 3. Deploy to Railway
+  # ---------------------------------------------------------------------------
+  deploy-railway:
+    name: Deploy → Railway
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: build-and-push
+    if: |
+      github.event.inputs.target == 'railway' ||
+      github.event.inputs.target == 'all'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up --service "${{ github.event.inputs.service || 'api' }}" \
+                     --detach
+
+  # ---------------------------------------------------------------------------
+  # 4. Deploy to Fly.io
+  # ---------------------------------------------------------------------------
+  deploy-fly:
+    name: Deploy → Fly.io
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: build-and-push
+    if: |
+      github.event.inputs.target == 'fly' ||
+      github.event.inputs.target == 'all'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy --remote-only
+
+  # ---------------------------------------------------------------------------
+  # 5. Deployment summary
+  # ---------------------------------------------------------------------------
+  summary:
+    name: Deployment summary
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: [build-and-push, deploy-render, deploy-railway, deploy-fly]
+    if: always()
+    steps:
+      - name: Write summary
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ## Zero-Cost Deployment Summary
+
+          | Target   | Status |
+          |----------|--------|
+          | GHCR     | ${{ needs.build-and-push.result }} |
+          | Render   | ${{ needs.deploy-render.result }} |
+          | Railway  | ${{ needs.deploy-railway.result }} |
+          | Fly.io   | ${{ needs.deploy-fly.result }} |
+
+          **Images pushed:**
+          - `${{ needs.build-and-push.outputs.api_image }}`
+          - `${{ needs.build-and-push.outputs.dashboard_image }}`
+          EOF

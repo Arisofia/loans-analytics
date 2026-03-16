@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic
+.PHONY: help setup format lint type-check test e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic zero-cost-up zero-cost-down zero-cost-pipeline zero-cost-db zero-cost-schema etl-local snapshot-build
 PYTHON ?= $(shell \
 	for p in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do \
 		if command -v $$p >/dev/null 2>&1 && $$p -c "import pytest" >/dev/null 2>&1; then \
@@ -136,3 +136,46 @@ owner-map:
 # Strategic reporting
 report-strategic:
 	$(BIN)/python scripts/reporting/generate_strategic_report.py
+
+# =============================================================================
+# Zero-cost architecture targets
+# =============================================================================
+
+## Start the zero-cost local stack (API + dashboard)
+zero-cost-up:
+	@echo "Starting zero-cost local stack (API + Dashboard)..."
+	docker compose -f docker-compose.zero-cost.yml up --build api dashboard
+
+## Stop the zero-cost local stack
+zero-cost-down:
+	docker compose -f docker-compose.zero-cost.yml down
+
+## Run ETL pipeline inside the zero-cost stack (one-shot)
+zero-cost-pipeline:
+	@echo "Running ETL pipeline (zero-cost)..."
+	docker compose -f docker-compose.zero-cost.yml \
+		--profile pipeline run --rm pipeline
+
+## Start local PostgreSQL (mirrors Supabase schema)
+zero-cost-db:
+	docker compose -f docker-compose.zero-cost.yml --profile db up -d db
+
+## Initialise DuckDB star schema locally
+zero-cost-schema:
+	@echo "Initialising DuckDB star schema..."
+	"$(PYTHON)" scripts/data/init_duckdb_schema.py
+
+## Run ETL pipeline locally (no Docker) — zero-cost variant
+etl-local:
+	@echo "Running local ETL pipeline..."
+	"$(PYTHON)" scripts/data/run_data_pipeline.py \
+		--input $(or $(INPUT), data/raw/abaco_real_data_20260202.csv) \
+		--mode  $(or $(MODE), full) \
+		--verbose
+
+## Build monthly snapshot into DuckDB star schema
+snapshot-build:
+	@echo "Building monthly snapshot..."
+	INPUT=$(or $(INPUT), data/raw/abaco_real_data_20260202.csv) \
+	MONTH=$(or $(MONTH),) \
+	"$(PYTHON)" scripts/data/build_snapshot.py
