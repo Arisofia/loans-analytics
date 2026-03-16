@@ -127,6 +127,11 @@ def test_reconcile_payments_captures_invalid_dates_no_duplicates():
 
     # The row with both null loan_id AND invalid date should not appear in missing_loan_id_*
     # — it should only appear once under invalid_scheduled_date (no duplicates)
-    missing_loan = unmatched[unmatched["reason_code"] == "missing_loan_id_schedule"]
-    all_refs = list(invalid_sched.index) + list(missing_loan.index)
-    assert len(all_refs) == len(set(all_refs)), "No row should be logged twice"
+    overlapping_mask = (
+        unmatched["loan_id"].isna()
+        & (unmatched["scheduled_date"] == "not-a-date")
+        & (unmatched["scheduled_total"] == 50.0)
+    )
+    overlapping_rows = unmatched[overlapping_mask]
+    assert len(overlapping_rows) == 1, "Overlapping row should be logged exactly once"
+    assert overlapping_rows.iloc[0]["reason_code"] == "invalid_scheduled_date"
