@@ -47,7 +47,11 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
     """Build reason_code logs for fields with not specified values."""
     records: list[dict[str, object]] = []
     for col in df.columns:
-        if not pd.api.types.is_object_dtype(df[col]):
+        # Consider all logical string-like columns (object, pandas string, pyarrow string, etc.)
+        if not (
+            pd.api.types.is_object_dtype(df[col])
+            or pd.api.types.is_string_dtype(df[col])
+        ):
             continue
         mask = df[col].apply(_normalize_not_specified)
         if not mask.any():
