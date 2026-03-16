@@ -58,7 +58,7 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
                     "table_name": table_name,
                     "record_ref": str(idx),
                     "field_name": col,
-                    "reason_code": "no_especificado",
+                    "reason_code": "not_specified",
                     "reason_detail": f"Field '{col}' has no especificado/blank value",
                 }
             )
