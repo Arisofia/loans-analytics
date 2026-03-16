@@ -129,9 +129,7 @@ def reconcile_payments(
     # Priority: invalid date takes precedence over missing loan_id to avoid double-logging
     # a row that has both conditions.
     invalid_date_unmatched: list[pd.DataFrame] = []
-    sched_invalid = schedule[
-        schedule["scheduled_date"].isna() & schedule["loan_id"].notna()
-    ].copy()
+    sched_invalid = schedule[schedule["scheduled_date"].isna()].copy()
     if not sched_invalid.empty:
         sched_invalid = sched_invalid.assign(
             status="invalid_date",
@@ -144,9 +142,7 @@ def reconcile_payments(
         invalid_date_unmatched.append(
             sched_invalid[["loan_id", "reason_code", "reason_detail", "status"]]
         )
-    paid_invalid = paid[
-        paid["payment_date"].isna() & paid["loan_id"].notna()
-    ].copy()
+    paid_invalid = paid[paid["payment_date"].isna()].copy()
     if not paid_invalid.empty:
         paid_invalid = paid_invalid.assign(
             status="invalid_date",
