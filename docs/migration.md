@@ -104,6 +104,11 @@ architecture using exclusively free-tier and open-source services.
 
 ### Scripts: `scripts/data/`
 
+> **Note:** The scripts below are migration / zero-cost prototype helpers and
+> are **not** part of the canonical operations command set. For the
+> authoritative list of approved scripts and `make` targets, see
+> `docs/operations/SCRIPT_CANONICAL_MAP.md`.
+
 | File | Description |
 |------|-------------|
 | `init_duckdb_schema.py` | Initialise local DuckDB star schema |
