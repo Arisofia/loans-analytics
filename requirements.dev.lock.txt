@@ -523,7 +523,7 @@ orjson==3.11.7
     #   prefect
 ormsgpack==1.12.2
     # via langgraph-checkpoint
-packaging==25.0
+packaging==26.0
     # via
     #   -r requirements.txt
     #   altair
