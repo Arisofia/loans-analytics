@@ -110,10 +110,31 @@ class Crosswalk:
             Normalized Control-de-Mora DataFrame (contains ``lend_id`` and/or
             ``numero_desembolso``).
 
+        Notes
+        -----
+        Fuzzy matching on client name + disbursement date is only applied when
+        both a name column and a date column are available for each side.
+
+        - If ``tape_name_col`` is ``None`` and the loan tape has a
+          ``"client_name"`` column, that column is used automatically.
+        - If ``mora_name_col`` is ``None`` and the Control-de-Mora DataFrame has
+          a ``"client_name"`` column, that column is used automatically.
+        - If no suitable name columns can be resolved, fuzzy matching is skipped
+          and only exact-key matches are produced.
+
         Returns
         -------
         self
         """
+        # Resolve effective columns for fuzzy matching.
+        # This keeps the public signature stable while enabling the documented
+        # default behavior of using client name + disbursement date when
+        # available.
+        if tape_name_col is None and "client_name" in loan_tape_df.columns:
+            tape_name_col = "client_name"
+        if mora_name_col is None and "client_name" in control_mora_df.columns:
+            mora_name_col = "client_name"
+
         records = []
 
         tape_ids = set(loan_tape_df[tape_id_col].dropna().astype(str))
