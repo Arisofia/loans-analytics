@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date
+from decimal import Decimal
 
 import pandas as pd
 
@@ -277,21 +278,38 @@ class MonthlySnapshotBuilder:
         kpis: dict = {}
         kpis["total_loans"] = len(snapshot_df)
 
+        # Use Decimal for monetary aggregates to avoid floating-point drift.
         if "principal_outstanding" in snapshot_df.columns:
-            total_os = snapshot_df["principal_outstanding"].sum()
-            kpis["total_outstanding"] = float(total_os) if pd.notna(total_os) else 0.0
+            total_os_raw = snapshot_df["principal_outstanding"].sum()
+            if pd.notna(total_os_raw):
+                # Convert via str() to preserve value while avoiding binary float issues.
+                total_os = Decimal(str(total_os_raw))
+                kpis["total_outstanding"] = float(total_os)
+            else:
+                total_os = Decimal("0")
+                kpis["total_outstanding"] = 0.0
         else:
-            total_os = 0.0
+            total_os = Decimal("0")
             kpis["total_outstanding"] = 0.0
 
         if "total_overdue_amount" in snapshot_df.columns:
-            kpis["total_overdue"] = float(snapshot_df["total_overdue_amount"].sum())
+            total_overdue_raw = snapshot_df["total_overdue_amount"].sum()
+            if pd.notna(total_overdue_raw):
+                total_overdue = Decimal(str(total_overdue_raw))
+                kpis["total_overdue"] = float(total_overdue)
+            else:
+                kpis["total_overdue"] = 0.0
 
         for threshold in self.par_thresholds:
             par_col = f"par_{threshold}"
-            if par_col in snapshot_df.columns and total_os > 0:
-                par_amount = snapshot_df.loc[snapshot_df[par_col], "principal_outstanding"].sum()
-                kpis[f"par_{threshold}_pct"] = float(par_amount / total_os * 100)
+            if par_col in snapshot_df.columns and total_os > Decimal("0"):
+                par_amount_raw = snapshot_df.loc[
+                    snapshot_df[par_col], "principal_outstanding"
+                ].sum()
+                if pd.notna(par_amount_raw):
+                    par_amount = Decimal(str(par_amount_raw))
+                    par_pct = (par_amount / total_os) * Decimal("100")
+                    kpis[f"par_{threshold}_pct"] = float(par_pct)
 
         if "dpd" in snapshot_df.columns:
             kpis["avg_dpd"] = float(snapshot_df["dpd"].mean())
