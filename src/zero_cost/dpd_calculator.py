@@ -228,6 +228,48 @@ class DPDCalculator:
         pay_principal_col: str,
     ) -> pd.DataFrame:
         """Return one row per loan for *ref_date*."""
+        # Ensure required columns exist before accessing them. In Control-de-Mora
+        # months the schedule/payment tables may be empty or lack some columns;
+        # in that case we fall back to dpd=0 and use only dim_loan to compute
+        # a sensible outstanding principal.
+        required_sched_cols = {loan_id_col, sched_date_col, sched_principal_col}
+        required_pay_cols = {loan_id_col, pay_date_col, pay_principal_col}
+        has_sched_cols = required_sched_cols.issubset(fact_schedule.columns)
+        has_pay_cols = required_pay_cols.issubset(fact_real_payment.columns)
+
+        if not has_sched_cols or not has_pay_cols:
+            missing_sched = required_sched_cols.difference(fact_schedule.columns)
+            missing_pay = required_pay_cols.difference(fact_real_payment.columns)
+            logger.warning(
+                "Missing required schedule/payment columns for snapshot at %s. "
+                "Using fallback with dpd=0. missing_schedule=%s missing_payment=%s",
+                ref_date,
+                sorted(missing_sched) if missing_sched else [],
+                sorted(missing_pay) if missing_pay else [],
+            )
+
+            base = dim_loan[[loan_id_col]].copy()
+            if disb_col in dim_loan.columns:
+                base["original_principal"] = pd.to_numeric(
+                    dim_loan[disb_col], errors="coerce"
+                ).values
+
+            # With no reliable schedule/payment information, we assume no scheduled
+            # or paid principal yet for the purpose of the snapshot.
+            base["cum_sched_principal"] = 0.0
+            base["cum_paid_principal"] = 0.0
+
+            if "original_principal" in base.columns:
+                base["outstanding_principal"] = (
+                    base["original_principal"] - base["cum_paid_principal"]
+                ).clip(lower=0.0)
+
+            # Without schedule/payment tables, we cannot compute a meaningful DPD,
+            # so we default to 0 as required.
+            base["dpd"] = 0
+            base["snapshot_month"] = ref_date
+            return base.reset_index(drop=True)
+
         # Cumulative scheduled principal per loan up to ref_date
         sched_upto = fact_schedule[fact_schedule[sched_date_col] <= ref_date]
         cum_sched = (
