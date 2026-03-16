@@ -17,6 +17,7 @@ from .exporter import Exporter
 from .fuzzy_matcher import FuzzyIncomeMatcher
 from .lend_id_mapper import LendIdMapper
 from .loan_tape_loader import LoanTapeLoader
+from .local_migration_etl import ETLResult, LocalMonthlySnapshotETL
 from .monthly_snapshot import MonthlySnapshotBuilder
 from .pipeline_router import PipelineRouter
 from .storage import ZeroCostStorage
@@ -33,6 +34,8 @@ __all__ = [
     "DPDCalculator",
     "PipelineRouter",
     "Exporter",
+    "ETLResult",
+    "LocalMonthlySnapshotETL",
     "xirr",
     "contractual_apr",
     "loan_xirr",

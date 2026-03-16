@@ -51,7 +51,7 @@ jobs:
 
       - name: Run local ETL
         run: |
-          python scripts/data/local_star_snapshot_etl.py \
+          python scripts/data/local_monthly_etl.py \
             --loan-tape-dir "${{ github.event.inputs.loan_tape_dir || 'data/raw' }}" \
             --control-mora "${{ github.event.inputs.control_mora_path }}" \
             --snapshot-month "${{ steps.date.outputs.snapshot_month }}" \
