@@ -287,13 +287,34 @@ class Crosswalk:
         tape_date_col: Optional[str],
         mora_date_col: Optional[str],
     ) -> list[dict]:
-        records = []
-        mora_candidates = mora_df[~mora_df[mora_id_col].astype(str).isin(already_matched_mora)].copy()
+        records: list[dict] = []
+
+        # Determine which Control-de-Mora identifier column to use.
+        # Prefer ``mora_id_col`` when available, but fall back to ``mora_numero_col``
+        # for datasets that only provide ``numero_desembolso``.
+        if mora_id_col in mora_df.columns:
+            id_col = mora_id_col
+        elif mora_numero_col in mora_df.columns:
+            logger.warning(
+                "Control-de-Mora DataFrame missing '%s'; falling back to '%s' for fuzzy matching.",
+                mora_id_col,
+                mora_numero_col,
+            )
+            id_col = mora_numero_col
+        else:
+            logger.error(
+                "Control-de-Mora DataFrame is missing both '%s' and '%s'; cannot perform fuzzy matching.",
+                mora_id_col,
+                mora_numero_col,
+            )
+            return records
+
+        mora_candidates = mora_df[~mora_df[id_col].astype(str).isin(already_matched_mora)].copy()
         if mora_candidates.empty:
             return records
 
         mora_names = mora_candidates[mora_name_col].fillna("").tolist()
-        mora_oper_ids = mora_candidates[mora_id_col].astype(str).tolist()
+        mora_oper_ids = mora_candidates[id_col].astype(str).tolist()
 
         tape_subset = tape_df[tape_df[tape_id_col].astype(str).isin(unmatched_ids)]
 
