@@ -108,7 +108,7 @@ Loans are then assigned to five DPD buckets:
 | `1_30` | 1–30 | Low-Medium |
 | `31_60` | 31–60 | Medium |
 | `61_90` | 61–90 | Medium-High |
-| `90_plus` | 90+ | Critical |
+| `90_plus` | >90 | Critical |
 
 **Implementation**: `python/kpis/advanced_risk.py`
 
