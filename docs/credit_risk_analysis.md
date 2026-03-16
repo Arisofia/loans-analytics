@@ -368,7 +368,7 @@ pytest tests/test_default_risk_model.py python/tests/test_advanced_risk.py pytho
 | `SUPABASE_URL` | — | Supabase project URL for persistent storage |
 | `SUPABASE_KEY` | — | Supabase service role key |
 
-Model artefacts are stored under `models/risk/` and loaded at API startup.
+Model artefacts are stored under `models/risk/` and are lazy-loaded and cached on the first `/predict/default` request; they are reloaded only when `DEFAULT_RISK_MODEL_BACKEND` changes.
 
 ---
 
