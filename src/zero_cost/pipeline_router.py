@@ -175,7 +175,9 @@ class PipelineRouter:
                 # financial values; calculators can cast to Decimal.
                 "scheduled_principal": pd.Series(dtype="object"),
                 "scheduled_interest": pd.Series(dtype="object"),
-                "scheduled_fees": pd.Series(dtype="object"),
+                "scheduled_fee": pd.Series(dtype="object"),
+                "scheduled_total": pd.Series(dtype="object"),
+                "scheduled_other": pd.Series(dtype="object"),
             }
         )
 
