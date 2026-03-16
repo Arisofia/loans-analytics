@@ -24,6 +24,7 @@ from .xirr import contractual_apr, portfolio_xirr
 logger = logging.getLogger(__name__)
 
 NOT_SPECIFIED_VALUES = {"no especificado", "no_especificado", "not specified", ""}
+MAX_NOT_SPECIFIED_LOG_ROWS = 10_000
 
 
 @dataclass
@@ -49,9 +50,16 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
 
     Checks every column regardless of dtype so that dates/numerics coerced to
     NaT/NaN by upstream loaders are also captured.
+
+    To keep the ETL artifact bounded on wide/large tables, the number of
+    per-cell log records is capped by MAX_NOT_SPECIFIED_LOG_ROWS.
     """
     records: list[dict[str, object]] = []
+    truncated = False
     for col in df.columns:
+        if len(records) >= MAX_NOT_SPECIFIED_LOG_ROWS:
+            truncated = True
+            break
         if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_string_dtype(df[col]):
             mask = df[col].apply(_normalize_not_specified)
         else:
@@ -60,6 +68,9 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
         if not mask.any():
             continue
         for idx in df.index[mask]:
+            if len(records) >= MAX_NOT_SPECIFIED_LOG_ROWS:
+                truncated = True
+                break
             records.append(
                 {
                     "table_name": table_name,
@@ -69,6 +80,12 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
                     "reason_detail": f"Field '{col}' has not-specified/blank value",
                 }
             )
+    if truncated:
+        logger.warning(
+            "Truncated not-specified log for table '%s' after %d records to keep ETL artifacts bounded.",
+            table_name,
+            MAX_NOT_SPECIFIED_LOG_ROWS,
+        )
     return pd.DataFrame(records)
 
 
