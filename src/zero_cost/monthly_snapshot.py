@@ -14,7 +14,7 @@ Control-de-Mora CSV adapter output.
 Usage
 -----
     builder = MonthlySnapshotBuilder()
-    snap_df = builder.build(loans_df, payments_df, as_of_month="2026-01-31")
+    snap_df = builder.build(loans_df, as_of_month="2026-01-31", payments_df=payments_df)
     builder.to_star_schema(snap_df, storage)
 """
 
