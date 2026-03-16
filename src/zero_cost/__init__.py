@@ -16,6 +16,12 @@ from .dpd_calculator import DPDCalculator
 from .exporter import Exporter
 from .fuzzy_matcher import FuzzyIncomeMatcher
 from .lend_id_mapper import LendIdMapper
+from .local_migration_etl import (
+    ETLResult,
+    LocalMonthlySnapshotETL,
+    build_not_specified_log,
+    reconcile_payments,
+)
 from .loan_tape_loader import LoanTapeLoader
 from .monthly_snapshot import MonthlySnapshotBuilder
 from .pipeline_router import PipelineRouter
@@ -37,4 +43,8 @@ __all__ = [
     "contractual_apr",
     "loan_xirr",
     "portfolio_xirr",
+    "LocalMonthlySnapshotETL",
+    "ETLResult",
+    "reconcile_payments",
+    "build_not_specified_log",
 ]
