@@ -409,9 +409,9 @@ class TestFuzzyIncomeMatcher:
         result = matcher.match_two_pass(
             income_df,
             disb_df,
-            left_on="nombre_cliente",
-            right_on="client_name",
-            keep_unmatched=True,
+            exact_key="nombre_cliente",
+            fuzzy_left="nombre_cliente",
+            fuzzy_right="client_name",
         )
 
         # No rows should be dropped or duplicated from the left DataFrame.
