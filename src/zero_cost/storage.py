@@ -102,7 +102,9 @@ class ZeroCostStorage:
             Optional Hive-style partition columns (e.g. ``["year", "month"]``).
         write_manifest:
             When ``True`` (default), write a JSON manifest with row count and
-            content hash for auditability.
+            content hash for auditability.  Currently only applied when the
+            data is written as a single Parquet file (i.e. when
+            ``partition_cols`` is ``None``).
 
         Returns
         -------
@@ -113,13 +115,38 @@ class ZeroCostStorage:
         table_dir.mkdir(parents=True, exist_ok=True)
 
         ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        parquet_path = table_dir / f"{table_name}_{ts}.parquet"
 
-        df.to_parquet(parquet_path, index=False, engine="pyarrow")
-        logger.info("Wrote %d rows → %s", len(df), parquet_path)
+        if partition_cols:
+            # Write a Hive-style partitioned dataset using the pyarrow engine.
+            # This creates a directory structure like:
+            #   table_dir/table_name_YYYYMMDDTHHMMSSZ/year=2026/month=01/part-*.parquet
+            parquet_path = table_dir / f"{table_name}_{ts}"
+            df.to_parquet(
+                parquet_path,
+                index=False,
+                engine="pyarrow",
+                partition_cols=partition_cols,
+            )
+            logger.info(
+                "Wrote %d rows → %s (partitioned by %s)",
+                len(df),
+                parquet_path,
+                ", ".join(partition_cols),
+            )
+            # Manifest writing for partitioned datasets is not yet implemented,
+            # because there are multiple underlying Parquet files.
+            if write_manifest:
+                logger.warning(
+                    "Manifest writing is currently skipped for partitioned table %s",
+                    table_name,
+                )
+        else:
+            parquet_path = table_dir / f"{table_name}_{ts}.parquet"
+            df.to_parquet(parquet_path, index=False, engine="pyarrow")
+            logger.info("Wrote %d rows → %s", len(df), parquet_path)
 
-        if write_manifest:
-            self._write_manifest(df, parquet_path, table_name)
+            if write_manifest:
+                self._write_manifest(df, parquet_path, table_name)
 
         if DUCKDB_AVAILABLE:
             self._register_table(table_name, table_dir)
