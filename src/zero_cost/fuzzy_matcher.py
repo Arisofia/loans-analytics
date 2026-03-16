@@ -199,14 +199,26 @@ class FuzzyIncomeMatcher:
             Combined result from both passes.
         """
         # Pass 1: exact join
-        exact = left_df.merge(right_df, on=exact_key, how="inner", suffixes=("", "_right"))
+        # Preserve the original left_df index so we can correctly identify
+        # which left rows participated in the exact match.
+        left_with_idx = left_df.assign(_left_index=left_df.index)
+
+        exact = left_with_idx.merge(
+            right_df,
+            on=exact_key,
+            how="inner",
+            suffixes=("", "_right"),
+        )
         exact[score_col] = 100.0
-        matched_idx = exact.index
+
+        # matched_idx now correctly refers to the original left_df indices
+        matched_idx = exact["_left_index"].unique()
 
         unmatched_left = left_df[~left_df.index.isin(matched_idx)].copy()
 
         if len(unmatched_left) == 0:
-            return exact
+            # Drop helper column before returning to avoid changing the schema
+            return exact.drop(columns=["_left_index"])
 
         # Pass 2: fuzzy match on the unmatched portion
         fuzzy_result = self.match(
@@ -216,6 +228,9 @@ class FuzzyIncomeMatcher:
             right_on=fuzzy_right,
             score_col=score_col,
         )
+
+        # Drop helper column used to track original left_df indices
+        exact = exact.drop(columns=["_left_index"])
 
         combined = pd.concat([exact, fuzzy_result], ignore_index=True)
         logger.info(
