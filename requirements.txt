@@ -30,8 +30,8 @@ pydantic>=2.0
 pydantic-settings>=2.0
 # Prefect 3.6.x requires packaging<26.1
 packaging<26.1
-# pyiceberg 0.11.x requires cachetools<7.0
-cachetools<7.0
+# pyiceberg 0.11.x requires cachetools<8.0
+cachetools<8.0
 # realtime 2.28.0 requires websockets<17
 websockets<17
 jsonschema>=4.0
