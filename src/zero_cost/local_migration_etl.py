@@ -22,7 +22,6 @@ import csv
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-import csv
 
 import pandas as pd
 
@@ -94,14 +93,14 @@ def reconcile_payments(
     schedule["scheduled_date"] = pd.to_datetime(schedule["scheduled_date"], errors="coerce")
     paid["payment_date"] = pd.to_datetime(paid["payment_date"], errors="coerce")
 
-    schedule["scheduled_total"] = pd.to_numeric(schedule["scheduled_total"], errors="coerce").fillna(0.0)
+    schedule["scheduled_total"] = pd.to_numeric(
+        schedule["scheduled_total"], errors="coerce"
+    ).fillna(0.0)
     paid["paid_total"] = pd.to_numeric(paid["paid_total"], errors="coerce").fillna(0.0)
 
-    sched_agg = (
-        schedule.groupby(["loan_id", "scheduled_date"], as_index=False, dropna=False)[
-            "scheduled_total"
-        ].sum()
-    )
+    sched_agg = schedule.groupby(["loan_id", "scheduled_date"], as_index=False, dropna=False)[
+        "scheduled_total"
+    ].sum()
     paid_agg = paid.groupby(["loan_id", "payment_date"], as_index=False, dropna=False)[
         "paid_total"
     ].sum()
@@ -164,7 +163,9 @@ class LocalMonthlySnapshotETL:
         fact_schedule = tables["fact_schedule"].copy()
         fact_real_payment = tables["fact_real_payment"].copy()
 
-        dim_loan["disbursement_date"] = pd.to_datetime(dim_loan["disbursement_date"], errors="coerce")
+        dim_loan["disbursement_date"] = pd.to_datetime(
+            dim_loan["disbursement_date"], errors="coerce"
+        )
         dim_loan["original_principal"] = pd.to_numeric(
             dim_loan["original_principal"], errors="coerce"
         ).fillna(0.0)
@@ -185,7 +186,9 @@ class LocalMonthlySnapshotETL:
         dim_loan["contractual_apr"] = dim_loan["interest_rate"].apply(contractual_apr)
 
         # Only compute XIRR for loans with a valid disbursement_date and positive principal
-        valid_xirr_mask = dim_loan["disbursement_date"].notna() & (dim_loan["original_principal"] > 0)
+        valid_xirr_mask = dim_loan["disbursement_date"].notna() & (
+            dim_loan["original_principal"] > 0
+        )
         loan_xirr_series = portfolio_xirr(dim_loan[valid_xirr_mask], fact_real_payment)
 
         fact_monthly_snapshot = snapshots.merge(
@@ -200,7 +203,9 @@ class LocalMonthlySnapshotETL:
             how="left",
         )
 
-        reconciliation, unmatched_reconciliation = reconcile_payments(fact_schedule, fact_real_payment)
+        reconciliation, unmatched_reconciliation = reconcile_payments(
+            fact_schedule, fact_real_payment
+        )
 
         not_specified_logs = [
             build_not_specified_log(dim_loan, "dim_loan"),
@@ -231,7 +236,9 @@ class LocalMonthlySnapshotETL:
             )
 
         if "reason_code" in unmatched_records.columns:
-            unmatched_records["reason_code"] = unmatched_records["reason_code"].fillna("not_specified")
+            unmatched_records["reason_code"] = unmatched_records["reason_code"].fillna(
+                "not_specified"
+            )
 
         logger.info(
             "LocalMonthlySnapshotETL completed snapshot=%s loans=%d unmatched=%d",
@@ -262,15 +269,9 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--loan-tape-dir", default="data/raw", help="Directory with loan tape CSV files"
     )
-    parser.add_argument(
-        "--control-mora", default="", help="Optional control mora CSV path"
-    )
-    parser.add_argument(
-        "--snapshot-month", required=True, help="Snapshot month YYYY-MM-DD"
-    )
-    parser.add_argument(
-        "--output-dir", default="exports/local_star", help="Output directory"
-    )
+    parser.add_argument("--control-mora", default="", help="Optional control mora CSV path")
+    parser.add_argument("--snapshot-month", required=True, help="Snapshot month YYYY-MM-DD")
+    parser.add_argument("--output-dir", default="exports/local_star", help="Output directory")
     return parser.parse_args(argv)
 
 

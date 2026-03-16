@@ -678,13 +678,21 @@ class CalculationPhase:
     def _compute_portfolio_velocity_of_default(self, df: pd.DataFrame) -> Optional[Decimal]:
         """Build a monthly default-rate series and return the latest Velocity of Default.
 
-        Requires a date column and a ``status`` column.  Returns ``None`` when
-        insufficient data is available to compute at least two monthly periods.
+        Only active/delinquent/defaulted loans are included in the denominator,
+        consistent with the rest of CalculationPhase's risk metrics.
+
+        Requires a date column (uses the same candidate priority list as
+        TransformationPhase's canonical ``as_of_date``) and a ``status`` column.
+        Returns ``None`` when insufficient data is available to compute at least
+        two monthly periods.
         """
         date_col = next(
             (
                 c
                 for c in (
+                    "as_of_date",
+                    "measurement_date",
+                    "snapshot_date",
                     "origination_date",
                     "FechaDesembolso",
                     "application_date",
@@ -697,7 +705,12 @@ class CalculationPhase:
         if date_col is None or "status" not in df.columns:
             return None
 
-        work = df[[date_col, "status"]].copy()
+        # Restrict to the same active-status universe used by other risk metrics.
+        active_mask = df["status"].isin(["active", "delinquent", "defaulted"])
+        work = df.loc[active_mask, [date_col, "status"]].copy()
+        if work.empty:
+            return None
+
         work["_date"] = pd.to_datetime(work[date_col], errors="coerce", format="mixed")
         work = work.dropna(subset=["_date"])
         if work.empty:
@@ -778,8 +791,8 @@ class CalculationPhase:
         """
         required = ("capital_desembolsado", "valor_nominal_factura", "tasa_dilucion")
         if not all(col in df.columns for col in required):
-            logger.warning(
-                "Missing columns for LTV Sintético. Required: %s",
+            logger.debug(
+                "Missing columns for LTV Sintético — skipping (required: %s).",
                 ", ".join(required),
             )
             return pd.Series(dtype=float)

@@ -6,12 +6,10 @@ Covers:
 - _calculate_segment_par_metrics: Kiting/carousel adjustment via ratio_pago_real
 """
 
-import numpy as np
 import pandas as pd
 import pytest
 
 from src.pipeline.calculation import CalculationPhase
-
 
 # ---------------------------------------------------------------------------
 # _calculate_ltv_sintetico
@@ -57,9 +55,7 @@ def test_ltv_sintetico_missing_columns_returns_empty_series():
 
 def test_ltv_sintetico_empty_dataframe():
     """Returns an empty Series for an empty DataFrame."""
-    df = pd.DataFrame(
-        columns=["capital_desembolsado", "valor_nominal_factura", "tasa_dilucion"]
-    )
+    df = pd.DataFrame(columns=["capital_desembolsado", "valor_nominal_factura", "tasa_dilucion"])
     result = CalculationPhase._calculate_ltv_sintetico(df)
     assert len(result) == 0
 
@@ -117,7 +113,9 @@ def test_par_metrics_without_ratio_pago_real_unchanged():
             "dpd": [0.0, 45.0, 100.0],
         }
     )
-    result = CalculationPhase._calculate_segment_par_metrics(grp, "outstanding_balance", "dpd", 600.0)
+    result = CalculationPhase._calculate_segment_par_metrics(
+        grp, "outstanding_balance", "dpd", 600.0
+    )
 
     # PAR30: 200+300 = 500 → 83.3333%
     assert result["par_30"] == pytest.approx(500 / 600 * 100, rel=1e-3)
@@ -136,7 +134,9 @@ def test_par_metrics_kiting_forces_dpd_to_90():
             "ratio_pago_real": [1.0, 0.8],  # second account is kiting
         }
     )
-    result = CalculationPhase._calculate_segment_par_metrics(grp, "outstanding_balance", "dpd", 300.0)
+    result = CalculationPhase._calculate_segment_par_metrics(
+        grp, "outstanding_balance", "dpd", 300.0
+    )
 
     # The kiting account (200) gets DPD forced to 90, so PAR90 = 200/300 * 100
     assert result["par_90"] == pytest.approx(200 / 300 * 100, rel=1e-3)
@@ -170,7 +170,97 @@ def test_par_metrics_ratio_exactly_one_not_penalised():
             "ratio_pago_real": [1.0],
         }
     )
-    result = CalculationPhase._calculate_segment_par_metrics(grp, "outstanding_balance", "dpd", 100.0)
+    result = CalculationPhase._calculate_segment_par_metrics(
+        grp, "outstanding_balance", "dpd", 100.0
+    )
     assert result["par_30"] == 0.0
     assert result["par_60"] == 0.0
     assert result["par_90"] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# _compute_portfolio_velocity_of_default (portfolio-level integration)
+# ---------------------------------------------------------------------------
+
+
+def test_compute_portfolio_velocity_of_default_uses_as_of_date():
+    """Uses canonical 'as_of_date' column and returns a Decimal Vd value."""
+    from decimal import Decimal
+
+    phase = CalculationPhase.__new__(CalculationPhase)
+    df = pd.DataFrame(
+        {
+            "as_of_date": [
+                "2025-01-15",
+                "2025-01-20",
+                "2025-02-10",
+                "2025-02-25",
+                "2025-03-05",
+                "2025-03-18",
+            ],
+            "status": [
+                "defaulted",
+                "active",
+                "defaulted",
+                "defaulted",
+                "active",
+                "active",
+            ],
+        }
+    )
+    result = phase._compute_portfolio_velocity_of_default(df)
+
+    # Jan: 1/2 = 50%, Feb: 2/2 = 100%, Mar: 0/3 = 0%
+    # Vd latest = 0 - 100 = -100
+    assert result is not None
+    assert isinstance(result, Decimal)
+    assert result == pytest.approx(-100.0, rel=1e-4)
+
+
+def test_compute_portfolio_velocity_of_default_excludes_closed_loans():
+    """Closed loans must not affect the default-rate denominator."""
+    phase = CalculationPhase.__new__(CalculationPhase)
+    df = pd.DataFrame(
+        {
+            "as_of_date": [
+                "2025-01-10",
+                "2025-01-20",
+                "2025-01-25",  # closed — should be excluded
+                "2025-02-05",
+                "2025-02-15",
+                "2025-02-20",  # closed — should be excluded
+            ],
+            "status": [
+                "defaulted",
+                "active",
+                "closed",
+                "defaulted",
+                "active",
+                "closed",
+            ],
+        }
+    )
+    result = phase._compute_portfolio_velocity_of_default(df)
+
+    # Active set only: Jan: 1/2 = 50%, Feb: 1/2 = 50% → Vd = 0
+    assert result is not None
+    assert float(result) == pytest.approx(0.0, abs=1e-4)
+
+
+def test_compute_portfolio_velocity_of_default_returns_none_without_date():
+    """Returns None when no recognised date column exists."""
+    phase = CalculationPhase.__new__(CalculationPhase)
+    df = pd.DataFrame({"status": ["active", "defaulted"]})
+    assert phase._compute_portfolio_velocity_of_default(df) is None
+
+
+def test_compute_portfolio_velocity_of_default_returns_none_single_period():
+    """Returns None when all records fall in the same month (Vd needs ≥2 periods)."""
+    phase = CalculationPhase.__new__(CalculationPhase)
+    df = pd.DataFrame(
+        {
+            "as_of_date": ["2025-01-01", "2025-01-15"],
+            "status": ["active", "defaulted"],
+        }
+    )
+    assert phase._compute_portfolio_velocity_of_default(df) is None
