@@ -148,18 +148,58 @@ SELECT
     COALESCE(b.active_loans,       0)             AS active_loans,
     COALESCE(b.total_outstanding,  0)             AS total_outstanding,
     COALESCE(b.total_overdue,      0)             AS total_overdue,
-    -- PAR
+    -- PAR (averaged across dimensions)
     COALESCE(par.par_30_pct,       0)             AS par_30_pct,
     COALESCE(par.par_90_pct,       0)             AS par_90_pct,
     -- Income
     COALESCE(inc.interest_collected, 0)           AS interest_collected,
     COALESCE(inc.total_collected,    0)           AS total_collected,
-    -- APR proxy
+    -- APR proxy (averaged across dimensions)
     apr.apr_proxy_pct
 FROM dim_time t
-LEFT JOIN v_monthly_disbursements         d   ON d.year_month  = t.year_month
-LEFT JOIN v_monthly_outstanding_balance   b   ON b.year_month  = t.year_month
-LEFT JOIN v_par_monthly                   par ON par.year_month = t.year_month
-LEFT JOIN v_monthly_income                inc ON inc.year_month = t.year_month
-LEFT JOIN v_monthly_apr_proxy             apr ON apr.year_month = t.year_month
+LEFT JOIN (
+    SELECT
+        year_month,
+        SUM(new_loans)        AS new_loans,
+        SUM(total_disbursed)  AS total_disbursed
+    FROM v_monthly_disbursements
+    GROUP BY year_month
+) d
+    ON d.year_month = t.year_month
+LEFT JOIN (
+    SELECT
+        year_month,
+        SUM(active_loans)      AS active_loans,
+        SUM(total_outstanding) AS total_outstanding,
+        SUM(total_overdue)     AS total_overdue
+    FROM v_monthly_outstanding_balance
+    GROUP BY year_month
+) b
+    ON b.year_month = t.year_month
+LEFT JOIN (
+    SELECT
+        year_month,
+        AVG(par_30_pct) AS par_30_pct,
+        AVG(par_90_pct) AS par_90_pct
+    FROM v_par_monthly
+    GROUP BY year_month
+) par
+    ON par.year_month = t.year_month
+LEFT JOIN (
+    SELECT
+        year_month,
+        SUM(interest_collected) AS interest_collected,
+        SUM(total_collected)    AS total_collected
+    FROM v_monthly_income
+    GROUP BY year_month
+) inc
+    ON inc.year_month = t.year_month
+LEFT JOIN (
+    SELECT
+        year_month,
+        AVG(apr_proxy_pct) AS apr_proxy_pct
+    FROM v_monthly_apr_proxy
+    GROUP BY year_month
+) apr
+    ON apr.year_month = t.year_month
 ORDER BY t.snapshot_month;
