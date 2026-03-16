@@ -74,42 +74,61 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
 
     To keep the ETL artifact bounded on wide/large tables, the number of
     per-cell log records is capped by MAX_NOT_SPECIFIED_LOG_ROWS.
+
+    Uses vectorized pandas masks (``stack()``) rather than per-cell Python
+    loops so performance scales with table size.
     """
-    records: list[dict[str, object]] = []
-    truncated = False
+    _EMPTY_COLS = ["table_name", "record_ref", "field_name", "reason_code", "reason_detail"]
+
+    if df.empty or df.columns.empty:
+        return pd.DataFrame(columns=_EMPTY_COLS)
+
+    # Build one boolean mask Series per column — all vectorized, no per-cell Python
+    mask_series: list[pd.Series] = []
+    detail_suffix_by_col: dict[str, str] = {}
     for col in df.columns:
-        if len(records) >= MAX_NOT_SPECIFIED_LOG_ROWS:
-            truncated = True
-            break
         if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_string_dtype(df[col]):
             mask = _not_specified_mask(df[col])
-            detail_suffix = "no especificado/blank value"
+            detail_suffix_by_col[col] = "no especificado/blank value"
         else:
-            # For numeric/datetime columns flag null/NaT values
             mask = df[col].isna()
-            detail_suffix = "null/NaT value"
-        if not mask.any():
-            continue
-        for idx in df.index[mask]:
-            if len(records) >= MAX_NOT_SPECIFIED_LOG_ROWS:
-                truncated = True
-                break
-            records.append(
-                {
-                    "table_name": table_name,
-                    "record_ref": str(idx),
-                    "field_name": col,
-                    "reason_code": "not_specified",
-                    "reason_detail": f"Field '{col}' is not specified / {detail_suffix}",
-                }
-            )
-    if truncated:
+            detail_suffix_by_col[col] = "null/NaT value"
+        if mask.any():
+            mask_series.append(mask.rename(col))
+
+    if not mask_series:
+        return pd.DataFrame(columns=_EMPTY_COLS)
+
+    # Stack to get a flat MultiIndex (row_index, col_name) for every True cell
+    flagged_idx = pd.concat(mask_series, axis=1).stack()
+    flagged_idx = flagged_idx[flagged_idx].index  # keep only True entries
+
+    if len(flagged_idx) == 0:
+        return pd.DataFrame(columns=_EMPTY_COLS)
+
+    if len(flagged_idx) > MAX_NOT_SPECIFIED_LOG_ROWS:
         logger.warning(
             "Truncated not-specified log for table '%s' after %d records to keep ETL artifacts bounded.",
             table_name,
             MAX_NOT_SPECIFIED_LOG_ROWS,
         )
-    return pd.DataFrame(records)
+        flagged_idx = flagged_idx[:MAX_NOT_SPECIFIED_LOG_ROWS]
+
+    row_refs = [str(r) for r, _ in flagged_idx]
+    col_names = [c for _, c in flagged_idx]
+    detail_suffixes = [detail_suffix_by_col[c] for c in col_names]
+
+    return pd.DataFrame(
+        {
+            "table_name": table_name,
+            "record_ref": row_refs,
+            "field_name": col_names,
+            "reason_code": "not_specified",
+            "reason_detail": [
+                f"Field '{c}' is not specified / {d}" for c, d in zip(col_names, detail_suffixes)
+            ],
+        }
+    )
 
 
 def reconcile_payments(
@@ -141,7 +160,7 @@ def reconcile_payments(
     # silently dropped by groupby (which uses dropna=True by default for NaT keys).
     # Priority: invalid date takes precedence over missing loan_id to avoid double-logging
     # a row that has both conditions.
-    invalid_date_unmatched: list[pd.DataFrame] = []
+    excluded_rows_unmatched: list[pd.DataFrame] = []
     sched_invalid = schedule[schedule["scheduled_date"].isna()].copy()
     if not sched_invalid.empty:
         sched_invalid = sched_invalid.assign(
@@ -152,7 +171,7 @@ def reconcile_payments(
             + ", scheduled_total="
             + sched_invalid["scheduled_total"].round(2).astype(str),
         )
-        invalid_date_unmatched.append(
+        excluded_rows_unmatched.append(
             sched_invalid[["loan_id", "reason_code", "reason_detail", "status"]]
         )
     paid_invalid = paid[paid["payment_date"].isna()].copy()
@@ -165,7 +184,7 @@ def reconcile_payments(
             + ", paid_total="
             + paid_invalid["paid_total"].round(2).astype(str),
         )
-        invalid_date_unmatched.append(
+        excluded_rows_unmatched.append(
             paid_invalid[["loan_id", "reason_code", "reason_detail", "status"]]
         )
 
@@ -183,7 +202,7 @@ def reconcile_payments(
             + ", scheduled_total="
             + sched_missing_loan["scheduled_total"].round(2).astype(str),
         )
-        invalid_date_unmatched.append(
+        excluded_rows_unmatched.append(
             sched_missing_loan[["loan_id", "reason_code", "reason_detail", "status"]]
         )
     paid_missing_loan = paid[paid["loan_id"].isna() & paid["payment_date"].notna()].copy()
@@ -196,7 +215,7 @@ def reconcile_payments(
             + ", paid_total="
             + paid_missing_loan["paid_total"].round(2).astype(str),
         )
-        invalid_date_unmatched.append(
+        excluded_rows_unmatched.append(
             paid_missing_loan[["loan_id", "reason_code", "reason_detail", "status"]]
         )
 
@@ -246,9 +265,9 @@ def reconcile_payments(
         + unmatched["amount_diff"].round(2).astype(str)
     )
 
-    # Append any rows that were excluded due to invalid/blank dates
-    if invalid_date_unmatched:
-        unmatched = pd.concat([unmatched, *invalid_date_unmatched], ignore_index=True)
+    # Append any rows that were excluded due to invalid/blank dates or missing keys
+    if excluded_rows_unmatched:
+        unmatched = pd.concat([unmatched, *excluded_rows_unmatched], ignore_index=True)
 
     return merged.drop(columns=["_merge"]), unmatched
 

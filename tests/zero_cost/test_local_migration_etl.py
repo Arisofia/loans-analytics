@@ -125,13 +125,20 @@ def test_reconcile_payments_captures_invalid_dates_no_duplicates():
     assert len(invalid_sched) == 2
     assert len(invalid_paid) == 1
 
-    # The row with both null loan_id AND invalid date should not appear in missing_loan_id_*
-    # — it should only appear once under invalid_scheduled_date (no duplicates)
-    overlapping_mask = (
-        unmatched["loan_id"].isna()
-        & (unmatched["scheduled_date"] == "not-a-date")
-        & (unmatched["scheduled_total"] == 50.0)
+    # The row with both null loan_id AND invalid date should appear exactly once under
+    # invalid_scheduled_date and NOT under missing_loan_id_schedule.
+    # Use stable reason_code keys — index uniqueness is unreliable after ignore_index=True.
+    null_loan_invalid_sched = unmatched[
+        unmatched["loan_id"].isna() & (unmatched["reason_code"] == "invalid_scheduled_date")
+    ]
+    assert len(null_loan_invalid_sched) == 1, (
+        "Overlapping row (null loan_id + invalid date) should be logged exactly once "
+        "under invalid_scheduled_date"
     )
-    overlapping_rows = unmatched[overlapping_mask]
-    assert len(overlapping_rows) == 1, "Overlapping row should be logged exactly once"
-    assert overlapping_rows.iloc[0]["reason_code"] == "invalid_scheduled_date"
+
+    null_loan_missing_sched = unmatched[
+        unmatched["loan_id"].isna() & (unmatched["reason_code"] == "missing_loan_id_schedule")
+    ]
+    assert (
+        len(null_loan_missing_sched) == 0
+    ), "Overlapping row should NOT be double-logged under missing_loan_id_schedule"
