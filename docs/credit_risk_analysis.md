@@ -187,7 +187,7 @@ Response (abridged):
 
 ### `POST /analytics/risk-stratification`
 
-Returns DPD bucket percentages plus the 4-flag decision assessment and risk heatmap.
+Returns DPD bucket percentages plus the 4-flag decision assessment. Response includes `buckets`, `decision_flags`, and `summary`.
 
 ### `POST /analytics/risk-alerts`
 
