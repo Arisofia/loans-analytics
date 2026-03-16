@@ -120,14 +120,15 @@ The risk stratification layer produces two outputs:
 
 ### 1. DPD Bucket Breakdown
 
-A percentage distribution of portfolio balance across all five DPD buckets, plus a `risk_heatmap` summarizing risk intensity:
+A percentage distribution of portfolio balance across all five DPD buckets, plus a `risk_heatmap` summarizing risk intensity per bucket:
 
-| Intensity | Exposure Threshold |
-|-----------|--------------------|
-| `low` | < 1% |
-| `medium` | 1–5% |
-| `high` | 5–10% |
-| `critical` | > 10% |
+| Intensity | Definition |
+|-----------|------------|
+| `low` | Bucket exposure is below the configured threshold for that DPD bucket |
+| `medium` | Bucket exposure is between the threshold and `2 × threshold` |
+| `high` | Bucket exposure exceeds `2 × threshold` |
+
+Current per-bucket exposure thresholds (as a share of total portfolio balance) are: `8%`, `4%`, `2%`, and `1%` for progressively more delinquent DPD buckets (e.g. 0–30, 31–60, 61–90, and >90 days past due). `get_risk_heatmap_summary` returns only these three intensity levels (`low`, `medium`, `high`) based on the rules above.
 
 ### 2. Decision Flags (4-flag Assessment)
 
