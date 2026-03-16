@@ -156,8 +156,11 @@ Request (abridged):
 {
   "loans": [
     {
-      "loan_id": "L001",
-      "outstanding_balance": 50000,
+      "id": "L001",
+      "loan_amount": 60000,
+      "principal_balance": 50000,
+      "interest_rate": 0.12,
+      "loan_status": "current",
       "days_past_due": 35,
       "scheduled_payment": 2000,
       "actual_payment": 1800,
@@ -171,20 +174,13 @@ Response (abridged):
 
 ```json
 {
-  "par30": 0.15,
-  "par60": 0.08,
-  "par90": 0.03,
-  "default_rate": 0.02,
-  "npl_ratio": 0.03,
-  "collections_coverage": 0.90,
+  "par30": 15.0,
+  "par60": 8.0,
+  "par90": 3.0,
+  "default_rate": 2.0,
+  "collections_coverage": 90.0,
   "credit_quality_index": 69.1,
-  "dpd_bucket_breakdown": {
-    "current": 0.55,
-    "1_30": 0.22,
-    "31_60": 0.15,
-    "61_90": 0.05,
-    "90_plus": 0.03
-  }
+  "dpd_buckets": [55.0, 22.0, 15.0, 5.0, 3.0]
 }
 ```
 
