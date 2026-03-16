@@ -85,10 +85,12 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           MISSING=""
           [ -z "$SUPABASE_URL" ]              && MISSING="$MISSING SUPABASE_URL"
           [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && MISSING="$MISSING SUPABASE_SERVICE_ROLE_KEY"
+          [ -z "$SUPABASE_ANON_KEY" ]         && MISSING="$MISSING SUPABASE_ANON_KEY"
           if [ -n "$MISSING" ]; then
             echo "❌ Missing required secrets:$MISSING"
             echo "   Add them in Settings → Secrets and variables → Actions"
