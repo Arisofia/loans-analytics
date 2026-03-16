@@ -121,7 +121,6 @@ def xirr(
             result = _newton_raphson(_npv, _dnpv, g)
             if result is not None:
                 return result
-        except (ZeroDivisionError, OverflowError, FloatingPointError) as exc:
             logger.debug(
                 "Newton-Raphson failed for starting guess %s due to numerical error: %s",
                 g,
