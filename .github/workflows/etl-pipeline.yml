@@ -233,6 +233,8 @@ jobs:
       - name: Build monthly snapshot
         env:
           MONTH: ${{ github.event.inputs.snapshot_month }}
+          INPUT: ${{ needs.preflight.outputs.input_csv }}
+          MODE: ${{ needs.preflight.outputs.mode }}
         run: make snapshot-build
 
       - name: Upload snapshot artifacts

@@ -212,7 +212,13 @@ class PipelineRouter:
                 snapshot_month.date(),
             )
             return {
-                "dim_loan": pd.DataFrame(),
+                "dim_loan": pd.DataFrame(
+                    {
+                        "loan_id": pd.Series(dtype="object"),
+                        "snapshot_month": pd.Series(dtype="datetime64[ns]"),
+                        "source": pd.Series(dtype="object"),
+                    }
+                ),
                 "fact_schedule": self._empty_fact_schedule(),
                 "fact_real_payment": self._empty_fact_real_payment(),
                 "_source": "control_mora",
