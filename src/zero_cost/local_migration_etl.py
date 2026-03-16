@@ -93,9 +93,13 @@ def reconcile_payments(
     paid["paid_total"] = pd.to_numeric(paid["paid_total"], errors="coerce").fillna(0.0)
 
     sched_agg = (
-        schedule.groupby(["loan_id", "scheduled_date"], as_index=False)["scheduled_total"].sum()
+        schedule.groupby(["loan_id", "scheduled_date"], as_index=False, dropna=False)[
+            "scheduled_total"
+        ].sum()
     )
-    paid_agg = paid.groupby(["loan_id", "payment_date"], as_index=False)["paid_total"].sum()
+    paid_agg = paid.groupby(["loan_id", "payment_date"], as_index=False, dropna=False)[
+        "paid_total"
+    ].sum()
 
     merged = sched_agg.merge(
         paid_agg,
