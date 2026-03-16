@@ -188,7 +188,7 @@ jobs:
           SNAPSHOT_MONTH: ${{ github.event.inputs.snapshot_month }}
           INPUT: ${{ needs.preflight.outputs.input_csv }}
           MODE: ${{ needs.preflight.outputs.mode }}
-        run: make run
+        run: make etl-local
 
       - name: Upload pipeline artifacts
         if: always()
