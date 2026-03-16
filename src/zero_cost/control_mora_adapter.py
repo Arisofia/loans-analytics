@@ -264,11 +264,10 @@ class ControlMoraAdapter:
                     df["snapshot_month"] = pd.to_datetime(
                         normalized, format="%b%Y", errors="coerce"
                     )
-                # Normalise inferred year-months to month-end to match pipeline semantics
+                # Normalize inferred year-months to month-end to match pipeline semantics
                 if "snapshot_month" in df.columns:
-                    parsed_snapshot = pd.to_datetime(df["snapshot_month"], errors="coerce")
                     df["snapshot_month"] = (
-                        parsed_snapshot.dt.to_period("M").dt.to_timestamp("M")
+                        df["snapshot_month"].dt.to_period("M").dt.to_timestamp("M")
                     )
             else:
                 df["snapshot_month"] = pd.NaT
