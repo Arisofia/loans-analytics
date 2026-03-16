@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+import warnings
 
 # Ensure repo root is on path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -141,14 +142,16 @@ class TestLendIdMapper:
 # ControlMoraAdapter
 # =============================================================================
 class TestControlMoraAdapter:
-    def _make_mora_csv(self, tmp_path, delimiter=",") -> Path:
+    def _make_mora_csv(
+        self, tmp_path, delimiter: str = ",", filename: str = "control_mora_ene2026.csv"
+    ) -> Path:
         rows = [
             "NumeroDesembolso,lend_id,NombreCliente,SaldoVigente,TotalVencido,DPD,FechaDesembolso",
             "NDE-001,L-100,Juan Perez,10000.00,500.00,15,2025-01-15",
             "NDE-002,L-101,Maria Lopez,20000.00,0.00,0,2025-03-01",
             "NDE-003,L-102,Carlos Ruiz,5000.00,5000.00,95,2024-11-20",
         ]
-        p = tmp_path / "control_mora_ene2026.csv"
+        p = tmp_path / filename
         p.write_text(delimiter.join(rows[0].split(",")) + "\n")
         with p.open("a") as f:
             for row in rows[1:]:
@@ -182,6 +185,34 @@ class TestControlMoraAdapter:
         df = adapter.load(self._make_mora_csv(tmp_path))
         assert df["principal_outstanding"].dtype in (float, "float64")
         assert pd.api.types.is_integer_dtype(df["dpd"])
+
+    def test_snapshot_month_inferred_from_filename(self, tmp_path):
+        from src.zero_cost.control_mora_adapter import ControlMoraAdapter
+
+        # Do not pass an explicit snapshot_month so that the adapter must infer
+        # it from the filename "control_mora_ene2026.csv" produced by _make_mora_csv.
+        adapter = ControlMoraAdapter(snapshot_month=None)
+        df = adapter.load(self._make_mora_csv(tmp_path))
+
+        # Ensure that a snapshot_month column exists and that inference did not
+        # silently produce NaT.
+        assert "snapshot_month" in df.columns
+        assert df["snapshot_month"].notna().all()
+
+    def test_snapshot_month_inference_warning_on_unparseable_filename(self, tmp_path):
+        from src.zero_cost.control_mora_adapter import ControlMoraAdapter
+
+        adapter = ControlMoraAdapter(snapshot_month=None)
+        # Use a filename that does not encode a month to trigger the warning path.
+        csv_path = self._make_mora_csv(tmp_path, filename="control_mora_raw.csv")
+
+        with pytest.warns(UserWarning):
+            df = adapter.load(csv_path)
+
+        # Even on failure, the adapter should expose a snapshot_month column,
+        # but its values should be NaT (all missing).
+        assert "snapshot_month" in df.columns
+        assert df["snapshot_month"].isna().all()
 
     def test_snapshot_month_set(self, tmp_path):
         from src.zero_cost.control_mora_adapter import ControlMoraAdapter
