@@ -331,8 +331,14 @@ class MonthlySnapshotBuilder:
         if as_of_month is not None:
             df["snapshot_month"] = pd.to_datetime(str(as_of_month))
         elif "snapshot_month" not in df.columns:
-            df["snapshot_month"] = pd.Timestamp("today").normalize()
-            logger.warning("snapshot_month not provided — defaulting to today")
+            # Default to the current month-end to keep snapshot semantics consistent
+            today = pd.Timestamp("today").normalize()
+            current_month_end = today + pd.offsets.MonthEnd(0)
+            df["snapshot_month"] = current_month_end
+            logger.warning(
+                "snapshot_month not provided — defaulting to current month-end %s",
+                current_month_end.date(),
+            )
         else:
             df["snapshot_month"] = pd.to_datetime(df["snapshot_month"], errors="coerce")
         return df
