@@ -167,22 +167,43 @@ class MonthlySnapshotBuilder:
         tables: dict[str, pd.DataFrame] = {}
 
         # dim_loan
-        loan_cols = [c for c in ["lend_id", "numero_desembolso", "product_type",
-                                  "branch_code", "currency", "disbursement_date"] if c in snapshot_df.columns]
-        tables["dim_loan"] = (
-            snapshot_df[loan_cols]
-            .drop_duplicates(subset=["lend_id"] if "lend_id" in loan_cols else loan_cols[:1])
-            .reset_index(drop=True)
-        )
+        loan_cols = [
+            c
+            for c in [
+                "lend_id",
+                "numero_desembolso",
+                "product_type",
+                "branch_code",
+                "currency",
+                "disbursement_date",
+            ]
+            if c in snapshot_df.columns
+        ]
+        if loan_cols:
+            dim_loan = (
+                snapshot_df[loan_cols]
+                .drop_duplicates(
+                    subset=["lend_id"] if "lend_id" in loan_cols else loan_cols[:1]
+                )
+                .reset_index(drop=True)
+            )
+            # Surrogate key for loans
+            dim_loan["loan_sk"] = range(1, len(dim_loan) + 1)
+            tables["dim_loan"] = dim_loan
 
         # dim_client
-        client_cols = [c for c in ["lend_id", "client_id", "client_name"] if c in snapshot_df.columns]
+        client_cols = [
+            c for c in ["lend_id", "client_id", "client_name"] if c in snapshot_df.columns
+        ]
         if len(client_cols) > 1:
-            tables["dim_client"] = (
+            dim_client = (
                 snapshot_df[client_cols]
                 .drop_duplicates()
                 .reset_index(drop=True)
             )
+            # Surrogate key for clients
+            dim_client["client_sk"] = range(1, len(dim_client) + 1)
+            tables["dim_client"] = dim_client
 
         # dim_time
         if "snapshot_month" in snapshot_df.columns:
@@ -196,10 +217,43 @@ class MonthlySnapshotBuilder:
             time_df["month"] = time_df["snapshot_month"].dt.month
             time_df["quarter"] = time_df["snapshot_month"].dt.quarter
             time_df["year_month"] = time_df["snapshot_month"].dt.strftime("%Y-%m")
-            tables["dim_time"] = time_df.reset_index(drop=True)
+            time_df = time_df.reset_index(drop=True)
+            # Surrogate key for time dimension
+            time_df["time_id"] = range(1, len(time_df) + 1)
+            tables["dim_time"] = time_df
 
-        # fact_monthly_snapshot (all KPI columns)
-        tables["fact_monthly_snapshot"] = snapshot_df.reset_index(drop=True)
+        # fact_monthly_snapshot (all KPI columns, with surrogate keys)
+        fact_df = snapshot_df.copy()
+
+        # Attach loan surrogate key
+        if "dim_loan" in tables and "lend_id" in fact_df.columns:
+            fact_df = fact_df.merge(
+                tables["dim_loan"][["lend_id", "loan_sk"]],
+                on="lend_id",
+                how="left",
+            )
+
+        # Attach client surrogate key (if available)
+        if "dim_client" in tables:
+            # Use the intersection of columns used to build dim_client as join keys
+            dim_client = tables["dim_client"]
+            join_keys = [c for c in ["lend_id", "client_id"] if c in fact_df.columns and c in dim_client.columns]
+            if join_keys:
+                fact_df = fact_df.merge(
+                    dim_client[join_keys + ["client_sk"]],
+                    on=join_keys,
+                    how="left",
+                )
+
+        # Attach time surrogate key
+        if "dim_time" in tables and "snapshot_month" in fact_df.columns:
+            fact_df = fact_df.merge(
+                tables["dim_time"][["snapshot_month", "time_id"]],
+                on="snapshot_month",
+                how="left",
+            )
+
+        tables["fact_monthly_snapshot"] = fact_df.reset_index(drop=True)
 
         for name, table_df in tables.items():
             storage.write_parquet(table_df, name)
