@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import re
+import warnings
 from pathlib import Path
 from typing import Optional
 
@@ -266,11 +267,12 @@ class ControlMoraAdapter:
             else:
                 df["snapshot_month"] = pd.NaT
             if df["snapshot_month"].isna().all():
-                logger.warning(
-                    "Could not infer snapshot_month from filename '%s'. "
-                    "Set snapshot_month explicitly.",
-                    path.name,
+                message = (
+                    f"Could not infer snapshot_month from filename '{path.name}'. "
+                    "Set snapshot_month explicitly."
                 )
+                logger.warning(message)
+                warnings.warn(message, UserWarning)
         return df
 
     def _ensure_canonical_columns(self, df: pd.DataFrame) -> pd.DataFrame:
