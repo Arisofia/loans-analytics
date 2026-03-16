@@ -13,15 +13,19 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.zero_cost.local_migration_etl import LocalMonthlySnapshotETL
+from src.zero_cost.local_migration_etl import LocalMonthlySnapshotETL  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 logger = logging.getLogger("local_star_snapshot_etl")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build monthly star schema snapshot from raw CSV files")
-    parser.add_argument("--loan-tape-dir", default="data/raw", help="Directory with loan tape CSV files")
+    parser = argparse.ArgumentParser(
+        description="Build monthly star schema snapshot from raw CSV files"
+    )
+    parser.add_argument(
+        "--loan-tape-dir", default="data/raw", help="Directory with loan tape CSV files"
+    )
     parser.add_argument("--control-mora", default="", help="Optional control mora CSV path")
     parser.add_argument("--snapshot-month", required=True, help="Snapshot month YYYY-MM-DD")
     parser.add_argument("--output-dir", default="exports/local_star", help="Output directory")

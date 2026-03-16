@@ -10,6 +10,7 @@ Includes:
 
 from __future__ import annotations
 
+import csv
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -91,7 +92,9 @@ def reconcile_payments(
     schedule["scheduled_date"] = pd.to_datetime(schedule["scheduled_date"], errors="coerce")
     paid["payment_date"] = pd.to_datetime(paid["payment_date"], errors="coerce")
 
-    schedule["scheduled_total"] = pd.to_numeric(schedule["scheduled_total"], errors="coerce").fillna(0.0)
+    schedule["scheduled_total"] = pd.to_numeric(
+        schedule["scheduled_total"], errors="coerce"
+    ).fillna(0.0)
     paid["paid_total"] = pd.to_numeric(paid["paid_total"], errors="coerce").fillna(0.0)
 
     # Capture rows with invalid/blank dates before aggregation so they are not
@@ -107,7 +110,9 @@ def reconcile_payments(
             + ", scheduled_total="
             + sched_invalid["scheduled_total"].round(2).astype(str),
         )
-        invalid_date_unmatched.append(sched_invalid[["loan_id", "reason_code", "reason_detail", "status"]])
+        invalid_date_unmatched.append(
+            sched_invalid[["loan_id", "reason_code", "reason_detail", "status"]]
+        )
     paid_invalid = paid[paid["payment_date"].isna()].copy()
     if not paid_invalid.empty:
         paid_invalid = paid_invalid.assign(
@@ -118,7 +123,9 @@ def reconcile_payments(
             + ", paid_total="
             + paid_invalid["paid_total"].round(2).astype(str),
         )
-        invalid_date_unmatched.append(paid_invalid[["loan_id", "reason_code", "reason_detail", "status"]])
+        invalid_date_unmatched.append(
+            paid_invalid[["loan_id", "reason_code", "reason_detail", "status"]]
+        )
 
     # Aggregate only rows with valid dates
     sched_agg = (
@@ -194,7 +201,9 @@ class LocalMonthlySnapshotETL:
         fact_schedule = tables["fact_schedule"].copy()
         fact_real_payment = tables["fact_real_payment"].copy()
 
-        dim_loan["disbursement_date"] = pd.to_datetime(dim_loan["disbursement_date"], errors="coerce")
+        dim_loan["disbursement_date"] = pd.to_datetime(
+            dim_loan["disbursement_date"], errors="coerce"
+        )
         dim_loan["original_principal"] = pd.to_numeric(
             dim_loan["original_principal"], errors="coerce"
         ).fillna(0.0)
@@ -234,7 +243,9 @@ class LocalMonthlySnapshotETL:
             how="left",
         )
 
-        reconciliation, unmatched_reconciliation = reconcile_payments(fact_schedule, fact_real_payment)
+        reconciliation, unmatched_reconciliation = reconcile_payments(
+            fact_schedule, fact_real_payment
+        )
 
         not_specified_logs = [
             build_not_specified_log(dim_loan, "dim_loan"),
@@ -248,25 +259,26 @@ class LocalMonthlySnapshotETL:
 
         if control_mora_path:
             control_mora_path = Path(control_mora_path)
-            # Sniff delimiter (Control de Mora exports are often `;`-delimited from Excel)
-            # Read only the first 2048 bytes to avoid loading the full file into memory.
-            with control_mora_path.open("rb") as _fh:
-                raw_header = _fh.read(2048)
-            delimiter = ";" if b";" in raw_header else ","
-            control_mora_df = pd.read_csv(
-                control_mora_path,
-                dtype=str,
-                encoding="utf-8-sig",
-                sep=delimiter,
-                low_memory=False,
-            )
+            # Auto-detect delimiter to match ControlMoraAdapter behavior and handle Excel-style exports.
+            with control_mora_path.open("r", encoding="utf-8-sig", newline="") as _f:
+                _sample = _f.read(4096)
+                _f.seek(0)
+                try:
+                    _dialect = csv.Sniffer().sniff(_sample, delimiters=[",", ";", "\t", "|"])
+                    delimiter = _dialect.delimiter
+                except csv.Error:
+                    # Fallback to comma if sniffing fails.
+                    delimiter = ","
+                control_mora_df = pd.read_csv(_f, dtype=str, sep=delimiter, low_memory=False)
             unmatched_records = pd.concat(
                 [unmatched_records, build_not_specified_log(control_mora_df, "control_mora")],
                 ignore_index=True,
             )
 
         if "reason_code" in unmatched_records.columns:
-            unmatched_records["reason_code"] = unmatched_records["reason_code"].fillna("not_specified")
+            unmatched_records["reason_code"] = unmatched_records["reason_code"].fillna(
+                "not_specified"
+            )
 
         logger.info(
             "LocalMonthlySnapshotETL completed snapshot=%s loans=%d unmatched=%d",

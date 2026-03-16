@@ -38,30 +38,41 @@ jobs:
           fi
           echo "snapshot_month=$SNAPSHOT" >> "$GITHUB_OUTPUT"
 
+      - name: Preflight check for loan tape data
+        id: preflight
+        run: |
+          LOAN_TAPE_DIR="${{ github.event.inputs.loan_tape_dir || 'data/raw' }}"
+          echo "Using loan tape directory: $LOAN_TAPE_DIR"
+          if [ ! -d "$LOAN_TAPE_DIR" ]; then
+            echo "::warning::Loan tape directory '$LOAN_TAPE_DIR' does not exist — skipping local ETL run."
+            echo "has_data=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! ls "$LOAN_TAPE_DIR"/*.csv >/dev/null 2>&1; then
+            echo "::warning::No CSV files found in '$LOAN_TAPE_DIR' — skipping local ETL run."
+            echo "has_data=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Loan tape data found in '$LOAN_TAPE_DIR'; proceeding with local ETL."
+          echo "has_data=true" >> "$GITHUB_OUTPUT"
+
       - name: Setup Python
+        if: steps.preflight.outputs.has_data == 'true'
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
 
       - name: Install dependencies
+        if: steps.preflight.outputs.has_data == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Check input files exist
-        id: preflight
-        run: |
-          DIR="${{ github.event.inputs.loan_tape_dir || 'data/raw' }}"
-          if [ ! -d "$DIR" ] || [ -z "$(ls -A "$DIR" 2>/dev/null)" ]; then
-            echo "::warning::Loan tape directory '$DIR' is missing or empty — skipping ETL run"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Run local ETL
-        if: steps.preflight.outputs.skip != 'true'
+        if: steps.preflight.outputs.has_data == 'true'
         run: |
           python scripts/data/local_star_snapshot_etl.py \
             --loan-tape-dir "${{ github.event.inputs.loan_tape_dir || 'data/raw' }}" \
@@ -70,7 +81,7 @@ jobs:
             --output-dir exports/local_star
 
       - name: Validate unmatched records reason_code
-        if: steps.preflight.outputs.skip != 'true'
+        if: steps.preflight.outputs.has_data == 'true'
         run: |
           python - <<'PY'
           import pandas as pd
@@ -92,7 +103,7 @@ jobs:
           PY
 
       - name: Upload artifacts
-        if: always() && steps.preflight.outputs.skip != 'true'
+        if: always() && steps.preflight.outputs.has_data == 'true'
         uses: actions/upload-artifact@5349c256476b7a460d23bde9dc17a612d42fbaa4
         with:
           name: local-etl-${{ github.run_number }}
