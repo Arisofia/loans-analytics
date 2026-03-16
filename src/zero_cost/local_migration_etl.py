@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+import csv
 
 import pandas as pd
 
@@ -199,7 +200,18 @@ class LocalMonthlySnapshotETL:
         )
 
         if control_mora_path:
-            control_mora_df = pd.read_csv(control_mora_path, dtype=str, encoding="utf-8-sig")
+            # Auto-detect delimiter to match ControlMoraAdapter behavior and handle Excel-style exports.
+            control_mora_path = Path(control_mora_path)
+            with control_mora_path.open("r", encoding="utf-8-sig", newline="") as f:
+                sample = f.read(4096)
+                f.seek(0)
+                try:
+                    dialect = csv.Sniffer().sniff(sample, delimiters=[",", ";", "\t", "|"])
+                    delimiter = dialect.delimiter
+                except csv.Error:
+                    # Fallback to comma if sniffing fails.
+                    delimiter = ","
+                control_mora_df = pd.read_csv(f, dtype=str, sep=delimiter)
             unmatched_records = pd.concat(
                 [unmatched_records, build_not_specified_log(control_mora_df, "control_mora")],
                 ignore_index=True,
