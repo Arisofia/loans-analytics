@@ -359,3 +359,46 @@ class TestFuzzyIncomeMatcher:
             keep_unmatched=False,
         )
         assert len(result) < 4
+
+    def test_match_two_pass_exact_and_fuzzy_behavior(self):
+        from src.zero_cost.fuzzy_matcher import FuzzyIncomeMatcher
+
+        # Start from the helper DataFrames and introduce one exact match pair.
+        income_df = self._income_df().copy()
+        disb_df = self._disb_df().copy()
+
+        # Make the first row an exact match between income and disbursement.
+        income_df.loc[0, "nombre_cliente"] = "Exact Match Client"
+        disb_df.loc[0, "client_name"] = "Exact Match Client"
+
+        # Sanity check: we still have the same number of rows on each side.
+        assert len(income_df) == 4
+        assert len(disb_df) == 3
+
+        matcher = FuzzyIncomeMatcher(threshold=80)
+        result = matcher.match_two_pass(
+            income_df,
+            disb_df,
+            left_on="nombre_cliente",
+            right_on="client_name",
+            keep_unmatched=True,
+        )
+
+        # No rows should be dropped or duplicated from the left DataFrame.
+        assert len(result) == len(income_df)
+        assert set(result["nombre_cliente"]) == set(income_df["nombre_cliente"])
+        # Each left-side row should appear exactly once.
+        assert (result["nombre_cliente"].value_counts() == 1).all()
+
+        # The exact match client should be matched to the exact right row.
+        exact_left = "Exact Match Client"
+        exact_right_lend_id = disb_df.loc[
+            disb_df["client_name"] == exact_left, "lend_id"
+        ].iloc[0]
+        exact_row = result[result["nombre_cliente"] == exact_left].iloc[0]
+        assert exact_row["lend_id"] == exact_right_lend_id
+
+        # The income row with no reasonable counterpart should remain unmatched.
+        unmatched_name = "No Match Person XYZ"
+        unmatched_row = result[result["nombre_cliente"] == unmatched_name].iloc[0]
+        assert pd.isna(unmatched_row["lend_id"])
