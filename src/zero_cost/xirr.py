@@ -121,6 +121,7 @@ def xirr(
             result = _newton_raphson(_npv, _dnpv, g)
             if result is not None:
                 return result
+        except (ZeroDivisionError, OverflowError, FloatingPointError) as exc:
             logger.debug(
                 "Newton-Raphson failed for starting guess %s due to numerical error: %s",
                 g,
@@ -307,10 +308,12 @@ def _bisect(f, lo: float = -0.999, hi: float = 10.0, tol: float = _TOLERANCE, ma
             try:
                 fhi = f(scale)
                 if flo * fhi < 0:
-                logger.debug("Numerical error when evaluating function at scale=%s; trying next candidate.", scale)
                     break
             except (ZeroDivisionError, OverflowError):
-                pass
+                logger.debug(
+                    "Numerical error when evaluating function at scale=%s; trying next candidate.",
+                    scale,
+                )
         else:
             return None
 

@@ -405,6 +405,10 @@ class TestFuzzyIncomeMatcher:
         income_df.loc[0, "nombre_cliente"] = "Exact Match Client"
         disb_df.loc[0, "client_name"] = "Exact Match Client"
 
+        # Add a shared exact-join key so the exact pass fires for the first row.
+        income_df["client_id"] = ["C-001", "C-002", "C-003", "C-999"]
+        disb_df["client_id"] = ["C-001", "C-002", "C-XYZ"]
+
         # Sanity check: we still have the same number of rows on each side.
         assert len(income_df) == 4
         assert len(disb_df) == 3
@@ -413,9 +417,10 @@ class TestFuzzyIncomeMatcher:
         result = matcher.match_two_pass(
             income_df,
             disb_df,
-            exact_key="nombre_cliente",
-            fuzzy_left="nombre_cliente",
-            fuzzy_right="client_name",
+            left_on="nombre_cliente",
+            right_on="client_name",
+            exact_key="client_id",
+            keep_unmatched=True,
         )
 
         # No rows should be dropped or duplicated from the left DataFrame.
@@ -424,15 +429,11 @@ class TestFuzzyIncomeMatcher:
         # Each left-side row should appear exactly once.
         assert (result["nombre_cliente"].value_counts() == 1).all()
 
-        # The exact match client should be matched to the exact right row.
-        exact_left = "Exact Match Client"
-        exact_right_lend_id = disb_df.loc[
-            disb_df["client_name"] == exact_left, "lend_id"
-        ].iloc[0]
-        exact_row = result[result["nombre_cliente"] == exact_left].iloc[0]
-        assert exact_row["lend_id"] == exact_right_lend_id
+        # The exact-key-matched row should carry the correct lend_id.
+        exact_row = result[result["nombre_cliente"] == "Exact Match Client"].iloc[0]
+        expected_lend_id = disb_df.loc[disb_df["client_id"] == "C-001", "lend_id"].iloc[0]
+        assert exact_row["lend_id"] == expected_lend_id
 
         # The income row with no reasonable counterpart should remain unmatched.
-        unmatched_name = "No Match Person XYZ"
-        unmatched_row = result[result["nombre_cliente"] == unmatched_name].iloc[0]
+        unmatched_row = result[result["nombre_cliente"] == "No Match Person XYZ"].iloc[0]
         assert pd.isna(unmatched_row["lend_id"])
