@@ -122,6 +122,7 @@ SELECT
     i.month_end,
     i.currency,
     i.product_type,
+    i.branch_code,
     i.interest_collected,
     b.total_outstanding                                                    AS avg_outstanding,
     CASE WHEN b.total_outstanding > 0
@@ -131,7 +132,8 @@ FROM v_monthly_income    i
 LEFT JOIN v_monthly_outstanding_balance b
        ON  b.year_month    = i.year_month
        AND b.currency      = i.currency
-       AND b.product_type  = i.product_type;
+       AND b.product_type  = i.product_type
+       AND b.branch_code   = i.branch_code;
 
 -- ---------------------------------------------------------------------------
 -- v_kpi_summary
