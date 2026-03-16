@@ -85,7 +85,7 @@ beartype==0.22.9
     # via py-key-value-aio
 bidict==0.23.1
     # via python-socketio
-black==26.1.0
+black==26.3.1
     # via -r requirements-dev.txt
 blinker==1.9.0
     # via
