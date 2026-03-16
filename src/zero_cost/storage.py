@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import duckdb  # type: ignore[import]
-
+    _ = duckdb
     DUCKDB_AVAILABLE = True
 except ImportError:
     DUCKDB_AVAILABLE = False
