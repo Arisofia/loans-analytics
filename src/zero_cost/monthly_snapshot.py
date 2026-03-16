@@ -356,7 +356,9 @@ class MonthlySnapshotBuilder:
         self, df: pd.DataFrame, as_of_month: str | date | None
     ) -> pd.DataFrame:
         if as_of_month is not None:
-            df["snapshot_month"] = pd.to_datetime(str(as_of_month))
+            # Normalize to month-end so all code paths use the same semantics.
+            raw = pd.to_datetime(str(as_of_month))
+            df["snapshot_month"] = (raw + pd.offsets.MonthEnd(0)).normalize()
         elif "snapshot_month" not in df.columns:
             # Default to the current month-end to keep snapshot semantics consistent
             today = pd.Timestamp("today").normalize()
@@ -367,7 +369,11 @@ class MonthlySnapshotBuilder:
                 current_month_end.date(),
             )
         else:
-            df["snapshot_month"] = pd.to_datetime(df["snapshot_month"], errors="coerce")
+            # Normalize existing column values to month-end.
+            df["snapshot_month"] = (
+                pd.to_datetime(df["snapshot_month"], errors="coerce")
+                + pd.offsets.MonthEnd(0)
+            )
         return df
 
     def _join_monthly_income(

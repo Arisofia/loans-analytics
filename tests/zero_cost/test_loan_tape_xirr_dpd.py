@@ -290,6 +290,21 @@ class TestXIRR:
         rate = xirr(cashflows, dates)
         assert math.isfinite(rate), "XIRR should converge for valid flows"
 
+    def test_cashflows_order_independent(self):
+        """XIRR must return the same rate regardless of input order."""
+        from src.zero_cost.xirr import xirr
+
+        cashflows = [-1000.0, 1200.0]
+        dates_forward = ["2025-01-01", "2026-01-01"]
+        dates_reversed = ["2026-01-01", "2025-01-01"]
+        cashflows_reversed = [1200.0, -1000.0]
+
+        rate_fwd = xirr(cashflows, dates_forward)
+        rate_rev = xirr(cashflows_reversed, dates_reversed)
+        assert abs(rate_fwd - rate_rev) < 1e-6, (
+            f"Rate should be order-independent: {rate_fwd} vs {rate_rev}"
+        )
+
     def test_contractual_apr_monthly_compounding(self):
         """EAR for 24% nominal monthly = (1+0.02)^12 - 1 ≈ 26.82%."""
         from src.zero_cost.xirr import contractual_apr

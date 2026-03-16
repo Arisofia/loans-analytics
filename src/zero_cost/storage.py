@@ -33,7 +33,6 @@ try:
     DUCKDB_AVAILABLE = True
 except ImportError:
     DUCKDB_AVAILABLE = False
-    logger.info("duckdb not installed — SQL queries disabled (pip install duckdb)")
 
 
 class ZeroCostStorage:

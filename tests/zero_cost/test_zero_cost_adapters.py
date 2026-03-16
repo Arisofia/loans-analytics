@@ -298,6 +298,70 @@ class TestMonthlySnapshotBuilder:
         assert kpis["total_outstanding"] == pytest.approx(43000.0)
         assert kpis["total_overdue"] == pytest.approx(7000.0)
 
+    def test_compute_portfolio_kpis_active_loans(self):
+        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+
+        builder = MonthlySnapshotBuilder()
+        snap = builder.build(self._loans_df())
+        kpis = builder.compute_portfolio_kpis(snap)
+        # All 4 loans have principal_outstanding > 0 → all active
+        assert kpis["active_loans"] == 4
+
+    def test_compute_portfolio_kpis_active_loans_with_zero_outstanding(self):
+        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+
+        builder = MonthlySnapshotBuilder()
+        df = self._loans_df().copy()
+        df.loc[df["lend_id"] == "L-3", "principal_outstanding"] = 0
+        snap = builder.build(df)
+        kpis = builder.compute_portfolio_kpis(snap)
+        # L-3 has outstanding=0 → should not count as active
+        assert kpis["active_loans"] == 3
+
+    def test_compute_portfolio_kpis_active_loans_fallback(self):
+        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+
+        builder = MonthlySnapshotBuilder()
+        df = self._loans_df().drop(columns=["principal_outstanding"])
+        snap = builder.build(df)
+        kpis = builder.compute_portfolio_kpis(snap)
+        # No outstanding column → fallback: all loans treated as active
+        assert kpis["active_loans"] == kpis["total_loans"]
+
+    def test_compute_portfolio_kpis_weighted_avg_dpd(self):
+        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+
+        builder = MonthlySnapshotBuilder()
+        snap = builder.build(self._loans_df())
+        kpis = builder.compute_portfolio_kpis(snap)
+        # weighted_avg_dpd should be present and finite
+        assert "weighted_avg_dpd" in kpis
+        assert kpis["weighted_avg_dpd"] == pytest.approx(
+            (0 * 10000 + 35 * 20000 + 92 * 5000 + 0 * 8000) / 43000.0,
+            rel=1e-4,
+        )
+
+    def test_set_snapshot_month_explicit_normalizes_to_month_end(self):
+        """Explicit as_of_month must be normalized to the last day of the month."""
+        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+
+        builder = MonthlySnapshotBuilder()
+        df = self._loans_df().drop(columns=["snapshot_month"])
+        result = builder.build(df, as_of_month="2026-02-15")
+        expected = pd.Timestamp("2026-02-28")
+        assert (result["snapshot_month"] == expected).all()
+
+    def test_set_snapshot_month_column_normalizes_to_month_end(self):
+        """snapshot_month column mid-month values must be coerced to month-end."""
+        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+
+        builder = MonthlySnapshotBuilder()
+        df = self._loans_df().copy()
+        df["snapshot_month"] = pd.to_datetime("2026-03-10")
+        result = builder.build(df)
+        expected = pd.Timestamp("2026-03-31")
+        assert (result["snapshot_month"] == expected).all()
+
     def test_to_star_schema(self, tmp_path):
         from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
         from src.zero_cost.storage import ZeroCostStorage

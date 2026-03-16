@@ -90,9 +90,14 @@ def xirr(
     if len(cashflows) < 2:
         raise ValueError("At least two cash flows are required")
 
-    cfs = np.array(cashflows, dtype=float)
+    cfs_raw = np.array(cashflows, dtype=float)
     parsed_dates = [_to_date(d) for d in dates]
-    t0 = parsed_dates[0]
+
+    # Sort (cashflows, dates) by date so the result is independent of input order.
+    order = np.argsort(parsed_dates)
+    cfs = cfs_raw[order]
+    parsed_dates = [parsed_dates[i] for i in order]
+    t0 = parsed_dates[0]  # earliest date after sorting
     # Fractional years from t0
     years = np.array([(d - t0).days / 365.0 for d in parsed_dates])
 

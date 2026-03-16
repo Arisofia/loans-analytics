@@ -217,9 +217,15 @@ class ControlMoraAdapter:
 
     def _apply_snapshot_month(self, df: pd.DataFrame, path: Path) -> pd.DataFrame:
         if self.snapshot_month:
-            df["snapshot_month"] = pd.to_datetime(self.snapshot_month)
+            # Normalize to month-end for consistent routing/aggregation semantics.
+            raw = pd.to_datetime(self.snapshot_month)
+            df["snapshot_month"] = (raw + pd.offsets.MonthEnd(0)).normalize()
         elif "snapshot_month" in df.columns:
-            df["snapshot_month"] = pd.to_datetime(df["snapshot_month"], errors="coerce")
+            # Normalize existing column values to month-end.
+            df["snapshot_month"] = (
+                pd.to_datetime(df["snapshot_month"], errors="coerce")
+                + pd.offsets.MonthEnd(0)
+            )
         else:
             # Infer from filename pattern like "control_mora_ene2026.csv"
             match = re.search(r"(\d{4}[-_]\d{2}|\d{6}|\w{3}\d{4})", path.stem)
