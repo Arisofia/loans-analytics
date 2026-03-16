@@ -18,6 +18,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -183,12 +184,23 @@ class ZeroCostStorage:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _validate_identifier(self, name: str) -> str:
+        """Validate *name* as a safe SQL identifier for DuckDB.
+
+        Uses a conservative pattern: starts with a letter/underscore,
+        followed by letters, numbers, or underscores only.
+        """
+        if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name):
+            raise ValueError(f"Invalid DuckDB identifier: {name!r}")
+        return name
+
     def _register_table(self, table_name: str, table_dir: Path) -> None:
         """Register all Parquet files in *table_dir* as a DuckDB view."""
         conn = self._get_conn()
         glob_path = str(table_dir / "*.parquet")
+        safe_name = self._validate_identifier(table_name)
         conn.execute(
-            f"CREATE OR REPLACE VIEW {table_name} AS "
+            f'CREATE OR REPLACE VIEW "{safe_name}" AS '
             f"SELECT * FROM read_parquet('{glob_path}')"
         )
 
