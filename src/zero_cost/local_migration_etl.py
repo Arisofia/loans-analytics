@@ -143,7 +143,8 @@ class LocalMonthlySnapshotETL:
     """Generate monthly star-schema snapshot from local raw CSV files."""
 
     def __init__(self, snapshot_month: str) -> None:
-        self.snapshot_month = pd.Timestamp(snapshot_month)
+        snapshot_ts = pd.Timestamp(snapshot_month)
+        self.snapshot_month = snapshot_ts + pd.offsets.MonthEnd(0)
         self.loader = LoanTapeLoader(data_dir="data/raw")
         self.dpd_calculator = DPDCalculator()
 
