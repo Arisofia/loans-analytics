@@ -148,12 +148,29 @@ class Crosswalk:
         matched_tape: set[str] = set()
         matched_mora: set[str] = set()
 
-        for tid in tape_ids:
-            # Check against lend_id
-            if mora_id_col in control_mora_df.columns:
-                hit = control_mora_df[control_mora_df[mora_id_col].astype(str) == tid]
-                if not hit.empty:
-                    oid = str(hit[mora_id_col].iloc[0])
+        # Precompute distinct non-null tape_ids as strings for vectorized joins
+        if tape_ids:
+            loan_ids_df = pd.DataFrame({"loan_id": pd.Series(list(tape_ids), dtype=str)})
+        else:
+            loan_ids_df = pd.DataFrame(columns=["loan_id"])
+
+        # Exact matches against mora_id_col (e.g., lend_id)
+        if mora_id_col in control_mora_df.columns and not loan_ids_df.empty:
+            mora_id_series = control_mora_df[mora_id_col].dropna().astype(str)
+            if not mora_id_series.empty:
+                mora_id_df = pd.DataFrame({"operation_id": mora_id_series})
+                # Inner join on the stringified IDs
+                exact_id_matches = loan_ids_df.merge(
+                    mora_id_df,
+                    left_on="loan_id",
+                    right_on="operation_id",
+                    how="inner",
+                )
+                # Preserve original behavior of taking the first match per loan_id
+                exact_id_matches = exact_id_matches.drop_duplicates(subset=["loan_id"])
+                for _, row in exact_id_matches.iterrows():
+                    tid = str(row["loan_id"])
+                    oid = str(row["operation_id"])
                     records.append(
                         {
                             "loan_id": tid,
@@ -165,23 +182,36 @@ class Crosswalk:
                     )
                     matched_tape.add(tid)
                     matched_mora.add(oid)
-                    continue
-            # Check against numero_desembolso
-            if mora_numero_col in control_mora_df.columns:
-                hit = control_mora_df[control_mora_df[mora_numero_col].astype(str) == tid]
-                if not hit.empty:
-                    oid = str(hit[mora_numero_col].iloc[0])
-                    records.append(
-                        {
-                            "loan_id": tid,
-                            "operation_id": oid,
-                            "match_type": "exact",
-                            "reason_code": REASON_EXACT,
-                            "match_score": 100.0,
-                        }
+
+        # Exact matches against mora_numero_col (e.g., numero_desembolso) for remaining loans
+        if mora_numero_col in control_mora_df.columns and not loan_ids_df.empty:
+            # Only consider tape_ids not already matched via mora_id_col
+            remaining_loan_ids_df = loan_ids_df[~loan_ids_df["loan_id"].isin(matched_tape)]
+            if not remaining_loan_ids_df.empty:
+                mora_num_series = control_mora_df[mora_numero_col].dropna().astype(str)
+                if not mora_num_series.empty:
+                    mora_num_df = pd.DataFrame({"operation_id": mora_num_series})
+                    exact_num_matches = remaining_loan_ids_df.merge(
+                        mora_num_df,
+                        left_on="loan_id",
+                        right_on="operation_id",
+                        how="inner",
                     )
-                    matched_tape.add(tid)
-                    matched_mora.add(oid)
+                    exact_num_matches = exact_num_matches.drop_duplicates(subset=["loan_id"])
+                    for _, row in exact_num_matches.iterrows():
+                        tid = str(row["loan_id"])
+                        oid = str(row["operation_id"])
+                        records.append(
+                            {
+                                "loan_id": tid,
+                                "operation_id": oid,
+                                "match_type": "exact",
+                                "reason_code": REASON_EXACT,
+                                "match_score": 100.0,
+                            }
+                        )
+                        matched_tape.add(tid)
+                        matched_mora.add(oid)
 
         # Pass 2: fuzzy match (name + date) for unmatched tape loans
         unmatched_tape = [tid for tid in tape_ids if tid not in matched_tape]
