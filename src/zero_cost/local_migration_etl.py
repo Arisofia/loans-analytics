@@ -53,6 +53,19 @@ def _normalize_not_specified(value: object) -> bool:
     return str(value).strip().lower() in NOT_SPECIFIED_VALUES
 
 
+def _not_specified_mask(series: pd.Series) -> pd.Series:
+    """Vectorized equivalent of `_normalize_not_specified` for a pandas Series."""
+    # Treat explicit nulls/NaNs as not specified
+    na_mask = series.isna()
+
+    # Use pandas' nullable string dtype for consistent string operations
+    s_str = series.astype("string")
+    s_norm = s_str.str.strip().str.lower()
+
+    value_mask = s_norm.isin(NOT_SPECIFIED_VALUES)
+    return na_mask | value_mask
+
+
 def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
     """Build reason_code logs for fields with not-specified / null / NaT values.
 
@@ -69,7 +82,7 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
             truncated = True
             break
         if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_string_dtype(df[col]):
-            mask = df[col].apply(_normalize_not_specified)
+            mask = _not_specified_mask(df[col])
             detail_suffix = "no especificado/blank value"
         else:
             # For numeric/datetime columns flag null/NaT values
