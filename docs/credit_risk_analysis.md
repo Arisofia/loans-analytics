@@ -276,8 +276,8 @@ Response:
 | `total_scheduled` | Numeric |
 | `origination_fee` | Numeric |
 | `days_past_due` | Numeric |
-| `ltv_ratio` *(engineered)* | `collateral_value / principal_amount` |
-| `payment_ratio` *(engineered)* | `last_payment_amount / total_scheduled` (clamped to 0 when `total_scheduled = 0`) |
+| `ltv_ratio` *(engineered)* | `outstanding_balance / collateral_value * 100` |
+| `payment_ratio` *(engineered)* | `last_payment_amount / total_scheduled * 100` (clamped to 0 when `total_scheduled = 0`) |
 
 **Evaluation metrics**: AUC-ROC, accuracy, precision, recall, F1, cross-validation AUC.
 
