@@ -165,12 +165,23 @@ class ZeroCostStorage:
             f"SELECT * FROM read_parquet('{glob_path}')"
         )
 
+    def _compute_file_sha256(self, path: Path, chunk_size: int = 1024 * 1024) -> str:
+        """Compute a SHA-256 hash of the file at *path* by streaming its bytes.
+
+        This avoids loading the full file into memory and produces a stable,
+        audit-friendly hash of the persisted Parquet content.
+        """
+        hasher = hashlib.sha256()
+        with path.open("rb") as f:
+            for chunk in iter(lambda: f.read(chunk_size), b""):
+                hasher.update(chunk)
+        return hasher.hexdigest()
+
     def _write_manifest(
         self, df: pd.DataFrame, parquet_path: Path, table_name: str
     ) -> None:
         """Write a JSON audit manifest alongside the Parquet file."""
-        raw_bytes = df.to_json(orient="records", date_format="iso").encode()
-        content_hash = hashlib.sha256(raw_bytes).hexdigest()
+        content_hash = self._compute_file_sha256(parquet_path)
         manifest = {
             "table": table_name,
             "written_at": datetime.now(timezone.utc).isoformat(),
