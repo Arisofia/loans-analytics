@@ -272,8 +272,9 @@ class MonthlySnapshotBuilder:
         KPIs
         ----
         total_loans, active_loans, total_outstanding, total_overdue,
-        par_1, par_30, par_60, par_90 (as % of outstanding),
-        avg_dpd, weighted_avg_dpd
+        par_1, par_30, par_60, par_90 (as % of outstanding, with
+        corresponding par_1_pct, par_30_pct, par_60_pct, par_90_pct keys),
+        avg_dpd, weighted_avg_dpd, mora_distribution
         """
         kpis: dict = {}
         kpis["total_loans"] = len(snapshot_df)
@@ -291,6 +292,15 @@ class MonthlySnapshotBuilder:
         else:
             total_os = Decimal("0")
             kpis["total_outstanding"] = 0.0
+
+        # Active loans: loans with positive outstanding principal when available.
+        if "principal_outstanding" in snapshot_df.columns:
+            active_mask = snapshot_df["principal_outstanding"] > 0
+            # .sum() on a boolean Series counts True values.
+            kpis["active_loans"] = int(active_mask.sum())
+        else:
+            # Fallback: treat all loans in the snapshot as active.
+            kpis["active_loans"] = kpis["total_loans"]
 
         if "total_overdue_amount" in snapshot_df.columns:
             total_overdue_raw = snapshot_df["total_overdue_amount"].sum()
@@ -311,10 +321,27 @@ class MonthlySnapshotBuilder:
                 if pd.notna(par_amount_raw):
                     par_amount = Decimal(str(par_amount_raw))
                     par_pct = (par_amount / total_os) * Decimal("100")
-                    kpis[f"par_{threshold}_pct"] = float(par_pct)
+                    par_value = float(par_pct)
+                    # Backwards-compatible key with explicit _pct suffix.
+                    kpis[f"par_{threshold}_pct"] = par_value
+                    # Docstring-promised key without suffix.
+                    kpis[f"par_{threshold}"] = par_value
 
         if "dpd" in snapshot_df.columns:
             kpis["avg_dpd"] = float(snapshot_df["dpd"].mean())
+
+            # Principal-weighted average DPD when outstanding data is available.
+            if (
+                "principal_outstanding" in snapshot_df.columns
+                and snapshot_df["principal_outstanding"].notna().any()
+            ):
+                weights = snapshot_df["principal_outstanding"]
+                total_weight = weights.sum()
+                if pd.notna(total_weight) and float(total_weight) > 0.0:
+                    weighted_sum = (snapshot_df["dpd"] * weights).sum()
+                    # weighted_sum / total_weight is a DPD in days; float is acceptable here.
+                    weighted_avg_dpd = float(weighted_sum / total_weight)
+                    kpis["weighted_avg_dpd"] = weighted_avg_dpd
 
         if "mora_bucket" in snapshot_df.columns:
             kpis["mora_distribution"] = snapshot_df["mora_bucket"].value_counts().to_dict()
