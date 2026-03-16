@@ -653,6 +653,11 @@ class CalculationPhase:
         # Derived risk KPIs independent of YAML formulas.
         kpis.update(self._calculate_derived_risk_kpis(df))
 
+        # Velocity of Default: requires a date column to build a monthly default-rate series.
+        vd_kpi = self._compute_portfolio_velocity_of_default(df)
+        if vd_kpi is not None:
+            kpis["velocity_of_default"] = vd_kpi
+
         logger.info("Calculated %d KPIs", len(kpis))
         return kpis
 
@@ -669,6 +674,53 @@ class CalculationPhase:
         else:
             df_unique = df.drop_duplicates(dedupe_col)
         return engine_full, KPIFormulaEngine(df_unique)
+
+    def _compute_portfolio_velocity_of_default(self, df: pd.DataFrame) -> Optional[Decimal]:
+        """Build a monthly default-rate series and return the latest Velocity of Default.
+
+        Requires a date column and a ``status`` column.  Returns ``None`` when
+        insufficient data is available to compute at least two monthly periods.
+        """
+        date_col = next(
+            (
+                c
+                for c in (
+                    "origination_date",
+                    "FechaDesembolso",
+                    "application_date",
+                    "disbursement_date",
+                )
+                if c in df.columns
+            ),
+            None,
+        )
+        if date_col is None or "status" not in df.columns:
+            return None
+
+        work = df[[date_col, "status"]].copy()
+        work["_date"] = pd.to_datetime(work[date_col], errors="coerce", format="mixed")
+        work = work.dropna(subset=["_date"])
+        if work.empty:
+            return None
+
+        work["period"] = work["_date"].dt.to_period("M").astype(str)
+        monthly = (
+            work.groupby("period")["status"]
+            .apply(lambda s: round((s == "defaulted").sum() / len(s) * 100, 6))
+            .reset_index()
+            .sort_values("period")
+            .rename(columns={"status": "default_rate"})
+        )
+
+        if len(monthly) < 2:
+            return None
+
+        vd = self._calculate_velocity_of_default(monthly, default_rate_col="default_rate")
+        vd_clean = vd.dropna()
+        latest_vd = vd_clean.iloc[-1] if not vd_clean.empty else None
+        if latest_vd is None:
+            return None
+        return Decimal(str(round(float(latest_vd), 6)))
 
     def _calculate_derived_risk_kpis(self, df: pd.DataFrame) -> Dict[str, Decimal]:
         """Compute derived risk KPIs not covered by the formula catalog."""
@@ -696,7 +748,7 @@ class CalculationPhase:
             str(active_df.loc[active_df["status"] == "defaulted", balance_col].sum())
         )
 
-        return {
+        kpis: Dict[str, Decimal] = {
             "npl_ratio": npl_ratio,
             "npl_90_ratio": npl_ratio,
             "defaulted_outstanding_ratio": (defaulted_out / total_out) * 100,
@@ -704,6 +756,64 @@ class CalculationPhase:
                 active_df, balance_col, total_out
             ),
         }
+
+        # LTV Sintético portfolio-level summary
+        ltv_series = self._calculate_ltv_sintetico(df)
+        if not ltv_series.empty:
+            ltv_valid = ltv_series[ltv_series > 0]
+            if not ltv_valid.empty:
+                kpis["ltv_sintetico_mean"] = Decimal(str(round(float(ltv_valid.mean()), 6)))
+                high_risk_pct = float((ltv_valid > 1.0).sum()) / float(len(ltv_valid)) * 100
+                kpis["ltv_sintetico_high_risk_pct"] = Decimal(str(round(high_risk_pct, 4)))
+
+        return kpis
+
+    @staticmethod
+    def _calculate_ltv_sintetico(df: pd.DataFrame) -> "pd.Series[float]":
+        """Calculate Synthetic Factoring LTV at the loan level.
+
+        Formula: capital_desembolsado / (valor_nominal_factura * (1 - tasa_dilucion))
+
+        Returns an empty Series when the required columns are absent.
+        """
+        required = ("capital_desembolsado", "valor_nominal_factura", "tasa_dilucion")
+        if not all(col in df.columns for col in required):
+            logger.warning(
+                "Missing columns for LTV Sintético. Required: %s",
+                ", ".join(required),
+            )
+            return pd.Series(dtype=float)
+
+        valor_ajustado = pd.to_numeric(df["valor_nominal_factura"], errors="coerce").fillna(0.0) * (
+            1 - pd.to_numeric(df["tasa_dilucion"], errors="coerce").fillna(0.0)
+        )
+        capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce").fillna(0.0)
+
+        ltv = np.where(valor_ajustado > 0, capital / valor_ajustado, 0.0)
+        return pd.Series(ltv, index=df.index, dtype=float)
+
+    @staticmethod
+    def _calculate_velocity_of_default(
+        df_ts: pd.DataFrame, default_rate_col: str = "default_rate"
+    ) -> "pd.Series[float]":
+        """Calculate Velocity of Default (Vd) — first derivative of the default rate over time.
+
+        Args:
+            df_ts: DataFrame ordered chronologically by period (one row per month).
+            default_rate_col: Column containing the periodic default rate values.
+
+        Returns:
+            A Series of period-over-period changes (diff) in the default rate.
+            Returns an empty Series when the required column is absent.
+        """
+        if default_rate_col not in df_ts.columns:
+            logger.warning(
+                "_calculate_velocity_of_default: column '%s' not found.", default_rate_col
+            )
+            return pd.Series(dtype=float)
+
+        vd = pd.to_numeric(df_ts[default_rate_col], errors="coerce").diff()
+        return vd
 
     @staticmethod
     def _top_10_borrower_concentration(
@@ -1049,16 +1159,32 @@ class CalculationPhase:
     def _calculate_segment_par_metrics(
         grp: pd.DataFrame, balance_col: str, dpd_col: str, total_bal: float
     ) -> Dict[str, float]:
-        """Compute PAR30/60/90 for a segment group."""
+        """Compute PAR30/60/90 for a segment group, adjusted for carousel/kiting behaviour.
+
+        When the ``ratio_pago_real`` column is present, any account whose actual
+        payment ratio is below 1.0 is treated as having a minimum DPD of 90,
+        penalising silent delinquency even when the legacy system reports 0 DPD.
+        """
+        raw_dpd = pd.to_numeric(grp[dpd_col], errors="coerce").fillna(0.0)
+
+        # Kiting adjustment: accounts with ratio_pago_real < 1.0 are forced to DPD >= 90
+        if "ratio_pago_real" in grp.columns:
+            ratio = pd.to_numeric(grp["ratio_pago_real"], errors="coerce").fillna(1.0)
+            adjusted_dpd = np.where(ratio < 1.0, np.maximum(raw_dpd, 90), raw_dpd)
+        else:
+            adjusted_dpd = raw_dpd.to_numpy()
+
+        adjusted_dpd = pd.Series(adjusted_dpd, index=grp.index)
+
         return {
             "par_30": round(
-                float(grp.loc[grp[dpd_col] >= 30, balance_col].sum()) / total_bal * 100, 4
+                float(grp.loc[adjusted_dpd >= 30, balance_col].sum()) / total_bal * 100, 4
             ),
             "par_60": round(
-                float(grp.loc[grp[dpd_col] >= 60, balance_col].sum()) / total_bal * 100, 4
+                float(grp.loc[adjusted_dpd >= 60, balance_col].sum()) / total_bal * 100, 4
             ),
             "par_90": round(
-                float(grp.loc[grp[dpd_col] >= 90, balance_col].sum()) / total_bal * 100, 4
+                float(grp.loc[adjusted_dpd >= 90, balance_col].sum()) / total_bal * 100, 4
             ),
         }
 
