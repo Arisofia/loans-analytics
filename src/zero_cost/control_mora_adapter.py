@@ -223,7 +223,46 @@ class ControlMoraAdapter:
             # Infer from filename pattern like "control_mora_ene2026.csv"
             match = re.search(r"(\d{4}[-_]\d{2}|\d{6}|\w{3}\d{4})", path.stem)
             if match:
-                df["snapshot_month"] = pd.to_datetime(match.group(1), format="%b%Y", errors="coerce")
+                token = match.group(1)
+                # Decide parsing strategy based on the matched pattern:
+                #   - YYYY-MM or YYYY_MM
+                #   - YYYYMM
+                #   - 3-letter month token (possibly Spanish) + YYYY
+                if re.fullmatch(r"\d{4}[-_]\d{2}", token):
+                    # Normalize separator and parse as year-month
+                    normalized = token.replace("_", "-")
+                    df["snapshot_month"] = pd.to_datetime(
+                        normalized, format="%Y-%m", errors="coerce"
+                    )
+                elif re.fullmatch(r"\d{6}", token):
+                    # Compact year-month: YYYYMM
+                    df["snapshot_month"] = pd.to_datetime(
+                        token, format="%Y%m", errors="coerce"
+                    )
+                else:
+                    # Assume 3-letter month + 4-digit year, e.g. ene2026 / jan2026
+                    month_token = token[:3].lower()
+                    year_part = token[3:]
+                    # Map common Spanish abbreviations to English so %b can parse them
+                    es_to_en = {
+                        "ene": "jan",
+                        "feb": "feb",
+                        "mar": "mar",
+                        "abr": "apr",
+                        "may": "may",
+                        "jun": "jun",
+                        "jul": "jul",
+                        "ago": "aug",
+                        "sep": "sep",
+                        "oct": "oct",
+                        "nov": "nov",
+                        "dic": "dec",
+                    }
+                    normalized_month = es_to_en.get(month_token, month_token)
+                    normalized = f"{normalized_month}{year_part}"
+                    df["snapshot_month"] = pd.to_datetime(
+                        normalized, format="%b%Y", errors="coerce"
+                    )
             else:
                 df["snapshot_month"] = pd.NaT
             if df["snapshot_month"].isna().all():
