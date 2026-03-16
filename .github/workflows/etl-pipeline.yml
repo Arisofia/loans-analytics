@@ -181,6 +181,8 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SNAPSHOT_MONTH: ${{ github.event.inputs.snapshot_month }}
+          INPUT: ${{ needs.preflight.outputs.input_csv }}
+          MODE: ${{ needs.preflight.outputs.mode }}
         run: make run
 
       - name: Upload pipeline artifacts
