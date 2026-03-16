@@ -96,33 +96,36 @@ jobs:
           fi
           echo "✅ All required secrets present"
 
-      - name: Resolve pipeline inputs
+      - name: Resolve pipeline inputs and verify files
         id: resolve
         run: |
           CSV="${{ github.event.inputs.input_csv }}"
           MODE="${{ github.event.inputs.mode }}"
           RTYPE="${{ github.event.inputs.run_type }}"
 
-          # Scheduled runs: monthly cron = snapshot, daily cron = ingest
+          # Scheduled runs: monthly cron (08:00) = snapshot, daily (06:00) = ingest
           if [ "${{ github.event_name }}" = "schedule" ]; then
             HOUR=$(date -u +%H)
             [ "$HOUR" = "08" ] && RTYPE="snapshot" || RTYPE="ingest"
           fi
 
-          echo "input_csv=${CSV:-data/raw/abaco_real_data_20260202.csv}" >> "$GITHUB_OUTPUT"
-          echo "mode=${MODE:-full}"                                       >> "$GITHUB_OUTPUT"
-          echo "run_type=${RTYPE:-ingest}"                               >> "$GITHUB_OUTPUT"
+          # Default values
+          CSV="${CSV:-data/raw/abaco_real_data_20260202.csv}"
+          MODE="${MODE:-full}"
+          RTYPE="${RTYPE:-ingest}"
 
-      - name: Verify input file exists (if not dry-run)
-        if: steps.resolve.outputs.mode != 'dry-run'
-        run: |
-          CSV="${{ steps.resolve.outputs.input_csv }}"
-          if [ ! -f "$CSV" ]; then
+          # If the input file is missing, fall back to dry-run to avoid a hard failure.
+          # This is done in the same step so the output is always consistent.
+          if [ "$MODE" != "dry-run" ] && [ ! -f "$CSV" ]; then
             echo "⚠️  Input CSV '$CSV' not found — switching to dry-run mode"
-            echo "mode=dry-run" >> "$GITHUB_OUTPUT"
+            MODE="dry-run"
           else
-            echo "✅ Input file found: $CSV"
+            [ "$MODE" != "dry-run" ] && echo "✅ Input file found: $CSV"
           fi
+
+          echo "input_csv=${CSV}" >> "$GITHUB_OUTPUT"
+          echo "mode=${MODE}"     >> "$GITHUB_OUTPUT"
+          echo "run_type=${RTYPE}" >> "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------------------------
   # 2. Run tests

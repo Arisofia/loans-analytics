@@ -8,6 +8,20 @@ Single source of truth for script execution paths. Use only these commands.
 - Validate structure: `python3 scripts/maintenance/validate_structure.py`
 - Analyze real input files: `python3 scripts/data/analyze_real_data.py --data-dir ~/Downloads`
 
+## Zero-Cost ETL (DuckDB + Parquet — replaces Azure)
+
+> These are the canonical entry points for the zero-cost stack. Use `make` targets when available.
+
+- Full pipeline (ingest + schema + snapshot): `make run`
+- Tests only: `make test`
+- Ingest only (loan tape or Control de Mora): `make etl-local INPUT=data/raw/<file>.csv`
+- Initialise DuckDB star schema: `make zero-cost-schema`
+  _(Equivalent: `python3 scripts/data/init_duckdb_schema.py`)_
+- Build monthly snapshot: `make snapshot-build MONTH=2026-02-28`
+  _(Equivalent: `python3 scripts/data/build_snapshot.py --month 2026-02-28`)_
+- Local stack (API + dashboard via Docker): `make zero-cost-up`
+- Stop local stack: `make zero-cost-down`
+
 ## Synthetic Data
 
 - Generate synthetic loan dataset: `python3 scripts/data/generate_sample_data.py`

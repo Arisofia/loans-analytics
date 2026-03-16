@@ -198,20 +198,24 @@ class TestControlMoraAdapter:
         assert "snapshot_month" in df.columns
         assert df["snapshot_month"].notna().all()
 
-    def test_snapshot_month_inference_warning_on_unparseable_filename(self, tmp_path):
+    def test_snapshot_month_inference_warning_on_unparseable_filename(self, tmp_path, caplog):
         from src.zero_cost.control_mora_adapter import ControlMoraAdapter
 
         adapter = ControlMoraAdapter(snapshot_month=None)
         # Use a filename that does not encode a month to trigger the warning path.
         csv_path = self._make_mora_csv(tmp_path, filename="control_mora_raw.csv")
 
-        with pytest.warns(UserWarning):
+        import logging
+
+        with caplog.at_level(logging.WARNING, logger="src.zero_cost.control_mora_adapter"):
             df = adapter.load(csv_path)
 
         # Even on failure, the adapter should expose a snapshot_month column,
         # but its values should be NaT (all missing).
         assert "snapshot_month" in df.columns
         assert df["snapshot_month"].isna().all()
+        # A logger.warning should have been emitted about the unparseable filename.
+        assert any("snapshot_month" in record.message for record in caplog.records)
 
     def test_snapshot_month_set(self, tmp_path):
         from src.zero_cost.control_mora_adapter import ControlMoraAdapter

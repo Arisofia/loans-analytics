@@ -172,12 +172,13 @@ class FuzzyIncomeMatcher:
         self,
         left_df: pd.DataFrame,
         right_df: pd.DataFrame,
-        exact_key: str,
-        fuzzy_left: str,
-        fuzzy_right: str,
+        left_on: str,
+        right_on: str,
+        exact_key: str | None = None,
         score_col: str = "fuzzy_score",
+        keep_unmatched: bool = True,
     ) -> pd.DataFrame:
-        """Exact join first, then fuzzy for unmatched rows.
+        """Exact join first (when *exact_key* is given), then fuzzy for unmatched rows.
 
         Parameters
         ----------
@@ -185,57 +186,65 @@ class FuzzyIncomeMatcher:
             Income DataFrame.
         right_df:
             Disbursement DataFrame.
+        left_on:
+            Column in *left_df* used for the fuzzy pass.
+        right_on:
+            Column in *right_df* used for the fuzzy pass.
         exact_key:
-            Column present in both DataFrames for the exact-join pass
-            (e.g., ``client_id``).
-        fuzzy_left / fuzzy_right:
-            Name columns used for the fuzzy fallback.
+            Optional column present in both DataFrames for the first exact-join
+            pass (e.g., ``client_id``).  When ``None``, all rows go through the
+            fuzzy pass.
         score_col:
-            Score column added to fuzzy results.
+            Score column added to the result.
+        keep_unmatched:
+            When ``True`` (default), include left rows that could not be matched.
 
         Returns
         -------
         pd.DataFrame
-            Combined result from both passes.
+            Combined result preserving every left-side row exactly once.
         """
-        # Pass 1: exact join
-        # Preserve the original left_df index so we can correctly identify
-        # which left rows participated in the exact match.
-        left_with_idx = left_df.assign(_left_index=left_df.index)
+        matched_positions: set[int] = set()
+        exact_parts: list[pd.DataFrame] = []
 
-        exact = left_with_idx.merge(
-            right_df,
-            on=exact_key,
-            how="inner",
-            suffixes=("", "_right"),
-        )
-        exact[score_col] = 100.0
+        if exact_key and exact_key in left_df.columns and exact_key in right_df.columns:
+            # Add a positional tracker that survives the merge index reset.
+            left_tagged = left_df.copy()
+            left_tagged["_pos"] = range(len(left_tagged))
 
-        # matched_idx now correctly refers to the original left_df indices
-        matched_idx = exact["_left_index"].unique()
+            exact_merge = left_tagged.merge(
+                right_df, on=exact_key, how="inner", suffixes=("", "_right")
+            )
+            if not exact_merge.empty:
+                exact_merge[score_col] = 100.0
+                matched_positions.update(exact_merge["_pos"].tolist())
+                exact_parts.append(exact_merge.drop(columns=["_pos"]))
 
-        unmatched_left = left_df[~left_df.index.isin(matched_idx)].copy()
+        # Pass 2: fuzzy match only on rows not already matched in pass 1.
+        unmatched_left = left_df.iloc[
+            [i for i in range(len(left_df)) if i not in matched_positions]
+        ].copy()
 
-        if len(unmatched_left) == 0:
-            # Drop helper column before returning to avoid changing the schema
-            return exact.drop(columns=["_left_index"])
+        if len(unmatched_left) > 0:
+            fuzzy_result = self.match(
+                unmatched_left,
+                right_df,
+                left_on=left_on,
+                right_on=right_on,
+                score_col=score_col,
+                keep_unmatched=keep_unmatched,
+            )
+        else:
+            fuzzy_result = pd.DataFrame()
 
-        # Pass 2: fuzzy match on the unmatched portion
-        fuzzy_result = self.match(
-            unmatched_left,
-            right_df,
-            left_on=fuzzy_left,
-            right_on=fuzzy_right,
-            score_col=score_col,
-        )
+        parts = [df for df in exact_parts + [fuzzy_result] if not df.empty]
+        if not parts:
+            return pd.DataFrame(columns=list(left_df.columns))
 
-        # Drop helper column used to track original left_df indices
-        exact = exact.drop(columns=["_left_index"])
-
-        combined = pd.concat([exact, fuzzy_result], ignore_index=True)
+        combined = pd.concat(parts, ignore_index=True)
         logger.info(
             "Two-pass: %d exact + %d fuzzy = %d total",
-            len(exact),
+            sum(len(e) for e in exact_parts),
             len(fuzzy_result),
             len(combined),
         )
