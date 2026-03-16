@@ -305,9 +305,9 @@ A Polars-native vectorised engine that assigns recourse strategies to delinquent
 
 | Strategy | Trigger | Action |
 |----------|---------|--------|
-| **Recourse** | DPD > 90 | Chargeback |
-| **Non-Recourse** | DPD > 90 + insolvency flag | Insurance claim |
-| **Hybrid** | Combined recourse / non-recourse portfolio | Mixed logic |
+| **Recourse** | `days_overdue` > 90 | `recourse_action` = `chargeback` |
+| **Non-Recourse** | `days_overdue` > 90 and insolvency flag set | `recourse_action` = `insurance_claim` |
+| **Hybrid** | Combined recourse / non-recourse portfolio rules | Portfolio-level mix of `chargeback` / `insurance_claim` in `recourse_action` |
 
 ---
 
