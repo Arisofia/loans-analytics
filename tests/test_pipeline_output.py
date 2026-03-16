@@ -119,3 +119,55 @@ def test_execute_exports_segment_snapshot_when_clean_data_available(tmp_path):
     assert payload["run_id"] == tmp_path.name
     assert "company" in payload["dimensions"]
     assert payload["dimensions"]["company"][0]["loan_count"] == 2
+
+
+def test_execute_exports_full_ml_intelligence_payload(tmp_path):
+    """OutputPhase must export segment_kpis, time_series, anomalies and nsm_recurrent_tpv
+    when those payloads are supplied, so that no analytical intelligence is silently discarded."""
+    output = OutputPhase({"database": {"enabled": False}})
+
+    segment_kpis = {"product_type": [{"segment": "SME", "par_30": 5.0}]}
+    time_series = {"dates": ["2026-01-31"], "par_30": [5.0]}
+    anomalies = [{"kpi": "default_rate", "value": 42.0, "severity": "high"}]
+    nsm_tpv = {"total_tpv": 1_000_000, "recurrent_clients": 12}
+
+    result = output.execute(
+        kpi_results={"par_30": 5.0},
+        run_dir=tmp_path,
+        segment_kpis=segment_kpis,
+        time_series=time_series,
+        anomalies=anomalies,
+        nsm_recurrent_tpv=nsm_tpv,
+    )
+
+    assert result["status"] == "success"
+    exports = result["exports"]
+
+    assert "segment_kpis" in exports
+    assert (tmp_path / "segment_kpis.json").exists()
+
+    assert "time_series" in exports
+    assert (tmp_path / "time_series.json").exists()
+
+    assert "anomalies" in exports
+    assert (tmp_path / "anomalies.json").exists()
+
+    assert "nsm_recurrent_tpv" in exports
+    assert (tmp_path / "nsm_recurrent_tpv_output.json").exists()
+
+    with open(tmp_path / "anomalies.json", encoding="utf-8") as fh:
+        saved = json.load(fh)
+    assert saved[0]["kpi"] == "default_rate"
+
+
+def test_execute_omits_payload_keys_when_not_supplied(tmp_path):
+    """When optional ML intelligence payloads are absent, their keys must not appear in exports."""
+    output = OutputPhase({"database": {"enabled": False}})
+
+    result = output.execute(kpi_results={"par_30": 3.1}, run_dir=tmp_path)
+
+    assert result["status"] == "success"
+    assert "segment_kpis" not in result["exports"]
+    assert "time_series" not in result["exports"]
+    assert "anomalies" not in result["exports"]
+    assert "nsm_recurrent_tpv" not in result["exports"]

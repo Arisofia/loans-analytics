@@ -152,6 +152,43 @@ class TestNullHandling:
         assert actions.get("last_payment_amount") == "filled_zero (cashflow_semantics)"
         assert actions.get("recovery_value") == "filled_zero (cashflow_semantics)"
 
+    def test_smart_strategy_uses_structural_zero_not_median(self):
+        """Financial null values below LOW_NULL_THRESHOLD must use structural zeros + opacity
+        flags instead of median imputation."""
+        config = {"null_handling": {"strategy": "smart"}}
+        transformer = TransformationPhase(config)
+        # Build a dataset where null_pct is strictly below LOW_NULL_THRESHOLD_PCT (5.0).
+        # 1 null out of 40 rows = 2.5%  <  LOW_NULL_THRESHOLD_PCT → structural-zero path.
+        threshold = TransformationPhase.LOW_NULL_THRESHOLD_PCT  # 5.0
+        total_rows = int(100 / threshold) * 2  # 40 rows → 2.5% null rate
+        values = [float(i) for i in range(1, total_rows)] + [None]
+        df = pd.DataFrame({"loan_id": [f"L{i}" for i in range(total_rows)], "amount": values})
+
+        out, metrics = transformer._handle_nulls(df)
+
+        # Null must be filled with 0, not the median
+        assert out["amount"].iloc[-1] == 0.0, "Expected structural zero, not median imputation"
+        # An opacity flag column must be created
+        assert "amount_is_missing" in out.columns
+        assert bool(out["amount_is_missing"].iloc[-1]) is True
+        # Non-null rows must have flag = False
+        assert not out["amount_is_missing"].iloc[0]
+        actions = metrics.get("smart_actions", {})
+        assert "filled_structural_zero+flag" in actions.get("amount", "")
+
+    def test_structural_zero_flag_preserves_non_null_values(self):
+        """Structural-zero fill must not alter existing non-null values."""
+        config = {"null_handling": {"strategy": "smart"}}
+        transformer = TransformationPhase(config)
+        values = [100.0, None, 200.0, 300.0] + [float(i) for i in range(400, 420)]
+        df = pd.DataFrame({"loan_id": [f"L{i}" for i in range(24)], "dpd": values})
+
+        out, _ = transformer._handle_nulls(df)
+
+        assert out["dpd"].iloc[0] == 100.0
+        assert out["dpd"].iloc[2] == 200.0
+        assert out["dpd"].iloc[3] == 300.0
+
 
 class TestTypeNormalization:
     """Test type normalization functionality."""

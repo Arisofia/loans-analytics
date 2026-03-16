@@ -58,14 +58,22 @@ class OutputPhase:
         kpi_results: Dict[str, Any],
         run_dir: Optional[Path] = None,
         kpi_engine: Optional["KPIEngineV2"] = None,
+        segment_kpis: Optional[Dict[str, Any]] = None,
+        time_series: Optional[Dict[str, Any]] = None,
+        anomalies: Optional[list] = None,
+        nsm_recurrent_tpv: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Execute output phase.
 
         Args:
-            kpi_results: KPI calculation results from Phase 3
+            kpi_results: Flat KPI calculation results from Phase 3
             run_dir: Directory for this pipeline run
             kpi_engine: Optional KPIEngineV2 instance for audit trail export
+            segment_kpis: Per-dimension segment KPIs produced by CalculationPhase
+            time_series: Time-series rollup data produced by CalculationPhase
+            anomalies: Anomaly records produced by CalculationPhase
+            nsm_recurrent_tpv: NSM recurrent TPV payload produced by CalculationPhase
 
         Returns:
             Output results including export paths
@@ -92,6 +100,27 @@ class OutputPhase:
                 segment_snapshot_path = self._export_segment_snapshot(run_dir)
                 if segment_snapshot_path is not None:
                     exports["segment_snapshot"] = str(segment_snapshot_path)
+
+                # Export full ML intelligence payload
+                if segment_kpis:
+                    seg_kpi_path = self._export_payload_json(
+                        segment_kpis, run_dir, "segment_kpis.json"
+                    )
+                    exports["segment_kpis"] = str(seg_kpi_path)
+
+                if time_series:
+                    ts_path = self._export_payload_json(time_series, run_dir, "time_series.json")
+                    exports["time_series"] = str(ts_path)
+
+                if anomalies:
+                    anomalies_path = self._export_payload_json(anomalies, run_dir, "anomalies.json")
+                    exports["anomalies"] = str(anomalies_path)
+
+                if nsm_recurrent_tpv:
+                    nsm_path = self._export_payload_json(
+                        nsm_recurrent_tpv, run_dir, "nsm_recurrent_tpv_output.json"
+                    )
+                    exports["nsm_recurrent_tpv"] = str(nsm_path)
 
             # Export KPI audit trail if engine is provided
             if kpi_engine is not None:
@@ -177,6 +206,18 @@ class OutputPhase:
             json.dump(kpi_results, f, indent=2, default=str)
 
         logger.info("Exported JSON: %s", output_path)
+        return output_path
+
+    def _export_payload_json(self, payload: Any, run_dir: Path, filename: str) -> Path:
+        """Export an arbitrary ML intelligence payload to a named JSON file.
+
+        Used to preserve full calculation intelligence (segment KPIs, time-series,
+        anomalies, NSM TPV) so that no analytical output is silently discarded.
+        """
+        output_path = run_dir / filename
+        with open(output_path, "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, indent=2, default=str)
+        logger.info("Exported payload: %s", output_path)
         return output_path
 
     def _export_segment_snapshot(self, run_dir: Path) -> Optional[Path]:
