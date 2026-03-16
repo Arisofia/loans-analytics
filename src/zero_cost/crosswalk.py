@@ -38,8 +38,6 @@ try:
 
     _RAPIDFUZZ = True
 except ImportError:
-    import difflib  # noqa: PLC0415
-
     _RAPIDFUZZ = False
 
 
