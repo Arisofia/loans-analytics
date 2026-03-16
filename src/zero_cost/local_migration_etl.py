@@ -144,14 +144,43 @@ def reconcile_payments(
             paid_invalid[["loan_id", "reason_code", "reason_detail", "status"]]
         )
 
-    # Aggregate only rows with valid dates
+    # Capture rows with missing loan_id before aggregation so they are not
+    # silently dropped by groupby (which drops NA keys by default).
+    sched_missing_loan = schedule[schedule["loan_id"].isna()].copy()
+    if not sched_missing_loan.empty:
+        sched_missing_loan = sched_missing_loan.assign(
+            status="invalid_key",
+            reason_code="missing_loan_id_schedule",
+            reason_detail="loan_id=NaN, scheduled_date="
+            + sched_missing_loan["scheduled_date"].astype(str)
+            + ", scheduled_total="
+            + sched_missing_loan["scheduled_total"].round(2).astype(str),
+        )
+        invalid_date_unmatched.append(
+            sched_missing_loan[["loan_id", "reason_code", "reason_detail", "status"]]
+        )
+    paid_missing_loan = paid[paid["loan_id"].isna()].copy()
+    if not paid_missing_loan.empty:
+        paid_missing_loan = paid_missing_loan.assign(
+            status="invalid_key",
+            reason_code="missing_loan_id_payment",
+            reason_detail="loan_id=NaN, payment_date="
+            + paid_missing_loan["payment_date"].astype(str)
+            + ", paid_total="
+            + paid_missing_loan["paid_total"].round(2).astype(str),
+        )
+        invalid_date_unmatched.append(
+            paid_missing_loan[["loan_id", "reason_code", "reason_detail", "status"]]
+        )
+
+    # Aggregate only rows with valid dates and non-null loan_id
     sched_agg = (
-        schedule.dropna(subset=["scheduled_date"])
+        schedule.dropna(subset=["scheduled_date", "loan_id"])
         .groupby(["loan_id", "scheduled_date"], as_index=False)["scheduled_total"]
         .sum()
     )
     paid_agg = (
-        paid.dropna(subset=["payment_date"])
+        paid.dropna(subset=["payment_date", "loan_id"])
         .groupby(["loan_id", "payment_date"], as_index=False)["paid_total"]
         .sum()
     )
