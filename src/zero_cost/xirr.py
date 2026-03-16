@@ -308,6 +308,7 @@ def _bisect(f, lo: float = -0.999, hi: float = 10.0, tol: float = _TOLERANCE, ma
             try:
                 fhi = f(scale)
                 if flo * fhi < 0:
+                    hi = scale
                     break
             except (ZeroDivisionError, OverflowError):
                 logger.debug(
