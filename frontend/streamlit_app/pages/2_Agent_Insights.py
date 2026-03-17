@@ -11,9 +11,10 @@ import streamlit as st
 from python.logging_config import get_logger
 
 # Add project root to path
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
+for _p in (ROOT_DIR / "backend", ROOT_DIR / "frontend", ROOT_DIR):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 logger = get_logger(__name__)
 

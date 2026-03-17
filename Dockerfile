@@ -29,7 +29,7 @@ FROM python:3.12-slim AS runtime
 # Set runtime environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app \
+    PYTHONPATH=/app:/app/backend:/app/frontend \
     API_HOST=0.0.0.0 \
     API_PORT=8000
 

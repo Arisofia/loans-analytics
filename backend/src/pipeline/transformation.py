@@ -74,7 +74,7 @@ class TransformationPhase:
     }
 
     # Null handling thresholds and constants
-    LOW_NULL_THRESHOLD_PCT: float = 5.0  # Below this: fill with median/mode
+    LOW_NULL_THRESHOLD_PCT: float = 5.0  # Below this: use structural zero + opacity flag
     HIGH_NULL_THRESHOLD_PCT: float = 30.0  # Above this: use default fill
     MISSING_NUMERIC_INDICATOR: int = -999  # Indicator for missing numeric values
     # Cash-flow transaction fields where null should mean "no movement" (0),
@@ -898,9 +898,13 @@ class TransformationPhase:
         Intelligent null handling based on null percentage and column importance.
 
         Uses configurable thresholds:
-        - < LOW_NULL_THRESHOLD_PCT: Fill with median (numeric) or mode (categorical)
+        - < LOW_NULL_THRESHOLD_PCT: Structural zero fill + boolean opacity flag
         - LOW to HIGH_NULL_THRESHOLD_PCT: Fill with missing indicator
         - > HIGH_NULL_THRESHOLD_PCT: Log warning, fill with default
+
+        No mean/median imputation is ever applied to financial numeric columns.
+        Opacity flags (``{col}_is_missing``) let downstream ML models learn from
+        the absence of data rather than being misled by statistical substitutes.
         """
         total_rows = len(df)
         actions = self._process_null_columns(df, null_columns, total_rows)
@@ -928,18 +932,27 @@ class TransformationPhase:
             return "filled_zero (cashflow_semantics)"
 
         if null_pct < self.LOW_NULL_THRESHOLD_PCT:
-            return self._fill_numeric_with_median(df, col)
+            return self._fill_numeric_with_structural_zero(df, col)
         if null_pct < self.HIGH_NULL_THRESHOLD_PCT:
             return self._fill_numeric_with_indicator(df, col)
         return self._fill_numeric_with_zero(df, col, null_pct)
 
-    def _fill_numeric_with_median(self, df: pd.DataFrame, col: str) -> str:
-        """Fill numeric nulls with median value."""
-        median_val = df[col].median()
-        if pd.isna(median_val):
-            median_val = 0
-        df[col] = df[col].fillna(median_val)
-        return f"filled_median ({median_val:.2f})"
+    def _fill_numeric_with_structural_zero(self, df: pd.DataFrame, col: str) -> str:
+        """Fill numeric nulls with structural zero and add a boolean opacity flag.
+
+        Implements the "structural zeros + opacity flag" pattern:
+        - Null values are filled with 0 (structural zero, not a statistical estimate).
+        - A boolean indicator column ``{col}_is_missing`` is added so that ML models
+          can distinguish genuine zeros from imputed ones.
+
+        This replaces median/mean imputation to avoid injecting statistical bias
+        into financial data used for credit risk models.
+        """
+        null_mask = df[col].isna()
+        flag_col = f"{col}_is_missing"
+        df[flag_col] = null_mask
+        df[col] = df[col].fillna(0)
+        return f"filled_structural_zero+flag ({null_mask.sum()} nulls → {flag_col})"
 
     def _fill_numeric_with_indicator(self, df: pd.DataFrame, col: str) -> str:
         """Fill numeric nulls with missing indicator."""

@@ -285,7 +285,14 @@ class UnifiedPipeline:
                     phase_name="output",
                     run_id=run_id,
                     executor=self.output.execute,
-                    kwargs={"kpi_results": phase3_results.get("kpis", {}), "run_dir": run_dir},
+                    kwargs={
+                        "kpi_results": phase3_results.get("kpis", {}),
+                        "run_dir": run_dir,
+                        "segment_kpis": phase3_results.get("segment_kpis"),
+                        "time_series": phase3_results.get("time_series"),
+                        "anomalies": phase3_results.get("anomalies"),
+                        "nsm_recurrent_tpv": phase3_results.get("nsm_recurrent_tpv"),
+                    },
                 )
                 results["phases"]["output"] = phase4_results
                 results["phase_metrics"]["output"] = {

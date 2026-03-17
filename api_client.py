@@ -5,6 +5,39 @@ from typing import Any, Dict, Optional
 
 import requests
 from requests import Response
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+
+def _build_session(retries: int = 3, backoff_factor: float = 0.3) -> requests.Session:
+    """Return a requests.Session with a connection pool and retry policy.
+
+    The session re-uses underlying TCP connections (keep-alive) and retries
+    transient server/network errors automatically, making every call cheaper
+    and more resilient than calling ``requests.get/post`` directly.
+
+    Retries are intentionally limited to idempotent read-only methods (GET, HEAD,
+    OPTIONS) to avoid unintended duplicate side-effects on write operations.
+    """
+    session = requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=(429, 500, 502, 503, 504),
+        # Only retry idempotent methods; POST/PUT/DELETE must NOT be retried
+        # automatically to prevent duplicate writes or unintended state changes.
+        allowed_methods=frozenset(["GET", "HEAD", "OPTIONS"]),
+    )
+    adapter = HTTPAdapter(
+        max_retries=retry,
+        pool_connections=4,
+        pool_maxsize=10,
+    )
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
 
 
 class AbacoAnalyticsApiClient:
@@ -19,6 +52,13 @@ class AbacoAnalyticsApiClient:
         ).rstrip("/")
         self.api_token = api_token or os.getenv("ABACO_API_TOKEN")
         self.timeout = timeout
+        self._session = _build_session()
+
+    def __enter__(self) -> "AbacoAnalyticsApiClient":
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self._session.close()
 
     def _headers(self) -> Dict[str, str]:
         headers: Dict[str, str] = {
@@ -46,47 +86,63 @@ class AbacoAnalyticsApiClient:
 
     def get_drilldown_statuses(self) -> Dict[str, str]:
         url = f"{self.base_url}/drilldowns/status"
-        resp = requests.get(url, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.get(url, headers=self._headers(), timeout=self.timeout)
         return self._handle_response(resp)
 
     def calculate_all_kpis(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/analytics/kpis"
-        resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(
+            url, json=portfolio, headers=self._headers(), timeout=self.timeout
+        )
         return self._handle_response(resp)
 
     def calculate_par30(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/analytics/kpis/par30"
-        resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(
+            url, json=portfolio, headers=self._headers(), timeout=self.timeout
+        )
         return self._handle_response(resp)
 
     def calculate_par90(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/analytics/kpis/par90"
-        resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(
+            url, json=portfolio, headers=self._headers(), timeout=self.timeout
+        )
         return self._handle_response(resp)
 
     def calculate_collection_rate(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/analytics/kpis/collection-rate"
-        resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(
+            url, json=portfolio, headers=self._headers(), timeout=self.timeout
+        )
         return self._handle_response(resp)
 
     def calculate_portfolio_health(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/analytics/kpis/portfolio-health"
-        resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(
+            url, json=portfolio, headers=self._headers(), timeout=self.timeout
+        )
         return self._handle_response(resp)
 
     def calculate_ltv(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/analytics/kpis/ltv"
-        resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(
+            url, json=portfolio, headers=self._headers(), timeout=self.timeout
+        )
         return self._handle_response(resp)
 
     def calculate_dti(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/analytics/kpis/dti"
-        resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(
+            url, json=portfolio, headers=self._headers(), timeout=self.timeout
+        )
         return self._handle_response(resp)
 
     def calculate_portfolio_yield(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/analytics/kpis/portfolio-yield"
-        resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(
+            url, json=portfolio, headers=self._headers(), timeout=self.timeout
+        )
         return self._handle_response(resp)
 
     def get_risk_alerts(
@@ -99,25 +155,31 @@ class AbacoAnalyticsApiClient:
         body = dict(portfolio)
         body["ltv_threshold"] = ltv_threshold
         body["dti_threshold"] = dti_threshold
-        resp = requests.post(url, json=body, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(url, json=body, headers=self._headers(), timeout=self.timeout)
         return self._handle_response(resp)
 
     def run_full_analysis(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/analytics/full-analysis"
-        resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(
+            url, json=portfolio, headers=self._headers(), timeout=self.timeout
+        )
         return self._handle_response(resp)
 
     def get_executive_summary(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/analytics/executive-summary"
-        resp = requests.post(url, json=payload, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(url, json=payload, headers=self._headers(), timeout=self.timeout)
         return self._handle_response(resp)
 
     def get_data_quality_profile(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/data-quality/profile"
-        resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(
+            url, json=portfolio, headers=self._headers(), timeout=self.timeout
+        )
         return self._handle_response(resp)
 
     def validate_loan_data(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/data-quality/validate"
-        resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
+        resp = self._session.post(
+            url, json=portfolio, headers=self._headers(), timeout=self.timeout
+        )
         return self._handle_response(resp)

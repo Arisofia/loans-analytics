@@ -397,6 +397,7 @@ _dash_spec = _ilu.spec_from_file_location(
     "_portfolio_dashboard_test",
     str(
         __import__("pathlib").Path(__file__).parent.parent
+        / "frontend"
         / "streamlit_app"
         / "pages"
         / "3_Portfolio_Dashboard.py"

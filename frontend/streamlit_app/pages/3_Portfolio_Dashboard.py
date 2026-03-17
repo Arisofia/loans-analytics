@@ -25,10 +25,11 @@ import requests
 import streamlit as st
 
 # Add project root to path
-ROOT_DIR = Path(__file__).resolve().parent.parent
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
+for _p in (ROOT_DIR / "backend", ROOT_DIR / "frontend", ROOT_DIR):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
