@@ -20,7 +20,7 @@ from typing import Any, Dict, Optional
 import pandas as pd
 
 from python.logging_config import get_logger
-from src.pipeline.utils import format_error_response
+from .utils import format_error_response
 
 logger = get_logger(__name__)
 
