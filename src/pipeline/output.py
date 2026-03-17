@@ -102,21 +102,21 @@ class OutputPhase:
                     exports["segment_snapshot"] = str(segment_snapshot_path)
 
                 # Export full ML intelligence payload
-                if segment_kpis:
+                if segment_kpis is not None:
                     seg_kpi_path = self._export_payload_json(
                         segment_kpis, run_dir, "segment_kpis.json"
                     )
                     exports["segment_kpis"] = str(seg_kpi_path)
 
-                if time_series:
+                if time_series is not None:
                     ts_path = self._export_payload_json(time_series, run_dir, "time_series.json")
                     exports["time_series"] = str(ts_path)
 
-                if anomalies:
+                if anomalies is not None:
                     anomalies_path = self._export_payload_json(anomalies, run_dir, "anomalies.json")
                     exports["anomalies"] = str(anomalies_path)
 
-                if nsm_recurrent_tpv:
+                if nsm_recurrent_tpv is not None:
                     nsm_path = self._export_payload_json(
                         nsm_recurrent_tpv, run_dir, "nsm_recurrent_tpv_output.json"
                     )
