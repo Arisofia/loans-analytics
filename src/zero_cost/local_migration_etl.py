@@ -83,31 +83,52 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
     if df.empty or df.columns.empty:
         return pd.DataFrame(columns=_EMPTY_COLS)
 
-    records: list[dict[str, object]] = []
     # Build one boolean mask Series per column — all vectorized, no per-cell Python
     mask_series: list[pd.Series] = []
     detail_suffix_by_col: dict[str, str] = {}
     for col in df.columns:
-        # Consider all logical string-like columns (object, pandas string, pyarrow string, etc.)
-        if not (
-            pd.api.types.is_object_dtype(df[col])
-            or pd.api.types.is_string_dtype(df[col])
-        ):
-            continue
-        mask = df[col].apply(_normalize_not_specified)
-        if not mask.any():
-            continue
-        for idx in df.index[mask]:
-            records.append(
-                {
-                    "table_name": table_name,
-                    "record_ref": str(idx),
-                    "field_name": col,
-                    "reason_code": "no_especificado",
-                    "reason_detail": f"Field '{col}' has no especificado/blank value",
-                }
-            )
-    return pd.DataFrame(records)
+        if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_string_dtype(df[col]):
+            mask = _not_specified_mask(df[col])
+            detail_suffix_by_col[col] = "no especificado/blank value"
+        else:
+            mask = df[col].isna()
+            detail_suffix_by_col[col] = "null/NaT value"
+        if mask.any():
+            mask_series.append(mask.rename(col))
+
+    if not mask_series:
+        return pd.DataFrame(columns=_EMPTY_COLS)
+
+    # Stack to get a flat MultiIndex (row_index, col_name) for every True cell
+    flagged_idx = pd.concat(mask_series, axis=1).stack()
+    flagged_idx = flagged_idx[flagged_idx].index  # keep only True entries
+
+    if len(flagged_idx) == 0:
+        return pd.DataFrame(columns=_EMPTY_COLS)
+
+    if len(flagged_idx) > MAX_NOT_SPECIFIED_LOG_ROWS:
+        logger.warning(
+            "Truncated not-specified log for table '%s' after %d records to keep ETL artifacts bounded.",
+            table_name,
+            MAX_NOT_SPECIFIED_LOG_ROWS,
+        )
+        flagged_idx = flagged_idx[:MAX_NOT_SPECIFIED_LOG_ROWS]
+
+    row_refs = [str(r) for r, _ in flagged_idx]
+    col_names = [c for _, c in flagged_idx]
+    detail_suffixes = [detail_suffix_by_col[c] for c in col_names]
+
+    return pd.DataFrame(
+        {
+            "table_name": table_name,
+            "record_ref": row_refs,
+            "field_name": col_names,
+            "reason_code": "not_specified",
+            "reason_detail": [
+                f"Field '{c}' is not specified / {d}" for c, d in zip(col_names, detail_suffixes)
+            ],
+        }
+    )
 
 
 def reconcile_payments(
@@ -198,10 +219,17 @@ def reconcile_payments(
             paid_missing_loan[["loan_id", "reason_code", "reason_detail", "status"]]
         )
 
+    # Aggregate only rows with valid dates and non-null loan_id
     sched_agg = (
-        schedule.groupby(["loan_id", "scheduled_date"], as_index=False)["scheduled_total"].sum()
+        schedule.dropna(subset=["scheduled_date", "loan_id"])
+        .groupby(["loan_id", "scheduled_date"], as_index=False)["scheduled_total"]
+        .sum()
     )
-    paid_agg = paid.groupby(["loan_id", "payment_date"], as_index=False)["paid_total"].sum()
+    paid_agg = (
+        paid.dropna(subset=["payment_date", "loan_id"])
+        .groupby(["loan_id", "payment_date"], as_index=False)["paid_total"]
+        .sum()
+    )
 
     merged = sched_agg.merge(
         paid_agg,
@@ -248,7 +276,8 @@ class LocalMonthlySnapshotETL:
     """Generate monthly star-schema snapshot from local raw CSV files."""
 
     def __init__(self, snapshot_month: str) -> None:
-        self.snapshot_month = pd.Timestamp(snapshot_month)
+        # Normalize to month-end to match MonthlySnapshotBuilder semantics
+        self.snapshot_month = pd.Timestamp(snapshot_month) + pd.offsets.MonthEnd(0)
         self.loader = LoanTapeLoader(data_dir="data/raw")
         self.dpd_calculator = DPDCalculator()
 
@@ -270,7 +299,13 @@ class LocalMonthlySnapshotETL:
         dim_loan["original_principal"] = pd.to_numeric(
             dim_loan["original_principal"], errors="coerce"
         ).fillna(0.0)
-        dim_loan["interest_rate"] = pd.to_numeric(dim_loan.get("interest_rate"), errors="coerce").fillna(0.0)
+        # Guard: interest_rate column may not exist in all loan tape variants
+        if "interest_rate" not in dim_loan.columns:
+            dim_loan["interest_rate"] = 0.0
+        else:
+            dim_loan["interest_rate"] = pd.to_numeric(
+                dim_loan["interest_rate"], errors="coerce"
+            ).fillna(0.0)
 
         snapshots = self.dpd_calculator.build_snapshots(
             dim_loan,
@@ -280,7 +315,13 @@ class LocalMonthlySnapshotETL:
         )
 
         dim_loan["contractual_apr"] = dim_loan["interest_rate"].apply(contractual_apr)
-        loan_xirr_series = portfolio_xirr(dim_loan, fact_real_payment)
+
+        # Filter out loans that would cause XIRR to crash: NaT disbursement_date
+        # or non-positive principal (no valid cash flow sign change).
+        xirr_eligible = dim_loan[
+            dim_loan["disbursement_date"].notna() & (dim_loan["original_principal"] > 0)
+        ]
+        loan_xirr_series = portfolio_xirr(xirr_eligible, fact_real_payment)
 
         fact_monthly_snapshot = snapshots.merge(
             dim_loan[["loan_id", "contractual_apr"]],
@@ -309,7 +350,18 @@ class LocalMonthlySnapshotETL:
         )
 
         if control_mora_path:
-            control_mora_df = pd.read_csv(control_mora_path, dtype=str, encoding="utf-8-sig")
+            control_mora_path = Path(control_mora_path)
+            # Auto-detect delimiter to match ControlMoraAdapter behavior and handle Excel-style exports.
+            with control_mora_path.open("r", encoding="utf-8-sig", newline="") as _f:
+                _sample = _f.read(4096)
+                _f.seek(0)
+                try:
+                    _dialect = csv.Sniffer().sniff(_sample, delimiters=[",", ";", "\t", "|"])
+                    delimiter = _dialect.delimiter
+                except csv.Error:
+                    # Fallback to comma if sniffing fails.
+                    delimiter = ","
+                control_mora_df = pd.read_csv(_f, dtype=str, sep=delimiter, low_memory=False)
             unmatched_records = pd.concat(
                 [unmatched_records, build_not_specified_log(control_mora_df, "control_mora")],
                 ignore_index=True,
