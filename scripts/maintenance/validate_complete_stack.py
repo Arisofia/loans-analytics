@@ -110,7 +110,9 @@ def validate_dashboard() -> dict[str, bool]:
 
     results: dict[str, bool] = {}
 
-    results["main_app"] = check_file_exists(ROOT_DIR / "streamlit_app.py", "Main Streamlit App")
+    results["main_app"] = check_file_exists(
+        ROOT_DIR / "frontend" / "streamlit_app" / "app.py", "Main Streamlit App"
+    )
 
     results["multi_page_app"] = check_file_exists(
         ROOT_DIR / "frontend" / "streamlit_app" / "app.py", "Multi-page Streamlit App Entrypoint"

@@ -23,7 +23,7 @@ echo "✅ Dependencies installed"
 
 # Run Streamlit app
 echo "🎯 Starting Streamlit application on port 8000..."
-exec streamlit run streamlit_app.py \
+exec streamlit run frontend/streamlit_app/app.py \
 	--server.port=8000 \
 	--server.address=0.0.0.0 \
 	--logger.level=info \

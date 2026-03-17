@@ -8,7 +8,7 @@
 This repository contains the Abaco financial analytics platform:
 
 - Unified 4-phase pipeline: Ingestion -> Transformation -> Calculation -> Output
-- Multi-agent analysis modules under `python/multi_agent/`
+- Multi-agent analysis modules under `backend/python/multi_agent/`
 - Streamlit dashboard and monitoring automation
 
 ## Current status
@@ -86,7 +86,7 @@ python3 scripts/data/run_data_pipeline.py \
 5. Launch dashboard
 
 ```bash
-streamlit run streamlit_app.py
+streamlit run frontend/streamlit_app/app.py
 ```
 
 6. Start monitoring stack (optional)
@@ -99,7 +99,7 @@ bash scripts/monitoring/auto_start_monitoring.sh
 
 ### Core pipeline
 
-`src/pipeline/`
+`backend/src/pipeline/`
 
 - `orchestrator.py`
 - `ingestion.py`
@@ -128,9 +128,9 @@ bash scripts/monitoring/auto_start_monitoring.sh
 
 ### Apps and analytics
 
-- `streamlit_app.py` and `streamlit_app/`
-- `python/apps/analytics/api/`
-- `python/multi_agent/`
+- `frontend/streamlit_app/`
+- `backend/python/apps/analytics/api/`
+- `backend/python/multi_agent/`
 
 ### Infra
 
@@ -174,7 +174,7 @@ Tests:
 pytest tests/ -v --tb=short -m "not integration"
 
 # Multi-agent suite
-pytest python/multi_agent/ -v -k "test_" --tb=short
+pytest backend/python/multi_agent/ -v -k "test_" --tb=short
 
 # Integration tests (requires Supabase secrets)
 pytest tests/ -v -m "integration" --tb=short

@@ -177,7 +177,7 @@ if [ "$HAS_BLACK" = true ]; then
 	if [ "$DRY_RUN" = true ]; then
 		black --check . 2>&1 | head -5 || echo "    (would format files)"
 	else
-		if black src/ tests/ scripts/ python/ --exclude '\.venv|venv|build|dist|\.eggs|archives'; then
+		if black backend/src backend/python frontend/streamlit_app tests/ scripts/ --exclude '\.venv|venv|build|dist|\.eggs|archives'; then
 			echo -e "${GREEN}  ✓ Black complete${NC}"
 		else
 			echo -e "${RED}  ✗ Black failed${NC}"
@@ -193,7 +193,7 @@ if [ "$HAS_ISORT" = true ]; then
 	if [ "$DRY_RUN" = true ]; then
 		isort --check . 2>&1 | head -5 || echo "    (would sort imports)"
 	else
-		if isort src/ tests/ scripts/ python/ --profile black --skip .venv --skip venv --skip archives; then
+		if isort backend/src backend/python frontend/streamlit_app tests/ scripts/ --profile black --skip .venv --skip venv --skip archives; then
 			echo -e "${GREEN}  ✓ isort complete${NC}"
 		else
 			echo -e "${RED}  ✗ isort failed${NC}"
@@ -209,7 +209,7 @@ if [ "$HAS_RUFF" = true ]; then
 	if [ "$DRY_RUN" = true ]; then
 		ruff check . 2>&1 | head -10 || true
 	else
-		if ruff check src python scripts tests --fix; then
+		if ruff check backend/src backend/python frontend/streamlit_app tests/ scripts/ --fix; then
 			echo -e "${GREEN}  ✓ Ruff complete${NC}"
 		else
 			echo -e "${RED}  ✗ Ruff found issues${NC}"
