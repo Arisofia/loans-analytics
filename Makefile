@@ -10,7 +10,7 @@ PYTHON ?= $(shell \
 )
 VENV := .venv
 BIN := $(VENV)/bin
-export PYTHONPATH := .
+export PYTHONPATH := .:backend:frontend
 # Default target
 help:
 	@echo "Abaco Loans Analytics Automation"
@@ -69,10 +69,10 @@ format:
 	$(BIN)/isort .
 lint:
 	$(BIN)/ruff check .
-	$(BIN)/flake8 src python scripts
-	$(BIN)/pylint src python scripts
+	$(BIN)/flake8 backend/src backend/python scripts
+	$(BIN)/pylint backend/src backend/python scripts
 type-check:
-	$(BIN)/mypy --check-untyped-defs src
+	$(BIN)/mypy --check-untyped-defs backend/src
 test:
 	"$(PYTHON)" -m pytest
 test-zero-cost:
@@ -80,7 +80,7 @@ test-zero-cost:
 e2e:
 	RUN_E2E=1 "$(PYTHON)" -m pytest tests/e2e -m e2e
 security-check:
-	$(BIN)/bandit -r src python --quiet -x "**/test_*.py,**/tests.py"
+	$(BIN)/bandit -r backend/src backend/python --quiet -x "**/test_*.py,**/tests.py"
 	@if $(BIN)/pip list | grep -q safety; then $(BIN)/safety check --continue-on-error; else echo "safety not installed, skipping"; fi
 clean:
 	@bash scripts/maintenance/repo_maintenance.sh --mode=standard
@@ -112,7 +112,7 @@ monitoring-health:
 # Development/API entry point (hot-reload)
 api:
 	@echo "Starting API server on http://127.0.0.1:8000 with hot-reload..."
-	"$(PYTHON)" -m uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir python --reload-dir src --reload-dir config
+	"$(PYTHON)" -m uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir backend/python --reload-dir backend/src --reload-dir config
 dev: api
 
 # Multi-agent entry point

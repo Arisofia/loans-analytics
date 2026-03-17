@@ -11,9 +11,10 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # Add repository root so local packages resolve when page runs standalone.
-ROOT_DIR = Path(__file__).resolve().parents[2]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
+ROOT_DIR = Path(__file__).resolve().parents[3]
+for _p in (ROOT_DIR / "backend", ROOT_DIR / "frontend", ROOT_DIR):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 from python.multi_agent.config_historical import build_historical_context_provider  # noqa: E402
 from python.multi_agent.historical_context import (  # noqa: E402

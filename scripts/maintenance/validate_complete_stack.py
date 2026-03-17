@@ -113,21 +113,21 @@ def validate_dashboard() -> dict[str, bool]:
     results["main_app"] = check_file_exists(ROOT_DIR / "streamlit_app.py", "Main Streamlit App")
 
     results["multi_page_app"] = check_file_exists(
-        ROOT_DIR / "streamlit_app" / "app.py", "Multi-page Streamlit App Entrypoint"
+        ROOT_DIR / "frontend" / "streamlit_app" / "app.py", "Multi-page Streamlit App Entrypoint"
     )
 
     results["portfolio_dashboard"] = check_file_exists(
-        ROOT_DIR / "streamlit_app" / "pages" / "3_Portfolio_Dashboard.py",
+        ROOT_DIR / "frontend" / "streamlit_app" / "pages" / "3_Portfolio_Dashboard.py",
         "Portfolio Dashboard",
     )
 
     results["usage_metrics"] = check_file_exists(
-        ROOT_DIR / "streamlit_app" / "pages" / "4_Usage_Metrics.py",
+        ROOT_DIR / "frontend" / "streamlit_app" / "pages" / "4_Usage_Metrics.py",
         "Usage Metrics Page",
     )
 
     results["monitoring_control"] = check_file_exists(
-        ROOT_DIR / "streamlit_app" / "pages" / "5_Monitoring_Control.py",
+        ROOT_DIR / "frontend" / "streamlit_app" / "pages" / "5_Monitoring_Control.py",
         "Monitoring & Control Page",
     )
 

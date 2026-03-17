@@ -253,7 +253,7 @@ class ServiceStatusChecker:
             status["success"] = False
 
         # Check if pipeline modules exist
-        pipeline_dir = self.repo_root / "src" / "pipeline"
+        pipeline_dir = self.repo_root / "backend" / "src" / "pipeline"
         if pipeline_dir.exists():
             modules = ["ingestion.py", "transformation.py", "calculation.py", "output.py"]
             existing_modules = [m for m in modules if (pipeline_dir / m).exists()]
@@ -273,7 +273,7 @@ class ServiceStatusChecker:
         }
 
         # Check if multi-agent directory exists
-        agent_dir = self.repo_root / "python" / "multi_agent"
+        agent_dir = self.repo_root / "backend" / "python" / "multi_agent"
         status["details"]["directory_exists"] = agent_dir.exists()
 
         if not agent_dir.exists():
