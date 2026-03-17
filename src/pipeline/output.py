@@ -104,7 +104,7 @@ class OutputPhase:
                 # Export full ML intelligence payload
                 if segment_kpis is not None:
                     seg_kpi_path = self._export_payload_json(
-                        segment_kpis, run_dir, "segment_kpis.json"
+                        segment_kpis, run_dir, "output_segment_kpis.json"
                     )
                     exports["segment_kpis"] = str(seg_kpi_path)
 
