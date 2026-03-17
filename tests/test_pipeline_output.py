@@ -144,7 +144,7 @@ def test_execute_exports_full_ml_intelligence_payload(tmp_path):
     exports = result["exports"]
 
     assert "segment_kpis" in exports
-    assert (tmp_path / "segment_kpis.json").exists()
+    assert (tmp_path / "output_segment_kpis.json").exists()
 
     assert "time_series" in exports
     assert (tmp_path / "time_series.json").exists()
@@ -158,6 +158,34 @@ def test_execute_exports_full_ml_intelligence_payload(tmp_path):
     with open(tmp_path / "anomalies.json", encoding="utf-8") as fh:
         saved = json.load(fh)
     assert saved[0]["kpi"] == "default_rate"
+
+
+def test_execute_exports_empty_payload_when_not_none(tmp_path):
+    """Empty-but-not-None payloads (e.g. [] or {}) must still be exported.
+
+    An empty anomalies list is meaningful — it means 'no anomalies detected'
+    and should be written to disk so consumers can distinguish it from a run
+    where anomaly detection never ran (None / not supplied).
+    """
+    output = OutputPhase({"database": {"enabled": False}})
+
+    result = output.execute(
+        kpi_results={"par_30": 3.1},
+        run_dir=tmp_path,
+        anomalies=[],  # empty list — still meaningful
+        time_series={},  # empty dict — still meaningful
+    )
+
+    assert result["status"] == "success"
+    exports = result["exports"]
+
+    assert "anomalies" in exports
+    assert (tmp_path / "anomalies.json").exists()
+    with open(tmp_path / "anomalies.json", encoding="utf-8") as fh:
+        assert json.load(fh) == []
+
+    assert "time_series" in exports
+    assert (tmp_path / "time_series.json").exists()
 
 
 def test_execute_omits_payload_keys_when_not_supplied(tmp_path):
