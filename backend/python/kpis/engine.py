@@ -449,8 +449,8 @@ class KPIEngineV2:
         ltv = np.where(~is_opaque, capital / valor_ajustado, np.nan)
 
         # Tag the dataframe with the opacity flag for downstream transparency.
-        # Use a copy-safe assignment to avoid SettingWithCopyWarning on sliced frames.
-        df["ltv_sintetico_is_opaque"] = is_opaque.astype(int)
+        # Use explicit .loc assignment for in-place mutation on the provided frame.
+        df.loc[:, "ltv_sintetico_is_opaque"] = is_opaque.astype(int)
 
         return pd.Series(ltv, index=df.index, dtype=float)
 
