@@ -78,7 +78,6 @@ def test_advanced_risk_endpoint_returns_expected_shape():
 def test_full_analysis_deterministic_summary_includes_advanced_metrics(monkeypatch):
     # Force deterministic local analytical fallback path.
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
     client = TestClient(app)
     response = client.post("/analytics/full-analysis", json=_sample_payload())

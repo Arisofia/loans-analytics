@@ -268,8 +268,8 @@ async def _run_orchestrated_full_analysis(
     service: "KPIService",
     kpi_summary: str,
 ) -> tuple[str, str]:
-    if not os.getenv("OPENAI_API_KEY") and not os.getenv("ANTHROPIC_API_KEY"):
-        raise ValueError("No LLM API keys configured")
+    if not os.getenv("OPENAI_API_KEY"):
+        raise ValueError("OPENAI_API_KEY not configured")
 
     orchestrator = MultiAgentOrchestrator()
     trace_id = str(uuid.uuid4())

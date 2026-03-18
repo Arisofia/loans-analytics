@@ -50,18 +50,16 @@ class BaseAgent(ABC):
     def _default_model(self) -> str:
         """Get default model for provider."""
         defaults = {
-            LLMProvider.OPENAI: "gpt-4o-mini",
-            LLMProvider.ANTHROPIC: "claude-3-5-sonnet-20241022",
+            LLMProvider.OPENAI: "gpt-4o",
             LLMProvider.GEMINI: "gemini-2.0-flash-exp",
             LLMProvider.GROK: os.getenv("GROK_MODEL", "grok-2-latest"),
         }
-        return defaults.get(self.provider, "gpt-4o-mini")
+        return defaults.get(self.provider, "gpt-4o")
 
     def _init_client(self) -> Any:
         """Initialize LLM client."""
         initializers = {
             LLMProvider.OPENAI: self._init_openai_client,
-            LLMProvider.ANTHROPIC: self._init_anthropic_client,
             LLMProvider.GEMINI: self._init_gemini_client,
             LLMProvider.GROK: self._init_grok_client,
         }
@@ -82,18 +80,6 @@ class BaseAgent(ABC):
         max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
 
         return OpenAI(api_key=api_key, timeout=timeout, max_retries=max_retries)
-
-    def _init_anthropic_client(self) -> Any:
-        """Initialize Anthropic client."""
-        try:
-            from anthropic import Anthropic  # pylint: disable=import-outside-toplevel
-        except ImportError as exc:
-            raise ImportError("anthropic package required") from exc
-
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY not set")
-        return Anthropic(api_key=api_key)
 
     def _init_gemini_client(self) -> Any:
         """Initialize Gemini client."""
@@ -227,8 +213,6 @@ class BaseAgent(ABC):
             try:
                 if self.provider == LLMProvider.OPENAI:
                     return self._call_openai(messages, request)
-                if self.provider == LLMProvider.ANTHROPIC:
-                    return self._call_anthropic(messages, request)
                 if self.provider == LLMProvider.GEMINI:
                     return self._call_gemini(messages, request)
                 if self.provider == LLMProvider.GROK:
@@ -298,39 +282,6 @@ class BaseAgent(ABC):
             "tokens_used": tokens,
             "cost_usd": cost,
             "finish_reason": response.choices[0].finish_reason,
-        }
-
-    def _call_anthropic(
-        self, messages: List[Dict[str, str]], request: AgentRequest
-    ) -> Dict[str, Any]:
-        """Call Anthropic API."""
-        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
-        user_messages = [m for m in messages if m["role"] != "system"]
-
-        timeout = float(os.getenv("LLM_TIMEOUT", "60"))
-
-        response = self._client.messages.create(
-            model=self.model,
-            system=system_msg,
-            messages=user_messages,
-            max_tokens=request.max_tokens,
-            temperature=request.temperature,
-            timeout=timeout,
-        )
-
-        tokens = response.usage.input_tokens + response.usage.output_tokens
-
-        cost_per_1k_input = 0.003
-        cost_per_1k_output = 0.015
-        cost = (response.usage.input_tokens * cost_per_1k_input / 1000) + (
-            response.usage.output_tokens * cost_per_1k_output / 1000
-        )
-
-        return {
-            "content": response.content[0].text,
-            "tokens_used": tokens,
-            "cost_usd": cost,
-            "finish_reason": response.stop_reason,
         }
 
     def _call_gemini(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:

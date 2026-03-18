@@ -23,7 +23,7 @@ class TestAgentFactory(unittest.TestCase):
         self.assertTrue(hasattr(TestAgent, "__init__"))
         self.assertIsNotNone(TestAgent.__init__)
 
-    @patch("python.multi_agent.base_agent.BaseAgent._init_client")
+    @patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
     def test_decorated_agent_initializes_with_correct_role(self, mock_init_client):
         """Test that decorated agent initializes with the specified role."""
         mock_init_client.return_value = Mock()
@@ -36,7 +36,7 @@ class TestAgentFactory(unittest.TestCase):
         agent = TestAgent()
         self.assertEqual(agent.role, AgentRole.COMPLIANCE)
 
-    @patch("python.multi_agent.base_agent.BaseAgent._init_client")
+    @patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
     def test_decorated_agent_accepts_provider_parameter(self, mock_init_client):
         """Test that decorated agent accepts provider parameter."""
         mock_init_client.return_value = Mock()
@@ -51,10 +51,10 @@ class TestAgentFactory(unittest.TestCase):
         self.assertEqual(agent1.provider, LLMProvider.OPENAI)
 
         # Test with custom provider
-        agent2 = TestAgent(provider=LLMProvider.ANTHROPIC)
-        self.assertEqual(agent2.provider, LLMProvider.ANTHROPIC)
+        agent2 = TestAgent(provider=LLMProvider.GEMINI)
+        self.assertEqual(agent2.provider, LLMProvider.GEMINI)
 
-    @patch("python.multi_agent.base_agent.BaseAgent._init_client")
+    @patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
     def test_decorated_agent_accepts_kwargs(self, mock_init_client):
         """Test that decorated agent passes through kwargs."""
         mock_init_client.return_value = Mock()

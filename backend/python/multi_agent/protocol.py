@@ -31,7 +31,6 @@ class LLMProvider(str, Enum):
     """Supported LLM providers."""
 
     OPENAI = "openai"
-    ANTHROPIC = "anthropic"
     GEMINI = "gemini"
     GROK = "grok"
 
@@ -88,7 +87,7 @@ class AgentResponse(BaseModel):
     cost_usd: float = 0.0
     latency_ms: float = 0.0
     provider: LLMProvider = LLMProvider.OPENAI
-    model: str = "gpt-4o-mini"
+    model: str = "gpt-4o"
     finish_reason: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=get_utc_now)
