@@ -43,7 +43,7 @@ def main():
         print("🔍 Checking tables...\n")
 
         try:
-            result = supabase.table("monitoring.kpi_definitions").select("*").limit(1).execute()
+            supabase.table("monitoring.kpi_definitions").select("*").limit(1).execute()
             print("✅ monitoring.kpi_definitions exists")
             has_defs = True
         except Exception:
@@ -51,7 +51,7 @@ def main():
             has_defs = False
 
         try:
-            result = supabase.table("monitoring.kpi_values").select("*").limit(1).execute()
+            supabase.table("monitoring.kpi_values").select("*").limit(1).execute()
             print("✅ monitoring.kpi_values exists")
             has_values = True
         except Exception:

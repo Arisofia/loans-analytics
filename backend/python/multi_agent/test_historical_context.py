@@ -330,9 +330,9 @@ class TestSeasonalityDetection(unittest.TestCase):
     def test_monthly_pattern_detection(self):
         """Test monthly pattern detection."""
         seasonality = self.provider.get_seasonality("default_rate")
-        self.assertTrue(seasonality.cycle_length_months == 12)
-        self.assertTrue(len(seasonality.peak_months) > 0)
-        self.assertTrue(len(seasonality.trough_months) > 0)
+        self.assertEqual(seasonality.cycle_length_months, 12)
+        self.assertGreater(len(seasonality.peak_months), 0)
+        self.assertGreater(len(seasonality.trough_months), 0)
 
     def test_seasonal_index_calculation(self):
         """Test seasonal index (adjustment factors) calculation."""

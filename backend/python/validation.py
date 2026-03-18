@@ -11,10 +11,6 @@ import polars as pl
 
 from backend.python.config import settings
 
-# Unified required columns for both ingestion and analytics
-REQUIRED_ANALYTICS_COLUMNS: List[str] = settings.analytics.required_columns
-
-
 def _missing_columns(df: Any, columns: List[str]) -> List[str]:
     return [col for col in columns if col not in df.columns]
 
@@ -65,7 +61,6 @@ def _is_iso8601_value(value) -> bool:
     return isinstance(value, datetime)
 
 
-ANALYTICS_NUMERIC_COLUMNS: List[str] = settings.analytics.numeric_columns
 NUMERIC_COLUMNS: List[str] = settings.analytics.ingestion_numeric_columns
 
 

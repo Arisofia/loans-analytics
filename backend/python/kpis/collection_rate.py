@@ -47,15 +47,6 @@ def calculate_collection_rate(df: pd.DataFrame | None) -> Tuple[Decimal, Dict[st
 
     collected_col = find_column(df, _COLLECTED_CANDIDATES)
     due_col = find_column(df, _DUE_CANDIDATES)
-
-    missing = [
-        name
-        for name, column in (
-            ("payments_collected", collected_col),
-            ("payments_due", due_col),
-        )
-        if column is None
-    ]
     if collected_col is None or due_col is None:
         missing = [
             label

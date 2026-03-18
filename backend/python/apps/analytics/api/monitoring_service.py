@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 
+from backend.python.multi_agent.guardrails import Guardrails
 from backend.python.apps.analytics.api.monitoring_models import (
     CommandCreate,
     CommandResponse,
@@ -19,6 +20,10 @@ from backend.python.logging_config import get_logger
 from backend.python.supabase_pool import get_pool
 
 logger = get_logger(__name__)
+
+
+def _safe_log_value(value: object, max_length: int = 200) -> str:
+    return Guardrails.sanitize_for_logging(value, max_length=max_length)
 
 
 class MonitoringService:
@@ -45,9 +50,9 @@ class MonitoringService:
 
         logger.info(
             "Operational event emitted: type=%s severity=%s source=%s",
-            event.event_type,
-            event.severity.value,
-            event.source,
+            _safe_log_value(event.event_type),
+            _safe_log_value(event.severity.value),
+            _safe_log_value(event.source),
         )
 
         return self._row_to_event(row)
@@ -110,7 +115,7 @@ class MonitoringService:
         if row is None:
             return None
 
-        logger.info("Event acknowledged: %s", event_id)
+        logger.info("Event acknowledged: %s", _safe_log_value(event_id))
         return self._row_to_event(row)
 
     async def create_command(self, cmd: CommandCreate) -> CommandResponse:
@@ -132,8 +137,8 @@ class MonitoringService:
 
         logger.info(
             "Command created: type=%s by=%s",
-            cmd.command_type,
-            cmd.requested_by,
+            _safe_log_value(cmd.command_type),
+            _safe_log_value(cmd.requested_by),
         )
 
         return self._row_to_command(row)
@@ -221,7 +226,11 @@ class MonitoringService:
         if row is None:
             return None
 
-        logger.info("Command %s updated to status=%s", cmd_id, update.status.value)
+        logger.info(
+            "Command %s updated to status=%s",
+            _safe_log_value(cmd_id),
+            _safe_log_value(update.status.value),
+        )
         return self._row_to_command(row)
 
     # ------------------------------------------------------------------

@@ -111,6 +111,10 @@ def get_monitoring_service():
     return MonitoringService(actor="api_user")
 
 
+def _safe_log_value(value: Any, max_length: int = 200) -> str:
+    return _sanitize_for_logging(str(value), max_length=max_length)
+
+
 def _build_kpi_response(
     kpis: list[Any] | None, source: str = "production-snapshot"
 ) -> "KpiResponse":
@@ -521,7 +525,11 @@ if app is not None:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Error acknowledging event %s: %s", request.event_id, e)
+            logger.error(
+                "Error acknowledging event %s: %s",
+                _safe_log_value(request.event_id),
+                _safe_log_value(e),
+            )
             raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post("/monitoring/events/{event_id}/ack")
@@ -540,7 +548,11 @@ if app is not None:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Error acknowledging event %s: %s", event_id, e)
+            logger.error(
+                "Error acknowledging event %s: %s",
+                _safe_log_value(event_id),
+                _safe_log_value(e),
+            )
             raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post("/monitoring/commands", response_model=CommandsListResponse)
@@ -596,7 +608,11 @@ if app is not None:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Error updating command %s: %s", cmd_id, e)
+            logger.error(
+                "Error updating command %s: %s",
+                _safe_log_value(cmd_id),
+                _safe_log_value(e),
+            )
             raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.get("/health")
@@ -1206,18 +1222,25 @@ def _sanitize_for_logging(value: str, max_length: int = 200) -> str:
 def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     if not candidate:
         raise ValueError("empty path")
-    # Explicitly block absolute-looking paths before pathlib normalization
-    if candidate.startswith(("/", "\\")):
+    normalized = candidate.replace("\\", "/").strip()
+    if not normalized:
+        raise ValueError("empty path")
+    if normalized.startswith("/"):
         raise ValueError("absolute paths are not allowed")
-    normalized = candidate.replace("\\", "/")
     if not re.match(r"^[a-zA-Z0-9_./\-]+$", normalized):
         raise ValueError("invalid characters")
-    candidate_path = Path(normalized)
-    if candidate_path.is_absolute():
-        raise ValueError("absolute paths are not allowed")
-    if any(p == ".." for p in candidate_path.parts):
-        raise ValueError("parent traversal is not allowed")
-    resolved = (allowed_dir / candidate_path).resolve()
+    safe_parts = []
+    for part in normalized.split("/"):
+        if not part or part == ".":
+            continue
+        if part == "..":
+            raise ValueError("parent traversal is not allowed")
+        if not re.match(r"^[a-zA-Z0-9_.\-]+$", part):
+            raise ValueError("invalid path segment")
+        safe_parts.append(part)
+    if not safe_parts:
+        raise ValueError("empty path")
+    resolved = allowed_dir.resolve().joinpath(*safe_parts).resolve(strict=False)
     try:
         resolved.relative_to(allowed_dir.resolve())
     except ValueError as exc:

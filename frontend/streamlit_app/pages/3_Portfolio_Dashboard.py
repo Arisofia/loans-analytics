@@ -2377,9 +2377,9 @@ def _safe_cache_data_decorator(*decorator_args: Any, **decorator_kwargs: Any):
             decorated = cache_data(*decorator_args, **decorator_kwargs)
             if callable(decorated):
                 return decorated
-        except Exception:
+        except Exception as exc:
             # In test stubs, cache_data can be a placeholder that is not a real decorator.
-            pass
+            logger.debug("cache_data fallback activated: %s", exc)
 
     def _identity(fn):
         return fn
