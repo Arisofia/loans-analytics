@@ -315,10 +315,10 @@ class DPDCalculator:
                 sched_principal_col
             ].cumsum()
 
-            paid_upto = fact_real_payment[fact_real_payment[pay_date_col] <= ref_date]
+            # Reuse already-computed per-loan cumulative principal paid instead of
+            # re-filtering and re-grouping fact_real_payment for each snapshot.
             total_paid = (
-                paid_upto.groupby(loan_id_col)[pay_principal_col]
-                .sum()
+                base.set_index(loan_id_col)["cum_paid_principal"]
                 .rename("_total_paid")
             )
             sched_sorted = sched_sorted.join(total_paid, on=loan_id_col, how="left")
