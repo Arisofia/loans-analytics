@@ -388,8 +388,13 @@ class UnifiedPipeline:
                     hasher.update(chunk)
             return hasher.hexdigest()[:16]
         except Exception as e:
-            logger.warning("Failed to hash input file: %s, using timestamp", e)
-            return datetime.now().strftime("%H%M%S")
+            logger.error(
+                "Failed to hash input file '%s': %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
+            raise RuntimeError(f"Failed to hash input file '{file_path}'") from e
 
     def _calculate_config_hash(self) -> str:
         """Calculate deterministic hash of the pipeline configuration.
