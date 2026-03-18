@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -573,4 +573,16 @@ class CalculationPhase:
 
         # Return the most recent velocity value using Decimal arithmetic for precision
         latest_vd = vd_series.iloc[-1]
-        return Decimal(latest_vd).quantize(Decimal("0.000001"))
+        # Guard against None/NaN/inf before constructing a Decimal to avoid
+        # representation artifacts and InvalidOperation during quantize.
+        if latest_vd is None or not np.isfinite(latest_vd):
+            return None
+
+        try:
+            latest_vd_decimal = Decimal(str(latest_vd))
+            return latest_vd_decimal.quantize(Decimal("0.000001"))
+        except InvalidOperation:
+            logger.warning(
+                "Unable to quantize Velocity of Default value %r; returning None", latest_vd
+            )
+            return None
