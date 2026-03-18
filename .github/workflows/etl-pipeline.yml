@@ -26,7 +26,8 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - "src/**"
+      - "backend/src/**"
+      - "backend/python/**"
       - "scripts/data/**"
       - "config/**"
       - "data/raw/**"
