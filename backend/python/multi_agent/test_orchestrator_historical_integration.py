@@ -22,7 +22,7 @@ class TestOrchestratorHistoricalIntegration(unittest.TestCase):
             latency_ms=25.0,
         )
 
-    @patch("python.multi_agent.base_agent.BaseAgent._init_client")
+    @patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
     def test_auto_enriches_and_injects_historical_context(self, mock_init_client):
         """Orchestrator should derive historical context from KPI IDs automatically."""
         mock_init_client.return_value = MagicMock()
@@ -65,7 +65,7 @@ class TestOrchestratorHistoricalIntegration(unittest.TestCase):
         self.assertIn("historical_context", captured["context"])
         self.assertIn("historical_trends", captured["context"])
 
-    @patch("python.multi_agent.base_agent.BaseAgent._init_client")
+    @patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
     def test_preserves_explicit_historical_context(self, mock_init_client):
         """Explicit historical context should not be overridden by provider lookups."""
         mock_init_client.return_value = MagicMock()

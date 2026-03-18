@@ -10,7 +10,7 @@ from backend.python.multi_agent.protocol import AgentResponse, AgentRole, Messag
 class TestContinuousLearningLoop(unittest.TestCase):
     """Validate commentary quality and continuous learning integration."""
 
-    @patch("python.multi_agent.base_agent.BaseAgent._init_client")
+    @patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
     def setUp(self, mock_init_client):
         """Set up orchestrator with mocked clients and tracking."""
         mock_init_client.return_value = MagicMock()

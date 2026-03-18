@@ -48,7 +48,7 @@ class TestBaseAgentGrok(unittest.TestCase):
         agent = _TestAgent(role=AgentRole.RISK_ANALYST, provider=LLMProvider.GROK)
 
         with (
-            patch("python.multi_agent.base_agent.OpenAI") as mock_openai,
+            patch("backend.python.multi_agent.base_agent.OpenAI") as mock_openai,
             patch.dict(
                 os.environ,
                 {

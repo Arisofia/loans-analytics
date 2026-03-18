@@ -175,7 +175,7 @@ class HistoricalContextProvider:
         self._historical_data: Dict[str, List[KpiHistoricalValue]] = {}
         self.rule_hash: str = rule_hash or "default_v1"
 
-        env_mode = os.getenv("HISTORICAL_CONTEXT_MODE", "REAL").upper()
+        env_mode = os.getenv("HISTORICAL_CONTEXT_MODE", "MOCK").upper()
         self.mode: str = (mode or env_mode).upper()
         self._backend: Optional[HistoricalDataBackend] = backend
 

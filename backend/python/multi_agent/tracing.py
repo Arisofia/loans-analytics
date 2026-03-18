@@ -1,7 +1,6 @@
 """Agent tracing and observability."""
 
-import hashlib
-import time
+import uuid
 from typing import Any, Dict, Optional
 
 try:
@@ -32,8 +31,7 @@ class AgentTracer:
     @staticmethod
     def generate_trace_id(prefix: str = "trace") -> str:
         """Generate unique trace ID."""
-        timestamp = str(time.time_ns())
-        return f"{prefix}_{hashlib.sha256(timestamp.encode()).hexdigest()[:16]}"
+        return f"{prefix}_{uuid.uuid4().hex[:16]}"
 
     def start_trace(self, agent_role: AgentRole, request: AgentRequest) -> Optional[Any]:
         """Start trace span."""

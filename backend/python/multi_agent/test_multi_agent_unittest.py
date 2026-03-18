@@ -234,7 +234,7 @@ class TestOrchestrator(unittest.TestCase):
         self.env_patcher = patch.dict("os.environ", {"OPENAI_API_KEY": "test_key"})
         self.env_patcher.start()
 
-        self.openai_patcher = patch("python.multi_agent.base_agent.OpenAI")
+        self.openai_patcher = patch("backend.python.multi_agent.base_agent.OpenAI")
         self.mock_openai = self.openai_patcher.start()
         self.mock_openai.return_value = MagicMock()
 
