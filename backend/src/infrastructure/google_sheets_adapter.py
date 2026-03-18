@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 try:
     import gspread
-    from gspread import Worksheet
     from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 
     _GSPREAD_AVAILABLE = True
