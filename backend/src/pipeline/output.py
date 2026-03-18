@@ -439,8 +439,10 @@ class OutputPhase:
         not a portfolio cutoff date.  Using it as a fallback corrupts the temporal
         semantics of the as_of_date field.
         """
-        for date_col in ("as_of_date", "snapshot_date", "fecha_actual",
-                         "ingestion_timestamp", "ingest_date"):
+        for date_col in (
+            "as_of_date", "snapshot_date", "fecha_actual",
+            "ingestion_timestamp", "ingest_date",
+        ):
             if date_col in df.columns:
                 parsed = pd.to_datetime(df[date_col], errors="coerce", format="mixed")
                 max_dt = parsed.max()
@@ -1036,38 +1038,6 @@ class OutputPhase:
                 logger.warning("Could not add KPI engine audit info: %s", e)
 
         return payload
-        """
-        Extract failed KPI names from audit trail DataFrame.
-
-        Helper method to reduce code duplication and ensure consistent
-        filtering behavior across quality score and SLA checking methods.
-
-        Args:
-            audit_df: Audit trail DataFrame from KPIEngineV2
-
-        Returns:
-            List of KPI names with failed status
-
-        Raises:
-            ValueError: If audit DataFrame has unexpected structure
-        """
-        try:
-            if audit_df.empty:
-                return []
-
-            # Validate expected columns exist
-            if "status" not in audit_df.columns or "kpi_name" not in audit_df.columns:
-                logger.warning("Audit DataFrame missing required columns")
-                return []
-
-            # Filter for failed status and extract KPI names
-            failed_mask = audit_df["status"] == "failed"
-            failed_kpis = audit_df[failed_mask]["kpi_name"].tolist()
-            return failed_kpis
-
-        except Exception as e:
-            logger.error("Error extracting failed KPIs from audit trail: %s", e)
-            return []
 
     def _generate_audit_metadata(
         self,
