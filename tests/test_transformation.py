@@ -226,6 +226,49 @@ class TestTypeNormalization:
         assert metrics["enabled"] is False
 
 
+class TestCanonicalRiskState:
+    """Test canonical upstream kiting/DPD derivation."""
+
+    def test_derive_canonical_risk_state_flags_kiting_and_adjusts_dpd(self, default_config):
+        transformer = TransformationPhase(default_config)
+        df = pd.DataFrame(
+            {
+                "dpd": [10.0, 45.0],
+                "last_payment_amount": [50.0, 100.0],
+                "total_scheduled": [100.0, 100.0],
+            }
+        )
+
+        out, metrics = transformer._derive_canonical_risk_state(df)
+
+        assert out.loc[0, "ratio_pago_real"] == pytest.approx(0.5)
+        assert out.loc[0, "is_kiting_suspected"] == 1
+        assert out.loc[0, "dpd_adjusted"] == pytest.approx(90.0)
+
+        assert out.loc[1, "is_kiting_suspected"] == 0
+        assert out.loc[1, "dpd_adjusted"] == pytest.approx(45.0)
+        assert metrics["kiting_rows"] == 1
+
+    def test_derive_canonical_risk_state_marks_ratio_opaque_when_scheduled_non_positive(
+        self, default_config
+    ):
+        transformer = TransformationPhase(default_config)
+        df = pd.DataFrame(
+            {
+                "dpd": [5.0, 5.0],
+                "last_payment_amount": [10.0, 10.0],
+                "total_scheduled": [0.0, -1.0],
+            }
+        )
+
+        out, metrics = transformer._derive_canonical_risk_state(df)
+
+        assert out["ratio_pago_real"].isna().all()
+        assert (out["is_kiting_suspected"] == 0).all()
+        assert (out["dpd_adjusted"] == out["dpd"]).all()
+        assert metrics["opaque_ratio_rows"] == 2
+
+
 class TestBusinessRules:
     """Test business rules application."""
 

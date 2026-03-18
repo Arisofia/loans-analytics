@@ -167,6 +167,9 @@ class TransformationPhase:
             df, rule_metrics = self._apply_business_rules(df)
             transformation_metrics["business_rules"] = rule_metrics
 
+            df, risk_state_metrics = self._derive_canonical_risk_state(df)
+            transformation_metrics["canonical_risk_state"] = risk_state_metrics
+
             df, outlier_metrics = self._detect_outliers(df)
             transformation_metrics["outlier_detection"] = outlier_metrics
 
@@ -807,6 +810,58 @@ class TransformationPhase:
         df["tpv"] = final_tpv
         track("tpv", existing_tpv.isna() & final_tpv.notna())
 
+        return df, metrics
+
+    def _derive_canonical_risk_state(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        """Derive canonical risk-state fields that must travel downstream.
+
+        Canonical outputs:
+        - ratio_pago_real: pagado / programado, strict NaN when programado <= 0
+        - is_kiting_suspected: 1 when ratio_pago_real < 1.0 and dpd < 30
+        - dpd_adjusted: max(dpd, 90) for kiting rows, otherwise original dpd
+        """
+        metrics: Dict[str, Any] = {"enabled": True}
+
+        paid_amount = self._coalesce_numeric_columns(
+            df,
+            [
+                "last_payment_amount",
+                "payment_amount",
+                "total_payment_received",
+                "montototalabonado",
+                "capital_collected",
+                "capitalcobrado",
+            ],
+        )
+        scheduled_amount = self._coalesce_numeric_columns(
+            df,
+            [
+                "total_scheduled",
+                "scheduled_amount",
+                "total_due",
+                "monto_programado",
+            ],
+        )
+        dpd_source = df["dpd"] if "dpd" in df.columns else pd.Series(np.nan, index=df.index)
+        dpd = pd.to_numeric(dpd_source, errors="coerce").fillna(0.0)
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            ratio_pago_real = np.where(scheduled_amount > 0, paid_amount / scheduled_amount, np.nan)
+
+        is_kiting_suspected = (
+            pd.Series(ratio_pago_real, index=df.index).lt(1.0)
+            & pd.Series(ratio_pago_real, index=df.index).notna()
+            & dpd.lt(30)
+        )
+
+        dpd_adjusted = np.where(is_kiting_suspected, np.maximum(dpd.to_numpy(), 90.0), dpd.to_numpy())
+
+        df["ratio_pago_real"] = pd.Series(ratio_pago_real, index=df.index, dtype=float)
+        df["is_kiting_suspected"] = is_kiting_suspected.astype(int)
+        df["dpd_adjusted"] = pd.Series(dpd_adjusted, index=df.index, dtype=float)
+
+        metrics["kiting_rows"] = int(is_kiting_suspected.sum())
+        metrics["opaque_ratio_rows"] = int(pd.Series(ratio_pago_real, index=df.index).isna().sum())
         return df, metrics
 
     def _handle_nulls(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
