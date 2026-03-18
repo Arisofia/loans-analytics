@@ -425,7 +425,15 @@ class CalculationPhase:
         LTV Sintético = capital_desembolsado / (valor_nominal_factura * (1 - tasa_dilucion))
 
         Returns an empty Series when required columns are absent or the DataFrame
-        is empty.  Division-by-zero (fully diluted invoices) yields 0.0.
+        is empty.
+
+        Invalid-denominator semantics (fail-safe opacity):
+            When ``valor_nominal_factura * (1 - tasa_dilucion) == 0`` the LTV is
+            mathematically undefined.  Returning 0.0 would silently encode a
+            false low-risk value and collapse epistemic uncertainty.  These rows
+            therefore yield ``np.nan``.  Use
+            :py:meth:`_ltv_sintetico_invalid_mask` to produce an explicit boolean
+            opacity flag identifying which loans require manual review.
         """
         required = {"capital_desembolsado", "valor_nominal_factura", "tasa_dilucion"}
         if not required.issubset(df.columns) or df.empty:
@@ -436,15 +444,53 @@ class CalculationPhase:
         dilution = pd.to_numeric(df["tasa_dilucion"], errors="coerce").fillna(0.0)
 
         adjusted = nominal * (1.0 - dilution)
-        # Replace 0 denominators with NaN so division yields NaN, then fill with 0.0
-        ltv = (capital / adjusted.replace(0.0, np.nan)).fillna(0.0)
+        # Zero denominator → np.nan (explicit opacity; see docstring).
+        # Non-parseable capital (already 0.0 from fillna) with a valid denominator
+        # returns 0.0 as expected.
+        ltv = capital / adjusted.replace(0.0, np.nan)
         return ltv
 
     @staticmethod
+    def _ltv_sintetico_invalid_mask(df: pd.DataFrame) -> pd.Series:
+        """Return a boolean Series flagging loans with an invalid (zero) LTV denominator.
+
+        A loan is marked ``True`` (invalid / opaque) when
+        ``valor_nominal_factura * (1 - tasa_dilucion) == 0``, i.e. the
+        adjusted invoice value is fully diluted or the nominal value is zero.
+        These loans must not be used in portfolio LTV aggregations without
+        explicit acknowledgement.
+
+        Returns an all-False Series (no invalids) when required columns are
+        absent or the DataFrame is empty.
+        """
+        required = {"valor_nominal_factura", "tasa_dilucion"}
+        if not required.issubset(df.columns):
+            return pd.Series(dtype=bool)
+        if df.empty:
+            return pd.Series(False, index=df.index, dtype=bool)
+
+        nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce").fillna(0.0)
+        dilution = pd.to_numeric(df["tasa_dilucion"], errors="coerce").fillna(0.0)
+        adjusted = nominal * (1.0 - dilution)
+        return adjusted == 0.0
+
+    @staticmethod
     def _calculate_velocity_of_default(
-        df_ts: pd.DataFrame, default_rate_col: str = "default_rate"
+        df_ts: pd.DataFrame,
+        default_rate_col: str = "default_rate",
+        period_col: Optional[str] = None,
     ) -> pd.Series:
         """Compute period-over-period first derivative of the default rate.
+
+        **Units**: The returned Series is expressed in the same units as
+        *default_rate_col*.  When *default_rate_col* holds values in percent
+        (e.g. 2.5 = 2.5 %), each element of the result is a percentage-point
+        (pp) change per period.  One percentage point equals 100 basis points.
+
+        **Chronology normalisation**: If *period_col* is provided the DataFrame
+        is sorted ascending by that column before differencing, ensuring the
+        result is monotonically aligned to the calendar timeline regardless of
+        the input row order.
 
         Returns an empty Series when *default_rate_col* is absent.  With a
         single row the result contains one NaN (no prior period to diff against).
@@ -452,7 +498,11 @@ class CalculationPhase:
         if default_rate_col not in df_ts.columns:
             return pd.Series(dtype=float)
 
-        rate = pd.to_numeric(df_ts[default_rate_col], errors="coerce")
+        working = df_ts
+        if period_col is not None and period_col in df_ts.columns:
+            working = df_ts.sort_values(period_col)
+
+        rate = pd.to_numeric(working[default_rate_col], errors="coerce")
         return rate.diff()
 
     def _compute_portfolio_velocity_of_default(
@@ -460,13 +510,23 @@ class CalculationPhase:
     ) -> Optional[Decimal]:
         """Compute portfolio-level Velocity of Default from the canonical date column.
 
+        **Chronology**: Records are bucketed into calendar months (Period[M]).
+        The groupby is always performed in ascending period order so that
+        :py:meth:`pandas.Series.diff` produces the correct forward-looking
+        delta between consecutive months.
+
+        **Units**: The returned value is the change in portfolio default rate
+        between the two most recent calendar months, expressed in percentage
+        points (pp).  A Vd of ``+1.5`` means the default rate rose 1.5 pp
+        (= 150 basis points) month-on-month.
+
         Uses the ``as_of_date`` column (or other recognised date columns) and
         excludes ``closed`` loans from the denominator to avoid dilution.
 
         Returns:
-            Decimal Vd value (latest period default-rate minus prior period), or
-            ``None`` when no recognised date column exists or fewer than two
-            distinct month-periods are present.
+            ``Decimal`` Vd value quantised to 6 decimal places, or ``None``
+            when no recognised date column exists or fewer than two distinct
+            month-periods are present.
         """
         _date_candidates = [
             "as_of_date",
@@ -494,13 +554,13 @@ class CalculationPhase:
         if len(periods) < 2:
             return None
 
-        # Vectorised default-rate aggregation per period
+        # Vectorised default-rate aggregation per period (ascending chronological order)
         if "status" in working.columns:
             working["_is_defaulted"] = (working["status"] == "defaulted").astype(int)
         else:
             working["_is_defaulted"] = 0
 
-        period_agg = working.groupby("_period").agg(
+        period_agg = working.groupby("_period", sort=True).agg(
             _total=("_is_defaulted", "count"),
             _defaulted=("_is_defaulted", "sum"),
         )
@@ -508,6 +568,7 @@ class CalculationPhase:
             0.0
         ) * 100.0
 
+        # diff() on an ascending-sorted Series gives the correct forward delta
         vd_series = rates.diff()
 
         # Return the most recent velocity value using Decimal arithmetic for precision
