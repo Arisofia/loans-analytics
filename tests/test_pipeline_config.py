@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from src.pipeline.config import PipelineConfig, load_business_rules, load_kpi_definitions
+from backend.src.pipeline.config import PipelineConfig, load_business_rules, load_kpi_definitions
 
 
 def test_pipeline_config_load_not_found():
@@ -65,3 +65,4 @@ def test_load_kpi_definitions_valid(tmp_path):
 
     kpis = load_kpi_definitions(kpi_file)
     assert kpis == kpi_data
+

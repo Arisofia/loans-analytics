@@ -8,8 +8,8 @@ to ensure proper agent coordination and workflow execution.
 import unittest
 from unittest.mock import patch
 
-from python.multi_agent.orchestrator import MultiAgentOrchestrator
-from python.multi_agent.protocol import AgentRole
+from backend.python.multi_agent.orchestrator import MultiAgentOrchestrator
+from backend.python.multi_agent.protocol import AgentRole
 
 
 class TestRetailLoanScenarios(unittest.TestCase):
@@ -325,3 +325,4 @@ class TestPortfolioScenarios(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

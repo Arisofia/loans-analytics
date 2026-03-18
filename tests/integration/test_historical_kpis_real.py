@@ -34,7 +34,7 @@ def supabase_backend():
 
     Validates environment configuration before running tests.
     """
-    from python.multi_agent.historical_backend_supabase import (
+    from backend.python.multi_agent.historical_backend_supabase import (
         SupabaseHistoricalBackend,
     )
 
@@ -72,7 +72,7 @@ def historical_provider(supabase_backend):
     """
     Fixture to initialize HistoricalContextProvider in REAL mode.
     """
-    from python.multi_agent.historical_context import HistoricalContextProvider
+    from backend.python.multi_agent.historical_context import HistoricalContextProvider
 
     provider = HistoricalContextProvider(mode="REAL", backend=supabase_backend)
     return provider
@@ -411,3 +411,4 @@ def test_historical_kpis_data_integrity(supabase_backend, test_portfolio_id, see
     assert (
         response.status_code == 409
     ), f"Expected 409 Conflict for duplicate insert, got {response.status_code}"
+

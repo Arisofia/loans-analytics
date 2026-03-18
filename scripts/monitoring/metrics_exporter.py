@@ -26,8 +26,8 @@ from typing import Dict, Optional
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from python.config import settings  # noqa: E402
-from python.supabase_pool import SupabaseConnectionPool  # noqa: E402
+from backend.python.config import settings  # noqa: E402
+from backend.python.supabase_pool import SupabaseConnectionPool  # noqa: E402
 
 
 class MetricsRegistry:
@@ -289,3 +289,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

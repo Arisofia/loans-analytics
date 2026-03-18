@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from src.pipeline.ingestion import IngestionPhase
+from backend.src.pipeline.ingestion import IngestionPhase
 
 
 @pytest.fixture
@@ -66,3 +66,4 @@ def test_validation_strict_raises(tmp_path):
         raise AssertionError("Expected ValueError")
     except ValueError:
         pass
+

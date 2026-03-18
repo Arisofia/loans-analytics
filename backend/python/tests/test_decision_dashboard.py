@@ -4,8 +4,8 @@ from datetime import datetime
 
 from fastapi.testclient import TestClient
 
-from python.apps.analytics.api.main import app
-from python.kpis.health_score import calculate_portfolio_health_score
+from backend.python.apps.analytics.api.main import app
+from backend.python.kpis.health_score import calculate_portfolio_health_score
 
 
 def _sample_loans_payload() -> dict:
@@ -113,3 +113,4 @@ def test_full_analysis_includes_unit_economics_and_portfolio_health():
     assert body["unit_economics"]["npl"]["npl_ratio"] >= 0.0
     assert "portfolio_health" in body
     assert body["portfolio_health"]["score"] >= 0.0
+

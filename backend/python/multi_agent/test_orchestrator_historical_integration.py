@@ -3,8 +3,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from python.multi_agent.orchestrator import MultiAgentOrchestrator
-from python.multi_agent.protocol import AgentResponse, AgentRole, Message, MessageRole
+from backend.python.multi_agent.orchestrator import MultiAgentOrchestrator
+from backend.python.multi_agent.protocol import AgentResponse, AgentRole, Message, MessageRole
 
 
 class TestOrchestratorHistoricalIntegration(unittest.TestCase):
@@ -113,3 +113,4 @@ class TestOrchestratorHistoricalIntegration(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from python.apps.analytics.api.main import app
+from backend.python.apps.analytics.api.main import app
 
 
 def test_openapi_contains_decision_dashboard_endpoint_and_schema_refs():
@@ -19,3 +19,4 @@ def test_openapi_contains_decision_dashboard_endpoint_and_schema_refs():
 
     request_ref = post["requestBody"]["content"]["application/json"]["schema"]["$ref"]
     assert request_ref.endswith("/LoanPortfolioRequest")
+

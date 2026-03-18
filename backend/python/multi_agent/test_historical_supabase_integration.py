@@ -17,10 +17,10 @@ from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
-from python.multi_agent.historical_backend_supabase import (
+from backend.python.multi_agent.historical_backend_supabase import (
     SupabaseHistoricalBackend,
 )
-from python.multi_agent.historical_context import HistoricalContextProvider
+from backend.python.multi_agent.historical_context import HistoricalContextProvider
 
 # Check if real Supabase tests are explicitly enabled
 REAL_SUPABASE_ENABLED = os.getenv("RUN_REAL_SUPABASE_TESTS", "0") == "1"
@@ -195,3 +195,4 @@ class TestHistoricalKpisSupabaseIntegration:
         # If REAL has data, structure should match MOCK
         if history_real:
             assert set(history_mock[0].keys()) == set(history_real[0].keys())
+

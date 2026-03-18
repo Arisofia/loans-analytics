@@ -1,4 +1,4 @@
-from streamlit_app.utils.security import sanitize_api_base
+from frontend.streamlit_app.utils.security import sanitize_api_base
 
 
 def test_sanitize_valid_host():
@@ -44,3 +44,4 @@ def test_loopback_allowed_via_env(monkeypatch):
         assert sanitize_api_base("http://127.0.0.1") == "http://127.0.0.1"
     finally:
         monkeypatch.delenv("ALLOW_PRIVATE_API_BASE", raising=False)
+

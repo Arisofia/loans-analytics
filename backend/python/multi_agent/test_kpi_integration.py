@@ -3,8 +3,8 @@
 import unittest
 from datetime import datetime
 
-from python.models.kpi_models import KpiDefinition, KpiRegistry, KpiValidationConfig
-from python.multi_agent.kpi_integration import (
+from backend.python.models.kpi_models import KpiDefinition, KpiRegistry, KpiValidationConfig
+from backend.python.multi_agent.kpi_integration import (
     KpiContextProvider,
     KpiValue,
 )
@@ -236,3 +236,4 @@ class TestKpiIntegration(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

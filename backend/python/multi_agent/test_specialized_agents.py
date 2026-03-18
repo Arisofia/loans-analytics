@@ -9,8 +9,8 @@ to fintech scenarios.
 import unittest
 from unittest.mock import Mock, patch
 
-from python.multi_agent.protocol import AgentRole
-from python.multi_agent.specialized_agents import (
+from backend.python.multi_agent.protocol import AgentRole
+from backend.python.multi_agent.specialized_agents import (
     CollectionsAgent,
     CustomerRetentionAgent,
     DatabaseDesignerAgent,
@@ -181,3 +181,4 @@ class TestSpecializedAgentIntegration(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

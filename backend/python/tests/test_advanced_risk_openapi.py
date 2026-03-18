@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from python.apps.analytics.api.main import app
+from backend.python.apps.analytics.api.main import app
 
 
 def test_openapi_contains_advanced_risk_endpoint_and_schema_example():
@@ -26,3 +26,4 @@ def test_openapi_contains_advanced_risk_endpoint_and_schema_example():
     assert "dpd_buckets" in example
     assert isinstance(example["dpd_buckets"], list)
     assert example["dpd_buckets"][0]["bucket"] == "current"
+

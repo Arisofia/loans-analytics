@@ -1,7 +1,7 @@
 import asyncio
 
-from python.apps.analytics.api.models import LoanRecord
-from python.apps.analytics.api.service import KPIService
+from backend.python.apps.analytics.api.models import LoanRecord
+from backend.python.apps.analytics.api.service import KPIService
 
 
 def _sample_loans() -> list[LoanRecord]:
@@ -91,3 +91,4 @@ def test_executive_analytics_includes_strategic_confirmations():
     assert len(payload["opportunity_prioritization"]) >= 1
     assert len(payload["churn_90d_metrics"]) >= 1
     assert payload["data_governance"].get("quality_score") is not None
+

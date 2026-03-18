@@ -4,7 +4,7 @@ import unittest
 
 import pandas as pd
 
-from python.kpis.catalog_processor import KPICatalogProcessor
+from backend.python.kpis.catalog_processor import KPICatalogProcessor
 
 
 class TestKPICatalogProcessorStrategic(unittest.TestCase):
@@ -102,3 +102,4 @@ class TestKPICatalogProcessorStrategic(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

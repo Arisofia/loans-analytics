@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from python.apps.analytics.api.main import app
+from backend.python.apps.analytics.api.main import app
 
 
 def _payload() -> dict:
@@ -94,3 +94,4 @@ def test_roll_rate_endpoint_returns_transition_rows_and_summary():
     transition_pairs = {(row["from_bucket"], row["to_bucket"]) for row in body["transition_matrix"]}
     assert ("31_60", "current") in transition_pairs
     assert ("61_90", "90_plus") in transition_pairs
+

@@ -37,14 +37,9 @@ class CalculationPhase:
             ValueError: If critical calculation failures occur.
         """
         if df.empty:
-            logger.warning("Empty dataframe provided to CalculationPhase")
-            return {
-                "kpis": {},
-                "segments": {},
-                "time_series": self._empty_time_series_result(),
-                "anomalies": [],
-                "manifest": self._generate_manifest({}, df),
-            }
+            error_msg = "CRITICAL: EMPTY DATAFRAME PROVIDED TO CALCULATIONPHASE"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         try:
             # 1. Unified KPI Calculation (SSOT)
@@ -242,7 +237,9 @@ class CalculationPhase:
         status_col = "status" if "status" in df.columns else None
 
         if balance_col is None:
-            return {}
+            error_msg = "CRITICAL: MISSING BALANCE COLUMN FOR SEGMENT CALCULATION"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         work = self._prepare_segment_workframe(df, balance_col, dpd_col, status_col)
         if work.empty:

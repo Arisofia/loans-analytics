@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from python.apps.analytics.api.main import app
+from backend.python.apps.analytics.api.main import app
 
 
 def _sample_payload() -> dict:
@@ -165,3 +165,4 @@ def test_full_analysis_layered_insights():
         layer_item for layer_item in layers if layer_item["layer"] == "Growth & Profitability"
     )
     assert growth_layer["now_what"] is not None
+

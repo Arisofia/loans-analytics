@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from src.pipeline.calculation import CalculationPhase
+from backend.src.pipeline.calculation import CalculationPhase
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -200,3 +200,4 @@ class TestCalculateRecurrentTpv:
                 "recovered_clients",
             ):
                 assert key in period_data
+

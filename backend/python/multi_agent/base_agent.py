@@ -13,7 +13,7 @@ else:
     except ImportError:
         OpenAI = None
 
-from python.logging_config import get_logger
+from backend.python.logging_config import get_logger
 
 from .guardrails import Guardrails
 from .protocol import (
@@ -404,3 +404,4 @@ class BaseAgent(ABC):
             "cost_usd": cost,
             "finish_reason": response.choices[0].finish_reason,
         }
+

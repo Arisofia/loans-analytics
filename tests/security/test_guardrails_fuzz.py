@@ -5,7 +5,7 @@ from __future__ import annotations
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from python.multi_agent.guardrails import Guardrails
+from backend.python.multi_agent.guardrails import Guardrails
 
 
 @settings(max_examples=150, deadline=None)
@@ -34,3 +34,4 @@ def test_redact_pii_replaces_emails(local: str, domain: str) -> None:
 
     assert "@{}.".format(domain) not in redacted
     assert "[REDACTED]" in redacted
+

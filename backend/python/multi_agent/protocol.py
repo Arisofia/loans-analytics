@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from python.time_utils import get_utc_now
+from backend.python.time_utils import get_utc_now
 
 
 class AgentRole(str, Enum):
@@ -122,3 +122,4 @@ class Scenario(BaseModel):
     description: str
     steps: List[ScenarioStep]
     initial_context: Dict[str, Any] = Field(default_factory=dict)
+

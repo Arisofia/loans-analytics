@@ -3,8 +3,8 @@
 import asyncio
 from datetime import datetime
 
-from python.apps.analytics.api.models import LoanRecord
-from python.apps.analytics.api.service import KPIService
+from backend.python.apps.analytics.api.models import LoanRecord
+from backend.python.apps.analytics.api.service import KPIService
 
 
 def test_calculate_kpis_for_portfolio_includes_collection_rate():
@@ -141,3 +141,4 @@ def test_supported_catalog_kpis_include_remaining_catalog_ids():
     service = KPIService(actor="test_user")
     supported = set(service.get_supported_catalog_kpi_ids())
     assert {"default_rate", "total_loans_count", "customer_lifetime_value"}.issubset(supported)
+

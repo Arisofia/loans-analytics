@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.pipeline.orchestrator import UnifiedPipeline
+from backend.src.pipeline.orchestrator import UnifiedPipeline
 
 
 @pytest.fixture
@@ -91,3 +91,4 @@ def test_pipeline_dry_run(mock_pipeline_deps, tmp_path):
     assert "ingestion" in results["phases"]
     assert "transformation" not in results["phases"]
     mock_pipeline_deps["transformation"].return_value.execute.assert_not_called()
+

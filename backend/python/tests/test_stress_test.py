@@ -2,8 +2,8 @@
 
 import asyncio
 
-from python.apps.analytics.api.models import LoanRecord, StressTestResponse
-from python.apps.analytics.api.service import KPIService
+from backend.python.apps.analytics.api.models import LoanRecord, StressTestResponse
+from backend.python.apps.analytics.api.service import KPIService
 
 
 def _stress_loans() -> list[LoanRecord]:
@@ -73,3 +73,4 @@ def test_calculate_stress_test_handles_empty_inputs():
     assert response.baseline.par30_pct == 0.0
     assert response.stressed.par30_pct == 0.0
     assert response.alerts == []
+

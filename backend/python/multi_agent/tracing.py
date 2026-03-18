@@ -12,8 +12,8 @@ try:
 except ImportError:
     OTEL_AVAILABLE = False
 
-from python.logging_config import get_logger
-from python.time_utils import get_iso_timestamp
+from backend.python.logging_config import get_logger
+from backend.python.time_utils import get_iso_timestamp
 
 from .protocol import AgentError, AgentRequest, AgentResponse, AgentRole
 
@@ -134,3 +134,4 @@ class AgentTracer:
         """Reset accumulators for trace."""
         self._cost_accumulator.pop(trace_id, None)
         self._token_accumulator.pop(trace_id, None)
+

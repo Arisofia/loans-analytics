@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from src.pipeline.output import OutputPhase
+from backend.src.pipeline.output import OutputPhase
 
 
 def _output(config_overrides=None) -> OutputPhase:
@@ -199,3 +199,4 @@ def test_execute_omits_payload_keys_when_not_supplied(tmp_path):
     assert "time_series" not in result["exports"]
     assert "anomalies" not in result["exports"]
     assert "nsm_recurrent_tpv" not in result["exports"]
+

@@ -5,9 +5,9 @@ import unittest
 
 import pandas as pd
 
-from python.apps.analytics.api.models import AdvancedRiskResponse, LoanRecord
-from python.apps.analytics.api.service import KPIService
-from python.kpis.advanced_risk import calculate_advanced_risk_metrics
+from backend.python.apps.analytics.api.models import AdvancedRiskResponse, LoanRecord
+from backend.python.apps.analytics.api.service import KPIService
+from backend.python.kpis.advanced_risk import calculate_advanced_risk_metrics
 
 
 class TestAdvancedRiskMetrics(unittest.TestCase):
@@ -116,3 +116,4 @@ class TestAdvancedRiskService(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

@@ -38,7 +38,7 @@ for _attr in [
 
 sys.modules["streamlit"] = _st_stub
 
-from streamlit_app.components.csv_upload import (  # noqa: E402
+from frontend.streamlit_app.components.csv_upload import (  # noqa: E402
     _alias_matches,
     _apply_aliases,
     _classify_loan_id_duplicates,
@@ -523,3 +523,4 @@ class TestPortfolioDashboardDuplicateClassification:
         )
         result = _dash_mod._classify_loan_id_duplicates(df)
         assert any(level == "warning" and "suspicious" in msg.lower() for level, msg in result)
+

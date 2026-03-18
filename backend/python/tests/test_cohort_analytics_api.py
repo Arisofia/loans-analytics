@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from python.apps.analytics.api.main import app
+from backend.python.apps.analytics.api.main import app
 
 
 def _payload() -> dict:
@@ -63,3 +63,4 @@ def test_cohort_analytics_endpoint_returns_vintage_rows_and_summary():
 
     cohort_months = [row["cohort_month"] for row in body["cohorts"]]
     assert cohort_months == ["2026-01", "2026-02"]
+

@@ -17,7 +17,7 @@ except ImportError:
     sys.exit(1)
 
 try:
-    from src.agents.monitoring import CostTracker, PerformanceTracker
+    from backend.src.agents.monitoring import CostTracker, PerformanceTracker
 except ImportError:
     CostTracker = None
     PerformanceTracker = None
@@ -215,3 +215,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

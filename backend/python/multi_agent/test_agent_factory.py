@@ -3,9 +3,9 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from python.multi_agent.agent_factory import agent_with_role
-from python.multi_agent.base_agent import BaseAgent
-from python.multi_agent.protocol import AgentRole, LLMProvider
+from backend.python.multi_agent.agent_factory import agent_with_role
+from backend.python.multi_agent.base_agent import BaseAgent
+from backend.python.multi_agent.protocol import AgentRole, LLMProvider
 
 
 class TestAgentFactory(unittest.TestCase):
@@ -71,3 +71,4 @@ class TestAgentFactory(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

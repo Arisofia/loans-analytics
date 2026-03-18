@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from python.kpis.strategic_reporting import (
+from backend.python.kpis.strategic_reporting import (
     build_strategic_summary,
     load_dashboard_metrics,
     write_strategic_report,
@@ -81,3 +81,4 @@ class TestStrategicReporting(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

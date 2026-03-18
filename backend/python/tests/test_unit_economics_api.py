@@ -4,9 +4,9 @@ import pytest
 from datetime import datetime
 from fastapi.testclient import TestClient
 
-from python.apps.analytics.api.main import app
-from python.apps.analytics.api.models import LoanRecord
-from python.apps.analytics.api.service import KPIService
+from backend.python.apps.analytics.api.main import app
+from backend.python.apps.analytics.api.models import LoanRecord
+from backend.python.apps.analytics.api.service import KPIService
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -371,3 +371,4 @@ class TestKPIServiceUnitEconomics:
 
         # Payback = 240 / 20 = 12 months
         assert result.payback.payback_months == pytest.approx(12.0, abs=0.01)
+

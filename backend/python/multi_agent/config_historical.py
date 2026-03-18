@@ -4,7 +4,7 @@ This module provides a single point of configuration for choosing between
 REAL (Supabase-backed) and MOCK (synthetic) historical KPI data.
 
 Usage:
-    from python.multi_agent.config_historical import build_historical_context_provider
+    from backend.python.multi_agent.config_historical import build_historical_context_provider
 
     # Default: MOCK mode (no Supabase credentials required)
     provider = build_historical_context_provider()
@@ -23,10 +23,10 @@ import logging
 import os
 from typing import Optional, Type
 
-from python.multi_agent.historical_context import HistoricalContextProvider
+from backend.python.multi_agent.historical_context import HistoricalContextProvider
 
 try:
-    from python.multi_agent.historical_backend_supabase import (
+    from backend.python.multi_agent.historical_backend_supabase import (
         SupabaseHistoricalBackend,
     )
 
@@ -103,3 +103,4 @@ def build_historical_context_provider(
     )
     logger.info("Built HistoricalContextProvider in MOCK mode (synthetic data)")
     return provider
+

@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import pandas as pd
 
-from python.kpis.engine import KPIEngineV2
+from backend.python.kpis.engine import KPIEngineV2
 
 
 class TestKPIEngineV2(unittest.TestCase):
@@ -248,3 +248,4 @@ class TestKPIEngineV2(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

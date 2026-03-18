@@ -32,21 +32,21 @@ class TestDefaultRiskModel:
 
     def test_import(self):
         """Module is importable."""
-        from python.models.default_risk_model import FEATURE_COLUMNS, DefaultRiskModel
+        from backend.python.models.default_risk_model import FEATURE_COLUMNS, DefaultRiskModel
 
         assert DefaultRiskModel is not None
         assert len(FEATURE_COLUMNS) > 0
 
     def test_load_file_not_found(self):
         """Raises FileNotFoundError when model file is missing."""
-        from python.models.default_risk_model import DefaultRiskModel
+        from backend.python.models.default_risk_model import DefaultRiskModel
 
         with pytest.raises(FileNotFoundError):
             DefaultRiskModel.load("/nonexistent/path/model.ubj")
 
     def test_predict_proba(self):
         """predict_proba returns a float in [0, 1]."""
-        from python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
+        from backend.python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
         mock_clf = _make_mock_classifier([0.42])
         model = DefaultRiskModel(model=mock_clf)
@@ -59,7 +59,7 @@ class TestDefaultRiskModel:
 
     def test_predict_proba_high(self):
         """High probability returned correctly."""
-        from python.models.default_risk_model import DefaultRiskModel
+        from backend.python.models.default_risk_model import DefaultRiskModel
 
         mock_clf = _make_mock_classifier([0.95])
         model = DefaultRiskModel(model=mock_clf)
@@ -70,7 +70,7 @@ class TestDefaultRiskModel:
 
     def test_predict_proba_low(self):
         """Low probability returned correctly."""
-        from python.models.default_risk_model import DefaultRiskModel
+        from backend.python.models.default_risk_model import DefaultRiskModel
 
         mock_clf = _make_mock_classifier([0.01])
         model = DefaultRiskModel(model=mock_clf)
@@ -81,7 +81,7 @@ class TestDefaultRiskModel:
 
     def test_predict_proba_not_loaded_raises(self):
         """predict_proba raises RuntimeError when model is None."""
-        from python.models.default_risk_model import DefaultRiskModel
+        from backend.python.models.default_risk_model import DefaultRiskModel
 
         model = DefaultRiskModel(model=None)
 
@@ -90,7 +90,7 @@ class TestDefaultRiskModel:
 
     def test_predict_batch(self):
         """predict_batch returns predictions for multiple loans."""
-        from python.models.default_risk_model import DefaultRiskModel
+        from backend.python.models.default_risk_model import DefaultRiskModel
 
         mock_clf = _make_mock_classifier([0.3, 0.7])
         model = DefaultRiskModel(model=mock_clf)
@@ -101,13 +101,13 @@ class TestDefaultRiskModel:
 
     def test_feature_columns_alias(self):
         """FEATURE_COLUMNS is an alias for ALL_FEATURES."""
-        from python.models.default_risk_model import ALL_FEATURES, FEATURE_COLUMNS
+        from backend.python.models.default_risk_model import ALL_FEATURES, FEATURE_COLUMNS
 
         assert FEATURE_COLUMNS == ALL_FEATURES
 
     def test_metadata_empty_on_init(self):
         """Model starts with empty metadata."""
-        from python.models.default_risk_model import DefaultRiskModel
+        from backend.python.models.default_risk_model import DefaultRiskModel
 
         model = DefaultRiskModel()
         assert model.metadata == {}
@@ -121,7 +121,7 @@ class TestPredictionModels:
     """Tests for DefaultPredictionRequest/Response Pydantic models."""
 
     def test_request_model(self):
-        from python.apps.analytics.api.models import DefaultPredictionRequest
+        from backend.python.apps.analytics.api.models import DefaultPredictionRequest
 
         req = DefaultPredictionRequest(
             loan_amount=50000.0,
@@ -132,7 +132,7 @@ class TestPredictionModels:
         assert req.ltv_ratio == 0.0  # default
 
     def test_response_model(self):
-        from python.apps.analytics.api.models import DefaultPredictionResponse
+        from backend.python.apps.analytics.api.models import DefaultPredictionResponse
 
         resp = DefaultPredictionResponse(
             probability=0.42,
@@ -154,7 +154,7 @@ class TestPredictEndpoint:
         try:
             from fastapi.testclient import TestClient
 
-            from python.apps.analytics.api.main import app
+            from backend.python.apps.analytics.api.main import app
 
             if app is None:
                 pytest.skip("FastAPI app not initialized")
@@ -164,7 +164,7 @@ class TestPredictEndpoint:
             pytest.skip("FastAPI not available")
 
         # Clear model cache to force reload
-        from python.apps.analytics.api import main as main_mod
+        from backend.python.apps.analytics.api import main as main_mod
 
         if hasattr(main_mod, "_risk_model_cache"):
             main_mod._risk_model_cache.clear()
@@ -185,7 +185,7 @@ class TestPredictEndpoint:
         try:
             from fastapi.testclient import TestClient
 
-            from python.apps.analytics.api.main import app
+            from backend.python.apps.analytics.api.main import app
 
             if app is None:
                 pytest.skip("FastAPI app not initialized")
@@ -194,7 +194,7 @@ class TestPredictEndpoint:
         except ImportError:
             pytest.skip("FastAPI not available")
 
-        from python.apps.analytics.api import main as main_mod
+        from backend.python.apps.analytics.api import main as main_mod
 
         mock_model = MagicMock()
         mock_model.predict_proba.return_value = 0.35
@@ -220,3 +220,4 @@ class TestPredictEndpoint:
             assert data["risk_level"] == "medium"
         finally:
             main_mod._risk_model_cache.clear()
+

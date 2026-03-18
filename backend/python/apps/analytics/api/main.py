@@ -1077,7 +1077,7 @@ if app is not None:
             try:
                 base_path = Path(__file__).resolve().parents[4]
                 if backend in {"torch", "pytorch"}:
-                    from python.models.default_risk_torch_model import TorchDefaultRiskModel
+                    from backend.python.models.default_risk_torch_model import TorchDefaultRiskModel
 
                     model_path = base_path / "models" / "risk" / "default_risk_torch.pt"
                     if model_path.exists():
@@ -1089,7 +1089,7 @@ if app is not None:
                         _risk_model_cache["model"] = None
                         _risk_model_cache["model_version"] = "torch_mlp_v1"
                 else:
-                    from python.models.default_risk_model import DefaultRiskModel
+                    from backend.python.models.default_risk_model import DefaultRiskModel
 
                     model_path = base_path / "models" / "risk" / "default_risk_xgb.ubj"
                     if model_path.exists():
@@ -1232,3 +1232,4 @@ if __name__ == "__main__":
     else:
         print("FastAPI app not initialized. Check imports.")
         sys.exit(1)
+

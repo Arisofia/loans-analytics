@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import pytest
 
-from python.utils.usage_tracker import UsageTracker
+from backend.python.utils.usage_tracker import UsageTracker
 
 
 @pytest.fixture
@@ -104,3 +104,4 @@ def test_export_parquet(temp_storage, tmp_path):
     assert df_len == 1
     feature_name_parquet = df.iloc[0]["feature_name"]
     assert feature_name_parquet == "feature"
+

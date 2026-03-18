@@ -23,7 +23,7 @@ import math
 import os
 from datetime import datetime, timedelta, timezone
 
-from src.agents.multi_agent.config_historical import build_historical_context_provider
+from backend.src.agents.multi_agent.config_historical import build_historical_context_provider
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -130,3 +130,4 @@ def summarize_kpis(days: int = 90) -> None:
 
 if __name__ == "__main__":
     summarize_kpis()
+

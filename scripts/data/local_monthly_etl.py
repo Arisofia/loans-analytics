@@ -25,7 +25,8 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 
-from src.zero_cost.local_migration_etl import main  # noqa: E402
+from backend.src.zero_cost.local_migration_etl import main  # noqa: E402
 
 if __name__ == "__main__":
     main()
+

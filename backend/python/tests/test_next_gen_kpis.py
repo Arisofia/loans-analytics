@@ -4,8 +4,8 @@ import pytest
 import pandas as pd
 from datetime import datetime
 
-from python.apps.analytics.api.models import LoanRecord
-from python.apps.analytics.api.service import KPIService
+from backend.python.apps.analytics.api.models import LoanRecord
+from backend.python.apps.analytics.api.service import KPIService
 
 
 @pytest.mark.asyncio
@@ -160,3 +160,4 @@ async def test_get_vintage_curves():
 
     # MoB 6 point (Old loan) should be healthy
     assert avg_points[6].npl_ratio == 0.0
+

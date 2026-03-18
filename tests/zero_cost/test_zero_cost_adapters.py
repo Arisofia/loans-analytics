@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 # =============================================================================
 class TestZeroCostStorage:
     def test_write_and_read_parquet(self, tmp_path):
-        from src.zero_cost.storage import ZeroCostStorage
+        from backend.src.zero_cost.storage import ZeroCostStorage
 
         storage = ZeroCostStorage(base_dir=tmp_path / "data", db_path=None)
         df = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
@@ -41,7 +41,7 @@ class TestZeroCostStorage:
     def test_manifest_content(self, tmp_path):
         import json
 
-        from src.zero_cost.storage import ZeroCostStorage
+        from backend.src.zero_cost.storage import ZeroCostStorage
 
         storage = ZeroCostStorage(base_dir=tmp_path / "data", db_path=None)
         df = pd.DataFrame({"col1": [10, 20], "col2": [0.1, 0.2]})
@@ -55,7 +55,7 @@ class TestZeroCostStorage:
 
     def test_duckdb_query(self, tmp_path):
         pytest.importorskip("duckdb")
-        from src.zero_cost.storage import ZeroCostStorage
+        from backend.src.zero_cost.storage import ZeroCostStorage
 
         db_path = tmp_path / "test.duckdb"
         storage = ZeroCostStorage(base_dir=tmp_path / "data", db_path=db_path)
@@ -83,14 +83,14 @@ class TestLendIdMapper:
         return p
 
     def test_load_from_csv(self, tmp_path):
-        from src.zero_cost.lend_id_mapper import LendIdMapper
+        from backend.src.zero_cost.lend_id_mapper import LendIdMapper
 
         mapper = LendIdMapper()
         mapper.load_from_csv(self._make_csv(tmp_path))
         assert len(mapper) == 3
 
     def test_to_lend_id(self, tmp_path):
-        from src.zero_cost.lend_id_mapper import LendIdMapper
+        from backend.src.zero_cost.lend_id_mapper import LendIdMapper
 
         mapper = LendIdMapper()
         mapper.load_from_csv(self._make_csv(tmp_path))
@@ -98,21 +98,21 @@ class TestLendIdMapper:
         assert mapper.to_lend_id("nde-001") == "L-100"  # case-insensitive
 
     def test_to_numero_desembolso(self, tmp_path):
-        from src.zero_cost.lend_id_mapper import LendIdMapper
+        from backend.src.zero_cost.lend_id_mapper import LendIdMapper
 
         mapper = LendIdMapper()
         mapper.load_from_csv(self._make_csv(tmp_path))
         assert mapper.to_numero_desembolso("L-101") == "NDE-002"
 
     def test_unknown_returns_none(self, tmp_path):
-        from src.zero_cost.lend_id_mapper import LendIdMapper
+        from backend.src.zero_cost.lend_id_mapper import LendIdMapper
 
         mapper = LendIdMapper()
         mapper.load_from_csv(self._make_csv(tmp_path))
         assert mapper.to_lend_id("NDE-999") is None
 
     def test_save_and_reload(self, tmp_path):
-        from src.zero_cost.lend_id_mapper import LendIdMapper
+        from backend.src.zero_cost.lend_id_mapper import LendIdMapper
 
         mapper = LendIdMapper()
         mapper.load_from_csv(self._make_csv(tmp_path))
@@ -125,7 +125,7 @@ class TestLendIdMapper:
         assert mapper2.to_lend_id("NDE-003") == "L-102"
 
     def test_enrich_dataframe(self, tmp_path):
-        from src.zero_cost.lend_id_mapper import LendIdMapper
+        from backend.src.zero_cost.lend_id_mapper import LendIdMapper
 
         mapper = LendIdMapper()
         mapper.load_from_csv(self._make_csv(tmp_path))
@@ -156,7 +156,7 @@ class TestControlMoraAdapter:
         return p
 
     def test_load_basic(self, tmp_path):
-        from src.zero_cost.control_mora_adapter import ControlMoraAdapter
+        from backend.src.zero_cost.control_mora_adapter import ControlMoraAdapter
 
         adapter = ControlMoraAdapter(snapshot_month="2026-01-31")
         df = adapter.load(self._make_mora_csv(tmp_path))
@@ -166,7 +166,7 @@ class TestControlMoraAdapter:
         assert "client_name" in df.columns
 
     def test_column_aliasing(self, tmp_path):
-        from src.zero_cost.control_mora_adapter import ControlMoraAdapter
+        from backend.src.zero_cost.control_mora_adapter import ControlMoraAdapter
 
         adapter = ControlMoraAdapter(snapshot_month="2026-01-31")
         df = adapter.load(self._make_mora_csv(tmp_path))
@@ -176,7 +176,7 @@ class TestControlMoraAdapter:
         assert "dpd" in df.columns
 
     def test_numeric_coercion(self, tmp_path):
-        from src.zero_cost.control_mora_adapter import ControlMoraAdapter
+        from backend.src.zero_cost.control_mora_adapter import ControlMoraAdapter
 
         adapter = ControlMoraAdapter(snapshot_month="2026-01-31")
         df = adapter.load(self._make_mora_csv(tmp_path))
@@ -184,7 +184,7 @@ class TestControlMoraAdapter:
         assert pd.api.types.is_integer_dtype(df["dpd"])
 
     def test_snapshot_month_inferred_from_filename(self, tmp_path):
-        from src.zero_cost.control_mora_adapter import ControlMoraAdapter
+        from backend.src.zero_cost.control_mora_adapter import ControlMoraAdapter
 
         # Do not pass an explicit snapshot_month so that the adapter must infer
         # it from the filename "control_mora_ene2026.csv" produced by _make_mora_csv.
@@ -197,7 +197,7 @@ class TestControlMoraAdapter:
         assert df["snapshot_month"].notna().all()
 
     def test_snapshot_month_inference_warning_on_unparseable_filename(self, tmp_path, caplog):
-        from src.zero_cost.control_mora_adapter import ControlMoraAdapter
+        from backend.src.zero_cost.control_mora_adapter import ControlMoraAdapter
 
         adapter = ControlMoraAdapter(snapshot_month=None)
         # Use a filename that does not encode a month to trigger the warning path.
@@ -216,15 +216,15 @@ class TestControlMoraAdapter:
         assert any("snapshot_month" in record.message for record in caplog.records)
 
     def test_snapshot_month_set(self, tmp_path):
-        from src.zero_cost.control_mora_adapter import ControlMoraAdapter
+        from backend.src.zero_cost.control_mora_adapter import ControlMoraAdapter
 
         adapter = ControlMoraAdapter(snapshot_month="2026-01-31")
         df = adapter.load(self._make_mora_csv(tmp_path))
         assert df["snapshot_month"].iloc[0] == pd.Timestamp("2026-01-31")
 
     def test_mora_bucket_inference(self, tmp_path):
-        from src.zero_cost.control_mora_adapter import ControlMoraAdapter
-        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+        from backend.src.zero_cost.control_mora_adapter import ControlMoraAdapter
+        from backend.src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
 
         adapter = ControlMoraAdapter(snapshot_month="2026-01-31")
         df = adapter.load(self._make_mora_csv(tmp_path))
@@ -236,7 +236,7 @@ class TestControlMoraAdapter:
         assert buckets["L-102"] == "91-180"
 
     def test_load_many(self, tmp_path):
-        from src.zero_cost.control_mora_adapter import ControlMoraAdapter
+        from backend.src.zero_cost.control_mora_adapter import ControlMoraAdapter
 
         csv1 = self._make_mora_csv(tmp_path)
         # Create a second CSV in a subdir
@@ -265,7 +265,7 @@ class TestMonthlySnapshotBuilder:
         )
 
     def test_build_returns_expected_columns(self):
-        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+        from backend.src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
 
         builder = MonthlySnapshotBuilder()
         snap = builder.build(self._loans_df())
@@ -275,7 +275,7 @@ class TestMonthlySnapshotBuilder:
         assert "months_on_book" in snap.columns
 
     def test_par_flags(self):
-        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+        from backend.src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
 
         builder = MonthlySnapshotBuilder()
         snap = builder.build(self._loans_df()).set_index("lend_id")
@@ -285,7 +285,7 @@ class TestMonthlySnapshotBuilder:
         assert not snap.loc["L-4", "par_90"]  # dpd=0 → not in PAR-90
 
     def test_compute_portfolio_kpis(self):
-        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+        from backend.src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
 
         builder = MonthlySnapshotBuilder()
         snap = builder.build(self._loans_df())
@@ -295,7 +295,7 @@ class TestMonthlySnapshotBuilder:
         assert kpis["total_overdue"] == pytest.approx(7000.0)
 
     def test_compute_portfolio_kpis_active_loans(self):
-        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+        from backend.src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
 
         builder = MonthlySnapshotBuilder()
         snap = builder.build(self._loans_df())
@@ -304,7 +304,7 @@ class TestMonthlySnapshotBuilder:
         assert kpis["active_loans"] == 4
 
     def test_compute_portfolio_kpis_active_loans_with_zero_outstanding(self):
-        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+        from backend.src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
 
         builder = MonthlySnapshotBuilder()
         df = self._loans_df().copy()
@@ -315,7 +315,7 @@ class TestMonthlySnapshotBuilder:
         assert kpis["active_loans"] == 3
 
     def test_compute_portfolio_kpis_active_loans_fallback(self):
-        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+        from backend.src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
 
         builder = MonthlySnapshotBuilder()
         df = self._loans_df().drop(columns=["principal_outstanding"])
@@ -325,7 +325,7 @@ class TestMonthlySnapshotBuilder:
         assert kpis["active_loans"] == kpis["total_loans"]
 
     def test_compute_portfolio_kpis_weighted_avg_dpd(self):
-        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+        from backend.src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
 
         builder = MonthlySnapshotBuilder()
         snap = builder.build(self._loans_df())
@@ -339,7 +339,7 @@ class TestMonthlySnapshotBuilder:
 
     def test_set_snapshot_month_explicit_normalizes_to_month_end(self):
         """Explicit as_of_month must be normalized to the last day of the month."""
-        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+        from backend.src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
 
         builder = MonthlySnapshotBuilder()
         df = self._loans_df().drop(columns=["snapshot_month"])
@@ -349,7 +349,7 @@ class TestMonthlySnapshotBuilder:
 
     def test_set_snapshot_month_column_normalizes_to_month_end(self):
         """snapshot_month column mid-month values must be coerced to month-end."""
-        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+        from backend.src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
 
         builder = MonthlySnapshotBuilder()
         df = self._loans_df().copy()
@@ -359,8 +359,8 @@ class TestMonthlySnapshotBuilder:
         assert (result["snapshot_month"] == expected).all()
 
     def test_to_star_schema(self, tmp_path):
-        from src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
-        from src.zero_cost.storage import ZeroCostStorage
+        from backend.src.zero_cost.monthly_snapshot import MonthlySnapshotBuilder
+        from backend.src.zero_cost.storage import ZeroCostStorage
 
         builder = MonthlySnapshotBuilder()
         snap = builder.build(self._loans_df())
@@ -399,7 +399,7 @@ class TestFuzzyIncomeMatcher:
         )
 
     def test_match_returns_dataframe(self):
-        from src.zero_cost.fuzzy_matcher import FuzzyIncomeMatcher
+        from backend.src.zero_cost.fuzzy_matcher import FuzzyIncomeMatcher
 
         matcher = FuzzyIncomeMatcher(threshold=70)
         result = matcher.match(
@@ -413,7 +413,7 @@ class TestFuzzyIncomeMatcher:
         assert len(result) == 4  # keep_unmatched=True by default
 
     def test_high_confidence_match(self):
-        from src.zero_cost.fuzzy_matcher import FuzzyIncomeMatcher
+        from backend.src.zero_cost.fuzzy_matcher import FuzzyIncomeMatcher
 
         matcher = FuzzyIncomeMatcher(threshold=70)
         result = matcher.match(
@@ -427,7 +427,7 @@ class TestFuzzyIncomeMatcher:
         assert juan_row["lend_id"] == "L-100"
 
     def test_unmatched_rows_have_null_right_cols(self):
-        from src.zero_cost.fuzzy_matcher import FuzzyIncomeMatcher
+        from backend.src.zero_cost.fuzzy_matcher import FuzzyIncomeMatcher
 
         matcher = FuzzyIncomeMatcher(threshold=90)  # high threshold → fewer matches
         result = matcher.match(
@@ -442,7 +442,7 @@ class TestFuzzyIncomeMatcher:
         assert pd.isna(no_match["lend_id"])
 
     def test_drop_unmatched(self):
-        from src.zero_cost.fuzzy_matcher import FuzzyIncomeMatcher
+        from backend.src.zero_cost.fuzzy_matcher import FuzzyIncomeMatcher
 
         matcher = FuzzyIncomeMatcher(threshold=99)  # very strict
         result = matcher.match(
@@ -455,7 +455,7 @@ class TestFuzzyIncomeMatcher:
         assert len(result) < 4
 
     def test_match_two_pass_exact_and_fuzzy_behavior(self):
-        from src.zero_cost.fuzzy_matcher import FuzzyIncomeMatcher
+        from backend.src.zero_cost.fuzzy_matcher import FuzzyIncomeMatcher
 
         # Start from the helper DataFrames and introduce one exact match pair.
         income_df = self._income_df().copy()
@@ -497,3 +497,4 @@ class TestFuzzyIncomeMatcher:
         # The income row with no reasonable counterpart should remain unmatched.
         unmatched_row = result[result["nombre_cliente"] == "No Match Person XYZ"].iloc[0]
         assert pd.isna(unmatched_row["lend_id"])
+

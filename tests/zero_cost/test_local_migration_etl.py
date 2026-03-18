@@ -5,12 +5,12 @@ import math
 import pandas as pd
 import pytest
 
-from src.zero_cost.local_migration_etl import (
+from backend.src.zero_cost.local_migration_etl import (
     MAX_NOT_SPECIFIED_LOG_ROWS,
     build_not_specified_log,
     reconcile_payments,
 )
-from src.zero_cost.xirr import xirr
+from backend.src.zero_cost.xirr import xirr
 
 
 def test_xirr_known_case_precision():
@@ -142,3 +142,4 @@ def test_reconcile_payments_captures_invalid_dates_no_duplicates():
     assert (
         len(null_loan_missing_sched) == 0
     ), "Overlapping row should NOT be double-logged under missing_loan_id_schedule"
+

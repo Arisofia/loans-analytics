@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from python.apps.analytics.api.main import app
+from backend.python.apps.analytics.api.main import app
 
 
 def _payload() -> dict:
@@ -100,3 +100,4 @@ def test_segment_analytics_endpoint_supports_company_dimension():
     segments = {row["segment"] for row in body["segments"]}
     assert "CompanyA" in segments
     assert "CompanyB" in segments
+

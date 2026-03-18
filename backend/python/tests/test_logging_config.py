@@ -3,7 +3,7 @@
 import logging
 import unittest
 
-from python.logging_config import configure_logging, get_logger
+from backend.python.logging_config import configure_logging, get_logger
 
 
 class TestLoggingConfig(unittest.TestCase):
@@ -49,3 +49,4 @@ class TestLoggingConfig(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

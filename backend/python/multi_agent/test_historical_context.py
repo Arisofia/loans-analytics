@@ -11,7 +11,7 @@ Phase G4.1: Initial implementation tests
 import unittest
 from datetime import date, timedelta
 
-from python.multi_agent.historical_context import (
+from backend.python.multi_agent.historical_context import (
     HistoricalContextProvider,
     TrendDirection,
     TrendStrength,
@@ -489,3 +489,4 @@ class TestBenchmarking(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

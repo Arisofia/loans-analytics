@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from python.utils.usage_tracker import UsageTracker
+from backend.python.utils.usage_tracker import UsageTracker
 
 from .agents import (
     ComplianceAgent,
@@ -1334,3 +1334,4 @@ class MultiAgentOrchestrator:
             "by_agent": by_agent,
             "usage_tracking_enabled": self.usage_tracker is not None,
         }
+

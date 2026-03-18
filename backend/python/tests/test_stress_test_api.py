@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from python.apps.analytics.api.main import app
+from backend.python.apps.analytics.api.main import app
 
 
 def _payload() -> dict:
@@ -94,3 +94,4 @@ def test_stress_test_endpoint_allows_custom_shocks():
     assert body["assumptions"]["funding_cost_bps"] == 400.0
     assert body["stressed"]["gross_margin_pct"] <= body["baseline"]["gross_margin_pct"]
     assert len(body["alerts"]) >= 1
+

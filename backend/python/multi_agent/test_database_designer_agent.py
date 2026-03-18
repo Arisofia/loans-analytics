@@ -8,8 +8,8 @@ for database design, schema optimization, and data architecture decisions.
 import unittest
 from unittest.mock import Mock, patch
 
-from python.multi_agent.protocol import AgentRole
-from python.multi_agent.specialized_agents import DatabaseDesignerAgent
+from backend.python.multi_agent.protocol import AgentRole
+from backend.python.multi_agent.specialized_agents import DatabaseDesignerAgent
 
 
 class TestDatabaseDesignerAgent(unittest.TestCase):
@@ -73,3 +73,4 @@ class TestDatabaseDesignerAgent(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

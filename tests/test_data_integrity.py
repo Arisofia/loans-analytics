@@ -159,7 +159,7 @@ class TestDataIntegrity:
 
         Phase B Requirement: Environment-based data path resolution must exist.
         """
-        from python.config import settings
+        from backend.python.config import settings
 
         # Verify EnvironmentSettings exists
         assert hasattr(
@@ -182,7 +182,7 @@ class TestDataIntegrity:
 
         Phase B Requirement: Test data must not be accessible in production.
         """
-        from python.config import EnvironmentSettings
+        from backend.python.config import EnvironmentSettings
 
         # Create a prod environment config
         prod_env = EnvironmentSettings(environment="prod", prod_data_path="/mnt/prod-data")
@@ -199,7 +199,7 @@ class TestDataIntegrity:
         """
         from pydantic import ValidationError
 
-        from python.config import EnvironmentSettings
+        from backend.python.config import EnvironmentSettings
 
         # Valid environments should work
         for env in ["dev", "staging", "prod"]:
@@ -213,3 +213,4 @@ class TestDataIntegrity:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+

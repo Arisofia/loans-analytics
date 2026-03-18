@@ -3,8 +3,8 @@
 import pandas as pd
 import pytest
 
-from src.pipeline.calculation import KPIFormulaEngine
-from src.pipeline.ingestion import IngestionPhase
+from backend.src.pipeline.calculation import KPIFormulaEngine
+from backend.src.pipeline.ingestion import IngestionPhase
 
 
 def test_comparison_formula_uses_latest_and_previous_month_balances():
@@ -136,3 +136,4 @@ def test_where_clause_supports_and_conditions():
 
     # Only second row matches both predicates.
     assert float(engine.calculate(formula)) == pytest.approx(33.3333333333)
+

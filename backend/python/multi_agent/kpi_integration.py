@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from python.models.kpi_models import KpiDefinition, KpiRegistry
+from backend.python.models.kpi_models import KpiDefinition, KpiRegistry
 
 
 class KpiValue(BaseModel):
@@ -314,3 +314,4 @@ class KpiContextProvider:
             lines.append("")
 
         return "\n".join(lines)
+

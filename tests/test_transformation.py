@@ -12,7 +12,7 @@ Validates:
 import pandas as pd
 import pytest
 
-from src.pipeline.transformation import TransformationPhase
+from backend.src.pipeline.transformation import TransformationPhase
 
 
 @pytest.fixture
@@ -547,3 +547,4 @@ class TestExecute:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+

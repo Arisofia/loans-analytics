@@ -9,7 +9,7 @@ Covers:
 import pandas as pd
 import pytest
 
-from src.pipeline.calculation import CalculationPhase
+from backend.src.pipeline.calculation import CalculationPhase
 
 # ---------------------------------------------------------------------------
 # _calculate_ltv_sintetico
@@ -264,3 +264,4 @@ def test_compute_portfolio_velocity_of_default_returns_none_single_period():
         }
     )
     assert phase._compute_portfolio_velocity_of_default(df) is None
+

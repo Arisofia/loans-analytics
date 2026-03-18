@@ -8,7 +8,7 @@ import time
 
 import pytest
 
-from src.agents.monitoring import PerformanceTracker
+from backend.src.agents.monitoring import PerformanceTracker
 
 
 class TestLatencyBenchmarks:
@@ -95,3 +95,4 @@ class TestLatencyBenchmarks:
             assert (
                 avg_latency < 200
             ), f"Agent {i} average latency {avg_latency:.2f}ms exceeds threshold"
+

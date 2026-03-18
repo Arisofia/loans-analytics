@@ -5,7 +5,7 @@ import time
 
 from fastapi.testclient import TestClient
 
-from python.apps.analytics.api.main import app
+from backend.python.apps.analytics.api.main import app
 
 client = TestClient(app)
 
@@ -116,3 +116,4 @@ def test_nsm_endpoint_selects_most_recently_modified_run(tmp_path, monkeypatch):
     response = client.get("/analytics/nsm")
     assert response.status_code == 200
     assert response.json()["latest_period"] == "2026-01"
+

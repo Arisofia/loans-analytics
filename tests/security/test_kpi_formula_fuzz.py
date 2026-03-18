@@ -6,7 +6,7 @@ import pandas as pd
 from hypothesis import HealthCheck, example, given, settings
 from hypothesis import strategies as st
 
-from src.pipeline.calculation import KPIFormulaEngine
+from backend.src.pipeline.calculation import KPIFormulaEngine
 
 
 def _sample_df() -> pd.DataFrame:
@@ -73,3 +73,4 @@ def test_untrusted_formula_input_never_crashes(payload: str) -> None:
     from decimal import Decimal
 
     assert isinstance(result, Decimal)
+

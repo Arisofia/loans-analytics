@@ -5,8 +5,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from python.multi_agent.config_historical import build_historical_context_provider
-from python.multi_agent.historical_context import HistoricalContextProvider
+from backend.python.multi_agent.config_historical import build_historical_context_provider
+from backend.python.multi_agent.historical_context import HistoricalContextProvider
 
 
 class TestConfigHistorical:
@@ -106,3 +106,4 @@ class TestConfigHistorical:
             # Verify values are correct types
             assert isinstance(sample.kpi_id, str)
             assert isinstance(sample.value, (int, float))
+

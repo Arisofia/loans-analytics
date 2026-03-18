@@ -75,7 +75,7 @@ class TestLoanTapeLoader:
         return p
 
     def test_load_all_returns_required_tables(self, tmp_path):
-        from src.zero_cost.loan_tape_loader import LoanTapeLoader
+        from backend.src.zero_cost.loan_tape_loader import LoanTapeLoader
 
         self._make_loan_csv(tmp_path)
         self._make_schedule_csv(tmp_path)
@@ -89,7 +89,7 @@ class TestLoanTapeLoader:
         assert "fact_real_payment" in tables
 
     def test_dim_loan_has_loan_id_key(self, tmp_path):
-        from src.zero_cost.loan_tape_loader import LoanTapeLoader
+        from backend.src.zero_cost.loan_tape_loader import LoanTapeLoader
 
         self._make_loan_csv(tmp_path)
         self._make_schedule_csv(tmp_path)
@@ -101,7 +101,7 @@ class TestLoanTapeLoader:
         assert len(tables["dim_loan"]) == 2
 
     def test_fact_schedule_has_loan_id(self, tmp_path):
-        from src.zero_cost.loan_tape_loader import LoanTapeLoader
+        from backend.src.zero_cost.loan_tape_loader import LoanTapeLoader
 
         self._make_loan_csv(tmp_path)
         self._make_schedule_csv(tmp_path)
@@ -113,7 +113,7 @@ class TestLoanTapeLoader:
         assert "scheduled_principal" in tables["fact_schedule"].columns
 
     def test_fact_real_payment_has_loan_id(self, tmp_path):
-        from src.zero_cost.loan_tape_loader import LoanTapeLoader
+        from backend.src.zero_cost.loan_tape_loader import LoanTapeLoader
 
         self._make_loan_csv(tmp_path)
         self._make_schedule_csv(tmp_path)
@@ -125,7 +125,7 @@ class TestLoanTapeLoader:
         assert "paid_principal" in tables["fact_real_payment"].columns
 
     def test_source_tag_is_set(self, tmp_path):
-        from src.zero_cost.loan_tape_loader import LoanTapeLoader
+        from backend.src.zero_cost.loan_tape_loader import LoanTapeLoader
 
         self._make_loan_csv(tmp_path)
         self._make_schedule_csv(tmp_path)
@@ -137,8 +137,8 @@ class TestLoanTapeLoader:
 
     def test_control_mora_and_loan_tape_share_loan_id_column(self, tmp_path):
         """Both adapters must expose 'loan_id' in dim_loan."""
-        from src.zero_cost.control_mora_adapter import ControlMoraAdapter
-        from src.zero_cost.loan_tape_loader import LoanTapeLoader
+        from backend.src.zero_cost.control_mora_adapter import ControlMoraAdapter
+        from backend.src.zero_cost.loan_tape_loader import LoanTapeLoader
 
         # Loan tape
         self._make_loan_csv(tmp_path)
@@ -187,7 +187,7 @@ class TestCrosswalk:
         )
 
     def test_unmatched_file_is_created(self, tmp_path):
-        from src.zero_cost.crosswalk import Crosswalk
+        from backend.src.zero_cost.crosswalk import Crosswalk
 
         cw = Crosswalk()
         cw.build(self._make_tape_df(), self._make_mora_df())
@@ -197,7 +197,7 @@ class TestCrosswalk:
         assert out.exists()
 
     def test_unmatched_reason_code_not_empty(self, tmp_path):
-        from src.zero_cost.crosswalk import Crosswalk
+        from backend.src.zero_cost.crosswalk import Crosswalk
 
         cw = Crosswalk()
         cw.build(self._make_tape_df(), self._make_mora_df())
@@ -210,7 +210,7 @@ class TestCrosswalk:
         assert (df["reason_code"] != "").all(), "reason_code must not be blank"
 
     def test_exact_match_resolves(self):
-        from src.zero_cost.crosswalk import Crosswalk
+        from backend.src.zero_cost.crosswalk import Crosswalk
 
         cw = Crosswalk()
         cw.build(self._make_tape_df(), self._make_mora_df())
@@ -218,7 +218,7 @@ class TestCrosswalk:
 
     def test_unmatched_file_exists_even_when_all_matched(self, tmp_path):
         """File must always exist, even with zero unmatched rows."""
-        from src.zero_cost.crosswalk import Crosswalk
+        from backend.src.zero_cost.crosswalk import Crosswalk
 
         # All tape loans match mora
         tape = pd.DataFrame({"loan_id": ["L-001"]})
@@ -240,7 +240,7 @@ class TestXIRR:
 
     def test_simple_known_case(self):
         """Simple 1-year loan at ~20% annual return."""
-        from src.zero_cost.xirr import xirr
+        from backend.src.zero_cost.xirr import xirr
 
         cashflows = [-1000.0, 1200.0]
         dates = ["2025-01-01", "2026-01-01"]
@@ -249,7 +249,7 @@ class TestXIRR:
 
     def test_realistic_loan_cashflows(self):
         """Multi-period loan — rate should be positive (convergence test)."""
-        from src.zero_cost.xirr import xirr
+        from backend.src.zero_cost.xirr import xirr
 
         # Standard loan: -10000 initial, equal monthly repayments totalling 11200
         # (modest positive return over ~10 months)
@@ -261,27 +261,27 @@ class TestXIRR:
 
     def test_all_negative_raises_value_error(self):
         """All-negative flows have no solution — must raise ValueError."""
-        from src.zero_cost.xirr import xirr
+        from backend.src.zero_cost.xirr import xirr
 
         with pytest.raises(ValueError, match="at least one positive"):
             xirr([-1000.0, -500.0], ["2025-01-01", "2026-01-01"])
 
     def test_all_positive_raises_value_error(self):
         """All-positive flows have no solution — must raise ValueError."""
-        from src.zero_cost.xirr import xirr
+        from backend.src.zero_cost.xirr import xirr
 
         with pytest.raises(ValueError, match="at least one positive"):
             xirr([1000.0, 500.0], ["2025-01-01", "2026-01-01"])
 
     def test_mismatched_lengths_raises_value_error(self):
-        from src.zero_cost.xirr import xirr
+        from backend.src.zero_cost.xirr import xirr
 
         with pytest.raises(ValueError):
             xirr([-1000, 500], ["2025-01-01"])
 
     def test_irregular_dates(self):
         """Irregular (non-monthly) cash flows should converge."""
-        from src.zero_cost.xirr import xirr
+        from backend.src.zero_cost.xirr import xirr
 
         cashflows = [-5000, 1000, 1500, 3000]
         dates = ["2025-01-01", "2025-04-15", "2025-09-30", "2026-02-01"]
@@ -290,7 +290,7 @@ class TestXIRR:
 
     def test_cashflows_order_independent(self):
         """XIRR must return the same rate regardless of input order."""
-        from src.zero_cost.xirr import xirr
+        from backend.src.zero_cost.xirr import xirr
 
         cashflows = [-1000.0, 1200.0]
         dates_forward = ["2025-01-01", "2026-01-01"]
@@ -305,20 +305,20 @@ class TestXIRR:
 
     def test_contractual_apr_monthly_compounding(self):
         """EAR for 24% nominal monthly = (1+0.02)^12 - 1 ≈ 26.82%."""
-        from src.zero_cost.xirr import contractual_apr
+        from backend.src.zero_cost.xirr import contractual_apr
 
         ear = contractual_apr(0.24, payments_per_year=12)
         assert abs(ear - 0.2682) < 0.001, f"Expected ~0.2682, got {ear}"
 
     def test_contractual_apr_annual(self):
         """EAR for annual compounding equals nominal rate."""
-        from src.zero_cost.xirr import contractual_apr
+        from backend.src.zero_cost.xirr import contractual_apr
 
         ear = contractual_apr(0.15, payments_per_year=1)
         assert abs(ear - 0.15) < 1e-9
 
     def test_loan_xirr_returns_float(self):
-        from src.zero_cost.xirr import loan_xirr
+        from backend.src.zero_cost.xirr import loan_xirr
 
         disb = pd.DataFrame(
             {
@@ -339,7 +339,7 @@ class TestXIRR:
         assert rate > 0
 
     def test_loan_xirr_missing_loan_returns_nan(self):
-        from src.zero_cost.xirr import loan_xirr
+        from backend.src.zero_cost.xirr import loan_xirr
 
         disb = pd.DataFrame(
             {
@@ -353,7 +353,7 @@ class TestXIRR:
         assert math.isnan(rate)
 
     def test_portfolio_xirr_returns_series(self):
-        from src.zero_cost.xirr import portfolio_xirr
+        from backend.src.zero_cost.xirr import portfolio_xirr
 
         disb = pd.DataFrame(
             {
@@ -383,31 +383,31 @@ class TestPipelineRouter:
     """PipelineRouter selects correct source by snapshot month."""
 
     def test_jan_2026_uses_loan_tape(self):
-        from src.zero_cost.pipeline_router import PipelineRouter
+        from backend.src.zero_cost.pipeline_router import PipelineRouter
 
         router = PipelineRouter()
         assert router.source_for("2026-01-31") == "loan_tape"
 
     def test_dec_2025_uses_loan_tape(self):
-        from src.zero_cost.pipeline_router import PipelineRouter
+        from backend.src.zero_cost.pipeline_router import PipelineRouter
 
         router = PipelineRouter()
         assert router.source_for("2025-12-31") == "loan_tape"
 
     def test_feb_2026_uses_control_mora(self):
-        from src.zero_cost.pipeline_router import PipelineRouter
+        from backend.src.zero_cost.pipeline_router import PipelineRouter
 
         router = PipelineRouter()
         assert router.source_for("2026-02-28") == "control_mora"
 
     def test_march_2026_uses_control_mora(self):
-        from src.zero_cost.pipeline_router import PipelineRouter
+        from backend.src.zero_cost.pipeline_router import PipelineRouter
 
         router = PipelineRouter()
         assert router.source_for("2026-03-31") == "control_mora"
 
     def test_custom_pivot_month(self):
-        from src.zero_cost.pipeline_router import PipelineRouter
+        from backend.src.zero_cost.pipeline_router import PipelineRouter
 
         router = PipelineRouter(pivot_month="2025-06-01")
         assert router.source_for("2025-05-31") == "loan_tape"
@@ -427,21 +427,21 @@ class TestExporter:
         )
 
     def test_parquet_file_is_created(self, tmp_path):
-        from src.zero_cost.exporter import Exporter
+        from backend.src.zero_cost.exporter import Exporter
 
         exp = Exporter(output_dir=tmp_path)
         exp.export_snapshot(self._sample_df())
         assert (tmp_path / "fact_monthly_snapshot.parquet").exists()
 
     def test_csv_file_is_created(self, tmp_path):
-        from src.zero_cost.exporter import Exporter
+        from backend.src.zero_cost.exporter import Exporter
 
         exp = Exporter(output_dir=tmp_path, write_csv=True)
         exp.export_snapshot(self._sample_df())
         assert (tmp_path / "fact_monthly_snapshot.csv").exists()
 
     def test_export_tables_writes_multiple_files(self, tmp_path):
-        from src.zero_cost.exporter import Exporter
+        from backend.src.zero_cost.exporter import Exporter
 
         exp = Exporter(output_dir=tmp_path)
         tables = {
@@ -455,7 +455,7 @@ class TestExporter:
         assert not (tmp_path / "_source.parquet").exists()
 
     def test_unmatched_records_file_exists(self, tmp_path):
-        from src.zero_cost.exporter import Exporter
+        from backend.src.zero_cost.exporter import Exporter
 
         exp = Exporter(output_dir=tmp_path)
         unmatched = pd.DataFrame(
@@ -476,7 +476,7 @@ class TestExporter:
     def test_manifest_is_written(self, tmp_path):
         import json
 
-        from src.zero_cost.exporter import Exporter
+        from backend.src.zero_cost.exporter import Exporter
 
         exp = Exporter(output_dir=tmp_path)
         exp.export_snapshot(self._sample_df())
@@ -518,7 +518,7 @@ class TestDPDCalculator:
         return dim_loan, fact_schedule, fact_real_payment
 
     def test_build_snapshots_returns_dataframe(self):
-        from src.zero_cost.dpd_calculator import DPDCalculator
+        from backend.src.zero_cost.dpd_calculator import DPDCalculator
 
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
@@ -528,7 +528,7 @@ class TestDPDCalculator:
 
     def test_current_loan_has_zero_dpd(self):
         """L-002 paid its Jan installment — DPD at Jan 31 should be 0."""
-        from src.zero_cost.dpd_calculator import DPDCalculator
+        from backend.src.zero_cost.dpd_calculator import DPDCalculator
 
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
@@ -538,7 +538,7 @@ class TestDPDCalculator:
 
     def test_overdue_loan_has_positive_dpd(self):
         """L-001 missed its Feb installment — DPD at Mar 15 should be > 0."""
-        from src.zero_cost.dpd_calculator import DPDCalculator
+        from backend.src.zero_cost.dpd_calculator import DPDCalculator
 
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
@@ -548,7 +548,7 @@ class TestDPDCalculator:
         assert l1_row["dpd"] > 0
 
     def test_par_flags_set_correctly(self):
-        from src.zero_cost.dpd_calculator import DPDCalculator
+        from backend.src.zero_cost.dpd_calculator import DPDCalculator
 
         calc = DPDCalculator(par_thresholds=[1, 30])
         dim_loan, sched, pays = self._make_inputs()
@@ -561,10 +561,11 @@ class TestDPDCalculator:
         assert not l2_row["par_1"]  # L-002 is current
 
     def test_mora_bucket_is_populated(self):
-        from src.zero_cost.dpd_calculator import DPDCalculator
+        from backend.src.zero_cost.dpd_calculator import DPDCalculator
 
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
         snap = calc.build_snapshots(dim_loan, sched, pays, ["2026-02-28"])
         assert "mora_bucket" in snap.columns
         assert snap["mora_bucket"].notna().all()
+
