@@ -431,11 +431,15 @@ class OutputPhase:
         Precedence (no statistical fallbacks):
         1. Explicit date present in the data (``as_of_date``, ``snapshot_date``, ``fecha_actual``)
         2. Ingest timestamp embedded in the data (``ingestion_timestamp``, ``ingest_date``)
-        3. None — caller falls back to the orchestrator's execution timestamp
+        3. None — no suitable as-of date could be derived from the available columns
 
         ``origination_date`` is deliberately excluded: it is a loan-level disbursement date,
         not a portfolio cutoff date.  Using it as a fallback corrupts the temporal
         semantics of the as_of_date field.
+
+        This function does not apply any runtime-based defaults (such as an orchestrator
+        execution timestamp); if no appropriate column can be parsed, it returns None and
+        leaves any fallback policy to the caller.
         """
         for date_col in (
             "as_of_date",
