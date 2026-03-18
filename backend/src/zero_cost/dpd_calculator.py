@@ -304,12 +304,10 @@ class DPDCalculator:
                 base["original_principal"] - base["cum_paid_principal"]
             ).clip(lower=0.0)
 
-        # DPD per loan — vectorized to avoid O(N×M) per-loan filter loop
-        # Reuse the already-filtered schedule (sched_upto) instead of
-        # re-filtering fact_schedule for each snapshot.
-        sched_sorted = (
-            sched_upto.sort_values([loan_id_col, sched_date_col]).copy()
-        )
+        # DPD per loan — vectorized to avoid O(N×M) per-loan filter loop.
+        # Reuse the already-filtered schedule (sched_upto) to avoid a duplicate
+        # full-table boolean filter and copy within this snapshot computation.
+        sched_sorted = sched_upto.sort_values([loan_id_col, sched_date_col]).copy()
         if not sched_sorted.empty:
             sched_sorted["_cum_sched"] = sched_sorted.groupby(loan_id_col)[
                 sched_principal_col
