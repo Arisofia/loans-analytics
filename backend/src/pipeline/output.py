@@ -131,18 +131,6 @@ class OutputPhase:
                 )
                 exports["clustering_metrics"] = str(clustering_path)
 
-                # audit_metadata.json — run provenance and is_opaque validation counts
-                audit_metadata_payload = self._build_audit_metadata_payload(
-                    kpi_results=kpi_results,
-                    exports=exports,
-                    kpi_engine=kpi_engine,
-                    transformation_metrics=transformation_metrics,
-                )
-                audit_meta_path = self._export_payload_json(
-                    audit_metadata_payload, run_dir, "audit_metadata.json"
-                )
-                exports["audit_metadata"] = str(audit_meta_path)
-
                 # Segment-level risk snapshot (derived from clean_data.parquet)
                 segment_snapshot_path = self._export_segment_snapshot(run_dir)
                 if segment_snapshot_path is not None:
@@ -154,6 +142,18 @@ class OutputPhase:
                         nsm_recurrent_tpv, run_dir, "nsm_recurrent_tpv_output.json"
                     )
                     exports["nsm_recurrent_tpv"] = str(nsm_path)
+
+                # audit_metadata.json — run provenance and is_opaque validation counts
+                audit_metadata_payload = self._build_audit_metadata_payload(
+                    kpi_results=kpi_results,
+                    exports=exports,
+                    kpi_engine=kpi_engine,
+                    transformation_metrics=transformation_metrics,
+                )
+                audit_meta_path = self._export_payload_json(
+                    audit_metadata_payload, run_dir, "audit_metadata.json"
+                )
+                exports["audit_metadata"] = str(audit_meta_path)
 
             # Export KPI audit trail if engine is provided
             if kpi_engine is not None:
