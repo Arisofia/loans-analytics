@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only the requirements to leverage Docker cache
-COPY requirements.prod.lock.txt ./requirements.txt
+# Copy the maintained runtime requirements to leverage Docker cache.
+COPY requirements.txt ./requirements.txt
 
 # Create wheels for all dependencies
 RUN pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt
