@@ -20,7 +20,6 @@ from typing import Any, Dict, Optional
 import pandas as pd
 
 from backend.python.logging_config import get_logger
-from .utils import format_error_response
 
 logger = get_logger(__name__)
 
@@ -54,71 +53,57 @@ class IngestionPhase:
         """
         logger.info("Starting Phase 1: Ingestion")
 
-        try:
-            # Load data
-            if input_path and input_path.exists():
-                df = self._load_from_file(input_path)
-            elif input_path and not input_path.exists():
-                raise FileNotFoundError(f"Input file not found: {input_path}")
-            else:
-                logger.info("No input file provided; API ingestion is disabled")
-                df = self._load_from_api()
+        # Load data
+        if input_path and input_path.exists():
+            df = self._load_from_file(input_path)
+        elif input_path and not input_path.exists():
+            raise FileNotFoundError(f"Input file not found: {input_path}")
+        else:
+            logger.info("No input file provided; API ingestion is disabled")
+            df = self._load_from_api()
 
-            # Validate schema
-            validation_results = self._validate_schema(df)
-            if not validation_results.get("schema_valid", False):
-                error_msg = f"SCHEMA VALIDATION FAILED: {validation_results.get('missing_columns', validation_results.get('type_errors', 'Unknown schema error'))}"
-                logger.error(error_msg)
-                return {
-                    "status": "failed",
-                    "error": error_msg,
-                    "validation": validation_results,
-                    "timestamp": datetime.now().isoformat(),
-                }
+        # Validate schema (Raises ValueError on failure)
+        validation_results = self._validate_schema(df)
 
-            # Check for duplicates
-            duplicate_check = self._check_duplicates(df)
+        # Check for duplicates
+        duplicate_check = self._check_duplicates(df)
 
-            # Store raw data
-            if run_dir:
-                output_path = run_dir / "raw_data.parquet"
-                try:
-                    df.to_parquet(output_path, index=False)
-                except Exception as parquet_error:
-                    logger.warning(
-                        "Parquet write failed on raw frame; applying Arrow-safe coercion. Error: %s",
-                        parquet_error,
-                    )
-                    df = self._make_arrow_safe(df)
-                    df.to_parquet(output_path, index=False)
-                logger.info("Saved raw data to %s", output_path)
-            else:
-                output_path = None
+        # Store raw data
+        if run_dir:
+            output_path = run_dir / "raw_data.parquet"
+            try:
+                df.to_parquet(output_path, index=False)
+            except Exception as parquet_error:
+                logger.warning(
+                    "Parquet write failed on raw frame; applying Arrow-safe coercion. Error: %s",
+                    parquet_error,
+                )
+                df = self._make_arrow_safe(df)
+                df.to_parquet(output_path, index=False)
+            logger.info("Saved raw data to %s", output_path)
+        else:
+            output_path = None
 
-            # Calculate data hash
-            data_hash = self._calculate_hash(df)
+        # Calculate data hash
+        data_hash = self._calculate_hash(df)
 
-            results = {
-                "status": "success",
-                "row_count": len(df),
-                "column_count": len(df.columns),
-                "data_hash": data_hash,
-                "validation": validation_results,
-                "duplicates": duplicate_check,
-                "output_path": str(output_path) if output_path else None,
-                "timestamp": datetime.now().isoformat(),
-            }
+        results = {
+            "status": "success",
+            "row_count": len(df),
+            "column_count": len(df.columns),
+            "data_hash": data_hash,
+            "validation": validation_results,
+            "duplicates": duplicate_check,
+            "output_path": str(output_path) if output_path else None,
+            "timestamp": datetime.now().isoformat(),
+        }
 
-            logger.info(
-                "Ingestion completed: %d rows, %d columns",
-                results["row_count"],
-                results["column_count"],
-            )
-            return results
-
-        except Exception as e:
-            logger.error("Ingestion failed: %s", str(e), exc_info=True)
-            return format_error_response(e)
+        logger.info(
+            "Ingestion completed: %d rows, %d columns",
+            results["row_count"],
+            results["column_count"],
+        )
+        return results
 
     def _load_from_file(self, file_path: Path) -> pd.DataFrame:
         """Load data from CSV file."""
@@ -179,13 +164,9 @@ class IngestionPhase:
             # Check for required columns
             missing_columns = [col for col in required_columns if col not in df.columns]
             if missing_columns:
-                logger.warning("Missing required columns: %s", missing_columns)
-                return {
-                    "schema_valid": False,
-                    "required_columns_present": False,
-                    "missing_columns": missing_columns,
-                    "data_types_valid": False,
-                }
+                error_msg = f"CRITICAL: SCHEMA VALIDATION FAILED: Missing required columns: {missing_columns}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
             # Validate data types (vectorized for performance)
             type_validation: Dict[str, Any] = {
@@ -202,13 +183,9 @@ class IngestionPhase:
                     type_errors.append(col)
 
             if type_errors:
-                logger.warning("Type validation failed for columns: %s", type_errors)
-                return {
-                    "schema_valid": False,
-                    "required_columns_present": True,
-                    "data_types_valid": False,
-                    "type_errors": type_errors,
-                }
+                error_msg = f"CRITICAL: SCHEMA VALIDATION FAILED: Type validation failed for columns: {type_errors}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
             logger.info(
                 "Schema validation passed",
@@ -225,11 +202,10 @@ class IngestionPhase:
                 "row_count": len(df),
             }
         except Exception as e:
+            if isinstance(e, ValueError) and "CRITICAL: SCHEMA VALIDATION FAILED" in str(e):
+                raise
             logger.error("Schema validation error: %s", e, exc_info=True)
-            return {
-                "schema_valid": False,
-                "error": str(e),
-            }
+            raise ValueError(f"CRITICAL: Schema validation pipeline failure: {e}") from e
 
     def _check_duplicates(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Check for duplicate rows."""

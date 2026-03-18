@@ -7,7 +7,7 @@ from pathlib import Path
 
 def test_sql_directory_avoids_dynamic_sql_constructs() -> None:
     """`sql/` assets are expected to stay static to reduce injection risk."""
-    sql_root = Path("database/sql")
+    sql_root = Path("db/sql")
     assert sql_root.exists(), "Expected sql/ directory to exist"
 
     blocked_patterns = ("execute ", "prepare ", "do $$", "format(")

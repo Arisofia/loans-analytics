@@ -21,7 +21,6 @@ import numpy as np
 import pandas as pd
 
 from backend.python.logging_config import get_logger
-from .utils import format_error_response
 
 logger = get_logger(__name__)
 
@@ -198,7 +197,8 @@ class TransformationPhase:
 
         except Exception as e:
             logger.error("Transformation failed: %s", str(e), exc_info=True)
-            return format_error_response(e)
+            # Fail-fast mandate: raise instead of returning failure payload dict
+            raise ValueError(f"CRITICAL: Transformation phase failed: {e}") from e
 
     def _normalize_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
         """

@@ -117,14 +117,15 @@ class TestKPIEngineV2(unittest.TestCase):
         self.assertIsInstance(results, dict)
         self.assertIn("PAR30", results)
         self.assertIn("COLLECTION_RATE", results)
+        self.assertIn("LTV", results)
 
         # Each KPI should have value and context
         for _kpi_name, kpi_data in results.items():
             self.assertIn("value", kpi_data)
             self.assertIn("context", kpi_data)
 
-        # Check that audit trail has records for all KPIs
-        self.assertEqual(len(engine._audit_records), 2)
+        # Check that audit trail has records for standard KPIs
+        self.assertGreaterEqual(len(engine._audit_records), 3)
 
     def test_get_audit_trail(self):
         """Test get_audit_trail method returns proper DataFrame."""
@@ -183,7 +184,7 @@ class TestKPIEngineV2(unittest.TestCase):
             self.assertIn(col, audit_df.columns)
 
     def test_error_handling_in_calculations(self):
-        """Test that errors are properly captured in audit trail."""
+        """Test that errors raise ValueError per fail-fast mandate."""
         # Create data missing required columns for PAR30
         invalid_df = pd.DataFrame(
             {
@@ -193,23 +194,14 @@ class TestKPIEngineV2(unittest.TestCase):
 
         engine = KPIEngineV2(invalid_df, actor="test_user")
 
-        # Calculate PAR30 (should fail due to missing columns)
-        value, context = engine.calculate_par_30()
-
-        # Should return 0.0 and error in context
-        self.assertEqual(value, 0.0)
-        self.assertIn("error", context)
-
-        # Check audit trail recorded the failure with consistent value
-        audit_df = engine.get_audit_trail()
-        self.assertEqual(len(audit_df), 1)
-        self.assertEqual(audit_df.iloc[0]["status"], "failed")
-        self.assertIsNotNone(audit_df.iloc[0]["error"])
-        # Verify audit trail value matches returned value
-        self.assertEqual(float(audit_df.iloc[0]["value"]), value)
+        # Calculate PAR30 (should raise ValueError due to missing columns)
+        with self.assertRaises(ValueError) as cm:
+            engine.calculate_par_30()
+        
+        self.assertIn("CRITICAL: PAR30 calculation failed", str(cm.exception))
 
     def test_individual_kpi_failure_isolation(self):
-        """Test that individual KPI failures don't crash calculate_all."""
+        """Test that individual KPI failures are still reported in calculate_all."""
         # Use invalid data that will cause PAR30 to fail
         invalid_df = pd.DataFrame(
             {
@@ -219,17 +211,14 @@ class TestKPIEngineV2(unittest.TestCase):
 
         engine = KPIEngineV2(invalid_df, actor="test_user")
 
-        # This should not raise an exception
-        results = engine.calculate_all()
-
-        # Should still return results for all KPIs (with 0.0 values for failed ones)
-        self.assertIsInstance(results, dict)
-        self.assertIn("PAR30", results)
-        self.assertIn("COLLECTION_RATE", results)
-
-        # Check audit trail has records for all attempts
-        audit_df = engine.get_audit_trail()
-        self.assertGreater(len(audit_df), 0)
+        # If calculate_all catches exceptions, it should still return results
+        # However, per our new fail-fast refactor, if we want it to crash the whole batch,
+        # we would let it raise. If we want it to be isolated, we catch it inside calculate_all.
+        # Currently KPIEngineV2.calculate_all DOES NOT catch exceptions for standard KPIs,
+        # so it should raise.
+        
+        with self.assertRaises(ValueError):
+            engine.calculate_all()
 
     def test_audit_trail_timestamp_format(self):
         """Test that timestamps in audit trail are properly formatted."""

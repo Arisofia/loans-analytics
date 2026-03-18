@@ -76,7 +76,10 @@ def load_business_rules(rules_path: Optional[Path] = None) -> Dict[str, Any]:
         )
 
     with open(rules_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        data = yaml.safe_load(f)
+        if data is None:
+            raise ValueError(f"Business rules file {rules_path} is empty or invalid.")
+        return data
 
 
 def load_kpi_definitions(kpi_path: Optional[Path] = None) -> Dict[str, Any]:
@@ -99,4 +102,7 @@ def load_kpi_definitions(kpi_path: Optional[Path] = None) -> Dict[str, Any]:
         )
 
     with open(kpi_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        data = yaml.safe_load(f)
+        if data is None:
+            raise ValueError(f"KPI definitions file {kpi_path} is empty or invalid.")
+        return data

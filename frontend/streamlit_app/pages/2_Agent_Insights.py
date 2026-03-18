@@ -8,7 +8,7 @@ import streamlit as st
 from backend.python.logging_config import get_logger
 
 # AGENT_OUTPUTS_DIR requires ROOT_DIR
-ROOT_DIR = Path.cwd()
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 AGENT_OUTPUTS_DIR = ROOT_DIR / "data" / "agent_outputs"
 
 logger = get_logger(__name__)

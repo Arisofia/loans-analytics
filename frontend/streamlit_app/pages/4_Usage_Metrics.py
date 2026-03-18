@@ -8,7 +8,7 @@ import streamlit as st
 from backend.python.config.theme import ABACO_THEME
 from backend.python.utils.usage_tracker import UsageTracker
 
-ROOT_DIR = Path.cwd()
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 st.set_page_config(page_title="Usage Metrics - Abaco", layout="wide")
 

@@ -35,8 +35,8 @@ from frontend.streamlit_app.components.sales_risk import (
     render_sales_performance,
 )
 
-# Use absolute paths relative to workspace root for persistence
-ROOT_DIR = Path.cwd()
+# Use absolute paths relative to this file for robustness
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 LOCAL_EXPORTS_DIR = ROOT_DIR / "local_exports"
 EXPORTS_DIR_CANDIDATES = [
     ROOT_DIR / "exports",

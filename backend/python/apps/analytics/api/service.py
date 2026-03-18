@@ -368,7 +368,9 @@ def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
             return _CATALOG_CACHE
 
         with open(KPI_DEFINITIONS_PATH, encoding="utf-8") as handle:
-            payload = yaml.safe_load(handle) or {}
+            payload = yaml.safe_load(handle)
+            if payload is None:
+                raise ValueError(f"KPI definitions file {KPI_DEFINITIONS_PATH} is empty or invalid.")
             
         _CATALOG_FILE_HASH = current_hash
     except Exception as exc:  # pragma: no cover - defensive parsing fallback

@@ -153,7 +153,8 @@ class OutputPhase:
 
         except Exception as e:
             logger.error("Output failed: %s", str(e), exc_info=True)
-            return {"status": "failed", "error": str(e), "timestamp": datetime.now().isoformat()}
+            # Fail-fast mandate: raise instead of returning failure payload dict
+            raise RuntimeError(f"CRITICAL: Output phase failed: {e}") from e
 
     def _export_parquet(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
         """Export KPI results to Parquet format."""
