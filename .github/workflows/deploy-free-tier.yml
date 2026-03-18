@@ -143,21 +143,22 @@ jobs:
             exit 0
           fi
 
-          # Call Render deploy API and capture the response instead of failing on jq errors.
-          response="$(curl -sS -X POST \
+          # Call Render deploy API and fail closed on transport or non-2xx errors.
+          response="$(curl -fsS -X POST \
             "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
-            -d '{"clearCache": false}' || true)"
+            -d '{"clearCache": false}')"
 
-          # Try to parse the deploy ID from the JSON response; do not fail the job if parsing fails.
+          # Parse deploy ID and fail if response schema is unexpected.
           if deploy_id="$(printf '%s' "$response" | jq -er '.id' 2>/dev/null)"; then
             echo "Render deploy ID: $deploy_id"
             echo "✅ Render deploy triggered"
           else
-            echo "⚠️ Render deploy triggered, but failed to parse deploy ID from response."
+            echo "❌ Render deploy API response missing deploy id."
             echo "Raw response from Render:"
             printf '%s\n' "$response"
+            exit 1
           fi
 
   # ---------------------------------------------------------------------------

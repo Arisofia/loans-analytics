@@ -44,6 +44,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
+from backend.python.financial_engine.ltv import calculate_ltv_sintetico
 from backend.python.kpis.collection_rate import calculate_collection_rate
 from backend.python.kpis.formula_engine import KPIFormulaEngine
 from backend.python.kpis.par_30 import calculate_par_30
@@ -218,6 +219,7 @@ class KPIEngineV2:
             self.kpi_definitions = kpi_definitions
 
         results = {}
+        failures: list[str] = []
 
         # 1. Standard Legacy KPIs
         try:
@@ -225,12 +227,14 @@ class KPIEngineV2:
             results["PAR30"] = {"value": par30_val, "context": par30_ctx}
         except Exception as e:
             logger.warning("Standard KPI PAR30 failed: %s", e)
+            failures.append(f"PAR30={e}")
 
         try:
             coll_rate_val, coll_rate_ctx = self.calculate_collection_rate()
             results["COLLECTION_RATE"] = {"value": coll_rate_val, "context": coll_rate_ctx}
         except Exception as e:
             logger.warning("Standard KPI COLLECTION_RATE failed: %s", e)
+            failures.append(f"COLLECTION_RATE={e}")
 
         # 2. V2 Standard KPIs
         try:
@@ -238,6 +242,7 @@ class KPIEngineV2:
             results["LTV"] = {"value": ltv_val, "context": ltv_ctx}
         except Exception as e:
             logger.warning("Standard KPI LTV failed: %s", e)
+            failures.append(f"LTV={e}")
 
         # 3. Dynamic Formula KPIs
         try:
@@ -249,6 +254,7 @@ class KPIEngineV2:
                 }
         except Exception as e:
             logger.warning("Dynamic KPIs calculation failed: %s", e)
+            failures.append(f"DYNAMIC={e}")
 
         # 4. Derived Risk KPIs
         try:
@@ -257,6 +263,7 @@ class KPIEngineV2:
                 results[name] = {"value": float(value), "context": {"type": "derived_risk"}}
         except Exception as e:
             logger.warning("Derived risk KPIs failed: %s", e)
+            failures.append(f"DERIVED_RISK={e}")
 
         # 5. Velocity of Default
         try:
@@ -268,6 +275,7 @@ class KPIEngineV2:
                 }
         except Exception as e:
             logger.warning("Velocity of default calculation failed: %s", e)
+            failures.append(f"VELOCITY_OF_DEFAULT={e}")
 
         # 6. Enriched KPIs (from CONTROL DE MORA)
         try:
@@ -279,6 +287,13 @@ class KPIEngineV2:
                 }
         except Exception as e:
             logger.warning("Enriched KPIs calculation failed: %s", e)
+            failures.append(f"ENRICHED={e}")
+
+        if failures:
+            raise ValueError(
+                "CRITICAL: KPI batch calculation failed with one or more errors: "
+                + " | ".join(failures)
+            )
 
         logger.info("Calculated %d KPIs in total", len(results))
         return results
@@ -460,26 +475,7 @@ class KPIEngineV2:
             false low-risk value.  These rows therefore yield ``np.nan`` so
             that callers can detect and handle them explicitly.
         """
-        required = ("capital_desembolsado", "valor_nominal_factura", "tasa_dilucion")
-        if not all(col in df.columns for col in required):
-            return pd.Series(dtype=float)
-
-        valor_nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce")
-        tasa_dilucion = pd.to_numeric(df["tasa_dilucion"], errors="coerce")
-        capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce")
-
-        valor_ajustado = valor_nominal * (1 - tasa_dilucion)
-        is_opaque = valor_ajustado.isna() | (valor_ajustado <= 0)
-
-        # Calculate LTV: never use fillna(0) for denominator to avoid division-by-zero
-        # which np.where handles but we want strict np.nan for opaque ones
-        ltv = np.where(~is_opaque, capital / valor_ajustado, np.nan)
-
-        # Tag the dataframe with the opacity flag for downstream transparency.
-        # Use explicit .loc assignment for in-place mutation on the provided frame.
-        df.loc[:, "ltv_sintetico_is_opaque"] = is_opaque.astype(int)
-
-        return pd.Series(ltv, index=df.index, dtype=float)
+        return calculate_ltv_sintetico(df)
 
     def _top_10_borrower_concentration(
         self, active_df: pd.DataFrame, balance_col: str, total_out: Decimal

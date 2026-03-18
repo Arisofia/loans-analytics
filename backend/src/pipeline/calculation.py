@@ -10,6 +10,7 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
 
+from backend.python.financial_engine.ltv import calculate_ltv_sintetico
 from backend.python.kpis.engine import KPIEngineV2
 from backend.python.kpis.formula_engine import KPIFormulaEngine  # re-exported as SSOT
 
@@ -510,21 +511,7 @@ class CalculationPhase:
         - Denominator <= 0 or NaN -> opaque observation
         - Opaque observations receive np.nan (never 0.0 fallback)
         """
-        required = ("capital_desembolsado", "valor_nominal_factura", "tasa_dilucion")
-        if not all(col in df.columns for col in required):
-            return pd.Series(dtype=float)
-
-        valor_nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce")
-        tasa_dilucion = pd.to_numeric(df["tasa_dilucion"], errors="coerce")
-        capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce")
-
-        valor_ajustado = valor_nominal * (1 - tasa_dilucion)
-        is_opaque = valor_ajustado.isna() | (valor_ajustado <= 0)
-
-        ltv = np.where(is_opaque, np.nan, capital / valor_ajustado)
-        df["ltv_sintetico_is_opaque"] = is_opaque.astype(int)
-        df["ltv_sintetico"] = pd.Series(ltv, index=df.index, dtype=float)
-        return df["ltv_sintetico"]
+        return calculate_ltv_sintetico(df)
 
     @staticmethod
     def _resolve_col(df: pd.DataFrame, *candidates: str) -> Optional[str]:

@@ -37,6 +37,9 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      - name: Validate migration governance
+        run: python scripts/maintenance/validate_migration_index.py
+
       - name: Run unit tests
         run: pytest tests/ -v --tb=short -m "not integration and not e2e"
 
@@ -67,7 +70,8 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           if [ -z "$SUPABASE_URL" ]; then
-            echo "::warning::Skipping integration tests - SUPABASE_URL not configured"
+            echo "::notice title=Integration tests skipped::SUPABASE_URL not configured"
+            echo "Integration tests skipped: SUPABASE_URL secret is missing." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           pytest tests/ -v -m "integration" --tb=short
@@ -131,20 +135,35 @@ jobs:
 
       - name: Wait for services
         run: |
+          api_ready=0
           for i in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:8000/health | grep -q ok; then
+              api_ready=1
               break
             fi
             echo "Waiting for API health (attempt ${i}/60)..."
             sleep 2
           done
+
+          if [ "$api_ready" -ne 1 ]; then
+            echo "::error::API service did not become healthy in time"
+            exit 1
+          fi
+
+          streamlit_ready=0
           for i in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:8501/_stcore/health >/dev/null; then
+              streamlit_ready=1
               break
             fi
             echo "Waiting for Streamlit health (attempt ${i}/60)..."
             sleep 2
           done
+
+          if [ "$streamlit_ready" -ne 1 ]; then
+            echo "::error::Streamlit service did not become healthy in time"
+            exit 1
+          fi
 
       - name: Run E2E tests
         env:

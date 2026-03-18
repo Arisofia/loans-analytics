@@ -18,6 +18,12 @@ status_mappings:
   "A": "active"
   "Current": "active"
   "CURRENT": "active"
+  "Activo": "active"
+  "ACTIVO": "active"
+  "Vigente": "active"
+  "VIGENTE": "active"
+  "al dia": "active"
+  "AL DIA": "active"
 
   # Delinquent loans
   "Delinquent": "delinquent"
@@ -25,6 +31,10 @@ status_mappings:
   "D": "delinquent"
   "Past Due": "delinquent"
   "PAST_DUE": "delinquent"
+  "Moroso": "delinquent"
+  "MOROSO": "delinquent"
+  "en mora": "delinquent"
+  "EN MORA": "delinquent"
 
   # Closed loans
   "Closed": "closed"
@@ -32,6 +42,12 @@ status_mappings:
   "C": "closed"
   "Paid Off": "closed"
   "PAID_OFF": "closed"
+  "Cerrado": "closed"
+  "CERRADO": "closed"
+  "Liquidado": "closed"
+  "LIQUIDADO": "closed"
+  "Cancelado": "closed"
+  "CANCELADO": "closed"
 
   # Defaulted loans
   "Defaulted": "defaulted"
@@ -40,6 +56,14 @@ status_mappings:
   "X": "defaulted"
   "Charged Off": "defaulted"
   "CHARGED_OFF": "defaulted"
+  "Incumplimiento": "defaulted"
+  "INCUMPLIMIENTO": "defaulted"
+  "en incumplimiento": "defaulted"
+  "EN INCUMPLIMIENTO": "defaulted"
+  "Vencido": "defaulted"
+  "VENCIDO": "defaulted"
+  "Castigado": "defaulted"
+  "CASTIGADO": "defaulted"
 
 # =============================================================================
 # DPD (Days Past Due) BUCKET DEFINITIONS

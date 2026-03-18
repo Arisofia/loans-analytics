@@ -85,3 +85,14 @@ def test_load_kpi_definitions_valid(tmp_path):
 
     kpis = load_kpi_definitions(kpi_file)
     assert kpis == kpi_data
+
+
+def test_business_rules_status_mappings_include_spanish_aliases():
+    """Repository business_rules.yaml must include canonical Spanish status aliases."""
+    repo_rules = load_business_rules(Path("config/business_rules.yaml"))
+    mappings = repo_rules.get("status_mappings", {})
+
+    assert mappings.get("Vigente") == "active"
+    assert mappings.get("en mora") == "delinquent"
+    assert mappings.get("Cerrado") == "closed"
+    assert mappings.get("Incumplimiento") == "defaulted"
