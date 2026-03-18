@@ -657,9 +657,7 @@ def test_rollup_sum_monthly_includes_period_key():
     """Monthly rollup records must include the period key, not just numeric totals."""
     df = pd.DataFrame(
         {
-            "payment_date": pd.to_datetime(
-                ["2025-01-10", "2025-01-20", "2025-02-15"]
-            ),
+            "payment_date": pd.to_datetime(["2025-01-10", "2025-01-20", "2025-02-15"]),
             "amount": [100.0, 200.0, 300.0],
         }
     )
@@ -708,9 +706,9 @@ def test_npl_ratio_and_npl_90_ratio_are_distinct():
     assert float(kpis["npl_90_ratio"]) == pytest.approx(40.0, rel=1e-4)
     # npl_ratio (broad): DPD≥30 or delinquent/defaulted → rows 1,2,3,4 = 4/5 = 80%
     assert float(kpis["npl_ratio"]) == pytest.approx(80.0, rel=1e-4)
-    assert kpis["npl_ratio"] != kpis["npl_90_ratio"], (
-        "npl_ratio and npl_90_ratio must be distinct; they were identical before fix"
-    )
+    assert (
+        kpis["npl_ratio"] != kpis["npl_90_ratio"]
+    ), "npl_ratio and npl_90_ratio must be distinct; they were identical before fix"
 
 
 def test_npl_90_ratio_strictly_subset_of_npl_ratio():
@@ -725,9 +723,9 @@ def test_npl_90_ratio_strictly_subset_of_npl_ratio():
     engine = KPIEngineV2.__new__(KPIEngineV2)
     kpis = engine._calculate_derived_risk_kpis(df)
 
-    assert float(kpis["npl_90_ratio"]) <= float(kpis["npl_ratio"]), (
-        "npl_90_ratio should never exceed npl_ratio"
-    )
+    assert float(kpis["npl_90_ratio"]) <= float(
+        kpis["npl_ratio"]
+    ), "npl_90_ratio should never exceed npl_ratio"
 
 
 # ---------------------------------------------------------------------------
@@ -741,27 +739,51 @@ def test_status_normalization_spanish_values():
 
     raw_statuses = [
         # active
-        "Activo", "ACTIVO", "activo",
-        "Vigente", "VIGENTE", "vigente",
-        "AL_DIA", "Al_dia", "al_dia",
+        "Activo",
+        "ACTIVO",
+        "activo",
+        "Vigente",
+        "VIGENTE",
+        "vigente",
+        "AL_DIA",
+        "Al_dia",
+        "al_dia",
         # delinquent
-        "Moroso", "MOROSO", "moroso",
-        "EN_MORA", "En_mora", "en_mora",
+        "Moroso",
+        "MOROSO",
+        "moroso",
+        "EN_MORA",
+        "En_mora",
+        "en_mora",
         # defaulted
-        "Incumplimiento", "INCUMPLIMIENTO", "incumplimiento",
-        "EN_INCUMPLIMIENTO", "En_incumplimiento", "en_incumplimiento",
-        "Vencido", "VENCIDO", "vencido",
-        "Castigado", "CASTIGADO", "castigado",
+        "Incumplimiento",
+        "INCUMPLIMIENTO",
+        "incumplimiento",
+        "EN_INCUMPLIMIENTO",
+        "En_incumplimiento",
+        "en_incumplimiento",
+        "Vencido",
+        "VENCIDO",
+        "vencido",
+        "Castigado",
+        "CASTIGADO",
+        "castigado",
         # closed
-        "Cerrado", "CERRADO", "cerrado",
-        "Liquidado", "LIQUIDADO", "liquidado",
-        "Cancelado", "CANCELADO", "cancelado",
+        "Cerrado",
+        "CERRADO",
+        "cerrado",
+        "Liquidado",
+        "LIQUIDADO",
+        "liquidado",
+        "Cancelado",
+        "CANCELADO",
+        "cancelado",
     ]
     expected = (
-        ["active"] * 9      # activo + vigente + al_dia
+        ["active"] * 9  # activo + vigente + al_dia
         + ["delinquent"] * 6  # moroso + en_mora
         + ["defaulted"] * 12  # incumplimiento + en_incumplimiento + vencido + castigado
-        + ["closed"] * 9    # cerrado + liquidado + cancelado
+        + ["closed"] * 9  # cerrado + liquidado + cancelado
     )
 
     df = pd.DataFrame({"status": raw_statuses})

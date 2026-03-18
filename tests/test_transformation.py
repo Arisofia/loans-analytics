@@ -293,8 +293,6 @@ class TestCanonicalRiskState:
         assert not out["is_kiting_suspected"].iloc[1], "new origination (dpd=10) must not be kiting"
         assert metrics["kiting_rows"] == 0
 
-
-
     """Test business rules application."""
 
     def test_dpd_bucket_assignment(self, default_config, sample_loan_data):
