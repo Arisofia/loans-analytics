@@ -13,6 +13,7 @@ NOTE: This module is not designed to be run directly as a script.
 """
 
 import hashlib
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -20,6 +21,7 @@ from typing import Any, Dict, Optional
 import pandas as pd
 
 from backend.python.logging_config import get_logger
+from backend.src.infrastructure.google_sheets_adapter import ControlMoraSheetsAdapter
 
 logger = get_logger(__name__)
 
@@ -54,7 +56,9 @@ class IngestionPhase:
         logger.info("Starting Phase 1: Ingestion")
 
         # Load data
-        if input_path and input_path.exists():
+        if self._should_use_google_sheets(input_path):
+            df = self._load_from_google_sheets()
+        elif input_path and input_path.exists():
             df = self._load_from_file(input_path)
         elif input_path and not input_path.exists():
             raise FileNotFoundError(f"Input file not found: {input_path}")
@@ -154,6 +158,41 @@ class IngestionPhase:
             "No input file provided. API ingestion was deprecated and dummy/sample fallback "
             "is disabled. Pass --input with a real dataset."
         )
+
+    def _should_use_google_sheets(self, input_path: Optional[Path]) -> bool:
+        """Return True when ingestion should pull from Google Sheets."""
+        if input_path is not None and str(input_path).startswith("gsheets://"):
+            return True
+        sheets_cfg = self.config.get("google_sheets", {})
+        return bool(sheets_cfg.get("enabled", False) and input_path is None)
+
+    def _load_from_google_sheets(self) -> pd.DataFrame:
+        """Load Control de Mora rows from Google Sheets through the institutional adapter."""
+        sheets_cfg = self.config.get("google_sheets", {})
+        credentials_path = sheets_cfg.get("credentials_path") or os.getenv(
+            "GOOGLE_SHEETS_CREDENTIALS_PATH"
+        )
+        spreadsheet_id = sheets_cfg.get("spreadsheet_id") or os.getenv(
+            "GOOGLE_SHEETS_SPREADSHEET_ID"
+        )
+
+        if not credentials_path or not spreadsheet_id:
+            raise ValueError(
+                "CRITICAL: Google Sheets ingestion enabled but credentials_path/spreadsheet_id "
+                "are missing. Set google_sheets config or environment variables."
+            )
+
+        adapter = ControlMoraSheetsAdapter(
+            credentials_path=str(credentials_path),
+            spreadsheet_id=str(spreadsheet_id),
+        )
+        records = adapter.fetch_desembolsos_raw()
+        if not records:
+            raise ValueError("CRITICAL: Google Sheets adapter returned zero records")
+
+        df = pd.DataFrame(records)
+        logger.info("Loaded %d rows from Google Sheets adapter", len(df))
+        return df
 
     def _validate_schema(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Validate DataFrame schema using Pydantic."""
