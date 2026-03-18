@@ -322,7 +322,6 @@ class TransformationPhase:
             "total_payment_received": "actual_payment_amount",
             "montototalabonado": "actual_payment_amount",
             # net_injected_capital
-            "tpv": "net_injected_capital",
             "ingreso_total_por_desembolso": "net_injected_capital",
         }
 
