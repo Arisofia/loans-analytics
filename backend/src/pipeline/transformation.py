@@ -1270,16 +1270,14 @@ class TransformationPhase:
         # Map normalized values to canonical labels where available.
         mapped_status = normalized_status.map(self.STATUS_MAPPINGS)
 
-        # Construct final status:
-        # - Keep missing values as missing.
-        # - Use mapped value when available.
-        # - For unmapped, non-missing values, fall back to the normalized string.
+        # Build final column:
+        # - Unmapped non-missing values fall back to the normalized string.
+        # - Missing values propagate as-is (pd.NA / NaN).
         mask_missing = original_status.isna()
         mask_unmapped = (~mask_missing) & mapped_status.isna()
-
-        final_status = mapped_status.copy()
-        final_status[mask_missing] = original_status[mask_missing]
-        final_status[mask_unmapped] = normalized_status[mask_unmapped]
+        final_status = mapped_status.where(~mask_unmapped, normalized_status).where(
+            ~mask_missing, original_status
+        )
 
         df["status"] = final_status
         conversions["status"] = {"normalized_values": original_values}
