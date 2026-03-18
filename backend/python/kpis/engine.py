@@ -271,7 +271,12 @@ class KPIEngineV2:
         return engine_full, KPIFormulaEngine(df_unique)
 
     def _compute_portfolio_velocity_of_default(self, df: pd.DataFrame) -> Optional[Decimal]:
-        """Build a monthly default-rate series and return the latest Velocity of Default."""
+        """Build a monthly default-rate series and return the latest Velocity of Default.
+        
+        Semantics: 
+        - Chronology: Strictly ordered by month period.
+        - Units: Percentage point change (e.g., 2.5% -> 3.0% = +0.5).
+        """
         date_col = next(
             (c for c in ("as_of_date", "measurement_date", "snapshot_date", "origination_date", "FechaDesembolso", "application_date", "disbursement_date") if c in df.columns),
             None
@@ -289,23 +294,26 @@ class KPIEngineV2:
         if work.empty:
             return None
 
-        work["period"] = work["_date"].dt.to_period("M").astype(str)
-        monthly = (
+        # Sort strictly by date to ensure diff semantics are chronologically sound
+        work = work.sort_values("_date")
+        work["period"] = work["_date"].dt.to_period("M")
+        
+        # Group by period and calculate default rate (defaulted / total_active)
+        monthly_rates = (
             work.groupby("period")["status"]
-            .apply(lambda s: round((s == "defaulted").sum() / len(s) * 100, 6))
-            .reset_index()
-            .sort_values("period")
-            .rename(columns={"status": "default_rate"})
+            .apply(lambda s: (s == "defaulted").sum() / len(s) * 100)
+            .sort_index()
         )
 
-        if len(monthly) < 2:
+        if len(monthly_rates) < 2:
             return None
 
-        vd = pd.to_numeric(monthly["default_rate"], errors="coerce").diff()
-        vd_clean = vd.dropna()
-        latest_vd = vd_clean.iloc[-1] if not vd_clean.empty else None
-        if latest_vd is None:
+        # Velocity = rate[t] - rate[t-1]
+        vd_series = monthly_rates.diff().dropna()
+        if vd_series.empty:
             return None
+            
+        latest_vd = vd_series.iloc[-1]
         return Decimal(str(round(float(latest_vd), 6)))
 
     def _calculate_derived_risk_kpis(self, df: pd.DataFrame) -> Dict[str, Decimal]:
@@ -349,16 +357,31 @@ class KPIEngineV2:
         return kpis
 
     def _calculate_ltv_sintetico(self, df: pd.DataFrame) -> pd.Series:
-        """Calculate Synthetic Factoring LTV at the loan level."""
+        """Calculate strict synthetic LTV and persist opacity metadata on the dataframe.
+
+        Epistemic uncertainty rule:
+        - Denominator <= 0 or NaN -> opaque observation
+        - Opaque observations receive np.nan (never 0.0 fallback)
+        """
         required = ("capital_desembolsado", "valor_nominal_factura", "tasa_dilucion")
         if not all(col in df.columns for col in required):
             return pd.Series(dtype=float)
 
-        valor_ajustado = pd.to_numeric(df["valor_nominal_factura"], errors="coerce").fillna(0.0) * (
-            1 - pd.to_numeric(df["tasa_dilucion"], errors="coerce").fillna(0.0)
-        )
-        capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce").fillna(0.0)
-        ltv = np.where(valor_ajustado > 0, capital / valor_ajustado, 0.0)
+        valor_nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce")
+        tasa_dilucion = pd.to_numeric(df["tasa_dilucion"], errors="coerce")
+        capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce")
+
+        valor_ajustado = valor_nominal * (1 - tasa_dilucion)
+        is_opaque = valor_ajustado.isna() | (valor_ajustado <= 0)
+
+        # Calculate LTV: never use fillna(0) for denominator to avoid division-by-zero
+        # which np.where handles but we want strict np.nan for opaque ones
+        ltv = np.where(~is_opaque, capital / valor_ajustado, np.nan)
+        
+        # Tag the dataframe if possible (for downstream transparency)
+        if "ltv_sintetico_is_opaque" not in df.columns:
+            df["ltv_sintetico_is_opaque"] = is_opaque.astype(int)
+
         return pd.Series(ltv, index=df.index, dtype=float)
 
     def _top_10_borrower_concentration(self, active_df: pd.DataFrame, balance_col: str, total_out: Decimal) -> Decimal:
