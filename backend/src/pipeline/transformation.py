@@ -1003,23 +1003,39 @@ class TransformationPhase:
         Intelligent null handling based on null percentage and column importance.
 
         Uses configurable thresholds:
-        - < LOW_NULL_THRESHOLD_PCT: Structural zero fill + boolean opacity flag
+        - < LOW_NULL_THRESHOLD_PCT: Structural zero fill + integer opacity flag
         - LOW to HIGH_NULL_THRESHOLD_PCT: Fill with missing indicator
         - > HIGH_NULL_THRESHOLD_PCT: Log warning, fill with default
 
         No mean/median imputation is ever applied to financial numeric columns.
         Opacity flags (``{col}_is_missing``) let downstream ML models learn from
         the absence of data rather than being misled by statistical substitutes.
+
+        Returns a structured ``opacity_counts`` dict (``{flag_col: null_count}``)
+        alongside the human-readable ``smart_actions`` so that downstream phases
+        (e.g. audit_metadata export) can consume it without parsing strings.
         """
         total_rows = len(df)
-        actions = self._process_null_columns(df, null_columns, total_rows)
-        return df, {"smart_actions": actions}
+        actions, opacity_counts = self._process_null_columns(df, null_columns, total_rows)
+        return df, {"smart_actions": actions, "opacity_counts": opacity_counts}
 
     def _process_null_columns(
         self, df: pd.DataFrame, null_columns: Dict[str, int], total_rows: int
-    ) -> Dict[str, str]:
-        """Process null values for each column based on column type."""
+    ) -> Tuple[Dict[str, str], Dict[str, int]]:
+        """Process null values for each column based on column type.
+
+        Returns
+        -------
+        actions : dict
+            Human-readable action string per column.
+        opacity_counts : dict
+            Structured mapping ``{flag_col: null_count}`` for every column
+            where a ``{col}_is_missing`` opacity flag was created.  Consumers
+            (e.g. ``_build_audit_metadata_payload``) should read from this dict
+            rather than parsing the action strings.
+        """
         actions: Dict[str, str] = {}
+        opacity_counts: Dict[str, int] = {}
         for col, null_count in null_columns.items():
             null_pct = null_count / total_rows * 100
             action = (
@@ -1028,7 +1044,11 @@ class TransformationPhase:
                 else self._handle_categorical_nulls(df, col, null_pct)
             )
             actions[col] = action
-        return actions
+            # Record structured count for every column that received an opacity flag
+            flag_col = f"{col}_is_missing"
+            if flag_col in df.columns:
+                opacity_counts[flag_col] = null_count
+        return actions, opacity_counts
 
     def _handle_numeric_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
         """Apply numeric null handling strategy for a column."""

@@ -702,14 +702,35 @@ class CalculationPhase:
 
     @staticmethod
     def _scale_and_reduce_pca(X: np.ndarray) -> tuple[np.ndarray, List[float]]:
-        """Apply RobustScaler then PCA with up to 10 components (bounded by features and samples)."""
+        """Apply RobustScaler then PCA retaining up to 95% cumulative variance.
+
+        Uses ``n_components=0.95`` so sklearn chooses the minimum number of
+        principal components that explain at least 95% of the total variance,
+        capped at 10 components.
+
+        Note: ``svd_solver='full'`` is required because it is the only solver
+        that accepts a fractional ``n_components`` value (variance threshold).
+        Using 'auto' or 'arpack' would raise a ValueError at fit time.
+        """
         scaler = RobustScaler()
         X_scaled = scaler.fit_transform(X)
 
-        n_components = min(X_scaled.shape[1], X_scaled.shape[0] - 1, 10)
-        pca = PCA(n_components=n_components, random_state=42)
-        X_pca = pca.fit_transform(X_scaled)
-        explained = [round(float(v), 4) for v in pca.explained_variance_ratio_]
+        max_components = min(X_scaled.shape[1], X_scaled.shape[0] - 1, 10)
+        if max_components >= 2:
+            # svd_solver='full' is mandatory for fractional n_components.
+            pca = PCA(n_components=0.95, svd_solver="full", random_state=42)
+            X_pca = pca.fit_transform(X_scaled)
+            explained = [round(float(v), 4) for v in pca.explained_variance_ratio_]
+            # Cap to max_components by slicing — avoids a second expensive fit.
+            # PCA output columns are already ordered by explained variance (descending).
+            if X_pca.shape[1] > max_components:
+                X_pca = X_pca[:, :max_components]
+                explained = explained[:max_components]
+        else:
+            pca = PCA(n_components=max_components, random_state=42)
+            X_pca = pca.fit_transform(X_scaled)
+            explained = [round(float(v), 4) for v in pca.explained_variance_ratio_]
+
         return X_pca, explained
 
     @staticmethod
