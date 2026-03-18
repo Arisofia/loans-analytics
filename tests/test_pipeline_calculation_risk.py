@@ -33,8 +33,8 @@ def test_ltv_sintetico_basic_calculation():
     assert result.iloc[1] == pytest.approx(0.5, rel=1e-4)
 
 
-def test_ltv_sintetico_zero_adjusted_value_returns_zero():
-    """When the adjusted invoice value is zero, LTV should be 0 (no division by zero)."""
+def test_ltv_sintetico_zero_adjusted_value_is_opaque_and_nan():
+    """When adjusted invoice value is zero, the observation is opaque and LTV is NaN."""
     df = pd.DataFrame(
         {
             "capital_desembolsado": [50.0],
@@ -43,7 +43,22 @@ def test_ltv_sintetico_zero_adjusted_value_returns_zero():
         }
     )
     result = CalculationPhase._calculate_ltv_sintetico(df)
-    assert result.iloc[0] == 0.0
+    assert pd.isna(result.iloc[0])
+    assert df.loc[0, "ltv_sintetico_is_opaque"] == 1
+
+
+def test_ltv_sintetico_missing_denominator_is_opaque_and_nan():
+    """NaN denominator must be treated as opaque and produce NaN LTV."""
+    df = pd.DataFrame(
+        {
+            "capital_desembolsado": [50.0],
+            "valor_nominal_factura": [None],
+            "tasa_dilucion": [0.1],
+        }
+    )
+    result = CalculationPhase._calculate_ltv_sintetico(df)
+    assert pd.isna(result.iloc[0])
+    assert df.loc[0, "ltv_sintetico_is_opaque"] == 1
 
 
 def test_ltv_sintetico_missing_columns_returns_empty_series():
@@ -125,57 +140,40 @@ def test_par_metrics_without_ratio_pago_real_unchanged():
     assert result["par_90"] == pytest.approx(300 / 600 * 100, rel=1e-3)
 
 
-def test_par_metrics_kiting_forces_dpd_to_90():
-    """Accounts with ratio_pago_real < 1.0 are forced to DPD >= 90, inflating PAR90."""
+def test_par_metrics_uses_canonical_dpd_adjusted():
+    """Segment PAR must use upstream canonical dpd_adjusted when present."""
     grp = pd.DataFrame(
         {
             "outstanding_balance": [100.0, 200.0],
             "dpd": [0.0, 0.0],  # both appear current in legacy system
-            "ratio_pago_real": [1.0, 0.8],  # second account is kiting
+            "dpd_adjusted": [0.0, 90.0],
         }
     )
     result = CalculationPhase._calculate_segment_par_metrics(
         grp, "outstanding_balance", "dpd", 300.0
     )
 
-    # The kiting account (200) gets DPD forced to 90, so PAR90 = 200/300 * 100
+    # The second account is canonically adjusted upstream to 90
     assert result["par_90"] == pytest.approx(200 / 300 * 100, rel=1e-3)
-    # The non-kiting account stays at DPD 0, not captured in PAR30
+    # The first account stays at DPD 0, not captured in PAR30
     assert result["par_30"] == pytest.approx(200 / 300 * 100, rel=1e-3)
 
 
-def test_par_metrics_all_kiting_accounts_captured():
-    """All accounts with ratio_pago_real < 1.0 are penalised, even if DPD is partially elevated."""
+def test_par_metrics_all_canonical_adjusted_accounts_captured():
+    """All accounts with canonical dpd_adjusted >= 90 are captured in PAR90."""
     grp = pd.DataFrame(
         {
             "outstanding_balance": [100.0, 100.0, 100.0],
             "dpd": [0.0, 45.0, 80.0],  # second is already >= 30, third almost at 90
-            "ratio_pago_real": [0.9, 0.95, 0.99],  # all kiting
+            "dpd_adjusted": [90.0, 90.0, 90.0],
         }
     )
     result = CalculationPhase._calculate_segment_par_metrics(
         grp, "outstanding_balance", "dpd", 300.0
     )
 
-    # All three are kiting → all forced to DPD >= 90
+    # All three are canonically adjusted upstream
     assert result["par_90"] == pytest.approx(100.0)
-
-
-def test_par_metrics_ratio_exactly_one_not_penalised():
-    """Accounts with ratio_pago_real exactly 1.0 retain their original DPD."""
-    grp = pd.DataFrame(
-        {
-            "outstanding_balance": [100.0],
-            "dpd": [0.0],
-            "ratio_pago_real": [1.0],
-        }
-    )
-    result = CalculationPhase._calculate_segment_par_metrics(
-        grp, "outstanding_balance", "dpd", 100.0
-    )
-    assert result["par_30"] == 0.0
-    assert result["par_60"] == 0.0
-    assert result["par_90"] == 0.0
 
 
 # ---------------------------------------------------------------------------

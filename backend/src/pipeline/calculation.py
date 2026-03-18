@@ -355,22 +355,12 @@ class CalculationPhase:
     def _calculate_segment_par_metrics(
         grp: pd.DataFrame, balance_col: str, dpd_col: str, total_bal: float
     ) -> Dict[str, float]:
-        """Compute PAR30/60/90 for a segment group, adjusted for carousel/kiting behaviour.
-
-        When the ``ratio_pago_real`` column is present, any account whose actual
-        payment ratio is below 1.0 is treated as having a minimum DPD of 90,
-        penalising silent delinquency even when the legacy system reports 0 DPD.
-        """
+        """Compute PAR30/60/90 for a segment group using canonical upstream DPD state."""
         raw_dpd = pd.to_numeric(grp[dpd_col], errors="coerce").fillna(0.0)
-
-        # Kiting adjustment: accounts with ratio_pago_real < 1.0 are forced to DPD >= 90
-        if "ratio_pago_real" in grp.columns:
-            ratio = pd.to_numeric(grp["ratio_pago_real"], errors="coerce").fillna(1.0)
-            adjusted_dpd = np.where(ratio < 1.0, np.maximum(raw_dpd, 90), raw_dpd)
+        if "dpd_adjusted" in grp.columns:
+            adjusted_dpd = pd.to_numeric(grp["dpd_adjusted"], errors="coerce").fillna(raw_dpd)
         else:
-            adjusted_dpd = raw_dpd.to_numpy()
-
-        adjusted_dpd = pd.Series(adjusted_dpd, index=grp.index)
+            adjusted_dpd = raw_dpd
 
         return {
             "par_30": round(
@@ -389,6 +379,30 @@ class CalculationPhase:
         """Compute default rate for a segment group."""
         n = len(grp)
         return round(float((grp[status_col] == "defaulted").sum()) / n * 100, 4) if n > 0 else 0.0
+
+    @staticmethod
+    def _calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
+        """Calculate strict synthetic LTV and persist opacity metadata on the dataframe.
+
+        Epistemic uncertainty rule:
+        - Denominator <= 0 or NaN -> opaque observation
+        - Opaque observations receive np.nan (never 0.0 fallback)
+        """
+        required = ("capital_desembolsado", "valor_nominal_factura", "tasa_dilucion")
+        if not all(col in df.columns for col in required):
+            return pd.Series(dtype=float)
+
+        valor_nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce")
+        tasa_dilucion = pd.to_numeric(df["tasa_dilucion"], errors="coerce")
+        capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce")
+
+        valor_ajustado = valor_nominal * (1 - tasa_dilucion)
+        is_opaque = valor_ajustado.isna() | (valor_ajustado <= 0)
+
+        ltv = np.where(is_opaque, np.nan, capital / valor_ajustado)
+        df["ltv_sintetico_is_opaque"] = is_opaque.astype(int)
+        df["ltv_sintetico"] = pd.Series(ltv, index=df.index, dtype=float)
+        return df["ltv_sintetico"]
 
     @staticmethod
     def _resolve_col(df: pd.DataFrame, *candidates: str) -> Optional[str]:
