@@ -6,7 +6,7 @@ import pandas as pd
 from hypothesis import HealthCheck, example, given, settings
 from hypothesis import strategies as st
 
-from backend.src.pipeline.calculation import KPIFormulaEngine
+from backend.python.kpis.formula_engine import KPIFormulaEngine
 
 
 def _sample_df() -> pd.DataFrame:

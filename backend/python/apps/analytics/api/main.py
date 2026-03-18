@@ -1206,14 +1206,17 @@ def _sanitize_for_logging(value: str, max_length: int = 200) -> str:
 def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     if not candidate:
         raise ValueError("empty path")
+    # Explicitly block absolute-looking paths before pathlib normalization
+    if candidate.startswith(("/", "\\")):
+        raise ValueError("absolute paths are not allowed")
     normalized = candidate.replace("\\", "/")
+    if not re.match(r"^[a-zA-Z0-9_./\-]+$", normalized):
+        raise ValueError("invalid characters")
     candidate_path = Path(normalized)
     if candidate_path.is_absolute():
         raise ValueError("absolute paths are not allowed")
     if any(p == ".." for p in candidate_path.parts):
         raise ValueError("parent traversal is not allowed")
-    if not re.match(r"^[a-zA-Z0-9_./\-]+$", str(candidate_path)):
-        raise ValueError("invalid characters")
     resolved = (allowed_dir / candidate_path).resolve()
     try:
         resolved.relative_to(allowed_dir.resolve())

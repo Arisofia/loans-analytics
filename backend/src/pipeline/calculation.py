@@ -22,7 +22,7 @@ class CalculationPhase:
         """Initialize with KPI formula definitions."""
         self.kpi_definitions = kpi_definitions
         # KPIEngineV2 is the Single Source of Truth for all metric logic
-        self.engine = KPIEngineV2(kpi_definitions)
+        self.engine = KPIEngineV2(kpi_definitions=kpi_definitions)
 
     def process(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Orchestrate the full calculation suite.

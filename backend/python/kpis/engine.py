@@ -37,7 +37,7 @@ class KPIEngineV2:
 
     def __init__(
         self,
-        df: pd.DataFrame,
+        df: Optional[pd.DataFrame] = None,
         actor: str = "system",
         run_id: Optional[str] = None,
         kpi_definitions: Optional[Dict[str, Any]] = None,
@@ -46,12 +46,12 @@ class KPIEngineV2:
         Initialize KPI engine.
 
         Args:
-            df: Input DataFrame with loan/payment data
+            df: Optional input DataFrame with loan/payment data
             actor: Identity of the entity requesting calculations.
             run_id: Optional unique identifier for this calculation run
             kpi_definitions: Optional dictionary of KPI formulas
         """
-        self.df = self._ensure_loan_count_column(df)
+        self.df = self._ensure_loan_count_column(df if df is not None else pd.DataFrame())
         self.actor = actor
         self.run_id = run_id or self._generate_run_id()
         self.kpi_definitions = kpi_definitions or {}
@@ -82,6 +82,22 @@ class KPIEngineV2:
             "status": "success" if error is None else "failed",
         }
         self._audit_records.append(record)
+
+    def calculate(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Main calculation orchestrator for external callers.
+
+        Updates the engine's dataframe and runs the full KPI suite.
+        Returns a flat results dictionary with simplified float values
+        to maintain compatibility with the calculation pipeline.
+        """
+        self.df = self._ensure_loan_count_column(df)
+        full_results = self.calculate_all()
+        
+        # Flatten for downstream consumption: {kpi_name: float_value}
+        return {
+            name: data["value"] for name, data in full_results.items()
+        }
 
     def calculate_par_30(self) -> Tuple[float, Dict[str, Any]]:
         """Calculate Portfolio at Risk (30+ days)."""
@@ -168,35 +184,56 @@ class KPIEngineV2:
         results = {}
 
         # 1. Standard Legacy KPIs
-        par30_val, par30_ctx = self.calculate_par_30()
-        results["PAR30"] = {"value": par30_val, "context": par30_ctx}
+        try:
+            par30_val, par30_ctx = self.calculate_par_30()
+            results["PAR30"] = {"value": par30_val, "context": par30_ctx}
+        except Exception as e:
+            logger.warning("Standard KPI PAR30 failed: %s", e)
 
-        coll_rate_val, coll_rate_ctx = self.calculate_collection_rate()
-        results["COLLECTION_RATE"] = {"value": coll_rate_val, "context": coll_rate_ctx}
+        try:
+            coll_rate_val, coll_rate_ctx = self.calculate_collection_rate()
+            results["COLLECTION_RATE"] = {"value": coll_rate_val, "context": coll_rate_ctx}
+        except Exception as e:
+            logger.warning("Standard KPI COLLECTION_RATE failed: %s", e)
 
         # 2. V2 Standard KPIs
-        ltv_val, ltv_ctx = self.calculate_ltv()
-        results["LTV"] = {"value": ltv_val, "context": ltv_ctx}
+        try:
+            ltv_val, ltv_ctx = self.calculate_ltv()
+            results["LTV"] = {"value": ltv_val, "context": ltv_ctx}
+        except Exception as e:
+            logger.warning("Standard KPI LTV failed: %s", e)
 
         # 3. Dynamic Formula KPIs
-        dynamic_kpis = self._calculate_dynamic_kpis()
-        for name, value in dynamic_kpis.items():
-            results[name] = {"value": float(value) if value is not None else None, "context": {"type": "dynamic_formula"}}
+        try:
+            dynamic_kpis = self._calculate_dynamic_kpis()
+            for name, value in dynamic_kpis.items():
+                results[name] = {"value": float(value) if value is not None else None, "context": {"type": "dynamic_formula"}}
+        except Exception as e:
+            logger.warning("Dynamic KPIs calculation failed: %s", e)
 
         # 4. Derived Risk KPIs
-        derived_risk = self._calculate_derived_risk_kpis(self.df)
-        for name, value in derived_risk.items():
-            results[name] = {"value": float(value), "context": {"type": "derived_risk"}}
+        try:
+            derived_risk = self._calculate_derived_risk_kpis(self.df)
+            for name, value in derived_risk.items():
+                results[name] = {"value": float(value), "context": {"type": "derived_risk"}}
+        except Exception as e:
+            logger.warning("Derived risk KPIs failed: %s", e)
 
         # 5. Velocity of Default
-        vd_val = self._compute_portfolio_velocity_of_default(self.df)
-        if vd_val is not None:
-            results["velocity_of_default"] = {"value": float(vd_val), "context": {"type": "risk_velocity"}}
+        try:
+            vd_val = self._compute_portfolio_velocity_of_default(self.df)
+            if vd_val is not None:
+                results["velocity_of_default"] = {"value": float(vd_val), "context": {"type": "risk_velocity"}}
+        except Exception as e:
+            logger.warning("Velocity of default calculation failed: %s", e)
 
         # 6. Enriched KPIs (from CONTROL DE MORA)
-        enriched_kpis = self._calculate_enriched_kpis(self.df)
-        for name, value in enriched_kpis.items():
-            results[name] = {"value": float(value) if value is not None else None, "context": {"type": "enriched"}}
+        try:
+            enriched_kpis = self._calculate_enriched_kpis(self.df)
+            for name, value in enriched_kpis.items():
+                results[name] = {"value": float(value) if value is not None else None, "context": {"type": "enriched"}}
+        except Exception as e:
+            logger.warning("Enriched KPIs calculation failed: %s", e)
 
         logger.info("Calculated %d KPIs in total", len(results))
         return results

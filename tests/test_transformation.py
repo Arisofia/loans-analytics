@@ -582,10 +582,8 @@ class TestExecute:
     def test_execute_no_data_raises_error(self, default_config):
         """Test that execute raises error when no data provided."""
         transformer = TransformationPhase(default_config)
-        results = transformer.execute()
-
-        assert results["status"] == "failed"
-        assert "error" in results
+        with pytest.raises(ValueError, match="No data provided for transformation"):
+            transformer.execute()
 
 
 if __name__ == "__main__":

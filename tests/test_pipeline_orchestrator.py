@@ -8,13 +8,13 @@ from backend.src.pipeline.orchestrator import UnifiedPipeline
 @pytest.fixture
 def mock_pipeline_deps():
     with (
-        patch("src.pipeline.config.PipelineConfig.load") as mock_load,
-        patch("src.pipeline.config.load_business_rules") as mock_rules,
-        patch("src.pipeline.config.load_kpi_definitions") as mock_kpis,
-        patch("src.pipeline.orchestrator.IngestionPhase") as mock_ingestion,
-        patch("src.pipeline.orchestrator.TransformationPhase") as mock_trans,
-        patch("src.pipeline.orchestrator.CalculationPhase") as mock_calc,
-        patch("src.pipeline.orchestrator.OutputPhase") as mock_output,
+        patch("backend.src.pipeline.config.PipelineConfig.load") as mock_load,
+        patch("backend.src.pipeline.config.load_business_rules") as mock_rules,
+        patch("backend.src.pipeline.config.load_kpi_definitions") as mock_kpis,
+        patch("backend.src.pipeline.orchestrator.IngestionPhase") as mock_ingestion,
+        patch("backend.src.pipeline.orchestrator.TransformationPhase") as mock_trans,
+        patch("backend.src.pipeline.orchestrator.CalculationPhase") as mock_calc,
+        patch("backend.src.pipeline.orchestrator.OutputPhase") as mock_output,
     ):
 
         mock_load.return_value = MagicMock(
