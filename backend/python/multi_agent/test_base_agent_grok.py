@@ -7,7 +7,13 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from backend.python.multi_agent.base_agent import BaseAgent
-from backend.python.multi_agent.protocol import AgentRequest, AgentRole, LLMProvider, Message, MessageRole
+from backend.python.multi_agent.protocol import (
+    AgentRequest,
+    AgentRole,
+    LLMProvider,
+    Message,
+    MessageRole,
+)
 
 
 class _TestAgent(BaseAgent):
@@ -73,4 +79,3 @@ class TestBaseAgentGrok(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

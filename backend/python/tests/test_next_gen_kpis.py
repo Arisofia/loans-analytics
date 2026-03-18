@@ -160,4 +160,3 @@ async def test_get_vintage_curves():
 
     # MoB 6 point (Old loan) should be healthy
     assert avg_points[6].npl_ratio == 0.0
-

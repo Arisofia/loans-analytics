@@ -568,4 +568,3 @@ class TestDPDCalculator:
         snap = calc.build_snapshots(dim_loan, sched, pays, ["2026-02-28"])
         assert "mora_bucket" in snap.columns
         assert snap["mora_bucket"].notna().all()
-

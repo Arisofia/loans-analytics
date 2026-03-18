@@ -20,4 +20,3 @@ def test_openapi_contains_roll_rate_analytics_endpoint():
     response_ref = post["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
     assert request_ref.endswith("/RollRateAnalyticsRequest")
     assert response_ref.endswith("/RollRateAnalyticsResponse")
-

@@ -100,4 +100,3 @@ def test_segment_analytics_endpoint_supports_company_dimension():
     segments = {row["segment"] for row in body["segments"]}
     assert "CompanyA" in segments
     assert "CompanyB" in segments
-

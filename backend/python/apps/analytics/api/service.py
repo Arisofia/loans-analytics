@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List
 import uuid
@@ -352,26 +351,30 @@ def _extract_kpi_metadata(kpi_def: dict[str, Any]) -> dict[str, Any]:
 _CATALOG_CACHE: dict[str, Any] = {}
 _CATALOG_FILE_HASH: str = ""
 
+
 def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
     global _CATALOG_CACHE, _CATALOG_FILE_HASH
-    
+
     if yaml is None or not KPI_DEFINITIONS_PATH.exists():
         return {}
 
     try:
         import hashlib
+
         # Rule-hash cache invalidation: check if file content changed
         with open(KPI_DEFINITIONS_PATH, "rb") as f:
             current_hash = hashlib.md5(f.read()).hexdigest()
-        
+
         if current_hash == _CATALOG_FILE_HASH:
             return _CATALOG_CACHE
 
         with open(KPI_DEFINITIONS_PATH, encoding="utf-8") as handle:
             payload = yaml.safe_load(handle)
             if payload is None:
-                raise ValueError(f"KPI definitions file {KPI_DEFINITIONS_PATH} is empty or invalid.")
-            
+                raise ValueError(
+                    f"KPI definitions file {KPI_DEFINITIONS_PATH} is empty or invalid."
+                )
+
         _CATALOG_FILE_HASH = current_hash
     except Exception as exc:  # pragma: no cover - defensive parsing fallback
         logger.warning("Failed to load KPI catalog metadata: %s", exc)
@@ -1592,7 +1595,9 @@ class KPIService:
         # Fail-fast if origination dates are missing (no imputation)
         if origination.isna().any():
             missing_count = origination.isna().sum()
-            raise ValueError(f"CRITICAL: {missing_count} loans missing 'origination_date'. Statistical imputation is forbidden.")
+            raise ValueError(
+                f"CRITICAL: {missing_count} loans missing 'origination_date'. Statistical imputation is forbidden."
+            )
 
         df["origination"] = origination
         df["cohort"] = df["origination"].dt.to_period("M").astype(str)
@@ -1958,51 +1963,69 @@ class KPIService:
     ) -> list[RollRateTransition]:
         from_totals_count = matrix_df.groupby("from_bucket")["loan_count"].transform("sum")
         from_totals_exposure = matrix_df.groupby("from_bucket")["exposure_usd"].transform("sum")
-        
+
         # Calculate shares in vectorized way
         matrix_df = matrix_df.copy()
-        matrix_df["loan_share_pct"] = (matrix_df["loan_count"] / from_totals_count * 100).fillna(0.0).round(2)
-        matrix_df["exposure_share_pct"] = (matrix_df["exposure_usd"] / from_totals_exposure * 100).fillna(0.0).round(2)
+        matrix_df["loan_share_pct"] = (
+            (matrix_df["loan_count"] / from_totals_count * 100).fillna(0.0).round(2)
+        )
+        matrix_df["exposure_share_pct"] = (
+            (matrix_df["exposure_usd"] / from_totals_exposure * 100).fillna(0.0).round(2)
+        )
         matrix_df["exposure_usd"] = matrix_df["exposure_usd"].round(2)
-        
-        # Convert to list of Pydantic models (using model_validate for v2 if needed, 
+
+        # Convert to list of Pydantic models (using model_validate for v2 if needed,
         # but here we construct the list)
         return [
-            RollRateTransition(**row) 
+            RollRateTransition(**row)
             for row in matrix_df[
-                ["from_bucket", "to_bucket", "loan_count", "exposure_usd", "loan_share_pct", "exposure_share_pct"]
+                [
+                    "from_bucket",
+                    "to_bucket",
+                    "loan_count",
+                    "exposure_usd",
+                    "loan_share_pct",
+                    "exposure_share_pct",
+                ]
             ].to_dict("records")
         ]
 
     def _build_roll_rate_bucket_summaries(self, df: pd.DataFrame) -> list[RollRateBucketSummary]:
         # Pre-calculate counts and sums per from_bucket
         bucket_stats = df.groupby("from_bucket").agg(
-            loan_count=("loan_count", "sum"),
-            exposure_usd=("from_exposure_usd", "sum")
+            loan_count=("loan_count", "sum"), exposure_usd=("from_exposure_usd", "sum")
         )
-        
+
         # Calculate specific counts per bucket
-        cure_counts = df[
-            (df["to_bucket"] == "current") & (df["from_bucket"] != "current")
-        ].groupby("from_bucket")["loan_count"].sum()
-        
-        roll_forward_counts = df[
-            (df["to_severity"] > df["from_severity"])
-        ].groupby("from_bucket")["loan_count"].sum()
-        
-        stable_counts = df[
-            (df["to_bucket"] == df["from_bucket"])
-        ].groupby("from_bucket")["loan_count"].sum()
-        
+        cure_counts = (
+            df[(df["to_bucket"] == "current") & (df["from_bucket"] != "current")]
+            .groupby("from_bucket")["loan_count"]
+            .sum()
+        )
+
+        roll_forward_counts = (
+            df[(df["to_severity"] > df["from_severity"])].groupby("from_bucket")["loan_count"].sum()
+        )
+
+        stable_counts = (
+            df[(df["to_bucket"] == df["from_bucket"])].groupby("from_bucket")["loan_count"].sum()
+        )
+
         summaries: list[RollRateBucketSummary] = []
         for bucket in self._bucket_order():
-            count = int(bucket_stats.loc[bucket, "loan_count"]) if bucket in bucket_stats.index else 0
-            exposure = float(bucket_stats.loc[bucket, "exposure_usd"]) if bucket in bucket_stats.index else 0.0
-            
+            count = (
+                int(bucket_stats.loc[bucket, "loan_count"]) if bucket in bucket_stats.index else 0
+            )
+            exposure = (
+                float(bucket_stats.loc[bucket, "exposure_usd"])
+                if bucket in bucket_stats.index
+                else 0.0
+            )
+
             cure_c = int(cure_counts.get(bucket, 0))
             roll_f_c = int(roll_forward_counts.get(bucket, 0))
             stable_c = int(stable_counts.get(bucket, 0))
-            
+
             summaries.append(
                 RollRateBucketSummary(
                     from_bucket=bucket,

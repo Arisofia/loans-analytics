@@ -141,4 +141,3 @@ def test_supported_catalog_kpis_include_remaining_catalog_ids():
     service = KPIService(actor="test_user")
     supported = set(service.get_supported_catalog_kpi_ids())
     assert {"default_rate", "total_loans_count", "customer_lifetime_value"}.issubset(supported)
-

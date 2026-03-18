@@ -165,4 +165,3 @@ def test_full_analysis_layered_insights():
         layer_item for layer_item in layers if layer_item["layer"] == "Growth & Profitability"
     )
     assert growth_layer["now_what"] is not None
-

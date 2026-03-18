@@ -1334,4 +1334,3 @@ class MultiAgentOrchestrator:
             "by_agent": by_agent,
             "usage_tracking_enabled": self.usage_tracker is not None,
         }
-

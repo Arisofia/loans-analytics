@@ -168,13 +168,11 @@ class Crosswalk:
                 )
                 # Preserve original behavior of taking the first match per loan_id
                 exact_id_matches = exact_id_matches.drop_duplicates(subset=["loan_id"])
-                
+
                 # Vectorized record creation
                 if not exact_id_matches.empty:
                     match_records = exact_id_matches.assign(
-                        match_type="exact",
-                        reason_code=REASON_EXACT,
-                        match_score=100.0
+                        match_type="exact", reason_code=REASON_EXACT, match_score=100.0
                     ).to_dict("records")
                     records.extend(match_records)
                     matched_tape.update(exact_id_matches["loan_id"].astype(str))
@@ -195,13 +193,11 @@ class Crosswalk:
                         how="inner",
                     )
                     exact_num_matches = exact_num_matches.drop_duplicates(subset=["loan_id"])
-                    
+
                     # Vectorized record creation
                     if not exact_num_matches.empty:
                         match_num_records = exact_num_matches.assign(
-                            match_type="exact",
-                            reason_code=REASON_EXACT,
-                            match_score=100.0
+                            match_type="exact", reason_code=REASON_EXACT, match_score=100.0
                         ).to_dict("records")
                         records.extend(match_num_records)
                         matched_tape.update(exact_num_matches["loan_id"].astype(str))

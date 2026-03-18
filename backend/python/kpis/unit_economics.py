@@ -106,13 +106,15 @@ def calculate_npl_ratio(df: pd.DataFrame) -> dict[str, Any]:
 
     total_balance_raw = balance.sum()
     npl_balance_raw = balance[npl_mask].sum()
-    
+
     total_balance = Decimal(str(total_balance_raw))
     npl_balance = Decimal(str(npl_balance_raw))
     npl_loan_count = int(npl_mask.sum())
     npl_ratio = float(_safe_pct(float(npl_balance), float(total_balance)))
 
-    logger.debug("NPL ratio=%.4f%%, balance=%.2f, count=%d", npl_ratio, float(npl_balance), npl_loan_count)
+    logger.debug(
+        "NPL ratio=%.4f%%, balance=%.2f, count=%d", npl_ratio, float(npl_balance), npl_loan_count
+    )
     return {
         "npl_ratio": npl_ratio,
         "npl_balance": float(round(npl_balance, 2)),

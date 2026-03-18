@@ -44,4 +44,3 @@ def test_loopback_allowed_via_env(monkeypatch):
         assert sanitize_api_base("http://127.0.0.1") == "http://127.0.0.1"
     finally:
         monkeypatch.delenv("ALLOW_PRIVATE_API_BASE", raising=False)
-

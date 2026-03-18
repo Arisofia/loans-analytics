@@ -29,4 +29,3 @@ from backend.src.zero_cost.local_migration_etl import main  # noqa: E402
 
 if __name__ == "__main__":
     main()
-

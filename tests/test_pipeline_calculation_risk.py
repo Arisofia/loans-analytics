@@ -85,8 +85,8 @@ def test_ltv_sintetico_strict_positive_denominator_rule():
     df = pd.DataFrame(
         {
             "capital_desembolsado": [100.0, 100.0],
-            "valor_nominal_factura": [100.0, -50.0], # negative nominal is invalid
-            "tasa_dilucion": [1.1, 0.1], # >100% dilution makes it negative
+            "valor_nominal_factura": [100.0, -50.0],  # negative nominal is invalid
+            "tasa_dilucion": [1.1, 0.1],  # >100% dilution makes it negative
         }
     )
     engine = KPIEngineV2.__new__(KPIEngineV2)
@@ -221,7 +221,7 @@ def test_ltv_sintetico_preserves_indices():
             "valor_nominal_factura": [200.0],
             "tasa_dilucion": [0.0],
         },
-        index=[42]
+        index=[42],
     )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     result = engine._calculate_ltv_sintetico(df)
@@ -320,10 +320,12 @@ def test_compute_portfolio_velocity_of_default_returns_none_single_period():
 
 def test_vd_chronology_unsorted_input():
     """Vd must handle unsorted input data correctly by internal sorting."""
-    df = pd.DataFrame({
-        "measurement_date": ["2025-02-01", "2025-01-01", "2025-02-15", "2025-01-15"],
-        "status": ["defaulted", "active", "defaulted", "active"]
-    })
+    df = pd.DataFrame(
+        {
+            "measurement_date": ["2025-02-01", "2025-01-01", "2025-02-15", "2025-01-15"],
+            "status": ["defaulted", "active", "defaulted", "active"],
+        }
+    )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     result = engine._compute_portfolio_velocity_of_default(df)
     # Jan: 0/2 = 0%, Feb: 2/2 = 100% -> Vd = +100
@@ -332,10 +334,12 @@ def test_vd_chronology_unsorted_input():
 
 def test_vd_units_percentage_points():
     """Vd should return diff in percentage points, not decimal ratios."""
-    df = pd.DataFrame({
-        "as_of_date": ["2025-01-01", "2025-02-01"],
-        "status": ["defaulted", "active"] # 100% -> 0%
-    })
+    df = pd.DataFrame(
+        {
+            "as_of_date": ["2025-01-01", "2025-02-01"],
+            "status": ["defaulted", "active"],  # 100% -> 0%
+        }
+    )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     result = engine._compute_portfolio_velocity_of_default(df)
     assert float(result) == -100.0
@@ -343,10 +347,12 @@ def test_vd_units_percentage_points():
 
 def test_vd_handles_mixed_date_formats():
     """Vd should handle mixed date formats via 'mixed' parser."""
-    df = pd.DataFrame({
-        "as_of_date": ["2025-01-01", "02/01/2025"], # ISO and US-ish (Feb 1st)
-        "status": ["active", "defaulted"]
-    })
+    df = pd.DataFrame(
+        {
+            "as_of_date": ["2025-01-01", "02/01/2025"],  # ISO and US-ish (Feb 1st)
+            "status": ["active", "defaulted"],
+        }
+    )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     result = engine._compute_portfolio_velocity_of_default(df)
     assert float(result) == 100.0
@@ -354,10 +360,12 @@ def test_vd_handles_mixed_date_formats():
 
 def test_vd_ignores_nan_dates():
     """Rows with unparseable dates should be excluded from Vd calculation."""
-    df = pd.DataFrame({
-        "as_of_date": ["2025-01-01", "not-a-date", "2025-02-01"],
-        "status": ["active", "active", "defaulted"]
-    })
+    df = pd.DataFrame(
+        {
+            "as_of_date": ["2025-01-01", "not-a-date", "2025-02-01"],
+            "status": ["active", "active", "defaulted"],
+        }
+    )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     result = engine._compute_portfolio_velocity_of_default(df)
     assert float(result) == 100.0
@@ -485,7 +493,6 @@ def test_compute_portfolio_velocity_of_default_units_are_percentage_points_v2():
     Moving from a 0% default rate to a 100% default rate in one month
     yields Vd = +100 pp = +10 000 bps.
     """
-    from decimal import Decimal
 
     phase = CalculationPhase.__new__(CalculationPhase)
     df = pd.DataFrame(
@@ -574,7 +581,9 @@ def test_par_metrics_zero_total_balance():
 def test_par_metrics_empty_group():
     """Empty group should return 0.0 for all PAR buckets."""
     grp = pd.DataFrame(columns=["outstanding_balance", "dpd"])
-    result = CalculationPhase._calculate_segment_par_metrics(grp, "outstanding_balance", "dpd", 100.0)
+    result = CalculationPhase._calculate_segment_par_metrics(
+        grp, "outstanding_balance", "dpd", 100.0
+    )
     assert result["par_30"] == 0.0
     assert result["par_60"] == 0.0
     assert result["par_90"] == 0.0
@@ -582,11 +591,13 @@ def test_par_metrics_empty_group():
 
 def test_ltv_sintetico_all_nan_input():
     """If all required columns are present but all NaN, result should be all NaN."""
-    df = pd.DataFrame({
-        "capital_desembolsado": [np.nan, np.nan],
-        "valor_nominal_factura": [np.nan, np.nan],
-        "tasa_dilucion": [np.nan, np.nan]
-    })
+    df = pd.DataFrame(
+        {
+            "capital_desembolsado": [np.nan, np.nan],
+            "valor_nominal_factura": [np.nan, np.nan],
+            "tasa_dilucion": [np.nan, np.nan],
+        }
+    )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     result = engine._calculate_ltv_sintetico(df)
     assert np.isnan(result).all()
@@ -595,10 +606,7 @@ def test_ltv_sintetico_all_nan_input():
 
 def test_vd_no_active_loans():
     """Vd should return None if no active/defaulted/delinquent loans exist."""
-    df = pd.DataFrame({
-        "as_of_date": ["2025-01-01", "2025-02-01"],
-        "status": ["closed", "closed"]
-    })
+    df = pd.DataFrame({"as_of_date": ["2025-01-01", "2025-02-01"], "status": ["closed", "closed"]})
     engine = KPIEngineV2.__new__(KPIEngineV2)
     result = engine._compute_portfolio_velocity_of_default(df)
     assert result is None
@@ -606,10 +614,9 @@ def test_vd_no_active_loans():
 
 def test_vd_all_defaulted_steady():
     """Vd should be 0.0 if default rate is constant at 100%."""
-    df = pd.DataFrame({
-        "as_of_date": ["2025-01-01", "2025-02-01"],
-        "status": ["defaulted", "defaulted"]
-    })
+    df = pd.DataFrame(
+        {"as_of_date": ["2025-01-01", "2025-02-01"], "status": ["defaulted", "defaulted"]}
+    )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     result = engine._compute_portfolio_velocity_of_default(df)
     assert float(result) == 0.0
@@ -617,12 +624,14 @@ def test_vd_all_defaulted_steady():
 
 def test_vd_three_periods_delta():
     """Vd should return the difference between the LAST two periods."""
-    df = pd.DataFrame({
-        "as_of_date": ["2025-01-01", "2025-02-01", "2025-03-01"],
-        "status": ["active", "defaulted", "active"] 
-        # Jan: 0%, Feb: 100%, Mar: 0%
-        # Vd(Feb) = +100, Vd(Mar) = -100
-    })
+    df = pd.DataFrame(
+        {
+            "as_of_date": ["2025-01-01", "2025-02-01", "2025-03-01"],
+            "status": ["active", "defaulted", "active"],
+            # Jan: 0%, Feb: 100%, Mar: 0%
+            # Vd(Feb) = +100, Vd(Mar) = -100
+        }
+    )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     result = engine._compute_portfolio_velocity_of_default(df)
     assert float(result) == -100.0
@@ -630,11 +639,9 @@ def test_vd_three_periods_delta():
 
 def test_ltv_sintetico_zero_dilution():
     """Zero dilution should result in simple capital/nominal ratio."""
-    df = pd.DataFrame({
-        "capital_desembolsado": [100.0],
-        "valor_nominal_factura": [200.0],
-        "tasa_dilucion": [0.0]
-    })
+    df = pd.DataFrame(
+        {"capital_desembolsado": [100.0], "valor_nominal_factura": [200.0], "tasa_dilucion": [0.0]}
+    )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     result = engine._calculate_ltv_sintetico(df)
     assert result.iloc[0] == 0.5

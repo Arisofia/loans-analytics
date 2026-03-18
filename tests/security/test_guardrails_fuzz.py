@@ -34,4 +34,3 @@ def test_redact_pii_replaces_emails(local: str, domain: str) -> None:
 
     assert "@{}.".format(domain) not in redacted
     assert "[REDACTED]" in redacted
-

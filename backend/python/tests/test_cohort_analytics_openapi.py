@@ -19,4 +19,3 @@ def test_openapi_contains_cohort_analytics_endpoint():
     response_ref = post["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
     assert request_ref.endswith("/CohortAnalyticsRequest")
     assert response_ref.endswith("/CohortAnalyticsResponse")
-

@@ -103,4 +103,3 @@ def test_track_success_rate_validates_counts():
 
     with pytest.raises(ValueError, match="failures"):
         tracker.track_success_rate("scenario_1", 1, -1)
-

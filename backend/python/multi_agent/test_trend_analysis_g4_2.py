@@ -22,7 +22,7 @@ class TestExponentialTrendAnalysis(unittest.TestCase):
 
     def setUp(self):
         """Initialize provider for each test."""
-        self.provider = HistoricalContextProvider()
+        self.provider = HistoricalContextProvider(mode="MOCK")
 
     def test_exponential_trend_calculation(self):
         """Test exponential smoothing trend is calculated correctly."""
@@ -67,7 +67,7 @@ class TestPolynomialTrendAnalysis(unittest.TestCase):
 
     def setUp(self):
         """Initialize provider for each test."""
-        self.provider = HistoricalContextProvider()
+        self.provider = HistoricalContextProvider(mode="MOCK")
 
     def test_polynomial_trend_fitting(self):
         """Test polynomial trend fit is calculated."""
@@ -99,7 +99,7 @@ class TestWeightedMovingAverage(unittest.TestCase):
 
     def setUp(self):
         """Initialize provider for each test."""
-        self.provider = HistoricalContextProvider()
+        self.provider = HistoricalContextProvider(mode="MOCK")
 
     def test_weighted_moving_average(self):
         """Test weighted moving average calculation."""
@@ -132,7 +132,7 @@ class TestMultiPeriodTrends(unittest.TestCase):
 
     def setUp(self):
         """Initialize provider for each test."""
-        self.provider = HistoricalContextProvider()
+        self.provider = HistoricalContextProvider(mode="MOCK")
 
     def test_multi_period_trends(self):
         """Test multi-period trend calculation."""
@@ -167,7 +167,7 @@ class TestTrendConfidenceInterval(unittest.TestCase):
 
     def setUp(self):
         """Initialize provider for each test."""
-        self.provider = HistoricalContextProvider()
+        self.provider = HistoricalContextProvider(mode="MOCK")
 
     def test_confidence_interval_calculation(self):
         """Test confidence interval calculation."""
@@ -208,7 +208,7 @@ class TestChangePointDetection(unittest.TestCase):
 
     def setUp(self):
         """Initialize provider for each test."""
-        self.provider = HistoricalContextProvider()
+        self.provider = HistoricalContextProvider(mode="MOCK")
 
     def test_change_point_detection(self):
         """Test change point detection returns valid result or None."""
@@ -254,7 +254,7 @@ class TestTrendAnalysisIntegration(unittest.TestCase):
 
     def setUp(self):
         """Initialize provider for each test."""
-        self.provider = HistoricalContextProvider()
+        self.provider = HistoricalContextProvider(mode="MOCK")
 
     def test_multiple_trend_methods_on_same_kpi(self):
         """Test running multiple trend methods on same KPI."""
@@ -305,7 +305,7 @@ class TestPhaseG42Completeness(unittest.TestCase):
 
     def setUp(self):
         """Initialize provider for each test."""
-        self.provider = HistoricalContextProvider()
+        self.provider = HistoricalContextProvider(mode="MOCK")
 
     def test_all_g42_methods_exist(self):
         """Test that all Phase G4.2 methods are implemented."""

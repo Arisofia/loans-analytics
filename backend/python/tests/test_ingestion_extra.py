@@ -66,4 +66,3 @@ def test_validation_strict_raises(tmp_path):
         raise AssertionError("Expected ValueError")
     except ValueError:
         pass
-

@@ -193,4 +193,3 @@ def test_get_single_kpi_supports_new_path_aliases():
     dpd_90_plus = client.post("/analytics/kpis/dpd-90-plus", json=payload)
     assert dpd_90_plus.status_code == 200
     assert dpd_90_plus.json()["id"] == "DPD_90_PLUS"
-

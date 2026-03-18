@@ -197,7 +197,7 @@ class TestKPIEngineV2(unittest.TestCase):
         # Calculate PAR30 (should raise ValueError due to missing columns)
         with self.assertRaises(ValueError) as cm:
             engine.calculate_par_30()
-        
+
         self.assertIn("CRITICAL: PAR30 calculation failed", str(cm.exception))
 
     def test_individual_kpi_failure_isolation(self):
@@ -216,7 +216,7 @@ class TestKPIEngineV2(unittest.TestCase):
         # we would let it raise. If we want it to be isolated, we catch it inside calculate_all.
         # Currently KPIEngineV2.calculate_all DOES NOT catch exceptions for standard KPIs,
         # so it should raise.
-        
+
         with self.assertRaises(ValueError):
             engine.calculate_all()
 
@@ -248,4 +248,3 @@ class TestKPIEngineV2(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

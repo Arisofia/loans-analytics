@@ -116,4 +116,3 @@ def test_nsm_endpoint_selects_most_recently_modified_run(tmp_path, monkeypatch):
     response = client.get("/analytics/nsm")
     assert response.status_code == 200
     assert response.json()["latest_period"] == "2026-01"
-

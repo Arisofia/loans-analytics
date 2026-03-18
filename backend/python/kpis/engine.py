@@ -170,7 +170,9 @@ class KPIEngineV2:
         logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
         return value, context
 
-    def calculate_all(self, kpi_definitions: Optional[Dict[str, Any]] = None) -> Dict[str, Dict[str, Any]]:
+    def calculate_all(
+        self, kpi_definitions: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Dict[str, Any]]:
         """
         Calculate all standard and dynamic KPIs.
 
@@ -207,7 +209,10 @@ class KPIEngineV2:
         try:
             dynamic_kpis = self._calculate_dynamic_kpis()
             for name, value in dynamic_kpis.items():
-                results[name] = {"value": float(value) if value is not None else None, "context": {"type": "dynamic_formula"}}
+                results[name] = {
+                    "value": float(value) if value is not None else None,
+                    "context": {"type": "dynamic_formula"},
+                }
         except Exception as e:
             logger.warning("Dynamic KPIs calculation failed: %s", e)
 
@@ -223,7 +228,10 @@ class KPIEngineV2:
         try:
             vd_val = self._compute_portfolio_velocity_of_default(self.df)
             if vd_val is not None:
-                results["velocity_of_default"] = {"value": float(vd_val), "context": {"type": "risk_velocity"}}
+                results["velocity_of_default"] = {
+                    "value": float(vd_val),
+                    "context": {"type": "risk_velocity"},
+                }
         except Exception as e:
             logger.warning("Velocity of default calculation failed: %s", e)
 
@@ -231,7 +239,10 @@ class KPIEngineV2:
         try:
             enriched_kpis = self._calculate_enriched_kpis(self.df)
             for name, value in enriched_kpis.items():
-                results[name] = {"value": float(value) if value is not None else None, "context": {"type": "enriched"}}
+                results[name] = {
+                    "value": float(value) if value is not None else None,
+                    "context": {"type": "enriched"},
+                }
         except Exception as e:
             logger.warning("Enriched KPIs calculation failed: %s", e)
 
@@ -249,12 +260,16 @@ class KPIEngineV2:
             try:
                 value = engine.calculate(formula)
                 kpis[kpi_name] = value
-                self._record_calculation(kpi_name, float(value), {"category": category, "formula": formula, "type": "dynamic"})
+                self._record_calculation(
+                    kpi_name,
+                    float(value),
+                    {"category": category, "formula": formula, "type": "dynamic"},
+                )
             except Exception as e:
                 logger.error("Dynamic KPI %s failed: %s", kpi_name, e)
                 # Fail-fast mandate: do not return partial/silent failures
                 raise ValueError(f"CRITICAL: Dynamic KPI {kpi_name} calculation failed: {e}") from e
-        
+
         return kpis
 
     def _build_kpi_engines(self, df: pd.DataFrame) -> tuple[KPIFormulaEngine, KPIFormulaEngine]:
@@ -292,11 +307,20 @@ class KPIEngineV2:
             month-periods are present.
         """
         date_col = next(
-            (c for c in (
-                "as_of_date", "measurement_date", "snapshot_date",
-                "origination_date", "FechaDesembolso", "application_date",
-                "disbursement_date", "reporting_date",
-            ) if c in df.columns),
+            (
+                c
+                for c in (
+                    "as_of_date",
+                    "measurement_date",
+                    "snapshot_date",
+                    "origination_date",
+                    "FechaDesembolso",
+                    "application_date",
+                    "disbursement_date",
+                    "reporting_date",
+                )
+                if c in df.columns
+            ),
             None,
         )
         if date_col is None:
@@ -334,12 +358,14 @@ class KPIEngineV2:
         latest_vd = vd_clean.iloc[-1] if not vd_clean.empty else None
         if latest_vd is None or not np.isfinite(latest_vd):
             return None
-            
+
         return Decimal(str(round(float(latest_vd), 6)))
 
     def _calculate_derived_risk_kpis(self, df: pd.DataFrame) -> Dict[str, Decimal]:
         """Compute derived risk KPIs not covered by the formula catalog."""
-        balance_col = next((c for c in ("outstanding_balance", "current_balance") if c in df.columns), None)
+        balance_col = next(
+            (c for c in ("outstanding_balance", "current_balance") if c in df.columns), None
+        )
         if "dpd" not in df.columns or "status" not in df.columns or balance_col is None:
             return {}
 
@@ -357,13 +383,17 @@ class KPIEngineV2:
         npl_mask = (active_df["dpd"] >= 90) | (active_df["status"] == "defaulted")
         npl_out = Decimal(str(active_df.loc[npl_mask, balance_col].sum()))
         npl_ratio = (npl_out / total_out) * 100
-        defaulted_out = Decimal(str(active_df.loc[active_df["status"] == "defaulted", balance_col].sum()))
+        defaulted_out = Decimal(
+            str(active_df.loc[active_df["status"] == "defaulted", balance_col].sum())
+        )
 
         kpis: Dict[str, Decimal] = {
             "npl_ratio": npl_ratio,
             "npl_90_ratio": npl_ratio,
             "defaulted_outstanding_ratio": (defaulted_out / total_out) * 100,
-            "top_10_borrower_concentration": self._top_10_borrower_concentration(active_df, balance_col, total_out),
+            "top_10_borrower_concentration": self._top_10_borrower_concentration(
+                active_df, balance_col, total_out
+            ),
         }
 
         # LTV Sintético portfolio-level summary (exclude opaque/NaN observations)
@@ -403,30 +433,49 @@ class KPIEngineV2:
         # Calculate LTV: never use fillna(0) for denominator to avoid division-by-zero
         # which np.where handles but we want strict np.nan for opaque ones
         ltv = np.where(~is_opaque, capital / valor_ajustado, np.nan)
-        
+
         # Tag the dataframe if possible (for downstream transparency)
         if "ltv_sintetico_is_opaque" not in df.columns:
             df["ltv_sintetico_is_opaque"] = is_opaque.astype(int)
 
         return pd.Series(ltv, index=df.index, dtype=float)
 
-    def _top_10_borrower_concentration(self, active_df: pd.DataFrame, balance_col: str, total_out: Decimal) -> Decimal:
+    def _top_10_borrower_concentration(
+        self, active_df: pd.DataFrame, balance_col: str, total_out: Decimal
+    ) -> Decimal:
         """Compute top-10 borrower concentration ratio."""
         if "borrower_id" not in active_df.columns or total_out <= 0:
             return Decimal("0.0")
-        concentration = active_df.groupby("borrower_id")[balance_col].sum().sort_values(ascending=False).head(10).sum()
+        concentration = (
+            active_df.groupby("borrower_id")[balance_col]
+            .sum()
+            .sort_values(ascending=False)
+            .head(10)
+            .sum()
+        )
         return (Decimal(str(concentration)) / total_out) * 100
 
     def _ensure_loan_count_column(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add loan_count when borrower_id and loan_id exist."""
-        if "borrower_id" in df.columns and "loan_id" in df.columns and "loan_count" not in df.columns:
+        if (
+            "borrower_id" in df.columns
+            and "loan_id" in df.columns
+            and "loan_count" not in df.columns
+        ):
             df = df.copy()
             df["loan_count"] = df.groupby("borrower_id")["loan_id"].transform("nunique")
         return df
 
     def _iter_kpi_formulas(self) -> List[tuple[str, str, str]]:
         """Collect (category, KPI name, formula) from configured KPI definitions."""
-        category_order = ["portfolio_kpis", "asset_quality_kpis", "cash_flow_kpis", "growth_kpis", "customer_kpis", "operational_kpis"]
+        category_order = [
+            "portfolio_kpis",
+            "asset_quality_kpis",
+            "cash_flow_kpis",
+            "growth_kpis",
+            "customer_kpis",
+            "operational_kpis",
+        ]
         formulas: List[tuple[str, str, str]] = []
         for category in category_order:
             category_kpis = self.kpi_definitions.get(category, {})
@@ -441,8 +490,24 @@ class KPIEngineV2:
         balance_col = self._resolve_col(df, "outstanding_balance", "current_balance", "amount")
         total_bal = float(df[balance_col].sum()) if balance_col else 0.0
 
-        self._add_categorical_exposure_rate(enriched, "collections_eligible_rate", df, balance_col, total_bal, ("collections_eligible", "procede_a_cobrar"), "Y")
-        self._add_categorical_exposure_rate(enriched, "government_sector_exposure_rate", df, balance_col, total_bal, ("government_sector", "goes"), "GOES")
+        self._add_categorical_exposure_rate(
+            enriched,
+            "collections_eligible_rate",
+            df,
+            balance_col,
+            total_bal,
+            ("collections_eligible", "procede_a_cobrar"),
+            "Y",
+        )
+        self._add_categorical_exposure_rate(
+            enriched,
+            "government_sector_exposure_rate",
+            df,
+            balance_col,
+            total_bal,
+            ("government_sector", "goes"),
+            "GOES",
+        )
 
         if util_col := self._resolve_col(df, "utilization_pct", "porcentaje_utilizado"):
             avg_utilization = self._calculate_avg_credit_line_utilization(df, util_col)
@@ -459,7 +524,16 @@ class KPIEngineV2:
 
         return enriched
 
-    def _add_categorical_exposure_rate(self, target: Dict[str, Any], metric_name: str, df: pd.DataFrame, balance_col: Optional[str], total_bal: float, candidates: tuple[str, str], match_value: str) -> None:
+    def _add_categorical_exposure_rate(
+        self,
+        target: Dict[str, Any],
+        metric_name: str,
+        df: pd.DataFrame,
+        balance_col: Optional[str],
+        total_bal: float,
+        candidates: tuple[str, str],
+        match_value: str,
+    ) -> None:
         """Add balance-weighted exposure for a categorical flag column."""
         source_col = self._resolve_col(df, *candidates)
         if source_col is None or balance_col is None or total_bal <= 0:
@@ -481,7 +555,9 @@ class KPIEngineV2:
             util_series = util_series * 100
         return round(float(util_series.mean()), 4)
 
-    def _calculate_capital_collection_rate(self, df: pd.DataFrame, balance_col: Optional[str], total_bal: float) -> Optional[float]:
+    def _calculate_capital_collection_rate(
+        self, df: pd.DataFrame, balance_col: Optional[str], total_bal: float
+    ) -> Optional[float]:
         """Compute capital collection ratio over outstanding balance."""
         cap_col = self._resolve_col(df, "capital_collected", "capitalcobrado")
         if cap_col is None or balance_col is None or total_bal <= 0:
@@ -527,7 +603,7 @@ class KPIEngineV2:
             else:
                 prev_period = periods[i - 1]
                 prior_periods = periods[:i]
-                
+
                 previously_active = pivot[prior_periods].sum(axis=1) > 0
                 recurrent_mask = active_mask & (pivot[prev_period] > 0)
                 recovered_mask = active_mask & (~(pivot[prev_period] > 0)) & previously_active
@@ -555,9 +631,30 @@ class KPIEngineV2:
         if df.empty:
             return pd.DataFrame(columns=["period", "client_id", "tpv"])
 
-        client_col = next((c for c in ("client_id", "borrower_id", "CodCliente") if c in df.columns), None)
-        date_col = next((c for c in ("origination_date", "FechaDesembolso", "application_date", "disbursement_date") if c in df.columns), None)
-        amount_col = next((c for c in ("amount", "MontoDesembolsado", "ValorAprobado", "loan_amount") if c in df.columns), None)
+        client_col = next(
+            (c for c in ("client_id", "borrower_id", "CodCliente") if c in df.columns), None
+        )
+        date_col = next(
+            (
+                c
+                for c in (
+                    "origination_date",
+                    "FechaDesembolso",
+                    "application_date",
+                    "disbursement_date",
+                )
+                if c in df.columns
+            ),
+            None,
+        )
+        amount_col = next(
+            (
+                c
+                for c in ("amount", "MontoDesembolsado", "ValorAprobado", "loan_amount")
+                if c in df.columns
+            ),
+            None,
+        )
 
         if client_col is None or date_col is None or amount_col is None:
             return pd.DataFrame(columns=["period", "client_id", "tpv"])
@@ -578,7 +675,18 @@ class KPIEngineV2:
     def get_audit_trail(self) -> pd.DataFrame:
         """Export the calculation audit trail as a DataFrame."""
         if not self._audit_records:
-            return pd.DataFrame(columns=["timestamp", "run_id", "actor", "kpi_name", "value", "context", "error", "status"])
+            return pd.DataFrame(
+                columns=[
+                    "timestamp",
+                    "run_id",
+                    "actor",
+                    "kpi_name",
+                    "value",
+                    "context",
+                    "error",
+                    "status",
+                ]
+            )
 
         records_for_df = []
         for record in self._audit_records:

@@ -4,7 +4,6 @@ Create monitoring tables in Supabase via REST API (RPC).
 No direct PostgreSQL connection needed.
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -81,7 +80,9 @@ def create_tables_via_supabase():
         return True
 
     except ImportError:
-        raise ValueError("CRITICAL: Supabase SDK is not installed. Non-deterministic runtime installation is forbidden.") from None
+        raise ValueError(
+            "CRITICAL: Supabase SDK is not installed. Non-deterministic runtime installation is forbidden."
+        ) from None
     except Exception as e:
         print(f"❌ Error: {e}")
         print("\n   Alternative: Create tables manually via Supabase UI")
@@ -95,7 +96,9 @@ def main():
     try:
         import requests
     except ImportError:
-        raise ValueError("CRITICAL: 'requests' library is not installed. Non-deterministic runtime installation is forbidden.") from None
+        raise ValueError(
+            "CRITICAL: 'requests' library is not installed. Non-deterministic runtime installation is forbidden."
+        ) from None
 
     env = load_env()
     if not env:

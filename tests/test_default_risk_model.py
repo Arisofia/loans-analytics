@@ -220,4 +220,3 @@ class TestPredictEndpoint:
             assert data["risk_level"] == "medium"
         finally:
             main_mod._risk_model_cache.clear()
-

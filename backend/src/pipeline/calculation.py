@@ -489,9 +489,7 @@ class CalculationPhase:
         rate = pd.to_numeric(working[default_rate_col], errors="coerce")
         return rate.diff()
 
-    def _compute_portfolio_velocity_of_default(
-        self, df: pd.DataFrame
-    ) -> Optional[Decimal]:
+    def _compute_portfolio_velocity_of_default(self, df: pd.DataFrame) -> Optional[Decimal]:
         """Compute portfolio-level Velocity of Default from the canonical date column.
 
         Delegates to :class:`~backend.python.kpis.engine.KPIEngineV2` as the

@@ -497,4 +497,3 @@ class TestFuzzyIncomeMatcher:
         # The income row with no reasonable counterpart should remain unmatched.
         unmatched_row = result[result["nombre_cliente"] == "No Match Person XYZ"].iloc[0]
         assert pd.isna(unmatched_row["lend_id"])
-

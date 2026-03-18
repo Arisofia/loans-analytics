@@ -92,4 +92,3 @@ def test_calculate_roll_rate_analytics_returns_transition_matrix_and_summary():
     assert buckets["31_60"].cure_rate_pct == 100.0
     assert buckets["61_90"].roll_forward_rate_pct == 100.0
     assert buckets["90_plus"].stability_rate_pct == 0.0
-

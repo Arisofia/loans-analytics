@@ -130,4 +130,3 @@ def summarize_kpis(days: int = 90) -> None:
 
 if __name__ == "__main__":
     summarize_kpis()
-

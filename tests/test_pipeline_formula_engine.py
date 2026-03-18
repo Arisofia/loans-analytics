@@ -92,7 +92,7 @@ def test_dpd_bucket_formulas_support_range_logic_via_aggregation_deltas():
             },
             "f_90_plus": {
                 "formula": "SUM(outstanding_balance WHERE dpd > 90) / SUM(outstanding_balance) * 100"
-            }
+            },
         }
     }
 

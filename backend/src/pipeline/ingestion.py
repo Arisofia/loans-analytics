@@ -143,7 +143,9 @@ class IngestionPhase:
                     return value.decode(encoding)
                 except Exception:
                     continue
-            raise ValueError(f"CRITICAL: decode failure for bytes value {repr(value)}. Aborting batch.")
+            raise ValueError(
+                f"CRITICAL: decode failure for bytes value {repr(value)}. Aborting batch."
+            )
         return str(value)
 
     def _load_from_api(self) -> pd.DataFrame:

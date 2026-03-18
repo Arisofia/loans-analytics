@@ -104,4 +104,3 @@ def test_export_parquet(temp_storage, tmp_path):
     assert df_len == 1
     feature_name_parquet = df.iloc[0]["feature_name"]
     assert feature_name_parquet == "feature"
-

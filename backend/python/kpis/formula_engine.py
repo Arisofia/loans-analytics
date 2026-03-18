@@ -6,9 +6,8 @@ import ast
 import os
 import re
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
-import numpy as np
 import pandas as pd
 
 from backend.python.logging_config import get_logger

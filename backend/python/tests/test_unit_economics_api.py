@@ -371,4 +371,3 @@ class TestKPIServiceUnitEconomics:
 
         # Payback = 240 / 20 = 12 months
         assert result.payback.payback_months == pytest.approx(12.0, abs=0.01)
-

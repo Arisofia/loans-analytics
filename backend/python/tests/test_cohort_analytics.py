@@ -62,4 +62,3 @@ def test_calculate_cohort_analytics_returns_grouped_metrics():
     assert response.cohorts[1].cohort_month == "2026-02"
     assert response.summary.highest_risk_cohort in {"2026-01", "2026-02"}
     assert response.summary.strongest_collection_cohort in {"2026-01", "2026-02"}
-

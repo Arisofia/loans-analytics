@@ -94,4 +94,3 @@ def test_roll_rate_endpoint_returns_transition_rows_and_summary():
     transition_pairs = {(row["from_bucket"], row["to_bucket"]) for row in body["transition_matrix"]}
     assert ("31_60", "current") in transition_pairs
     assert ("61_90", "90_plus") in transition_pairs
-

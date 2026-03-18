@@ -73,4 +73,3 @@ def test_calculate_stress_test_handles_empty_inputs():
     assert response.baseline.par30_pct == 0.0
     assert response.stressed.par30_pct == 0.0
     assert response.alerts == []
-

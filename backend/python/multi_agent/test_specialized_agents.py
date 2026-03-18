@@ -22,7 +22,7 @@ from backend.python.multi_agent.specialized_agents import (
 class TestCollectionsAgent(unittest.TestCase):
     """Test CollectionsAgent functionality."""
 
-    @patch("python.multi_agent.base_agent.BaseAgent._init_client")
+    @patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
     def setUp(self, mock_init_client):
         """Set up test fixtures."""
         mock_init_client.return_value = Mock()
@@ -50,7 +50,7 @@ class TestCollectionsAgent(unittest.TestCase):
 class TestFraudDetectionAgent(unittest.TestCase):
     """Test FraudDetectionAgent functionality."""
 
-    @patch("python.multi_agent.base_agent.BaseAgent._init_client")
+    @patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
     def setUp(self, mock_init_client):
         """Set up test fixtures."""
         mock_init_client.return_value = Mock()
@@ -78,7 +78,7 @@ class TestFraudDetectionAgent(unittest.TestCase):
 class TestPricingAgent(unittest.TestCase):
     """Test PricingAgent functionality."""
 
-    @patch("python.multi_agent.base_agent.BaseAgent._init_client")
+    @patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
     def setUp(self, mock_init_client):
         """Set up test fixtures."""
         mock_init_client.return_value = Mock()
@@ -106,7 +106,7 @@ class TestPricingAgent(unittest.TestCase):
 class TestCustomerRetentionAgent(unittest.TestCase):
     """Test CustomerRetentionAgent functionality."""
 
-    @patch("python.multi_agent.base_agent.BaseAgent._init_client")
+    @patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
     def setUp(self, mock_init_client):
         """Set up test fixtures."""
         mock_init_client.return_value = Mock()
@@ -134,7 +134,7 @@ class TestCustomerRetentionAgent(unittest.TestCase):
 class TestSpecializedAgentIntegration(unittest.TestCase):
     """Test specialized agents work together in workflows."""
 
-    @patch("python.multi_agent.base_agent.BaseAgent._init_client")
+    @patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
     def setUp(self, mock_init_client):
         """Set up test fixtures."""
         mock_init_client.return_value = Mock()
@@ -181,4 +181,3 @@ class TestSpecializedAgentIntegration(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

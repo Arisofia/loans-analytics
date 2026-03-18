@@ -191,4 +191,3 @@ class TestComplianceRequirements:
 def tmp_path(tmp_path):
     """Fixture providing temporary directory for tests."""
     return tmp_path
-

@@ -411,4 +411,3 @@ def test_historical_kpis_data_integrity(supabase_backend, test_portfolio_id, see
     assert (
         response.status_code == 409
     ), f"Expected 409 Conflict for duplicate insert, got {response.status_code}"
-

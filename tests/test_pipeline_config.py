@@ -85,4 +85,3 @@ def test_load_kpi_definitions_valid(tmp_path):
 
     kpis = load_kpi_definitions(kpi_file)
     assert kpis == kpi_data
-

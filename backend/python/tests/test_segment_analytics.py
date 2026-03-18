@@ -127,4 +127,3 @@ def test_calculate_segment_analytics_utilization_band_dimension():
     assert "0_25" in segments
     assert "50_75" in segments
     assert "75_100" in segments
-

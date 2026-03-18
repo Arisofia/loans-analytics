@@ -122,4 +122,3 @@ class Scenario(BaseModel):
     description: str
     steps: List[ScenarioStep]
     initial_context: Dict[str, Any] = Field(default_factory=dict)
-

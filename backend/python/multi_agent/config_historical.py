@@ -103,4 +103,3 @@ def build_historical_context_provider(
     )
     logger.info("Built HistoricalContextProvider in MOCK mode (synthetic data)")
     return provider
-

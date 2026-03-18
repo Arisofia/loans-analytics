@@ -73,4 +73,3 @@ def test_untrusted_formula_input_never_crashes(payload: str) -> None:
     from decimal import Decimal
 
     assert isinstance(result, Decimal)
-

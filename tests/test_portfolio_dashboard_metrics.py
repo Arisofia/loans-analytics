@@ -9,7 +9,11 @@ import pytest
 
 def _load_portfolio_dashboard_module():
     module_path = (
-        Path(__file__).resolve().parents[1] / "frontend" / "streamlit_app" / "pages" / "3_Portfolio_Dashboard.py"
+        Path(__file__).resolve().parents[1]
+        / "frontend"
+        / "streamlit_app"
+        / "pages"
+        / "3_Portfolio_Dashboard.py"
     )
     spec = importlib.util.spec_from_file_location("portfolio_dashboard_page", module_path)
     assert spec is not None and spec.loader is not None

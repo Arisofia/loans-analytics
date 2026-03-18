@@ -523,4 +523,3 @@ class TestPortfolioDashboardDuplicateClassification:
         )
         result = _dash_mod._classify_loan_id_duplicates(df)
         assert any(level == "warning" and "suspicious" in msg.lower() for level, msg in result)
-

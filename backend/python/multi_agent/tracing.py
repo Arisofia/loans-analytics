@@ -134,4 +134,3 @@ class AgentTracer:
         """Reset accumulators for trace."""
         self._cost_accumulator.pop(trace_id, None)
         self._token_accumulator.pop(trace_id, None)
-

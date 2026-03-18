@@ -95,4 +95,3 @@ class TestLatencyBenchmarks:
             assert (
                 avg_latency < 200
             ), f"Agent {i} average latency {avg_latency:.2f}ms exceeds threshold"
-

@@ -11,7 +11,6 @@ from __future__ import annotations
 import re
 import json
 import warnings
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -25,7 +24,6 @@ from backend.src.pipeline.config import PipelineConfig, load_business_rules, loa
 from backend.src.pipeline.ingestion import IngestionPhase
 from backend.src.pipeline.output import OutputPhase
 from backend.src.pipeline.transformation import TransformationPhase
-
 
 PIPELINE_REQUIRED_COLUMNS = ["loan_id", "amount", "status"]
 

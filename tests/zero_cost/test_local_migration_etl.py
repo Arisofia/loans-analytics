@@ -142,4 +142,3 @@ def test_reconcile_payments_captures_invalid_dates_no_duplicates():
     assert (
         len(null_loan_missing_sched) == 0
     ), "Overlapping row should NOT be double-logged under missing_loan_id_schedule"
-

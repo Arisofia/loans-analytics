@@ -404,4 +404,3 @@ class BaseAgent(ABC):
             "cost_usd": cost,
             "finish_reason": response.choices[0].finish_reason,
         }
-

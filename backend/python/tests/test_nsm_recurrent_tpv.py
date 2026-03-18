@@ -200,4 +200,3 @@ class TestCalculateRecurrentTpv:
                 "recovered_clients",
             ):
                 assert key in period_data
-

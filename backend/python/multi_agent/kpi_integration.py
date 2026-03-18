@@ -314,4 +314,3 @@ class KpiContextProvider:
             lines.append("")
 
         return "\n".join(lines)
-

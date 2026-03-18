@@ -17,7 +17,7 @@ class TestRetailLoanScenarios(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        with patch("python.multi_agent.base_agent.BaseAgent._init_client"):
+        with patch("backend.python.multi_agent.base_agent.BaseAgent._init_client"):
             self.orchestrator = MultiAgentOrchestrator()
 
     def test_retail_origination_scenario_exists(self):
@@ -112,7 +112,7 @@ class TestScenarioIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        with patch("python.multi_agent.base_agent.BaseAgent._init_client"):
+        with patch("backend.python.multi_agent.base_agent.BaseAgent._init_client"):
             self.orchestrator = MultiAgentOrchestrator()
 
     def test_total_scenario_count(self):
@@ -181,7 +181,7 @@ class TestSMELoanScenarios(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        with patch("python.multi_agent.base_agent.BaseAgent._init_client"):
+        with patch("backend.python.multi_agent.base_agent.BaseAgent._init_client"):
             self.orchestrator = MultiAgentOrchestrator()
 
     def test_sme_underwriting_scenario(self):
@@ -231,7 +231,7 @@ class TestAutoLoanScenarios(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        with patch("python.multi_agent.base_agent.BaseAgent._init_client"):
+        with patch("backend.python.multi_agent.base_agent.BaseAgent._init_client"):
             self.orchestrator = MultiAgentOrchestrator()
 
     def test_auto_origination_scenario(self):
@@ -280,7 +280,7 @@ class TestPortfolioScenarios(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        with patch("python.multi_agent.base_agent.BaseAgent._init_client"):
+        with patch("backend.python.multi_agent.base_agent.BaseAgent._init_client"):
             self.orchestrator = MultiAgentOrchestrator()
 
     def test_portfolio_health_check_scenario(self):
@@ -325,4 +325,3 @@ class TestPortfolioScenarios(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

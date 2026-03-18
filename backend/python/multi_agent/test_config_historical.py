@@ -106,4 +106,3 @@ class TestConfigHistorical:
             # Verify values are correct types
             assert isinstance(sample.kpi_id, str)
             assert isinstance(sample.value, (int, float))
-

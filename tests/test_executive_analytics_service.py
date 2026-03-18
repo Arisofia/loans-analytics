@@ -91,4 +91,3 @@ def test_executive_analytics_includes_strategic_confirmations():
     assert len(payload["opportunity_prioritization"]) >= 1
     assert len(payload["churn_90d_metrics"]) >= 1
     assert payload["data_governance"].get("quality_score") is not None
-

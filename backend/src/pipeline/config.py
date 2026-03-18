@@ -100,7 +100,9 @@ def load_kpi_definitions(kpi_path: Optional[Path] = None) -> Dict[str, Any]:
     """
     if kpi_path is None:
         # Resolve to root/config/kpis/kpi_definitions.yaml
-        kpi_path = Path(__file__).parent.parent.parent.parent / "config" / "kpis" / "kpi_definitions.yaml"
+        kpi_path = (
+            Path(__file__).parent.parent.parent.parent / "config" / "kpis" / "kpi_definitions.yaml"
+        )
 
     if not kpi_path.exists():
         # Fallback to local config if exists

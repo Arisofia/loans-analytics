@@ -20,4 +20,3 @@ def test_openapi_contains_stress_test_endpoint_and_schema_refs():
 
     request_ref = post["requestBody"]["content"]["application/json"]["schema"]["$ref"]
     assert request_ref.endswith("/StressTestRequest")
-
