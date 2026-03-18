@@ -3,7 +3,7 @@
 
 Usage:
   python3 scripts/ml/train_default_risk_model.py
-    python3 scripts/ml/train_default_risk_model.py --input data/samples/abaco_sample_data_20260202.csv
+  python3 scripts/ml/train_default_risk_model.py --input data/samples/abaco_sample_data_20260202.csv
 """
 
 from __future__ import annotations

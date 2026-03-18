@@ -466,7 +466,7 @@ Examples:
   python scripts/data/run_data_pipeline.py --input /path/to/your/data.csv
 
   # Live mode (alias for full - all 4 phases)
-    python scripts/data/run_data_pipeline.py --mode live --input data/samples/abaco_sample_data_20260202.csv
+  python scripts/data/run_data_pipeline.py --mode live --input data/samples/abaco_sample_data_20260202.csv
 
   # Validation mode (stop after transformation)
   python scripts/data/run_data_pipeline.py --mode validate

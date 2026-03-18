@@ -52,3 +52,4 @@ Single source of truth for script execution paths. Use only these commands.
 
 - Avoid root-level wrappers and any duplicate command entrypoints.
 - Keep one active implementation path per task under `scripts/{data,maintenance,monitoring,deployment,evaluation}`.
+

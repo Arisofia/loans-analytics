@@ -3,6 +3,35 @@ KPIEngineV2: Standardized KPI calculation engine with built-in audit trails.
 
 This module provides a unified interface for KPI calculations across the Abaco
 loans analytics platform, replacing the v1 approach of individual function calls.
+
+Broad vs. strict NPL mask doctest
+---------------------------------
+
+The core audit requirement is that `npl_ratio` (broad NPL) and `npl_90_ratio`
+(strict NPL) must not silently collapse to the same value. The masks differ:
+
+* strict: DPD >= 90 or status in ``_NPL_STRICT_STATUSES``
+* broad:  DPD >= 30 or status in ``_NPL_BROAD_STATUSES``
+
+The following doctest asserts that, on a mixed DPD/status dataset, the broad
+outstanding exceeds the strict outstanding while both remain below total:
+
+>>> import pandas as pd
+>>> from decimal import Decimal
+>>> df = pd.DataFrame(
+...     [
+...         {"dpd": 0, "status": "active", "outstanding_principal": 100},
+...         {"dpd": 45, "status": "delinquent", "outstanding_principal": 100},
+...         {"dpd": 95, "status": "defaulted", "outstanding_principal": 100},
+...     ]
+... )
+>>> total_out = Decimal(str(df["outstanding_principal"].sum()))
+>>> npl_mask = (df["dpd"] >= 90) | df["status"].isin(_NPL_STRICT_STATUSES)
+>>> broad_npl_mask = (df["dpd"] >= 30) | df["status"].isin(_NPL_BROAD_STATUSES)
+>>> strict_out = Decimal(str(df.loc[npl_mask, "outstanding_principal"].sum()))
+>>> broad_out = Decimal(str(df.loc[broad_npl_mask, "outstanding_principal"].sum()))
+>>> strict_out < broad_out < total_out
+True
 """
 
 from __future__ import annotations
@@ -24,6 +53,11 @@ logger = get_logger(__name__)
 
 # Log message format constants
 _LOG_KPI_CALCULATED = "Calculated %s: %s"
+
+# Loan statuses considered non-performing for NPL calculations.
+# Used in both the broad (DPD≥30) and strict (DPD≥90) NPL definitions.
+_NPL_BROAD_STATUSES: tuple[str, ...] = ("delinquent", "defaulted")
+_NPL_STRICT_STATUSES: tuple[str, ...] = ("defaulted",)
 
 
 class KPIEngineV2:
@@ -380,16 +414,23 @@ class KPIEngineV2:
                 "top_10_borrower_concentration": Decimal("0.0"),
             }
 
-        npl_mask = (active_df["dpd"] >= 90) | (active_df["status"] == "defaulted")
+        # npl_90_ratio: strict NPL (DPD >= 90 or defaulted) — standard 90-day threshold
+        npl_mask = (active_df["dpd"] >= 90) | (active_df["status"].isin(_NPL_STRICT_STATUSES))
         npl_out = Decimal(str(active_df.loc[npl_mask, balance_col].sum()))
-        npl_ratio = (npl_out / total_out) * 100
+        npl_90_ratio = (npl_out / total_out) * 100
+
+        # npl_ratio: broad NPL (DPD >= 30 or delinquent/defaulted) — early-warning threshold
+        broad_npl_mask = (active_df["dpd"] >= 30) | (active_df["status"].isin(_NPL_BROAD_STATUSES))
+        broad_npl_out = Decimal(str(active_df.loc[broad_npl_mask, balance_col].sum()))
+        npl_ratio = (broad_npl_out / total_out) * 100
+
         defaulted_out = Decimal(
-            str(active_df.loc[active_df["status"] == "defaulted", balance_col].sum())
+            str(active_df.loc[active_df["status"].isin(_NPL_STRICT_STATUSES), balance_col].sum())
         )
 
         kpis: Dict[str, Decimal] = {
             "npl_ratio": npl_ratio,
-            "npl_90_ratio": npl_ratio,
+            "npl_90_ratio": npl_90_ratio,
             "defaulted_outstanding_ratio": (defaulted_out / total_out) * 100,
             "top_10_borrower_concentration": self._top_10_borrower_concentration(
                 active_df, balance_col, total_out
@@ -434,9 +475,9 @@ class KPIEngineV2:
         # which np.where handles but we want strict np.nan for opaque ones
         ltv = np.where(~is_opaque, capital / valor_ajustado, np.nan)
 
-        # Tag the dataframe if possible (for downstream transparency)
-        if "ltv_sintetico_is_opaque" not in df.columns:
-            df["ltv_sintetico_is_opaque"] = is_opaque.astype(int)
+        # Tag the dataframe with the opacity flag for downstream transparency.
+        # Use explicit .loc assignment for in-place mutation on the provided frame.
+        df.loc[:, "ltv_sintetico_is_opaque"] = is_opaque.astype(int)
 
         return pd.Series(ltv, index=df.index, dtype=float)
 

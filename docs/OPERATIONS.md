@@ -28,7 +28,7 @@ python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_
 
 ```bash
 python scripts/data/run_data_pipeline.py \
-   --input data/samples/abaco_sample_data_20260202.csv \
+  --input data/samples/abaco_sample_data_20260202.csv \
   --config config/pipeline.yml
 ```
 
@@ -78,3 +78,4 @@ python scripts/data/run_data_pipeline.py \
    ```bash
    python -c "from src.pipeline.orchestrator import PipelineConfig; PipelineConfig()"
    ```
+

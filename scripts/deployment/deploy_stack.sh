@@ -90,3 +90,4 @@ echo "   • Vintage Analysis"
 echo "   • Loan Table (filterable, searchable)"
 echo ""
 echo "=========================================="
+

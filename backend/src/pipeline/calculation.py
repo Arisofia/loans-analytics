@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -193,10 +194,42 @@ class CalculationPhase:
         return {"daily": [], "weekly": [], "monthly": []}
 
     def _find_date_columns(self, df: pd.DataFrame) -> List[str]:
-        """Find columns that can be interpreted as dates."""
+        """Find columns that can be interpreted as dates.
+
+        Columns are first filtered by name heuristics (suffix ``_date``, ``_at``,
+        ``_ts``, ``date_``, ``fecha``) to avoid expensive datetime-parse attempts on
+        unrelated string columns such as borrower names or industry codes.
+        """
+        _KNOWN_DATE_COLS = frozenset(
+            {
+                "disbursement_date",
+                "origination_date",
+                "due_date",
+                "payment_date",
+                "measurement_date",
+                "approved_at",
+                "funded_at",
+                "created_at",
+                "updated_at",
+            }
+        )
+        date_name_pattern = re.compile(r"(^date|_date$|_at$|_ts$|^fecha|_fecha$)", re.IGNORECASE)
         date_columns: List[str] = []
         for col in df.columns:
-            if df[col].dtype not in ["datetime64[ns]", "object"]:
+            dtype = df[col].dtype
+            dtype_str = str(dtype)
+            is_datetime = dtype_str.startswith("datetime64")
+            # Handle: "object" (pandas ≤2.x default), "str" (pandas 3.0 default StringDtype),
+            # "string" / "string[pyarrow]" (explicit pd.StringDtype variants).
+            is_string = dtype_str in ("object", "str") or dtype_str.startswith("string")
+            if not is_datetime and not is_string:
+                continue
+            # Already typed as datetime — include directly
+            if is_datetime:
+                date_columns.append(col)
+                continue
+            # For object/string columns, apply name heuristics before expensive parsing
+            if col not in _KNOWN_DATE_COLS and not date_name_pattern.search(col):
                 continue
             try:
                 parsed = pd.to_datetime(df[col], errors="coerce", format="mixed")
@@ -231,7 +264,7 @@ class CalculationPhase:
                 grouped = df_ts.groupby(df_ts[date_col].dt.to_period("W"))[numeric_cols].sum()
             else:
                 grouped = df_ts.groupby(df_ts[date_col].dt.to_period("M"))[numeric_cols].sum()
-            return grouped.to_dict("records")[:limit]
+            return grouped.reset_index().to_dict("records")[:limit]
         except Exception as exc:
             logger.warning(
                 "%s rollup failed for %s: %s",
@@ -241,6 +274,42 @@ class CalculationPhase:
                 exc_info=True,
             )
             return []
+
+
+def _get__rollup_sum_owner_instance_for_test() -> Any:
+    """
+    Best-effort helper to obtain an instance of the class that owns `_rollup_sum`.
+
+    This avoids assuming a specific class name while still allowing a regression
+    test to exercise the real `_rollup_sum` implementation.
+    """
+    for obj in globals().values():
+        if isinstance(obj, type) and hasattr(obj, "_rollup_sum"):
+            try:
+                return obj()  # type: ignore[call-arg]
+            except TypeError:
+                # Class requires init arguments; try the next one.
+                continue
+    raise RuntimeError("No suitable owner class for `_rollup_sum` found for testing")
+
+
+def test__rollup_sum_includes_period_key() -> None:
+    """
+    Regression test: ensure `_rollup_sum` emits records that include the
+    date/period key for daily, weekly, and monthly rollups.
+    """
+    # Construct a small time-series DataFrame.
+    dates = pd.date_range(start="2024-01-01", periods=10, freq="D")
+    df_ts = pd.DataFrame({"date": dates, "amount": range(10)})
+
+    owner = _get__rollup_sum_owner_instance_for_test()
+
+    for period in ("daily", "weekly", "monthly"):
+        records = owner._rollup_sum(df_ts, "date", ["amount"], period, limit=100)
+        # We expect at least one aggregated record and that the date/period
+        # column is present in the emitted dictionaries.
+        assert records, f"Expected non-empty records for period={period}"
+        assert "date" in records[0], f"Missing 'date' key for period={period}"
 
     def _detect_anomalies(self, kpi_results: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Detect anomalies in KPI values."""
@@ -292,6 +361,10 @@ class CalculationPhase:
         if kpi_value is None or not isinstance(kpi_value, (int, float)):
             return None
         if kpi_name not in normal_ranges:
+            logger.debug(
+                "KPI '%s' has no anomaly range registered — anomaly monitoring skipped for this metric",
+                kpi_name,
+            )
             return None
 
         min_val, max_val = normal_ranges[kpi_name]

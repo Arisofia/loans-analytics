@@ -38,6 +38,12 @@ logger = logging.getLogger(__name__)
 
 _DateLike = Union[str, pd.Timestamp]
 
+# Floating-point tolerance for payment shortfall detection.
+# A loan is considered to have an unpaid installment when
+# cum_sched > cum_paid + _PAYMENT_TOLERANCE, preventing false positives
+# from floating-point rounding in payment amounts.
+_PAYMENT_TOLERANCE: float = 1e-6
+
 # DPD → mora bucket mapping
 _DPD_BUCKETS: list[tuple[int, int, str]] = [
     (0, 0, "current"),
@@ -201,7 +207,7 @@ class DPDCalculator:
         cum_paid = float(pays[pay_principal_col].sum())
 
         # Find the earliest unpaid installment
-        unpaid = sched[sched["cum_sched"] > cum_paid + 1e-6]
+        unpaid = sched[sched["cum_sched"] > cum_paid + _PAYMENT_TOLERANCE]
         if unpaid.empty:
             return 0  # Fully paid up
 
@@ -298,21 +304,31 @@ class DPDCalculator:
                 base["original_principal"] - base["cum_paid_principal"]
             ).clip(lower=0.0)
 
-        # DPD per loan
-        dpd_values = {}
-        for lid in base[loan_id_col].tolist():
-            dpd_values[lid] = self.dpd_at(
-                lid,
-                ref_date,
-                fact_schedule,
-                fact_real_payment,
-                loan_id_col=loan_id_col,
-                sched_date_col=sched_date_col,
-                sched_principal_col=sched_principal_col,
-                pay_date_col=pay_date_col,
-                pay_principal_col=pay_principal_col,
+        # DPD per loan — vectorized to avoid O(N×M) per-loan filter loop.
+        # Reuse the already-filtered schedule (sched_upto) to avoid a duplicate
+        # full-table boolean filter and copy within this snapshot computation.
+        sched_sorted = sched_upto.sort_values([loan_id_col, sched_date_col]).copy()
+        if not sched_sorted.empty:
+            sched_sorted["_cum_sched"] = sched_sorted.groupby(loan_id_col)[
+                sched_principal_col
+            ].cumsum()
+
+            # Reuse already-computed per-loan cumulative principal paid instead of
+            # re-filtering and re-grouping fact_real_payment for each snapshot.
+            total_paid = base.set_index(loan_id_col)["cum_paid_principal"].rename("_total_paid")
+            sched_sorted = sched_sorted.join(total_paid, on=loan_id_col, how="left")
+            sched_sorted["_total_paid"] = sched_sorted["_total_paid"].fillna(0.0)
+
+            unpaid_mask = (
+                sched_sorted["_cum_sched"] > sched_sorted["_total_paid"] + _PAYMENT_TOLERANCE
             )
-        base["dpd"] = base[loan_id_col].map(dpd_values)
+            first_unpaid_date = (
+                sched_sorted[unpaid_mask].groupby(loan_id_col)[sched_date_col].first()
+            )
+            dpd_days = (ref_date - first_unpaid_date).dt.days.clip(lower=0).astype(int)
+            base["dpd"] = base[loan_id_col].map(dpd_days).fillna(0).astype(int)
+        else:
+            base["dpd"] = 0
         base["snapshot_month"] = ref_date
 
         return base.reset_index(drop=True)

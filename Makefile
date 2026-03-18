@@ -189,3 +189,4 @@ run:
 	$(MAKE) etl-local
 	$(MAKE) zero-cost-schema
 	$(MAKE) snapshot-build
+

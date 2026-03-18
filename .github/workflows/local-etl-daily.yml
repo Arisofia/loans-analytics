@@ -113,7 +113,7 @@ jobs:
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # actions/upload-artifact@v4.3.6
         with:
           name: local-etl-${{ github.run_number }}
           path: |

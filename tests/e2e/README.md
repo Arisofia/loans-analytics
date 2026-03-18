@@ -132,3 +132,4 @@ RUN_E2E=1 pytest tests/e2e/test_csv_kpi_agent_flow.py -m e2e -v --tb=short
 - [pytest](https://docs.pytest.org/)
 - [pytest-playwright](https://github.com/microsoft/playwright-pytest)
 - [pytest-cov](https://pytest-cov.readthedocs.io/)
+
