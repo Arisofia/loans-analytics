@@ -155,6 +155,7 @@ class TransformationPhase:
 
             # Apply transformations with metrics tracking
             df = self._normalize_column_names(df)
+            df = self._map_canonical_semantic_layer(df)
             df, control_metrics = self._derive_control_mora_fields(df)
             transformation_metrics["control_derivations"] = control_metrics
             df = self._collapse_duplicate_columns(df)
@@ -286,6 +287,54 @@ class TransformationPhase:
                         "Overwrote current_balance with outstanding_balance "
                         "(due to high null/zero rate)"
                     )
+
+        return df
+
+    def _map_canonical_semantic_layer(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Normalize column names to the institutional canonical semantic standard.
+
+        Applies a second-pass mapping after ``_normalize_column_names`` to
+        unify the vocabulary used by downstream calculation and output phases.
+
+        Canonical targets
+        -----------------
+        approved_at          : timestamp when the loan was approved / application accepted
+        funded_at            : timestamp when capital was actually disbursed to the client
+        scheduled_amount     : the contractually agreed instalment or periodic payment
+        actual_payment_amount: the amount the client actually paid in the period
+        net_injected_capital : net capital deployed (disbursement minus any immediate recovery)
+        """
+        semantic_mapping: Dict[str, str] = {
+            # approved_at
+            "application_date": "approved_at",
+            "fecha_aprobacion": "approved_at",
+            "approval_date": "approved_at",
+            # funded_at
+            "origination_date": "funded_at",
+            "disbursement_date": "funded_at",
+            "fecha_desembolso": "funded_at",
+            # scheduled_amount
+            "total_scheduled": "scheduled_amount",
+            "monto_programado": "scheduled_amount",
+            "total_due": "scheduled_amount",
+            # actual_payment_amount
+            "last_payment_amount": "actual_payment_amount",
+            "total_payment_received": "actual_payment_amount",
+            "montototalabonado": "actual_payment_amount",
+            # net_injected_capital
+            "tpv": "net_injected_capital",
+            "ingreso_total_por_desembolso": "net_injected_capital",
+        }
+
+        rename_dict = {
+            source: target
+            for source, target in semantic_mapping.items()
+            if source in df.columns and target not in df.columns
+        }
+
+        if rename_dict:
+            df = df.rename(columns=rename_dict)
+            logger.info("Canonical semantic layer applied: %s", rename_dict)
 
         return df
 
@@ -993,19 +1042,19 @@ class TransformationPhase:
         return self._fill_numeric_with_zero(df, col, null_pct)
 
     def _fill_numeric_with_structural_zero(self, df: pd.DataFrame, col: str) -> str:
-        """Fill numeric nulls with structural zero and add a boolean opacity flag.
+        """Fill numeric nulls with structural zero and add an integer opacity flag.
 
         Implements the "structural zeros + opacity flag" pattern:
         - Null values are filled with 0 (structural zero, not a statistical estimate).
-        - A boolean indicator column ``{col}_is_missing`` is added so that ML models
-          can distinguish genuine zeros from imputed ones.
+        - An integer indicator column ``{col}_is_missing`` (1=missing, 0=present) is added
+          so that ML models can distinguish genuine zeros from imputed ones.
 
-        This replaces median/mean imputation to avoid injecting statistical bias
-        into financial data used for credit risk models.
+        No mean/median/mode imputation is ever applied — those substitute statistical
+        artefacts for genuine business knowledge, corrupting credit-risk models.
         """
         null_mask = df[col].isna()
         flag_col = f"{col}_is_missing"
-        df[flag_col] = null_mask
+        df[flag_col] = null_mask.astype(int)
         df[col] = df[col].fillna(0)
         return f"filled_structural_zero+flag ({null_mask.sum()} nulls → {flag_col})"
 
@@ -1027,22 +1076,27 @@ class TransformationPhase:
         return f"filled_zero (high_null: {null_pct:.1f}%)"
 
     def _handle_categorical_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
-        """Apply categorical null handling strategy for a column."""
-        if null_pct < self.LOW_NULL_THRESHOLD_PCT:
-            return self._fill_categorical_with_mode(df, col)
-        return self._fill_categorical_with_missing(df, col)
+        """Apply categorical null handling strategy for a column.
 
-    def _fill_categorical_with_mode(self, df: pd.DataFrame, col: str) -> str:
-        """Fill categorical nulls with mode value."""
-        mode_val = df[col].mode()
-        fill_val = mode_val.iloc[0] if len(mode_val) > 0 else "unknown"
-        df[col] = df[col].fillna(fill_val)
-        return f"filled_mode ({fill_val})"
+        Strict opacity rule: mode/moda imputation is never used.
+        All categorical nulls receive a ``{col}_is_missing`` integer flag and
+        are filled with the sentinel string ``"missing_data"``.
+        """
+        return self._fill_categorical_with_missing_data(df, col)
 
-    def _fill_categorical_with_missing(self, df: pd.DataFrame, col: str) -> str:
-        """Fill categorical nulls with missing label."""
-        df[col] = df[col].fillna("missing")
-        return "filled_missing_label"
+    def _fill_categorical_with_missing_data(self, df: pd.DataFrame, col: str) -> str:
+        """Fill categorical nulls with the sentinel 'missing_data' and add an opacity flag.
+
+        Creates ``{col}_is_missing`` (int 1/0) so downstream models can distinguish
+        genuine 'missing_data' values from values that were present in the source.
+        Mode imputation is explicitly forbidden here to avoid injecting distributional
+        bias into categorical features used for credit-risk segmentation.
+        """
+        null_mask = df[col].isna()
+        flag_col = f"{col}_is_missing"
+        df[flag_col] = null_mask.astype(int)
+        df[col] = df[col].fillna("missing_data")
+        return f"filled_missing_data+flag ({null_mask.sum()} nulls → {flag_col})"
 
     def _normalize_types(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
