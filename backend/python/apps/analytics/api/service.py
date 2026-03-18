@@ -348,13 +348,13 @@ def _extract_kpi_metadata(kpi_def: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-_CATALOG_CACHE: dict[str, Any] = {}
-_CATALOG_FILE_HASH: str = ""
+_CATALOG_STATE: dict[str, Any] = {
+    "cache": {},
+    "file_hash": "",
+}
 
 
 def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
-    global _CATALOG_CACHE, _CATALOG_FILE_HASH
-
     if yaml is None or not KPI_DEFINITIONS_PATH.exists():
         return {}
 
@@ -365,8 +365,8 @@ def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
         with open(KPI_DEFINITIONS_PATH, "rb") as f:
             current_hash = hashlib.md5(f.read()).hexdigest()
 
-        if current_hash == _CATALOG_FILE_HASH:
-            return _CATALOG_CACHE
+        if current_hash == _CATALOG_STATE["file_hash"]:
+            return _CATALOG_STATE["cache"]
 
         with open(KPI_DEFINITIONS_PATH, encoding="utf-8") as handle:
             payload = yaml.safe_load(handle)
@@ -375,10 +375,10 @@ def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
                     f"KPI definitions file {KPI_DEFINITIONS_PATH} is empty or invalid."
                 )
 
-        _CATALOG_FILE_HASH = current_hash
+        _CATALOG_STATE["file_hash"] = current_hash
     except Exception as exc:  # pragma: no cover - defensive parsing fallback
         logger.warning("Failed to load KPI catalog metadata: %s", exc)
-        return _CATALOG_CACHE if _CATALOG_CACHE else {}
+        return _CATALOG_STATE["cache"] if _CATALOG_STATE["cache"] else {}
 
     metadata: dict[str, dict[str, Any]] = {}
     for top_key, section in payload.items():
@@ -389,7 +389,7 @@ def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
             if isinstance(kpi_def, dict):
                 metadata[kpi_id.lower()] = _extract_kpi_metadata(kpi_def)
 
-    _CATALOG_CACHE = metadata
+    _CATALOG_STATE["cache"] = metadata
     return metadata
 
 
