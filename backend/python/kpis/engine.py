@@ -20,7 +20,7 @@ outstanding exceeds the strict outstanding while both remain below total:
 >>> from decimal import Decimal
 >>> df = pd.DataFrame(
 ...     [
-...         {"dpd": 0, "status": "current", "outstanding_principal": 100},
+...         {"dpd": 0, "status": "active", "outstanding_principal": 100},
 ...         {"dpd": 45, "status": "delinquent", "outstanding_principal": 100},
 ...         {"dpd": 95, "status": "defaulted", "outstanding_principal": 100},
 ...     ]
