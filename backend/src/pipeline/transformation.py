@@ -67,6 +67,7 @@ class TransformationPhase:
         "VIGENTE": "active",
         "Al_dia": "active",
         "al_dia": "active",
+        "AL_DIA": "active",
         "Delinquent": "delinquent",
         "DELINQUENT": "delinquent",
         # Spanish: delinquent
