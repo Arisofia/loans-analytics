@@ -37,7 +37,7 @@ class KPIEngineV2:
 
     def __init__(
         self,
-        df: pd.DataFrame,
+        df: Optional[pd.DataFrame] = None,
         actor: str = "system",
         run_id: Optional[str] = None,
         kpi_definitions: Optional[Dict[str, Any]] = None,
@@ -46,12 +46,12 @@ class KPIEngineV2:
         Initialize KPI engine.
 
         Args:
-            df: Input DataFrame with loan/payment data
+            df: Optional input DataFrame with loan/payment data
             actor: Identity of the entity requesting calculations.
             run_id: Optional unique identifier for this calculation run
             kpi_definitions: Optional dictionary of KPI formulas
         """
-        self.df = self._ensure_loan_count_column(df)
+        self.df = self._ensure_loan_count_column(df if df is not None else pd.DataFrame())
         self.actor = actor
         self.run_id = run_id or self._generate_run_id()
         self.kpi_definitions = kpi_definitions or {}
@@ -82,6 +82,22 @@ class KPIEngineV2:
             "status": "success" if error is None else "failed",
         }
         self._audit_records.append(record)
+
+    def calculate(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Evaluate only the dynamic formula KPIs defined in ``kpi_definitions``.
+
+        Intended for callers that supply their own formula catalog and do not
+        need the full legacy KPI suite (PAR30, LTV, etc.).  Returns a flat
+        ``{kpi_name: value}`` mapping so that downstream consumers can index
+        directly by name.
+        """
+        self.df = self._ensure_loan_count_column(df)
+        dynamic_kpis = self._calculate_dynamic_kpis()
+        return {
+            name: (float(value) if value is not None else None)
+            for name, value in dynamic_kpis.items()
+        }
 
     def calculate_par_30(self) -> Tuple[float, Dict[str, Any]]:
         """Calculate Portfolio at Risk (30+ days)."""

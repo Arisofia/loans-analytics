@@ -67,13 +67,19 @@ def load_business_rules(rules_path: Optional[Path] = None) -> Dict[str, Any]:
         Dictionary of business rules
     """
     if rules_path is None:
+        # Resolve to root/config/business_rules.yaml from backend/src/pipeline/config.py
         rules_path = Path(__file__).parent.parent.parent.parent / "config" / "business_rules.yaml"
 
     if not rules_path.exists():
-        raise FileNotFoundError(
-            f"Business rules file not found at {rules_path}. "
-            "Critical business logic depends on this configuration."
-        )
+        # Fallback to local config if exists (legacy/special environments)
+        local_rules = Path(__file__).parent.parent.parent / "config" / "business_rules.yaml"
+        if local_rules.exists():
+            rules_path = local_rules
+        else:
+            raise FileNotFoundError(
+                f"Business rules file not found at {rules_path}. "
+                "Critical business logic depends on this configuration."
+            )
 
     with open(rules_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
@@ -93,13 +99,19 @@ def load_kpi_definitions(kpi_path: Optional[Path] = None) -> Dict[str, Any]:
         Dictionary of KPI definitions
     """
     if kpi_path is None:
+        # Resolve to root/config/kpis/kpi_definitions.yaml
         kpi_path = Path(__file__).parent.parent.parent.parent / "config" / "kpis" / "kpi_definitions.yaml"
 
     if not kpi_path.exists():
-        raise FileNotFoundError(
-            f"KPI definitions file not found at {kpi_path}. "
-            "Pipeline cannot calculate metrics without valid definitions."
-        )
+        # Fallback to local config if exists
+        local_kpi = Path(__file__).parent.parent.parent / "config" / "kpis" / "kpi_definitions.yaml"
+        if local_kpi.exists():
+            kpi_path = local_kpi
+        else:
+            raise FileNotFoundError(
+                f"KPI definitions file not found at {kpi_path}. "
+                "Pipeline cannot calculate metrics without valid definitions."
+            )
 
     with open(kpi_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)

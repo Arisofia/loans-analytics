@@ -580,9 +580,9 @@ class TestExecute:
         assert "transformation_metrics" in results
 
     def test_execute_no_data_raises_error(self, default_config):
-        """Test that execute raises ValueError when no data provided (fail-fast doctrine)."""
+        """Test that execute raises error when no data provided."""
         transformer = TransformationPhase(default_config)
-        with pytest.raises(ValueError, match="CRITICAL: Transformation phase failed"):
+        with pytest.raises(ValueError, match="No data provided for transformation"):
             transformer.execute()
 
 
