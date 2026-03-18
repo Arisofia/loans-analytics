@@ -568,9 +568,7 @@ class CalculationPhase:
         rate = pd.to_numeric(working[default_rate_col], errors="coerce")
         return rate.diff()
 
-    def _compute_portfolio_velocity_of_default(
-        self, df: pd.DataFrame
-    ) -> Optional[Decimal]:
+    def _compute_portfolio_velocity_of_default(self, df: pd.DataFrame) -> Optional[Decimal]:
         """Compute portfolio-level Velocity of Default from the canonical date column.
 
         Delegates to :class:`~backend.python.kpis.engine.KPIEngineV2` as the
@@ -657,9 +655,7 @@ class CalculationPhase:
 
         return metrics
 
-    def _build_feature_matrix(
-        self, df: pd.DataFrame
-    ) -> tuple[np.ndarray, List[str], pd.Series]:
+    def _build_feature_matrix(self, df: pd.DataFrame) -> tuple[np.ndarray, List[str], pd.Series]:
         """Build the numeric feature matrix for clustering.
 
         Includes:
@@ -679,7 +675,8 @@ class CalculationPhase:
 
         # Add is_missing flags (they are already 0/1 integers)
         flag_cols = [
-            c for c in df.columns
+            c
+            for c in df.columns
             if c.endswith("_is_missing") and pd.api.types.is_numeric_dtype(df[c])
         ]
         feature_cols.extend(flag_cols)

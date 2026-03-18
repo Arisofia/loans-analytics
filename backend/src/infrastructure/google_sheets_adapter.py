@@ -154,13 +154,9 @@ class ControlMoraSheetsAdapter:
         self._ensure_dependencies()
 
         if not payload or not isinstance(payload, list):
-            raise ValueError(
-                "push_gestion_mora: payload must be a non-empty list of row dicts."
-            )
+            raise ValueError("push_gestion_mora: payload must be a non-empty list of row dicts.")
         if not isinstance(payload[0], dict):
-            raise ValueError(
-                "push_gestion_mora: each row in payload must be a dict."
-            )
+            raise ValueError("push_gestion_mora: each row in payload must be a dict.")
 
         # Determine header order from the first row and enforce a consistent key set
         headers = list(payload[0].keys())
@@ -169,8 +165,7 @@ class ControlMoraSheetsAdapter:
         for idx, row in enumerate(payload):
             if not isinstance(row, dict):
                 raise ValueError(
-                    f"push_gestion_mora: row at index {idx} is not a dict "
-                    f"(type={type(row)!r})."
+                    f"push_gestion_mora: row at index {idx} is not a dict (type={type(row)!r})."
                 )
             row_keys = set(row.keys())
             if row_keys != expected_keys:
@@ -238,9 +233,7 @@ class ControlMoraSheetsAdapter:
                 self._credentials_path, scopes=_SCOPES
             )
             client = gspread.authorize(creds)
-            logger.info(
-                "Google Sheets auth successful (credentials: %s)", self._credentials_path
-            )
+            logger.info("Google Sheets auth successful (credentials: %s)", self._credentials_path)
             return client
         except Exception as exc:
             raise ValueError(
@@ -294,9 +287,7 @@ class ControlMoraSheetsAdapter:
         except Exception:
             logger.info("Tab '%s' not found — creating it.", tab_name)
             try:
-                return spreadsheet.add_worksheet(
-                    title=tab_name, rows=1000, cols=50
-                )
+                return spreadsheet.add_worksheet(title=tab_name, rows=1000, cols=50)
             except Exception as exc:
                 raise ValueError(
                     f"CRITICAL: Could not create tab '{tab_name}' in spreadsheet "
@@ -304,9 +295,7 @@ class ControlMoraSheetsAdapter:
                 ) from exc
 
     @staticmethod
-    def _validate_required_columns(
-        columns: set, required: set, tab_name: str
-    ) -> None:
+    def _validate_required_columns(columns: set, required: set, tab_name: str) -> None:
         """Raise ValueError if any required column is missing.
 
         Parameters

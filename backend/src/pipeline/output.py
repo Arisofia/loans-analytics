@@ -121,9 +121,7 @@ class OutputPhase:
 
                 # anomalies.json — threshold-breach anomaly records
                 if anomalies is not None:
-                    anomalies_path = self._export_payload_json(
-                        anomalies, run_dir, "anomalies.json"
-                    )
+                    anomalies_path = self._export_payload_json(anomalies, run_dir, "anomalies.json")
                     exports["anomalies"] = str(anomalies_path)
 
                 # clustering_metrics.json — advanced ML clustering (PCA→UMAP→HDBSCAN)
@@ -440,8 +438,11 @@ class OutputPhase:
         semantics of the as_of_date field.
         """
         for date_col in (
-            "as_of_date", "snapshot_date", "fecha_actual",
-            "ingestion_timestamp", "ingest_date",
+            "as_of_date",
+            "snapshot_date",
+            "fecha_actual",
+            "ingestion_timestamp",
+            "ingest_date",
         ):
             if date_col in df.columns:
                 parsed = pd.to_datetime(df[date_col], errors="coerce", format="mixed")
@@ -1016,7 +1017,10 @@ class OutputPhase:
                 null_handling = transformation_metrics.get("null_handling", {})
                 smart_actions = null_handling.get("smart_actions", {})
                 for col, action in smart_actions.items():
-                    if "filled_structural_zero+flag" in action or "filled_missing_data+flag" in action:
+                    if (
+                        "filled_structural_zero+flag" in action
+                        or "filled_missing_data+flag" in action
+                    ):
                         # Extract null count from action string e.g. "(3 nulls → col_is_missing)"
                         try:
                             count_str = action.split("(")[1].split(" nulls")[0]
@@ -1032,9 +1036,7 @@ class OutputPhase:
                 )
 
         payload["is_opaque_validation_counts"] = opaque_counts
-        payload["total_opaque_observations"] = sum(
-            v for v in opaque_counts.values() if v > 0
-        )
+        payload["total_opaque_observations"] = sum(v for v in opaque_counts.values() if v > 0)
 
         # Attach KPI engine audit summary if available
         if kpi_engine is not None:

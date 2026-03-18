@@ -902,7 +902,9 @@ class TransformationPhase:
             & dpd.lt(30)
         )
 
-        dpd_adjusted = np.where(is_kiting_suspected, np.maximum(dpd.to_numpy(), 90.0), dpd.to_numpy())
+        dpd_adjusted = np.where(
+            is_kiting_suspected, np.maximum(dpd.to_numpy(), 90.0), dpd.to_numpy()
+        )
 
         df["ratio_pago_real"] = pd.Series(ratio_pago_real, index=df.index, dtype=float)
         df["is_kiting_suspected"] = is_kiting_suspected.astype(int)
@@ -1440,7 +1442,7 @@ class TransformationPhase:
             # Whole-number percentage (e.g. 24.5 meaning 24.5% annual)
             df["interest_rate"] = rates / 100
             logger.info(
-                "Normalized interest_rate: whole %% → annual decimal " "(median %.2f%% → %.4f)",
+                "Normalized interest_rate: whole %% → annual decimal (median %.2f%% → %.4f)",
                 median_rate,
                 median_rate / 100,
             )
@@ -1480,17 +1482,17 @@ class TransformationPhase:
         if "status" in df.columns and "dpd" in df.columns:
             status = df["status"].fillna("").astype(str)
             dpd = pd.to_numeric(df["dpd"], errors="coerce").fillna(0)
-            
+
             conditions = [
                 (status.str.contains("default", case=False, na=False)) | (dpd >= 90),
                 (dpd >= 30) & (dpd < 90),
                 (dpd > 0) & (dpd < 30),
-                (dpd <= 0)
+                (dpd <= 0),
             ]
             choices = ["critical", "high", "medium", "low"]
-            
+
             df["risk_category"] = np.select(conditions, choices, default="low")
-            
+
             fields_created.append("risk_category")
             rules_applied.append("risk_categorization")
 
