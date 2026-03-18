@@ -632,7 +632,7 @@ class CalculationPhase:
                 metrics["skip_reason"] = f"insufficient_observations ({X.shape[0]})"
                 return metrics
 
-            # 1. Winsorize + robust scale
+            # 1. Robust scaling and PCA dimensionality reduction
             X_scaled, pca_explained = self._scale_and_reduce_pca(X)
             metrics["pca_explained_variance"] = pca_explained
 
