@@ -705,7 +705,7 @@ class CalculationPhase:
 
     @staticmethod
     def _scale_and_reduce_pca(X: np.ndarray) -> tuple[np.ndarray, List[float]]:
-        """Apply RobustScaler then PCA (retain 95% variance or at most 10 components)."""
+        """Apply RobustScaler then PCA with up to 10 components (bounded by features and samples)."""
         scaler = RobustScaler()
         X_scaled = scaler.fit_transform(X)
 
