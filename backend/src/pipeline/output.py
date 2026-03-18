@@ -1002,16 +1002,29 @@ class OutputPhase:
         # Count is_opaque / is_missing flags from transformation phase
         opaque_counts: Dict[str, int] = {}
         if transformation_metrics:
-            null_handling = transformation_metrics.get("null_handling", {})
-            smart_actions = null_handling.get("smart_actions", {})
-            for col, action in smart_actions.items():
-                if "filled_structural_zero+flag" in action or "filled_missing_data+flag" in action:
-                    # Extract null count from action string e.g. "(3 nulls → col_is_missing)"
+            # Prefer structured opacity counts if TransformationPhase provides them,
+            # to avoid brittle parsing of human-readable action strings.
+            structured_opacity = transformation_metrics.get("opacity_counts")
+            if isinstance(structured_opacity, dict):
+                for key, value in structured_opacity.items():
                     try:
-                        count_str = action.split("(")[1].split(" nulls")[0]
-                        opaque_counts[f"{col}_is_missing"] = int(count_str)
-                    except (IndexError, ValueError):
-                        opaque_counts[f"{col}_is_missing"] = -1
+                        opaque_counts[str(key)] = int(value)
+                    except (TypeError, ValueError):
+                        # Skip values that cannot be coerced to int
+                        continue
+            else:
+                null_handling = transformation_metrics.get("null_handling", {})
+                smart_actions = null_handling.get("smart_actions", {})
+                for col, action in smart_actions.items():
+                    if "filled_structural_zero+flag" in action or "filled_missing_data+flag" in action:
+                        # Extract null count from action string e.g. "(3 nulls → col_is_missing)"
+                        try:
+                            count_str = action.split("(")[1].split(" nulls")[0]
+                            opaque_counts[f"{col}_is_missing"] = int(count_str)
+                        except (IndexError, ValueError):
+                            # If we cannot reliably parse the count, skip this entry rather than
+                            # emitting a misleading sentinel value.
+                            continue
             canonical_risk = transformation_metrics.get("canonical_risk_state", {})
             if canonical_risk.get("opaque_ratio_rows", 0):
                 opaque_counts["ratio_pago_real_opaque"] = int(
