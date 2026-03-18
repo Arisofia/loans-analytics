@@ -3,15 +3,12 @@
 Covers:
 - _calculate_ltv_sintetico: Synthetic Factoring LTV per loan
 - _calculate_velocity_of_default: First derivative of default rate over time
-- _calculate_segment_par_metrics: Kiting/carousel adjustment via ratio_pago_real
+- _calculate_segment_par_metrics: Kiting/carousel adjustment via dpd_adjusted
 """
 
 import pandas as pd
 import pytest
-
 import numpy as np
-import pandas as pd
-import pytest
 
 from backend.src.pipeline.calculation import CalculationPhase
 from backend.python.kpis.engine import KPIEngineV2
@@ -48,9 +45,8 @@ def test_ltv_sintetico_zero_adjusted_value_is_opaque_and_nan():
             "tasa_dilucion": [1.0],  # fully diluted → valor_ajustado = 0
         }
     )
-    engine = KPIEngineV2.__new__(KPIEngineV2)
-    result = engine._calculate_ltv_sintetico(df)
-    assert np.isnan(result.iloc[0])
+    result = CalculationPhase._calculate_ltv_sintetico(df)
+    assert pd.isna(result.iloc[0])
     assert df.loc[0, "ltv_sintetico_is_opaque"] == 1
 
 
@@ -63,9 +59,8 @@ def test_ltv_sintetico_missing_denominator_is_opaque_and_nan():
             "tasa_dilucion": [0.1],
         }
     )
-    engine = KPIEngineV2.__new__(KPIEngineV2)
-    result = engine._calculate_ltv_sintetico(df)
-    assert np.isnan(result.iloc[0])
+    result = CalculationPhase._calculate_ltv_sintetico(df)
+    assert pd.isna(result.iloc[0])
     assert df.loc[0, "ltv_sintetico_is_opaque"] == 1
 
 
@@ -99,6 +94,123 @@ def test_ltv_sintetico_strict_positive_denominator_rule():
     assert np.isnan(result.iloc[0])
     assert np.isnan(result.iloc[1])
     assert (df["ltv_sintetico_is_opaque"] == 1).all()
+
+
+def test_ltv_sintetico_valid_row_not_nan():
+    """Valid loans (non-zero adjusted value) must not produce np.nan."""
+    df = pd.DataFrame(
+        {
+            "capital_desembolsado": [100.0],
+            "valor_nominal_factura": [200.0],
+            "tasa_dilucion": [0.1],
+        }
+    )
+    result = CalculationPhase._calculate_ltv_sintetico(df)
+    assert not pd.isna(result.iloc[0])
+    assert result.iloc[0] == pytest.approx(100 / 180, rel=1e-4)
+
+
+def test_ltv_sintetico_zero_nominal_returns_nan():
+    """Invoice with zero nominal value must also yield np.nan (denominator is 0)."""
+    df = pd.DataFrame(
+        {
+            "capital_desembolsado": [50.0],
+            "valor_nominal_factura": [0.0],
+            "tasa_dilucion": [0.0],
+        }
+    )
+    result = CalculationPhase._calculate_ltv_sintetico(df)
+    assert pd.isna(result.iloc[0])
+
+
+# ---------------------------------------------------------------------------
+# _ltv_sintetico_invalid_mask — opacity flag
+# ---------------------------------------------------------------------------
+
+
+def test_ltv_sintetico_invalid_mask_fully_diluted():
+    """Fully-diluted row must be flagged as invalid."""
+    df = pd.DataFrame(
+        {
+            "valor_nominal_factura": [100.0, 200.0],
+            "tasa_dilucion": [1.0, 0.1],  # row 0 fully diluted, row 1 valid
+        }
+    )
+    mask = CalculationPhase._ltv_sintetico_invalid_mask(df)
+    assert mask.iloc[0]
+    assert not mask.iloc[1]
+
+
+def test_ltv_sintetico_invalid_mask_zero_nominal():
+    """Zero nominal invoice must be flagged as invalid regardless of dilution."""
+    df = pd.DataFrame(
+        {
+            "valor_nominal_factura": [0.0],
+            "tasa_dilucion": [0.5],
+        }
+    )
+    mask = CalculationPhase._ltv_sintetico_invalid_mask(df)
+    assert mask.iloc[0]
+
+
+def test_ltv_sintetico_invalid_mask_no_invalids_all_valid():
+    """All valid loans: mask must be all False."""
+    df = pd.DataFrame(
+        {
+            "valor_nominal_factura": [100.0, 200.0],
+            "tasa_dilucion": [0.0, 0.2],
+        }
+    )
+    mask = CalculationPhase._ltv_sintetico_invalid_mask(df)
+    assert not mask.any()
+
+
+def test_ltv_sintetico_invalid_mask_missing_columns_returns_empty_series():
+    """Missing columns → empty Series (no information available, not conservative False)."""
+    df = pd.DataFrame({"capital_desembolsado": [100.0]})
+    mask = CalculationPhase._ltv_sintetico_invalid_mask(df)
+    assert mask.empty
+
+
+def test_ltv_sintetico_invalid_mask_empty_dataframe():
+    """Empty DataFrame → empty bool Series."""
+    df = pd.DataFrame(columns=["valor_nominal_factura", "tasa_dilucion"])
+    mask = CalculationPhase._ltv_sintetico_invalid_mask(df)
+    assert mask.empty
+
+
+def test_ltv_sintetico_nan_and_mask_are_consistent():
+    """NaN positions in LTV must exactly match True positions in the invalid mask."""
+    df = pd.DataFrame(
+        {
+            "capital_desembolsado": [100.0, 50.0, 200.0],
+            "valor_nominal_factura": [200.0, 0.0, 500.0],
+            "tasa_dilucion": [0.1, 0.0, 1.0],  # rows 1 and 2 are invalid
+        }
+    )
+    ltv = CalculationPhase._calculate_ltv_sintetico(df)
+    mask = CalculationPhase._ltv_sintetico_invalid_mask(df)
+
+    # Wherever mask is True, LTV must be NaN
+    assert ltv[mask].isna().all()
+    # Wherever mask is False, LTV must not be NaN
+    assert ltv[~mask].notna().all()
+
+
+# ---------------------------------------------------------------------------
+# _calculate_velocity_of_default (extended: chronology & units)
+# ---------------------------------------------------------------------------
+
+
+def test_velocity_of_default_basic_diff():
+    """Vd should be the period-over-period diff of the default_rate column."""
+    df_ts = pd.DataFrame(
+        {"period": ["2025-01", "2025-02", "2025-03"], "default_rate": [1.0, 2.5, 2.0]}
+    )
+    vd = CalculationPhase._calculate_velocity_of_default(df_ts)
+    assert pd.isna(vd.iloc[0])
+    assert vd.iloc[1] == pytest.approx(1.5)
+    assert vd.iloc[2] == pytest.approx(-0.5)
 
 
 def test_ltv_sintetico_preserves_indices():
@@ -251,13 +363,151 @@ def test_vd_ignores_nan_dates():
     assert float(result) == 100.0
 
 
+def test_velocity_of_default_unsorted_input_normalized_by_period_col():
+    """When period_col is provided, rows are sorted chronologically before differencing."""
+    # Intentionally reversed input order
+    df_ts = pd.DataFrame(
+        {
+            "period": ["2025-03", "2025-01", "2025-02"],
+            "default_rate": [2.0, 1.0, 2.5],  # Jan=1.0, Feb=2.5, Mar=2.0
+        }
+    )
+    vd = CalculationPhase._calculate_velocity_of_default(
+        df_ts, default_rate_col="default_rate", period_col="period"
+    )
+    # After chronological sort: Jan(1.0) → Feb(2.5) → Mar(2.0)
+    # diff:                      NaN,       +1.5,       -0.5
+    assert pd.isna(vd.iloc[0])
+    assert vd.iloc[1] == pytest.approx(1.5)
+    assert vd.iloc[2] == pytest.approx(-0.5)
+
+
+def test_velocity_of_default_no_period_col_preserves_row_order():
+    """Without period_col, rows are diffed in their original (caller-managed) order."""
+    # Descending order — without period_col the result honours input order
+    df_ts = pd.DataFrame(
+        {
+            "period": ["2025-03", "2025-02", "2025-01"],
+            "default_rate": [2.0, 2.5, 1.0],
+        }
+    )
+    vd = CalculationPhase._calculate_velocity_of_default(df_ts)
+    # Row order: 2.0, 2.5, 1.0 → diffs: NaN, +0.5, -1.5
+    assert pd.isna(vd.iloc[0])
+    assert vd.iloc[1] == pytest.approx(0.5)
+    assert vd.iloc[2] == pytest.approx(-1.5)
+
+
+def test_velocity_of_default_units_are_percentage_points():
+    """Vd units: if default_rate is in %, the diff is in percentage points (1 pp = 100 bps).
+
+    A move from 1.0 % to 2.5 % is +1.5 percentage points (+150 basis points).
+    """
+    df_ts = pd.DataFrame({"default_rate": [1.0, 2.5]})  # values in %
+    vd = CalculationPhase._calculate_velocity_of_default(df_ts)
+    # Δ = 2.5% − 1.0% = 1.5 pp (150 bps)
+    assert vd.iloc[1] == pytest.approx(1.5)
+
+
+# ---------------------------------------------------------------------------
+# _compute_portfolio_velocity_of_default — extended edge cases
+# ---------------------------------------------------------------------------
+
+
+def test_compute_portfolio_velocity_of_default_unsorted_input_v2():
+    """Records arriving out of chronological order must still produce the correct Vd."""
+    from decimal import Decimal
+
+    phase = CalculationPhase.__new__(CalculationPhase)
+    # Intentionally shuffled: Mar, Jan, Feb
+    df = pd.DataFrame(
+        {
+            "as_of_date": [
+                "2025-03-05",
+                "2025-01-15",
+                "2025-02-10",
+                "2025-03-18",
+                "2025-01-20",
+                "2025-02-25",
+            ],
+            "status": [
+                "active",
+                "defaulted",
+                "defaulted",
+                "active",
+                "active",
+                "defaulted",
+            ],
+        }
+    )
+    result = phase._compute_portfolio_velocity_of_default(df)
+
+    # Jan: 1/2 = 50%, Feb: 2/2 = 100%, Mar: 0/2 = 0%
+    # Vd (Mar − Feb) = 0 − 100 = −100 pp
+    assert result is not None
+    assert isinstance(result, Decimal)
+    assert result == pytest.approx(-100.0, rel=1e-4)
+
+
+def test_compute_portfolio_velocity_of_default_all_closed_returns_none():
+    """When all non-closed records are filtered out the result must be None."""
+    phase = CalculationPhase.__new__(CalculationPhase)
+    df = pd.DataFrame(
+        {
+            "as_of_date": ["2025-01-10", "2025-02-10"],
+            "status": ["closed", "closed"],
+        }
+    )
+    assert phase._compute_portfolio_velocity_of_default(df) is None
+
+
+def test_compute_portfolio_velocity_of_default_no_status_column():
+    """Without a status column all loans are treated as non-defaulted (0% default rate)."""
+    from decimal import Decimal
+
+    phase = CalculationPhase.__new__(CalculationPhase)
+    df = pd.DataFrame(
+        {
+            "as_of_date": ["2025-01-01", "2025-01-15", "2025-02-05", "2025-02-20"],
+        }
+    )
+    result = phase._compute_portfolio_velocity_of_default(df)
+
+    # No defaults in either period → rate 0% both months → Vd = 0
+    assert result is not None
+    assert isinstance(result, Decimal)
+    assert float(result) == pytest.approx(0.0, abs=1e-4)
+
+
+def test_compute_portfolio_velocity_of_default_units_are_percentage_points_v2():
+    """Vd is expressed in percentage points (pp); 1 pp = 100 basis points.
+
+    Moving from a 0% default rate to a 100% default rate in one month
+    yields Vd = +100 pp = +10 000 bps.
+    """
+    from decimal import Decimal
+
+    phase = CalculationPhase.__new__(CalculationPhase)
+    df = pd.DataFrame(
+        {
+            "as_of_date": ["2025-01-01", "2025-02-01"],
+            "status": ["active", "defaulted"],
+        }
+    )
+    result = phase._compute_portfolio_velocity_of_default(df)
+
+    # Jan: 0/1 = 0%; Feb: 1/1 = 100%  → Vd = +100 pp
+    assert result is not None
+    assert float(result) == pytest.approx(100.0, rel=1e-4)
+
+
 # ---------------------------------------------------------------------------
 # _calculate_segment_par_metrics — kiting adjustment
 # ---------------------------------------------------------------------------
 
 
-def test_par_metrics_without_ratio_pago_real_unchanged():
-    """Without ratio_pago_real, PAR metrics use raw DPD as before."""
+def test_par_metrics_no_dpd_adjusted_uses_raw_dpd():
+    """Without dpd_adjusted, PAR metrics use raw DPD as before."""
     grp = pd.DataFrame(
         {
             "outstanding_balance": [100.0, 200.0, 300.0],
@@ -313,17 +563,12 @@ def test_par_metrics_all_canonical_adjusted_accounts_captured():
 
 
 def test_par_metrics_zero_total_balance():
-    """If total balance is zero, PAR metrics should probably handle it (avoid Div0)."""
-    # Note: _calculate_segment_par_metrics uses total_bal from argument
+    """If total balance is zero, PAR metrics should return 0.0 (avoid Div0)."""
     grp = pd.DataFrame({"outstanding_balance": [0.0], "dpd": [30.0]})
     result = CalculationPhase._calculate_segment_par_metrics(grp, "outstanding_balance", "dpd", 0.0)
-    # Currently it would crash or return NaN/Inf depending on pandas
-    # Let's check current behavior or define it
-    try:
-        res = result["par_30"]
-        assert np.isnan(res) or np.isinf(res) or res == 0.0
-    except ZeroDivisionError:
-        pytest.fail("Should handle zero balance gracefully")
+    assert result["par_30"] == 0.0
+    assert result["par_60"] == 0.0
+    assert result["par_90"] == 0.0
 
 
 def test_par_metrics_empty_group():
@@ -394,7 +639,3 @@ def test_ltv_sintetico_zero_dilution():
     result = engine._calculate_ltv_sintetico(df)
     assert result.iloc[0] == 0.5
     assert df.loc[0, "ltv_sintetico_is_opaque"] == 0
-
-
-
-

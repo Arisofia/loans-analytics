@@ -35,7 +35,7 @@ class PipelineConfig:
             PipelineConfig instance
         """
         if config_path is None:
-            config_path = Path(__file__).parent.parent.parent / "config" / "pipeline.yml"
+            config_path = Path(__file__).parent.parent.parent.parent / "config" / "pipeline.yml"
 
         if not config_path.exists():
             raise FileNotFoundError(

@@ -85,18 +85,18 @@ class KPIEngineV2:
 
     def calculate(self, df: pd.DataFrame) -> Dict[str, Any]:
         """
-        Main calculation orchestrator for external callers.
+        Evaluate only the dynamic formula KPIs defined in ``kpi_definitions``.
 
-        Updates the engine's dataframe and runs the full KPI suite.
-        Returns a flat results dictionary with simplified float values
-        to maintain compatibility with the calculation pipeline.
+        Intended for callers that supply their own formula catalog and do not
+        need the full legacy KPI suite (PAR30, LTV, etc.).  Returns a flat
+        ``{kpi_name: value}`` mapping so that downstream consumers can index
+        directly by name.
         """
         self.df = self._ensure_loan_count_column(df)
-        full_results = self.calculate_all()
-        
-        # Flatten for downstream consumption: {kpi_name: float_value}
+        dynamic_kpis = self._calculate_dynamic_kpis()
         return {
-            name: data["value"] for name, data in full_results.items()
+            name: (float(value) if value is not None else None)
+            for name, value in dynamic_kpis.items()
         }
 
     def calculate_par_30(self) -> Tuple[float, Dict[str, Any]]:
@@ -270,50 +270,71 @@ class KPIEngineV2:
             df_unique = df.drop_duplicates(dedupe_col)
         return engine_full, KPIFormulaEngine(df_unique)
 
-    def _compute_portfolio_velocity_of_default(self, df: pd.DataFrame) -> Optional[Decimal]:
+    @staticmethod
+    def _compute_portfolio_velocity_of_default(df: pd.DataFrame) -> Optional[Decimal]:
         """Build a monthly default-rate series and return the latest Velocity of Default.
-        
-        Semantics: 
-        - Chronology: Strictly ordered by month period.
-        - Units: Percentage point change (e.g., 2.5% -> 3.0% = +0.5).
+
+        **Chronology**: Records are bucketed into calendar months (Period[M]).
+        ``groupby(..., sort=True)`` guarantees ascending period order so that
+        :py:meth:`pandas.Series.diff` produces the correct forward-looking delta.
+
+        **Units**: The returned value is the change in portfolio default rate
+        between the two most recent calendar months, expressed in percentage
+        points (pp).  1 pp = 100 basis points.
+
+        Excludes ``closed`` loans from the active-portfolio denominator.  When
+        no ``status`` column is present, all records are treated as
+        non-defaulted (default rate = 0 % in every period).
+
+        Returns:
+            ``Decimal`` Vd value quantised to 6 decimal places, or ``None``
+            when no recognised date column exists or fewer than two distinct
+            month-periods are present.
         """
         date_col = next(
-            (c for c in ("as_of_date", "measurement_date", "snapshot_date", "origination_date", "FechaDesembolso", "application_date", "disbursement_date") if c in df.columns),
-            None
+            (c for c in (
+                "as_of_date", "measurement_date", "snapshot_date",
+                "origination_date", "FechaDesembolso", "application_date",
+                "disbursement_date", "reporting_date",
+            ) if c in df.columns),
+            None,
         )
-        if date_col is None or "status" not in df.columns:
+        if date_col is None:
             return None
 
-        active_mask = df["status"].isin(["active", "delinquent", "defaulted"])
-        work = df.loc[active_mask, [date_col, "status"]].copy()
-        if work.empty:
-            return None
-
+        work = df.copy()
         work["_date"] = pd.to_datetime(work[date_col], errors="coerce", format="mixed")
         work = work.dropna(subset=["_date"])
+
+        # Exclude closed loans from the active portfolio denominator
+        if "status" in work.columns:
+            work = work[work["status"] != "closed"]
+
         if work.empty:
             return None
 
-        # Sort strictly by date to ensure diff semantics are chronologically sound
-        work = work.sort_values("_date")
-        work["period"] = work["_date"].dt.to_period("M")
-        
-        # Group by period and calculate default rate (defaulted / total_active)
-        monthly_rates = (
-            work.groupby("period")["status"]
-            .apply(lambda s: (s == "defaulted").sum() / len(s) * 100)
-            .sort_index()
-        )
-
-        if len(monthly_rates) < 2:
+        work["_period"] = work["_date"].dt.to_period("M")
+        if work["_period"].nunique() < 2:
             return None
 
-        # Velocity = rate[t] - rate[t-1]
-        vd_series = monthly_rates.diff().dropna()
-        if vd_series.empty:
+        if "status" in work.columns:
+            work["_is_defaulted"] = (work["status"] == "defaulted").astype(int)
+        else:
+            work["_is_defaulted"] = 0
+
+        period_agg = work.groupby("_period", sort=True).agg(
+            _total=("_is_defaulted", "count"),
+            _defaulted=("_is_defaulted", "sum"),
+        )
+        default_ratio = period_agg["_defaulted"] / period_agg["_total"].replace(0, np.nan)
+        rates = default_ratio.fillna(0.0) * 100.0
+
+        vd = rates.diff()
+        vd_clean = vd.dropna()
+        latest_vd = vd_clean.iloc[-1] if not vd_clean.empty else None
+        if latest_vd is None or not np.isfinite(latest_vd):
             return None
             
-        latest_vd = vd_series.iloc[-1]
         return Decimal(str(round(float(latest_vd), 6)))
 
     def _calculate_derived_risk_kpis(self, df: pd.DataFrame) -> Dict[str, Decimal]:
@@ -345,10 +366,10 @@ class KPIEngineV2:
             "top_10_borrower_concentration": self._top_10_borrower_concentration(active_df, balance_col, total_out),
         }
 
-        # LTV Sintético portfolio-level summary
+        # LTV Sintético portfolio-level summary (exclude opaque/NaN observations)
         ltv_series = self._calculate_ltv_sintetico(df)
         if not ltv_series.empty:
-            ltv_valid = ltv_series[ltv_series > 0]
+            ltv_valid = ltv_series[ltv_series.notna() & (ltv_series > 0)]
             if not ltv_valid.empty:
                 kpis["ltv_sintetico_mean"] = Decimal(str(round(float(ltv_valid.mean()), 6)))
                 high_risk_pct = float((ltv_valid > 1.0).sum()) / float(len(ltv_valid)) * 100
@@ -356,12 +377,17 @@ class KPIEngineV2:
 
         return kpis
 
-    def _calculate_ltv_sintetico(self, df: pd.DataFrame) -> pd.Series:
-        """Calculate strict synthetic LTV and persist opacity metadata on the dataframe.
+    @staticmethod
+    def _calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
+        """Calculate Synthetic Factoring LTV at the loan level.
 
-        Epistemic uncertainty rule:
-        - Denominator <= 0 or NaN -> opaque observation
-        - Opaque observations receive np.nan (never 0.0 fallback)
+        LTV Sintético = capital_desembolsado / (valor_nominal_factura * (1 - tasa_dilucion))
+
+        Invalid-denominator semantics (fail-safe opacity):
+            When the adjusted invoice value is zero or NaN the LTV is
+            mathematically undefined.  Returning 0.0 would silently encode a
+            false low-risk value.  These rows therefore yield ``np.nan`` so
+            that callers can detect and handle them explicitly.
         """
         required = ("capital_desembolsado", "valor_nominal_factura", "tasa_dilucion")
         if not all(col in df.columns for col in required):

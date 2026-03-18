@@ -1,11 +1,15 @@
 import logging
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
 from backend.python.kpis.engine import KPIEngineV2
+from backend.python.kpis.formula_engine import KPIFormulaEngine  # re-exported as SSOT
+
+__all__ = ["CalculationPhase", "KPIFormulaEngine"]
 
 logger = logging.getLogger(__name__)
 
@@ -361,7 +365,6 @@ class CalculationPhase:
             adjusted_dpd = pd.to_numeric(grp["dpd_adjusted"], errors="coerce").fillna(raw_dpd)
         else:
             adjusted_dpd = raw_dpd
-
         if total_bal == 0:
             return {"par_30": 0.0, "par_60": 0.0, "par_90": 0.0}
 
@@ -384,6 +387,30 @@ class CalculationPhase:
         return round(float((grp[status_col] == "defaulted").sum()) / n * 100, 4) if n > 0 else 0.0
 
     @staticmethod
+    def _calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
+        """Calculate strict synthetic LTV and persist opacity metadata on the dataframe.
+
+        Epistemic uncertainty rule:
+        - Denominator <= 0 or NaN -> opaque observation
+        - Opaque observations receive np.nan (never 0.0 fallback)
+        """
+        required = ("capital_desembolsado", "valor_nominal_factura", "tasa_dilucion")
+        if not all(col in df.columns for col in required):
+            return pd.Series(dtype=float)
+
+        valor_nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce")
+        tasa_dilucion = pd.to_numeric(df["tasa_dilucion"], errors="coerce")
+        capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce")
+
+        valor_ajustado = valor_nominal * (1 - tasa_dilucion)
+        is_opaque = valor_ajustado.isna() | (valor_ajustado <= 0)
+
+        ltv = np.where(is_opaque, np.nan, capital / valor_ajustado)
+        df["ltv_sintetico_is_opaque"] = is_opaque.astype(int)
+        df["ltv_sintetico"] = pd.Series(ltv, index=df.index, dtype=float)
+        return df["ltv_sintetico"]
+
+    @staticmethod
     def _resolve_col(df: pd.DataFrame, *candidates: str) -> Optional[str]:
         """Return the first candidate column present in df, or None."""
         return next((c for c in candidates if c in df.columns), None)
@@ -402,3 +429,80 @@ class CalculationPhase:
                 "calculation_engine": "kpi_engine_v2",
             },
         }
+
+    # ------------------------------------------------------------------
+    # Risk metric helpers (companion opacity flag + Vd)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _ltv_sintetico_invalid_mask(df: pd.DataFrame) -> pd.Series:
+        """Return a boolean Series flagging loans with an invalid (zero) LTV denominator.
+
+        A loan is marked ``True`` (invalid / opaque) when
+        ``valor_nominal_factura * (1 - tasa_dilucion) == 0``, i.e. the
+        adjusted invoice value is fully diluted or the nominal value is zero.
+        These loans must not be used in portfolio LTV aggregations without
+        explicit acknowledgement.
+
+        Returns an all-False Series (no invalids) when required columns are
+        absent or the DataFrame is empty.
+        """
+        required = {"valor_nominal_factura", "tasa_dilucion"}
+        if not required.issubset(df.columns):
+            return pd.Series(dtype=bool)
+        if df.empty:
+            return pd.Series(False, index=df.index, dtype=bool)
+
+        nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce").fillna(0.0)
+        dilution = pd.to_numeric(df["tasa_dilucion"], errors="coerce").fillna(0.0)
+        adjusted = nominal * (1.0 - dilution)
+        return adjusted == 0.0
+
+    @staticmethod
+    def _calculate_velocity_of_default(
+        df_ts: pd.DataFrame,
+        default_rate_col: str = "default_rate",
+        period_col: Optional[str] = None,
+    ) -> pd.Series:
+        """Compute period-over-period first derivative of the default rate.
+
+        **Units**: The returned Series is expressed in the same units as
+        *default_rate_col*.  When *default_rate_col* holds values in percent
+        (e.g. 2.5 = 2.5 %), each element of the result is a percentage-point
+        (pp) change per period.  One percentage point equals 100 basis points.
+
+        **Chronology normalisation**: If *period_col* is provided the DataFrame
+        is sorted ascending by that column before differencing, ensuring the
+        result is monotonically aligned to the calendar timeline regardless of
+        the input row order.
+
+        Returns an empty Series when *default_rate_col* is absent.  With a
+        single row the result contains one NaN (no prior period to diff against).
+        """
+        if default_rate_col not in df_ts.columns:
+            return pd.Series(dtype=float)
+
+        working = df_ts
+        if period_col is not None and period_col in df_ts.columns:
+            working = df_ts.sort_values(period_col)
+
+        rate = pd.to_numeric(working[default_rate_col], errors="coerce")
+        return rate.diff()
+
+    def _compute_portfolio_velocity_of_default(
+        self, df: pd.DataFrame
+    ) -> Optional[Decimal]:
+        """Compute portfolio-level Velocity of Default from the canonical date column.
+
+        Delegates to :class:`~backend.python.kpis.engine.KPIEngineV2` as the
+        Single Source of Truth for this metric.
+
+        **Units**: percentage points per month (pp/month); 1 pp = 100 basis
+        points.  Positive values indicate a worsening default trend.
+
+        Returns:
+            ``Decimal`` Vd value quantised to 6 decimal places, or ``None``
+            when no recognised date column exists or fewer than two distinct
+            month-periods are present.
+        """
+        return KPIEngineV2._compute_portfolio_velocity_of_default(df)

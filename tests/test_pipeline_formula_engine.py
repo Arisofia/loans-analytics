@@ -78,7 +78,7 @@ def test_dpd_bucket_formulas_support_range_logic_via_aggregation_deltas():
             "outstanding_balance": [100.0, 200.0, 300.0, 400.0],
         }
     )
-    
+
     kpi_definitions = {
         "portfolio_kpis": {
             "f_1_30": {
@@ -95,7 +95,7 @@ def test_dpd_bucket_formulas_support_range_logic_via_aggregation_deltas():
             }
         }
     }
-    
+
     engine = KPIEngineV2(kpi_definitions=kpi_definitions)
     results = engine.calculate(df)
 
@@ -119,7 +119,6 @@ def test_where_clause_supports_or_conditions_for_npl_ratio_style_formulas():
         "/ SUM(outstanding_balance) * 100"
     )
     engine = KPIEngineV2(kpi_definitions={"portfolio_kpis": {"npl": {"formula": formula}}})
-    
     results = engine.calculate(df)
     result = results.get("npl")
 
@@ -141,11 +140,8 @@ def test_where_clause_supports_and_conditions():
         "/ SUM(outstanding_balance) * 100"
     )
     engine = KPIEngineV2(kpi_definitions={"portfolio_kpis": {"npl_and": {"formula": formula}}})
-    
     results = engine.calculate(df)
     result = results.get("npl_and")
 
     # Only second row matches both predicates.
     assert float(result) == pytest.approx(33.3333333333)
-
-
