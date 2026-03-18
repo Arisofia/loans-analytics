@@ -145,7 +145,8 @@ class UnifiedPipeline:
         config_hash = self._calculate_config_hash()
         code_version = self._get_code_version()
         run_signature = self._calculate_run_signature(data_hash, config_hash, code_version, mode_token)
-        base_run_id = f"{datetime.now().strftime('%Y%m%d')}_{run_signature[:8]}"
+        # Use a deterministic base_run_id derived solely from the run_signature to ensure idempotency.
+        base_run_id = run_signature[:8]
         run_id = base_run_id if mode == "full" else f"{base_run_id}_{mode_token}"
 
         logger.info("Starting pipeline execution (run_id: %s, mode: %s)", run_id, mode)
