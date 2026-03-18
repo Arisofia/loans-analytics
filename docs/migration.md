@@ -189,7 +189,7 @@ make zero-cost-schema
 make etl-local
 
 # Build monthly snapshot
-make snapshot-build INPUT=data/raw/abaco_real_data_20260202.csv MONTH=2026-01-31
+make snapshot-build INPUT=data/samples/abaco_sample_data_20260202.csv MONTH=2026-01-31
 
 # Start full local stack (API + Dashboard, no Azure)
 make zero-cost-up
@@ -315,3 +315,4 @@ graph TD
     GHA --> GHCR
     GHCR --> RENDER
 ```
+

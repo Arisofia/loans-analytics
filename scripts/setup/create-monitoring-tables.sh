@@ -160,5 +160,6 @@ echo "3. Click 'Test' on Supabase PostgreSQL"
 echo "4. View dashboards in 'KPI Monitoring' folder"
 echo ""
 echo -e "${BLUE}To populate with pipeline data:${NC}"
-echo "  python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv"
+echo "  python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv"
 echo ""
+

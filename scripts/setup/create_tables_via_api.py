@@ -206,7 +206,7 @@ ON CONFLICT (name) DO NOTHING;""",
     print("=" * 70)
     print("\n✅ After running the queries, run this command:\n")
     print(
-        "   python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv\n"
+        "   python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv\n"
     )
     print("This will populate monitoring.kpi_values with real KPI data.\n")
 

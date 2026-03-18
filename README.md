@@ -69,17 +69,17 @@ python3 scripts/maintenance/validate_structure.py
 ```bash
 # Full execution
 python3 scripts/data/run_data_pipeline.py \
-  --input data/raw/abaco_real_data_20260202.csv \
+  --input data/samples/abaco_sample_data_20260202.csv \
   --mode full
 
 # Ingestion-only check
 python3 scripts/data/run_data_pipeline.py \
-  --input data/raw/abaco_real_data_20260202.csv \
+  --input data/samples/abaco_sample_data_20260202.csv \
   --mode dry-run
 
 # Stop after transformation
 python3 scripts/data/run_data_pipeline.py \
-  --input data/raw/abaco_real_data_20260202.csv \
+  --input data/samples/abaco_sample_data_20260202.csv \
   --mode validate
 ```
 
@@ -210,3 +210,4 @@ Start here:
 ## License
 
 Proprietary - Abaco Financial Services.
+

@@ -26,7 +26,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # Pipeline
-python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
 python scripts/data/run_data_pipeline.py --mode validate
 python scripts/data/run_data_pipeline.py --mode dry-run
 
@@ -63,3 +63,4 @@ make monitoring-health
 - `docs/GOVERNANCE.md`
 - `docs/OBSERVABILITY.md`
 - `docs/PRODUCTION_DEPLOYMENT_GUIDE.md`
+

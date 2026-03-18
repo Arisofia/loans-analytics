@@ -21,14 +21,14 @@ This runbook covers deployment, execution, monitoring, incident response, and re
 ### Manual Run (Canonical)
 
 ```bash
-python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
 ```
 
 ### Configuration Override
 
 ```bash
 python scripts/data/run_data_pipeline.py \
-  --input data/raw/abaco_real_data_20260202.csv \
+  --input data/samples/abaco_sample_data_20260202.csv \
   --config config/pipeline.yml
 ```
 
@@ -64,7 +64,7 @@ python scripts/data/run_data_pipeline.py \
 1. Run pipeline with file input:
 
    ```bash
-   python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+   python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
    ```
 
 2. Run tests:
@@ -78,3 +78,4 @@ python scripts/data/run_data_pipeline.py \
    ```bash
    python -c "from src.pipeline.orchestrator import PipelineConfig; PipelineConfig()"
    ```
+

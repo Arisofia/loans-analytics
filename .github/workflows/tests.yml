@@ -151,7 +151,7 @@ jobs:
           RUN_E2E: "1"
           BACKEND_BASE_URL: "http://127.0.0.1:8000"
           FRONTEND_BASE_URL: "http://127.0.0.1:8501"
-          CSV_PATH: "data/raw/abaco_real_data_20260202.csv"
+          CSV_PATH: "data/samples/abaco_sample_data_20260202.csv"
           EXPECT_FALLBACK_MODE: "1"
         run: pytest tests/e2e -v -m e2e --tb=short
 
@@ -185,4 +185,5 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Pipeline config validation
-        run: python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv --mode validate
+        run: python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --mode validate
+

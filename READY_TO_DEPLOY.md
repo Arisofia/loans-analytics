@@ -121,7 +121,7 @@ After tables are created, run the pipeline again:
 
 ```bash
 source .venv/bin/activate
-python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
 ```
 
 **This will:**
@@ -156,4 +156,5 @@ python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_202602
 - ⏳ Run pipeline for real data
 
 **You're 99% done!** Just need to create those tables. 🎉
+
 

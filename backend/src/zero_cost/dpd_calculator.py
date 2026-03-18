@@ -315,18 +315,15 @@ class DPDCalculator:
 
             # Reuse already-computed per-loan cumulative principal paid instead of
             # re-filtering and re-grouping fact_real_payment for each snapshot.
-            total_paid = (
-                base.set_index(loan_id_col)["cum_paid_principal"]
-                .rename("_total_paid")
-            )
+            total_paid = base.set_index(loan_id_col)["cum_paid_principal"].rename("_total_paid")
             sched_sorted = sched_sorted.join(total_paid, on=loan_id_col, how="left")
             sched_sorted["_total_paid"] = sched_sorted["_total_paid"].fillna(0.0)
 
-            unpaid_mask = sched_sorted["_cum_sched"] > sched_sorted["_total_paid"] + _PAYMENT_TOLERANCE
+            unpaid_mask = (
+                sched_sorted["_cum_sched"] > sched_sorted["_total_paid"] + _PAYMENT_TOLERANCE
+            )
             first_unpaid_date = (
-                sched_sorted[unpaid_mask]
-                .groupby(loan_id_col)[sched_date_col]
-                .first()
+                sched_sorted[unpaid_mask].groupby(loan_id_col)[sched_date_col].first()
             )
             dpd_days = (ref_date - first_unpaid_date).dt.days.clip(lower=0).astype(int)
             base["dpd"] = base[loan_id_col].map(dpd_days).fillna(0).astype(int)

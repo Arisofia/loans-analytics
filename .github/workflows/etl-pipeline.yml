@@ -40,7 +40,7 @@ on:
       input_csv:
         description: "Path to input CSV (relative to repo root)"
         required: false
-        default: "data/raw/abaco_real_data_20260202.csv"
+        default: "data/samples/abaco_sample_data_20260202.csv"
       mode:
         description: "Pipeline mode"
         required: false
@@ -112,7 +112,7 @@ jobs:
           fi
 
           # Default values
-          CSV="${CSV:-data/raw/abaco_real_data_20260202.csv}"
+          CSV="${CSV:-data/samples/abaco_sample_data_20260202.csv}"
           MODE="${MODE:-full}"
           RTYPE="${RTYPE:-ingest}"
 
@@ -313,3 +313,4 @@ jobs:
           | `SUPABASE_SERVICE_ROLE_KEY` | Write access to Supabase |
           | `SUPABASE_ANON_KEY` | Read access to Supabase |
           EOF
+

@@ -121,7 +121,7 @@ agents:
 
 # KPI pipeline entry point
 kpis:
-	"$(PYTHON)" scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+	"$(PYTHON)" scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
 
 # Train default-risk model artifact for /predict/default endpoint
 train-risk-model:
@@ -171,14 +171,14 @@ zero-cost-schema:
 etl-local:
 	@echo "Running local ETL pipeline..."
 	"$(PYTHON)" scripts/data/run_data_pipeline.py \
-		--input $(or $(INPUT), data/raw/abaco_real_data_20260202.csv) \
+		--input $(or $(INPUT), data/samples/abaco_sample_data_20260202.csv) \
 		--mode  $(or $(MODE), full) \
 		--verbose
 
 ## Build monthly snapshot into DuckDB star schema
 snapshot-build:
 	@echo "Building monthly snapshot..."
-	INPUT=$(or $(INPUT), data/raw/abaco_real_data_20260202.csv) \
+	INPUT=$(or $(INPUT), data/samples/abaco_sample_data_20260202.csv) \
 	MONTH=$(or $(MONTH),) \
 	"$(PYTHON)" scripts/data/build_snapshot.py
 
@@ -189,3 +189,4 @@ run:
 	$(MAKE) etl-local
 	$(MAKE) zero-cost-schema
 	$(MAKE) snapshot-build
+

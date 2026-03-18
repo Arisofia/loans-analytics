@@ -420,9 +420,7 @@ class KPIEngineV2:
         npl_90_ratio = (npl_out / total_out) * 100
 
         # npl_ratio: broad NPL (DPD >= 30 or delinquent/defaulted) — early-warning threshold
-        broad_npl_mask = (active_df["dpd"] >= 30) | (
-            active_df["status"].isin(_NPL_BROAD_STATUSES)
-        )
+        broad_npl_mask = (active_df["dpd"] >= 30) | (active_df["status"].isin(_NPL_BROAD_STATUSES))
         broad_npl_out = Decimal(str(active_df.loc[broad_npl_mask, balance_col].sum()))
         npl_ratio = (broad_npl_out / total_out) * 100
 
