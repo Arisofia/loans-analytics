@@ -277,43 +277,6 @@ class CalculationPhase:
             )
             return []
 
-
-def _get__rollup_sum_owner_instance_for_test() -> Any:
-    """
-    Best-effort helper to obtain an instance of the class that owns `_rollup_sum`.
-
-    This avoids assuming a specific class name while still allowing a regression
-    test to exercise the real `_rollup_sum` implementation.
-    """
-    for obj in globals().values():
-        if isinstance(obj, type) and hasattr(obj, "_rollup_sum"):
-            try:
-                return obj()  # type: ignore[call-arg]
-            except TypeError:
-                # Class requires init arguments; try the next one.
-                continue
-    raise RuntimeError("No suitable owner class for `_rollup_sum` found for testing")
-
-
-def test__rollup_sum_includes_period_key() -> None:
-    """
-    Regression test: ensure `_rollup_sum` emits records that include the
-    date/period key for daily, weekly, and monthly rollups.
-    """
-    # Construct a small time-series DataFrame.
-    dates = pd.date_range(start="2024-01-01", periods=10, freq="D")
-    df_ts = pd.DataFrame({"date": dates, "amount": range(10)})
-
-    owner = _get__rollup_sum_owner_instance_for_test()
-
-    for period in ("daily", "weekly", "monthly"):
-        records = owner._rollup_sum(df_ts, "date", ["amount"], period, limit=100)
-        # We expect at least one aggregated record and that the date/period
-        # column is present in the emitted dictionaries.
-        assert records, f"Expected non-empty records for period={period}"
-        assert "date" in records[0], f"Missing 'date' key for period={period}"
-
-
     def _detect_anomalies(self, kpi_results: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Detect anomalies in KPI values."""
         anomalies: List[Dict[str, Any]] = []
@@ -561,8 +524,8 @@ def test__rollup_sum_includes_period_key() -> None:
         is_opaque = valor_ajustado.isna() | (valor_ajustado <= 0)
 
         ltv = np.where(is_opaque, np.nan, capital / valor_ajustado)
-        df["ltv_sintetico_is_opaque"] = is_opaque.astype(int)
-        df["ltv_sintetico"] = pd.Series(ltv, index=df.index, dtype=float)
+        df.loc[:, "ltv_sintetico_is_opaque"] = is_opaque.astype(int)
+        df.loc[:, "ltv_sintetico"] = pd.Series(ltv, index=df.index, dtype=float)
         return df["ltv_sintetico"]
 
     @staticmethod

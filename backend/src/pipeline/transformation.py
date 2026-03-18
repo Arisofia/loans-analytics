@@ -51,64 +51,50 @@ class TransformationPhase:
         "measurement_date",
     }
 
-    # Status mappings for normalization
+    # Status mappings for normalization.
+    # Keys are lowercase-normalized (strip + lower) source values so that any
+    # casing variant (e.g. "ACTIVO", "Activo", "activo") resolves correctly via
+    # _normalize_status_column, which lower-cases the raw value before lookup.
     STATUS_MAPPINGS: Dict[str, str] = {
-        "Active": "active",
-        "ACTIVE": "active",
-        "Current": "active",
+        # English: active
+        "active": "active",
         "current": "active",
-        "CURRENT": "active",
         # Spanish: active
-        "Activo": "active",
         "activo": "active",
-        "ACTIVO": "active",
-        "Vigente": "active",
         "vigente": "active",
-        "VIGENTE": "active",
-        "Al_dia": "active",
         "al_dia": "active",
-        "AL_DIA": "active",
-        "Delinquent": "delinquent",
-        "DELINQUENT": "delinquent",
+        "al dia": "active",
+        # English: delinquent
+        "delinquent": "delinquent",
         # Spanish: delinquent
-        "Moroso": "delinquent",
         "moroso": "delinquent",
-        "MOROSO": "delinquent",
-        "En_mora": "delinquent",
         "en_mora": "delinquent",
-        "EN_MORA": "delinquent",
-        "Complete": "closed",
+        "en mora": "delinquent",
+        # English: closed
         "complete": "closed",
-        "COMPLETE": "closed",
-        "Closed": "closed",
-        "CLOSED": "closed",
+        "closed": "closed",
+        "paid": "closed",
+        "paid_off": "closed",
+        "paid off": "closed",
+        "cancelled": "closed",
+        "canceled": "closed",
+        "liquidated": "closed",
         # Spanish: closed
-        "Cerrado": "closed",
         "cerrado": "closed",
-        "CERRADO": "closed",
-        "Liquidado": "closed",
         "liquidado": "closed",
-        "LIQUIDADO": "closed",
-        "Cancelado": "closed",
         "cancelado": "closed",
-        "CANCELADO": "closed",
-        "Default": "defaulted",
+        # English: defaulted
         "default": "defaulted",
-        "DEFAULT": "defaulted",
-        "Defaulted": "defaulted",
-        "DEFAULTED": "defaulted",
+        "defaulted": "defaulted",
+        "charged_off": "defaulted",
+        "charge_off": "defaulted",
+        "written_off": "defaulted",
         # Spanish: defaulted
-        "Incumplimiento": "defaulted",
         "incumplimiento": "defaulted",
-        "INCUMPLIMIENTO": "defaulted",
-        "En_incumplimiento": "defaulted",
         "en_incumplimiento": "defaulted",
-        "Vencido": "defaulted",
+        "en incumplimiento": "defaulted",
         "vencido": "defaulted",
-        "VENCIDO": "defaulted",
-        "Castigado": "defaulted",
         "castigado": "defaulted",
-        "CASTIGADO": "defaulted",
     }
 
     # Null handling thresholds and constants
@@ -1242,12 +1228,20 @@ class TransformationPhase:
     def _normalize_status_column(
         self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]
     ) -> None:
-        """Normalize status values to standardized labels."""
+        """Normalize status values to standardized labels.
+
+        Incoming values are stripped and lower-cased before looking up in
+        STATUS_MAPPINGS so that any casing variant (e.g. "ACTIVO", "Activo")
+        resolves to the canonical label without requiring separate map entries.
+        """
         if "status" not in df.columns:
             return
         original_values = df["status"].unique().tolist()
         df["status"] = df["status"].map(
-            lambda x: self.STATUS_MAPPINGS.get(x, str(x).lower() if pd.notna(x) else x)
+            lambda x: self.STATUS_MAPPINGS.get(
+                str(x).strip().lower() if pd.notna(x) else x,
+                str(x).strip().lower() if pd.notna(x) else x,
+            )
         )
         conversions["status"] = {"normalized_values": original_values}
 

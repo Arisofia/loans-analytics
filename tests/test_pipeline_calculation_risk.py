@@ -646,3 +646,152 @@ def test_ltv_sintetico_zero_dilution():
     result = engine._calculate_ltv_sintetico(df)
     assert result.iloc[0] == 0.5
     assert df.loc[0, "ltv_sintetico_is_opaque"] == 0
+
+
+# ---------------------------------------------------------------------------
+# _rollup_sum — period key regression tests
+# ---------------------------------------------------------------------------
+
+
+def test_rollup_sum_monthly_includes_period_key():
+    """Monthly rollup records must include the period key, not just numeric totals."""
+    df = pd.DataFrame(
+        {
+            "payment_date": pd.to_datetime(
+                ["2025-01-10", "2025-01-20", "2025-02-15"]
+            ),
+            "amount": [100.0, 200.0, 300.0],
+        }
+    )
+    phase = object.__new__(CalculationPhase)
+    records = phase._rollup_sum(df, "payment_date", ["amount"], "monthly", 12)
+
+    assert len(records) == 2, f"Expected 2 monthly buckets, got {len(records)}"
+    for record in records:
+        assert "payment_date" in record, f"Period key missing from monthly record: {record}"
+
+
+def test_rollup_sum_daily_includes_date_key():
+    """Daily rollup records must include the date key."""
+    df = pd.DataFrame(
+        {
+            "payment_date": pd.to_datetime(["2025-01-10", "2025-01-10", "2025-01-11"]),
+            "amount": [50.0, 50.0, 75.0],
+        }
+    )
+    phase = object.__new__(CalculationPhase)
+    records = phase._rollup_sum(df, "payment_date", ["amount"], "daily", 30)
+
+    assert len(records) == 2, f"Expected 2 daily buckets, got {len(records)}"
+    for record in records:
+        assert "payment_date" in record, f"Date key missing from daily record: {record}"
+
+
+# ---------------------------------------------------------------------------
+# _calculate_derived_risk_kpis — npl_ratio vs npl_90_ratio divergence
+# ---------------------------------------------------------------------------
+
+
+def test_npl_ratio_and_npl_90_ratio_are_distinct():
+    """npl_ratio (DPD≥30 broad) must differ from npl_90_ratio (DPD≥90 strict)."""
+    df = pd.DataFrame(
+        {
+            "outstanding_balance": [1000.0, 1000.0, 1000.0, 1000.0, 1000.0],
+            "dpd": [0, 35, 60, 95, 0],
+            "status": ["active", "active", "delinquent", "delinquent", "defaulted"],
+        }
+    )
+    engine = KPIEngineV2.__new__(KPIEngineV2)
+    kpis = engine._calculate_derived_risk_kpis(df)
+
+    # npl_90_ratio: DPD≥90 or defaulted → rows 3 (dpd=95) and 4 (defaulted) = 2/5 = 40%
+    assert float(kpis["npl_90_ratio"]) == pytest.approx(40.0, rel=1e-4)
+    # npl_ratio (broad): DPD≥30 or delinquent/defaulted → rows 1,2,3,4 = 4/5 = 80%
+    assert float(kpis["npl_ratio"]) == pytest.approx(80.0, rel=1e-4)
+    assert kpis["npl_ratio"] != kpis["npl_90_ratio"], (
+        "npl_ratio and npl_90_ratio must be distinct; they were identical before fix"
+    )
+
+
+def test_npl_90_ratio_strictly_subset_of_npl_ratio():
+    """npl_90_ratio (strict) must always be <= npl_ratio (broad)."""
+    df = pd.DataFrame(
+        {
+            "outstanding_balance": [500.0, 500.0, 1000.0],
+            "dpd": [0, 45, 120],
+            "status": ["active", "active", "active"],
+        }
+    )
+    engine = KPIEngineV2.__new__(KPIEngineV2)
+    kpis = engine._calculate_derived_risk_kpis(df)
+
+    assert float(kpis["npl_90_ratio"]) <= float(kpis["npl_ratio"]), (
+        "npl_90_ratio should never exceed npl_ratio"
+    )
+
+
+# ---------------------------------------------------------------------------
+# _normalize_status_column — Spanish + casing variant regression tests
+# ---------------------------------------------------------------------------
+
+
+def test_status_normalization_spanish_values():
+    """Spanish status labels (various casings) must map to canonical English values."""
+    from backend.src.pipeline.transformation import TransformationPhase
+
+    raw_statuses = [
+        # active
+        "Activo", "ACTIVO", "activo",
+        "Vigente", "VIGENTE", "vigente",
+        "AL_DIA", "Al_dia", "al_dia",
+        # delinquent
+        "Moroso", "MOROSO", "moroso",
+        "EN_MORA", "En_mora", "en_mora",
+        # defaulted
+        "Incumplimiento", "INCUMPLIMIENTO", "incumplimiento",
+        "EN_INCUMPLIMIENTO", "En_incumplimiento", "en_incumplimiento",
+        "Vencido", "VENCIDO", "vencido",
+        "Castigado", "CASTIGADO", "castigado",
+        # closed
+        "Cerrado", "CERRADO", "cerrado",
+        "Liquidado", "LIQUIDADO", "liquidado",
+        "Cancelado", "CANCELADO", "cancelado",
+    ]
+    expected = (
+        ["active"] * 9      # activo + vigente + al_dia
+        + ["delinquent"] * 6  # moroso + en_mora
+        + ["defaulted"] * 12  # incumplimiento + en_incumplimiento + vencido + castigado
+        + ["closed"] * 9    # cerrado + liquidado + cancelado
+    )
+
+    df = pd.DataFrame({"status": raw_statuses})
+    phase = TransformationPhase.__new__(TransformationPhase)
+    phase._normalize_status_column(df, {})
+
+    for raw, got, exp in zip(raw_statuses, df["status"].tolist(), expected):
+        assert got == exp, f"'{raw}' mapped to '{got}', expected '{exp}'"
+
+
+def test_status_normalization_english_values():
+    """Standard English status labels (various casings) map to canonical values."""
+    from backend.src.pipeline.transformation import TransformationPhase
+
+    cases = [
+        ("Active", "active"),
+        ("ACTIVE", "active"),
+        ("Current", "active"),
+        ("CURRENT", "active"),
+        ("Delinquent", "delinquent"),
+        ("DELINQUENT", "delinquent"),
+        ("Defaulted", "defaulted"),
+        ("DEFAULT", "defaulted"),
+        ("Complete", "closed"),
+        ("Closed", "closed"),
+        ("CLOSED", "closed"),
+    ]
+    df = pd.DataFrame({"status": [c[0] for c in cases]})
+    phase = TransformationPhase.__new__(TransformationPhase)
+    phase._normalize_status_column(df, {})
+
+    for (raw, expected), got in zip(cases, df["status"].tolist()):
+        assert got == expected, f"'{raw}' mapped to '{got}', expected '{expected}'"
