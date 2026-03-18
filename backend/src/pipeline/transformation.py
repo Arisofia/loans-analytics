@@ -296,13 +296,12 @@ class TransformationPhase:
         Applies a second-pass mapping after ``_normalize_column_names`` to
         unify the vocabulary used by downstream calculation and output phases.
 
-        Canonical targets
-        -----------------
+        Canonical targets (currently handled)
+        -------------------------------------
         approved_at          : timestamp when the loan was approved / application accepted
         funded_at            : timestamp when capital was actually disbursed to the client
         scheduled_amount     : the contractually agreed instalment or periodic payment
         actual_payment_amount: the amount the client actually paid in the period
-        net_injected_capital : net capital deployed (disbursement minus any immediate recovery)
         """
         # Note: this mapping fires *after* _normalize_column_names(), so only
         # post-normalization column names will be present in ``df.columns``.
