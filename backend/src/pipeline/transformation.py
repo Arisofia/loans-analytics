@@ -1006,12 +1006,17 @@ class TransformationPhase:
         self, df: pd.DataFrame, null_columns: Dict[str, int]
     ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
-        Intelligent null handling based on null percentage and column importance.
+        Intelligent null handling based on null percentage, column type, and importance.
 
-        Uses configurable thresholds:
+        For numeric columns, uses configurable thresholds:
         - < LOW_NULL_THRESHOLD_PCT: Structural zero fill + integer opacity flag
-        - LOW to HIGH_NULL_THRESHOLD_PCT: Fill with missing indicator
+        - LOW to HIGH_NULL_THRESHOLD_PCT: Fill with a numeric missing indicator
         - > HIGH_NULL_THRESHOLD_PCT: Log warning, fill with default
+
+        For categorical columns, nulls are always handled with a strict indicator
+        strategy regardless of ``null_pct``: missing values are filled with a
+        categorical missing token (for example, ``"missing_data"``) and an
+        opacity flag column (``{col}_is_missing``) is added.
 
         No mean/median imputation is ever applied to financial numeric columns.
         Opacity flags (``{col}_is_missing``) let downstream ML models learn from
