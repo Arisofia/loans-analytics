@@ -31,7 +31,7 @@ jobs:
           fetch-depth: 0 # Keep full history so CodeQL can build PR diff range reliably
 
       - name: Detect Code Scanning availability
-        id: check_sarif_api
+        id: check_code_scanning_availability
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -48,7 +48,7 @@ jobs:
           fi
 
       - name: Initialize CodeQL
-        if: steps.check_sarif_api.outputs.enabled == 'true'
+        if: steps.check_code_scanning_availability.outputs.enabled == 'true'
         uses: github/codeql-action/init@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
         with:
           languages: ${{ matrix.language }}
@@ -60,11 +60,11 @@ jobs:
           CODEQL_EXTRACTOR_PYTHON_OPTION_ANALYZE_PR_DIFF: "false"
 
       - name: Autobuild
-        if: steps.check_sarif_api.outputs.enabled == 'true'
+        if: steps.check_code_scanning_availability.outputs.enabled == 'true'
         uses: github/codeql-action/autobuild@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
 
       - name: Perform CodeQL Analysis
-        if: steps.check_sarif_api.outputs.enabled == 'true'
+        if: steps.check_code_scanning_availability.outputs.enabled == 'true'
         uses: github/codeql-action/analyze@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
         with:
           category: "/language:${{ matrix.language }}"
