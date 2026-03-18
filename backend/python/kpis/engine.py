@@ -3,6 +3,35 @@ KPIEngineV2: Standardized KPI calculation engine with built-in audit trails.
 
 This module provides a unified interface for KPI calculations across the Abaco
 loans analytics platform, replacing the v1 approach of individual function calls.
+
+Broad vs. strict NPL mask doctest
+---------------------------------
+
+The core audit requirement is that `npl_ratio` (broad NPL) and `npl_90_ratio`
+(strict NPL) must not silently collapse to the same value. The masks differ:
+
+* strict: DPD >= 90 or status in ``_NPL_STRICT_STATUSES``
+* broad:  DPD >= 30 or status in ``_NPL_BROAD_STATUSES``
+
+The following doctest asserts that, on a mixed DPD/status dataset, the broad
+outstanding exceeds the strict outstanding while both remain below total:
+
+>>> import pandas as pd
+>>> from decimal import Decimal
+>>> df = pd.DataFrame(
+...     [
+...         {"dpd": 0, "status": "current", "outstanding_principal": 100},
+...         {"dpd": 45, "status": "delinquent", "outstanding_principal": 100},
+...         {"dpd": 95, "status": "defaulted", "outstanding_principal": 100},
+...     ]
+... )
+>>> total_out = Decimal(str(df["outstanding_principal"].sum()))
+>>> npl_mask = (df["dpd"] >= 90) | df["status"].isin(_NPL_STRICT_STATUSES)
+>>> broad_npl_mask = (df["dpd"] >= 30) | df["status"].isin(_NPL_BROAD_STATUSES)
+>>> strict_out = Decimal(str(df.loc[npl_mask, "outstanding_principal"].sum()))
+>>> broad_out = Decimal(str(df.loc[broad_npl_mask, "outstanding_principal"].sum()))
+>>> strict_out < broad_out < total_out
+True
 """
 
 from __future__ import annotations
