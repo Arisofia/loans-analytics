@@ -468,6 +468,36 @@ def _to_datetime_mixed(series: pd.Series) -> pd.Series:
 
 
 def _canonicalize_status(value: Any) -> str:
+    """
+    Normalize raw status values into canonical labels used by the pipeline.
+
+    This helper is intentionally tolerant of null-ish values that may arrive from
+    heterogeneous CSV sources. Blank strings, NaN-like values, and explicit `None`
+    are all mapped to ``"unknown"``. Legacy behavior treated some of these as
+    ``"active"``, but downstream delinquency/default calculations now assume that
+    the absence of a clear status signal is represented as ``"unknown"``.
+
+    The examples below serve as executable documentation and regression tests for
+    the null/NaN handling and core alias mappings:
+
+    >>> _canonicalize_status("")  # empty string -> unknown
+    'unknown'
+    >>> _canonicalize_status("   ")  # whitespace-only -> unknown
+    'unknown'
+    >>> _canonicalize_status(float("nan"))  # NaN -> unknown
+    'unknown'
+    >>> _canonicalize_status(None)  # explicit None -> unknown
+    'unknown'
+
+    >>> _canonicalize_status("active")
+    'active'
+    >>> _canonicalize_status("PAID_OFF")
+    'closed'
+    >>> _canonicalize_status("mora 30")
+    'delinquent'
+    >>> _canonicalize_status("charged_off")
+    'defaulted'
+    """
     raw = str(value).strip().lower()
     if not raw or raw == "nan":
         return "unknown"
