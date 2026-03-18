@@ -673,12 +673,15 @@ class CalculationPhase:
         """
         feature_cols: List[str] = []
 
-        # Add is_missing flags (they are already 0/1 integers)
-        flag_cols = [
-            c
-            for c in df.columns
-            if c.endswith("_is_missing") and pd.api.types.is_numeric_dtype(df[c])
-        ]
+        # Add is_missing flags (they are already 0/1 integers).
+        # Sort them to ensure deterministic feature ordering regardless of df.columns order.
+        flag_cols = sorted(
+            [
+                c
+                for c in df.columns
+                if c.endswith("_is_missing") and pd.api.types.is_numeric_dtype(df[c])
+            ]
+        )
         feature_cols.extend(flag_cols)
 
         # Add canonical risk features if present
