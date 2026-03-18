@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -193,10 +194,42 @@ class CalculationPhase:
         return {"daily": [], "weekly": [], "monthly": []}
 
     def _find_date_columns(self, df: pd.DataFrame) -> List[str]:
-        """Find columns that can be interpreted as dates."""
+        """Find columns that can be interpreted as dates.
+
+        Columns are first filtered by name heuristics (suffix ``_date``, ``_at``,
+        ``_ts``, ``date_``, ``fecha``) to avoid expensive datetime-parse attempts on
+        unrelated string columns such as borrower names or industry codes.
+        """
+        _KNOWN_DATE_COLS = frozenset(
+            {
+                "disbursement_date",
+                "origination_date",
+                "due_date",
+                "payment_date",
+                "measurement_date",
+                "approved_at",
+                "funded_at",
+                "created_at",
+                "updated_at",
+            }
+        )
+        date_name_pattern = re.compile(
+            r"(^date|_date$|_at$|_ts$|^fecha|_fecha$)", re.IGNORECASE
+        )
         date_columns: List[str] = []
         for col in df.columns:
-            if df[col].dtype not in ["datetime64[ns]", "object"]:
+            dtype = df[col].dtype
+            dtype_str = str(dtype)
+            is_datetime = dtype_str.startswith("datetime64")
+            is_string = dtype_str in ("object", "str") or dtype_str.startswith("string")
+            if not is_datetime and not is_string:
+                continue
+            # Already typed as datetime — include directly
+            if is_datetime:
+                date_columns.append(col)
+                continue
+            # For object/string columns, apply name heuristics before expensive parsing
+            if col not in _KNOWN_DATE_COLS and not date_name_pattern.search(col):
                 continue
             try:
                 parsed = pd.to_datetime(df[col], errors="coerce", format="mixed")
@@ -231,7 +264,7 @@ class CalculationPhase:
                 grouped = df_ts.groupby(df_ts[date_col].dt.to_period("W"))[numeric_cols].sum()
             else:
                 grouped = df_ts.groupby(df_ts[date_col].dt.to_period("M"))[numeric_cols].sum()
-            return grouped.to_dict("records")[:limit]
+            return grouped.reset_index().to_dict("records")[:limit]
         except Exception as exc:
             logger.warning(
                 "%s rollup failed for %s: %s",
@@ -292,6 +325,10 @@ class CalculationPhase:
         if kpi_value is None or not isinstance(kpi_value, (int, float)):
             return None
         if kpi_name not in normal_ranges:
+            logger.debug(
+                "KPI '%s' has no anomaly range registered — anomaly monitoring skipped for this metric",
+                kpi_name,
+            )
             return None
 
         min_val, max_val = normal_ranges[kpi_name]

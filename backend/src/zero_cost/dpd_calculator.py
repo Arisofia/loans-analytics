@@ -298,21 +298,36 @@ class DPDCalculator:
                 base["original_principal"] - base["cum_paid_principal"]
             ).clip(lower=0.0)
 
-        # DPD per loan
-        dpd_values = {}
-        for lid in base[loan_id_col].tolist():
-            dpd_values[lid] = self.dpd_at(
-                lid,
-                ref_date,
-                fact_schedule,
-                fact_real_payment,
-                loan_id_col=loan_id_col,
-                sched_date_col=sched_date_col,
-                sched_principal_col=sched_principal_col,
-                pay_date_col=pay_date_col,
-                pay_principal_col=pay_principal_col,
+        # DPD per loan — vectorized to avoid O(N×M) per-loan filter loop
+        sched_sorted = (
+            fact_schedule[fact_schedule[sched_date_col] <= ref_date]
+            .sort_values([loan_id_col, sched_date_col])
+            .copy()
+        )
+        if not sched_sorted.empty:
+            sched_sorted["_cum_sched"] = sched_sorted.groupby(loan_id_col)[
+                sched_principal_col
+            ].cumsum()
+
+            paid_upto = fact_real_payment[fact_real_payment[pay_date_col] <= ref_date]
+            total_paid = (
+                paid_upto.groupby(loan_id_col)[pay_principal_col]
+                .sum()
+                .rename("_total_paid")
             )
-        base["dpd"] = base[loan_id_col].map(dpd_values)
+            sched_sorted = sched_sorted.join(total_paid, on=loan_id_col, how="left")
+            sched_sorted["_total_paid"] = sched_sorted["_total_paid"].fillna(0.0)
+
+            unpaid_mask = sched_sorted["_cum_sched"] > sched_sorted["_total_paid"] + 1e-6
+            first_unpaid_date = (
+                sched_sorted[unpaid_mask]
+                .groupby(loan_id_col)[sched_date_col]
+                .first()
+            )
+            dpd_days = (ref_date - first_unpaid_date).dt.days.clip(lower=0).astype(int)
+            base["dpd"] = base[loan_id_col].map(dpd_days).fillna(0).astype(int)
+        else:
+            base["dpd"] = 0
         base["snapshot_month"] = ref_date
 
         return base.reset_index(drop=True)

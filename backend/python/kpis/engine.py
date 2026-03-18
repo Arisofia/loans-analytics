@@ -380,16 +380,25 @@ class KPIEngineV2:
                 "top_10_borrower_concentration": Decimal("0.0"),
             }
 
+        # npl_90_ratio: strict NPL (DPD >= 90 or defaulted) — standard 90-day threshold
         npl_mask = (active_df["dpd"] >= 90) | (active_df["status"] == "defaulted")
         npl_out = Decimal(str(active_df.loc[npl_mask, balance_col].sum()))
-        npl_ratio = (npl_out / total_out) * 100
+        npl_90_ratio = (npl_out / total_out) * 100
+
+        # npl_ratio: broad NPL (DPD >= 30 or delinquent/defaulted) — early-warning threshold
+        broad_npl_mask = (active_df["dpd"] >= 30) | (
+            active_df["status"].isin(["delinquent", "defaulted"])
+        )
+        broad_npl_out = Decimal(str(active_df.loc[broad_npl_mask, balance_col].sum()))
+        npl_ratio = (broad_npl_out / total_out) * 100
+
         defaulted_out = Decimal(
             str(active_df.loc[active_df["status"] == "defaulted", balance_col].sum())
         )
 
         kpis: Dict[str, Decimal] = {
             "npl_ratio": npl_ratio,
-            "npl_90_ratio": npl_ratio,
+            "npl_90_ratio": npl_90_ratio,
             "defaulted_outstanding_ratio": (defaulted_out / total_out) * 100,
             "top_10_borrower_concentration": self._top_10_borrower_concentration(
                 active_df, balance_col, total_out
@@ -434,9 +443,9 @@ class KPIEngineV2:
         # which np.where handles but we want strict np.nan for opaque ones
         ltv = np.where(~is_opaque, capital / valor_ajustado, np.nan)
 
-        # Tag the dataframe if possible (for downstream transparency)
-        if "ltv_sintetico_is_opaque" not in df.columns:
-            df["ltv_sintetico_is_opaque"] = is_opaque.astype(int)
+        # Tag the dataframe with the opacity flag for downstream transparency.
+        # Use a copy-safe assignment to avoid SettingWithCopyWarning on sliced frames.
+        df["ltv_sintetico_is_opaque"] = is_opaque.astype(int)
 
         return pd.Series(ltv, index=df.index, dtype=float)
 
