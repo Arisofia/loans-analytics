@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import json
+import tempfile
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -467,9 +468,39 @@ def _to_datetime_mixed(series: pd.Series) -> pd.Series:
 
 
 def _canonicalize_status(value: Any) -> str:
+    """
+    Normalize raw status values into canonical labels used by the pipeline.
+
+    This helper is intentionally tolerant of null-ish values that may arrive from
+    heterogeneous CSV sources. Blank strings, NaN-like values, and explicit `None`
+    are all mapped to ``"unknown"``. Legacy behavior treated some of these as
+    ``"active"``, but downstream delinquency/default calculations now assume that
+    the absence of a clear status signal is represented as ``"unknown"``.
+
+    The examples below serve as executable documentation and regression tests for
+    the null/NaN handling and core alias mappings:
+
+    >>> _canonicalize_status("")  # empty string -> unknown
+    'unknown'
+    >>> _canonicalize_status("   ")  # whitespace-only -> unknown
+    'unknown'
+    >>> _canonicalize_status(float("nan"))  # NaN -> unknown
+    'unknown'
+    >>> _canonicalize_status(None)  # explicit None -> unknown
+    'unknown'
+
+    >>> _canonicalize_status("active")
+    'active'
+    >>> _canonicalize_status("PAID_OFF")
+    'closed'
+    >>> _canonicalize_status("mora 30")
+    'delinquent'
+    >>> _canonicalize_status("charged_off")
+    'defaulted'
+    """
     raw = str(value).strip().lower()
     if not raw or raw == "nan":
-        return "active"
+        return "unknown"
 
     active_aliases = {"active", "current", "vigente", "open", "in_force"}
     closed_aliases = {
@@ -779,10 +810,7 @@ def _merge_prepared_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
     if "loan_id" in stacked.columns:
         stacked = _collapse_to_loan_level(stacked)
 
-    merged = _prepare_dataframe(stacked)
-    if "loan_id" in merged.columns:
-        merged = _collapse_to_loan_level(merged)
-    return merged.copy()
+    return stacked.copy()
 
 
 def _classify_loan_id_duplicates(df: pd.DataFrame) -> list[tuple[str, str]]:
@@ -948,8 +976,7 @@ def _run_pipeline(df: pd.DataFrame, filename: str) -> None:
 
     try:
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        run_dir = Path("logs/runs") / run_id
-        run_dir.mkdir(parents=True, exist_ok=True)
+        run_dir = Path(tempfile.mkdtemp(prefix=f"abaco_run_{run_id}_"))
 
         upload_meta = _build_upload_metadata(df, filename)
         (run_dir / "upload_metadata.json").write_text(
@@ -1119,6 +1146,12 @@ def _format_file_size(size_bytes: int) -> str:
             return f"{size_bytes:.1f} {unit}"
         size_bytes /= 1024.0
     return f"{size_bytes:.1f} TB"
+
+
+# Public API aliases for functions used across module boundaries.
+# Callers should import these names instead of the private underscore-prefixed ones.
+classify_loan_id_duplicates = _classify_loan_id_duplicates
+coerce_numeric = _coerce_numeric
 
 
 if __name__ == "__main__":

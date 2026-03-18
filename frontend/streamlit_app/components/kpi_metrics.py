@@ -38,8 +38,8 @@ def render_executive_summary(merged):
             avg_apr = 0
     else:
         avg_apr = 0
-    if "loan_status" in merged:
-        default_rate = (merged["loan_status"] == "Default").mean() * 100
+    if "status" in merged:
+        default_rate = (merged["status"] == "defaulted").mean() * 100
     else:
         default_rate = 0
     col1.metric("Total Loans", f"{total_loans:,}")

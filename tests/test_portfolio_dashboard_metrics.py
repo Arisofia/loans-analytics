@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -116,3 +117,47 @@ def test_kpi_methodology_rows_include_new_metrics(dashboard):
     rows = dashboard._kpi_methodology_rows(metrics)
     labels = {row["KPI"] for row in rows}
     assert {"PAR 90", "Default Rate", "Collections Rate", "Recovery Rate"}.issubset(labels)
+
+
+# ---------------------------------------------------------------------------
+# _fetch_nsm_data – SSRF guard: unsafe URLs must be blocked without HTTP call
+# ---------------------------------------------------------------------------
+
+
+class TestFetchNsmDataSsrfGuard:
+    """Verify that _fetch_nsm_data blocks unsafe URLs before issuing HTTP requests."""
+
+    @pytest.fixture(scope="class")
+    def dash(self):
+        return _load_portfolio_dashboard_module()
+
+    def test_private_ip_blocked_without_http_call(self, dash):
+        """A private-range IP URL must be rejected and requests.get must not be called."""
+        with patch.object(dash.requests, "get") as mock_get:
+            result = dash._fetch_nsm_data("http://192.168.1.1/analytics/nsm")
+        assert result is None
+        mock_get.assert_not_called()
+
+    def test_localhost_blocked_without_http_call(self, dash):
+        """localhost resolves to a private address and must be blocked."""
+        with patch.object(dash.requests, "get") as mock_get:
+            result = dash._fetch_nsm_data("http://127.0.0.1/analytics/nsm")
+        assert result is None
+        mock_get.assert_not_called()
+
+    def test_invalid_scheme_blocked_without_http_call(self, dash):
+        """A URL with an unsupported scheme (ftp://) must be rejected."""
+        with patch.object(dash.requests, "get") as mock_get:
+            result = dash._fetch_nsm_data("ftp://example.com/analytics/nsm")
+        assert result is None
+        mock_get.assert_not_called()
+
+    def test_valid_public_url_passes_through(self, dash):
+        """A publicly-routable HTTPS URL must be allowed through to requests.get."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"latest_period": None}
+        mock_response.raise_for_status = MagicMock()
+        with patch.object(dash.requests, "get", return_value=mock_response) as mock_get:
+            result = dash._fetch_nsm_data("https://api.example.com/analytics/nsm")
+        mock_get.assert_called_once()
+        assert result == {"latest_period": None}

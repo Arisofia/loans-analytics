@@ -41,8 +41,10 @@ sys.modules["streamlit"] = _st_stub
 from frontend.streamlit_app.components.csv_upload import (  # noqa: E402
     _alias_matches,
     _apply_aliases,
+    _canonicalize_status,
     _classify_loan_id_duplicates,
     _coerce_numeric,
+    _derive_status,
     _normalize_column_names,
     _prepare_dataframe,
     _validate_for_pipeline,
@@ -523,3 +525,76 @@ class TestPortfolioDashboardDuplicateClassification:
         )
         result = _dash_mod._classify_loan_id_duplicates(df)
         assert any(level == "warning" and "suspicious" in msg.lower() for level, msg in result)
+
+
+# ---------------------------------------------------------------------------
+# _canonicalize_status – null / NaN / empty inputs must resolve to "unknown"
+# ---------------------------------------------------------------------------
+
+
+class TestCanonicalizeStatusNullHandling:
+    """Verify that missing/null status values yield 'unknown', not 'active'."""
+
+    def test_none_returns_unknown(self):
+        assert _canonicalize_status(None) == "unknown"
+
+    def test_empty_string_returns_unknown(self):
+        assert _canonicalize_status("") == "unknown"
+
+    def test_nan_string_returns_unknown(self):
+        assert _canonicalize_status("nan") == "unknown"
+
+    def test_nan_float_returns_unknown(self):
+        import math
+        assert _canonicalize_status(math.nan) == "unknown"
+
+    def test_whitespace_only_returns_unknown(self):
+        assert _canonicalize_status("   ") == "unknown"
+
+    def test_known_active_aliases_still_work(self):
+        for alias in ("active", "current", "vigente", "open", "in_force"):
+            assert _canonicalize_status(alias) == "active", f"expected 'active' for {alias!r}"
+
+    def test_defaulted_aliases_unaffected(self):
+        for alias in ("default", "defaulted", "charged_off"):
+            assert _canonicalize_status(alias) == "defaulted", f"expected 'defaulted' for {alias!r}"
+
+
+# ---------------------------------------------------------------------------
+# _derive_status – "unknown" status is resolved correctly via DPD overrides
+# ---------------------------------------------------------------------------
+
+
+class TestDeriveStatusNullResolution:
+    """Verify that null/NaN raw status values are ultimately resolved correctly."""
+
+    def test_null_status_no_dpd_resolves_to_active(self):
+        """A loan with blank status and DPD=0 (or no DPD column) should resolve to 'active'."""
+        df = pd.DataFrame({"status": [None, ""], "days_past_due": [0, 0]})
+        result = _derive_status(df)
+        assert list(result) == ["active", "active"]
+
+    def test_null_status_dpd_30_resolves_to_delinquent(self):
+        """Blank status + DPD between 1 and 89 → delinquent."""
+        df = pd.DataFrame({"status": [None], "days_past_due": [35]})
+        result = _derive_status(df)
+        assert result.iloc[0] == "delinquent"
+
+    def test_null_status_dpd_90_plus_resolves_to_defaulted(self):
+        """Blank status + DPD ≥ 90 → defaulted."""
+        df = pd.DataFrame({"status": [None], "days_past_due": [90]})
+        result = _derive_status(df)
+        assert result.iloc[0] == "defaulted"
+
+    def test_null_status_no_dpd_column_stays_unknown(self):
+        """When there is no DPD column, blank status has no signal to resolve it,
+        so it stays as 'unknown' — the caller must decide how to present it."""
+        df = pd.DataFrame({"status": [None, "nan"]})
+        result = _derive_status(df)
+        assert list(result) == ["unknown", "unknown"]
+
+    def test_explicit_status_is_not_overridden_by_zero_dpd(self):
+        """A known status ('delinquent') should not be overridden when DPD=0."""
+        df = pd.DataFrame({"status": ["delinquent"], "days_past_due": [0]})
+        result = _derive_status(df)
+        assert result.iloc[0] == "delinquent"
