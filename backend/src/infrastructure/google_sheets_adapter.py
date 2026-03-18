@@ -94,6 +94,7 @@ class ControlMoraSheetsAdapter:
         - Raises ``ValueError`` if gspread / google-auth are not installed.
         - Raises ``ValueError`` if authentication fails.
         - Raises ``ValueError`` if the DESEMBOLSOS tab does not exist.
+        - Raises ``ValueError`` if the DESEMBOLSOS tab is empty (0 data rows).
         - Raises ``ValueError`` if any of the required base columns
           (``CodCliente``, ``FechaDesembolso``, ``ValorAprobado``) are absent.
 
@@ -109,10 +110,12 @@ class ControlMoraSheetsAdapter:
         records = worksheet.get_all_records()
 
         if not records:
-            logger.warning(
-                "DESEMBOLSOS tab returned 0 rows — spreadsheet may be empty."
+            message = (
+                "DESEMBOLSOS tab returned 0 rows — spreadsheet may be empty or "
+                "misconfigured; this adapter requires at least one data row."
             )
-            return []
+            logger.error(message)
+            raise ValueError(message)
 
         self._validate_required_columns(
             columns=set(records[0].keys()),
