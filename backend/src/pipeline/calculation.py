@@ -739,7 +739,15 @@ class CalculationPhase:
     def _apply_hdbscan(
         X_embed: np.ndarray, X_fallback: np.ndarray, metrics: Dict[str, Any]
     ) -> np.ndarray:
-        """Apply HDBSCAN if available; fall back to a simple DPD-quartile split."""
+        """Apply HDBSCAN if available; fall back to a simple PC1-quartile split.
+
+        Notes
+        -----
+        When HDBSCAN is unavailable, we assign fallback cluster labels by
+        splitting on quartiles of the first column of ``X_fallback``. In the
+        current pipeline this column corresponds to the first principal
+        component (PC1) of the scaled feature space, not a raw DPD feature.
+        """
         if not _HDBSCAN_AVAILABLE:
             logger.info("HDBSCAN not available — using quartile-based fallback labels.")
             n = X_fallback.shape[0]
@@ -747,7 +755,7 @@ class CalculationPhase:
             quartiles = np.percentile(X_fallback[:, 0], [25, 50, 75])
             for i, q in enumerate(quartiles, start=1):
                 labels[X_fallback[:, 0] > q] = i
-            metrics["hdbscan_fallback"] = "quartile_split"
+            metrics["hdbscan_fallback"] = "pc1_quartile_split"
             return labels
         try:
             clusterer = hdbscan_module.HDBSCAN(
