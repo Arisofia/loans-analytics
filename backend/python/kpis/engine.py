@@ -328,10 +328,10 @@ class KPIEngineV2:
             "top_10_borrower_concentration": self._top_10_borrower_concentration(active_df, balance_col, total_out),
         }
 
-        # LTV Sintético portfolio-level summary
+        # LTV Sintético portfolio-level summary (exclude opaque/NaN observations)
         ltv_series = self._calculate_ltv_sintetico(df)
         if not ltv_series.empty:
-            ltv_valid = ltv_series[ltv_series > 0]
+            ltv_valid = ltv_series[ltv_series.notna() & (ltv_series > 0)]
             if not ltv_valid.empty:
                 kpis["ltv_sintetico_mean"] = Decimal(str(round(float(ltv_valid.mean()), 6)))
                 high_risk_pct = float((ltv_valid > 1.0).sum()) / float(len(ltv_valid)) * 100
@@ -346,23 +346,24 @@ class KPIEngineV2:
         LTV Sintético = capital_desembolsado / (valor_nominal_factura * (1 - tasa_dilucion))
 
         Invalid-denominator semantics (fail-safe opacity):
-            When the adjusted invoice value is zero the LTV is mathematically
-            undefined.  Returning 0.0 would silently encode a false low-risk
-            value.  These rows therefore yield ``np.nan`` so that callers can
-            detect and handle them explicitly.
+            When the adjusted invoice value is zero or NaN the LTV is
+            mathematically undefined.  Returning 0.0 would silently encode a
+            false low-risk value.  These rows therefore yield ``np.nan`` so
+            that callers can detect and handle them explicitly.
         """
         required = ("capital_desembolsado", "valor_nominal_factura", "tasa_dilucion")
         if not all(col in df.columns for col in required):
             return pd.Series(dtype=float)
 
-        valor_ajustado = pd.to_numeric(df["valor_nominal_factura"], errors="coerce").fillna(0.0) * (
-            1 - pd.to_numeric(df["tasa_dilucion"], errors="coerce").fillna(0.0)
-        )
-        capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce").fillna(0.0)
-        # Zero denominator → np.nan (explicit opacity; not 0.0 which encodes false low-risk)
-        safe_denominator = valor_ajustado.replace(0.0, np.nan)
-        ltv = capital / safe_denominator
-        return ltv
+        valor_nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce")
+        tasa_dilucion = pd.to_numeric(df["tasa_dilucion"], errors="coerce")
+        capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce")
+
+        valor_ajustado = valor_nominal * (1 - tasa_dilucion)
+        is_opaque = valor_ajustado.isna() | (valor_ajustado <= 0)
+        # NaN/zero denominator → np.nan (explicit opacity; never 0.0 which encodes false low-risk)
+        ltv = np.where(is_opaque, np.nan, capital / valor_ajustado)
+        return pd.Series(ltv, index=df.index, dtype=float)
 
     def _top_10_borrower_concentration(self, active_df: pd.DataFrame, balance_col: str, total_out: Decimal) -> Decimal:
         """Compute top-10 borrower concentration ratio."""

@@ -36,7 +36,7 @@ def test_pipeline_config_load_valid(tmp_path):
 
 
 def test_load_business_rules_not_found():
-    """Test loading non-existent business rules raises FileNotFoundError (fail-fast doctrine)."""
+    """Test loading non-existent business rules raises FileNotFoundError."""
     with pytest.raises(FileNotFoundError):
         load_business_rules(Path("non_existent_rules.yaml"))
 
@@ -53,9 +53,27 @@ def test_load_business_rules_valid(tmp_path):
 
 
 def test_load_kpi_definitions_not_found():
-    """Test loading non-existent KPI definitions raises FileNotFoundError (fail-fast doctrine)."""
+    """Test loading non-existent KPI definitions raises FileNotFoundError."""
     with pytest.raises(FileNotFoundError):
         load_kpi_definitions(Path("non_existent_kpis.yaml"))
+
+
+def test_load_business_rules_empty_yaml_fails_fast(tmp_path):
+    """Empty YAML must fail fast with critical configuration message."""
+    rules_file = tmp_path / "business_rules.yaml"
+    rules_file.write_text("", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Configuración vacía o malformada. Abortando."):
+        load_business_rules(rules_file)
+
+
+def test_load_kpi_definitions_empty_yaml_fails_fast(tmp_path):
+    """Empty YAML must fail fast with critical configuration message."""
+    kpi_file = tmp_path / "kpi_definitions.yaml"
+    kpi_file.write_text("", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Configuración vacía o malformada. Abortando."):
+        load_kpi_definitions(kpi_file)
 
 
 def test_load_kpi_definitions_valid(tmp_path):
