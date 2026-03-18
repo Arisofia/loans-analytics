@@ -28,8 +28,8 @@ from backend.src.agents.multi_agent.orchestrator import MultiAgentOrchestrator
 from backend.src.agents.multi_agent.protocol import LLMProvider
 from frontend.streamlit_app.components.csv_upload import (
     BORROWER_ID_COLS,
-    _classify_loan_id_duplicates,
-    _coerce_numeric as _coerce_amount,
+    classify_loan_id_duplicates as _classify_loan_id_duplicates,
+    coerce_numeric as _coerce_amount,
 )
 from frontend.streamlit_app.utils.security import sanitize_api_base
 
@@ -2390,6 +2390,13 @@ def _safe_cache_data_decorator(*decorator_args: Any, **decorator_kwargs: Any):
 @_safe_cache_data_decorator(ttl=60, show_spinner=False)
 def _fetch_nsm_data(api_url: str) -> dict | None:
     """Fetch NSM data from the analytics API, cached for 60 seconds."""
+    # Validate the URL base (scheme + netloc) before making the request to
+    # prevent SSRF regardless of where this function is called from.
+    parsed = urlparse(api_url)
+    base_url = f"{parsed.scheme}://{parsed.netloc}" if parsed.netloc else ""
+    if sanitize_api_base(base_url) is None:
+        logger.warning("Blocked NSM fetch: invalid or unsafe URL base: %s", base_url)
+        return None
     try:
         resp = requests.get(api_url, timeout=5)
         resp.raise_for_status()

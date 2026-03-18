@@ -159,6 +159,10 @@ def load_kpi_dashboard() -> dict:
                     dashboard_path,
                     exc,
                 )
+                st.warning(
+                    f"⚠️ KPI dashboard file is corrupted or incomplete and could not be loaded "
+                    f"({dashboard_path.name}). Re-run the pipeline to regenerate it."
+                )
     return {}
 
 
