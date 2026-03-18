@@ -18,10 +18,10 @@ paths-ignore:
 
 # Paths to specifically include
 paths:
-  - 'src/agents/**'
-  - 'src/**'
-  - 'apps/**'
-  - 'streamlit_app/**'
+  - 'backend/python/**'
+  - 'backend/src/**'
+  - 'frontend/streamlit_app/**'
+  - 'scripts/**'
 
 # Query filters for LLM/AI specific security concerns
 query-filters:
@@ -29,7 +29,7 @@ query-filters:
   - exclude:
       id: py/path-injection
       paths:
-        - python/apps/analytics/api/main.py
+        - backend/python/apps/analytics/api/main.py
 
   # Include all critical and high severity issues
   - include:

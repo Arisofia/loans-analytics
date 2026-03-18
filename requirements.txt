@@ -40,6 +40,8 @@ polars>=0.20
 PyYAML>=6.0
 scipy>=1.11.0
 scikit-learn>=1.0.0
+umap-learn>=0.5.0
+hdbscan>=0.8.33
 xgboost>=2.0.0
 
 # Observability / tracing
@@ -67,3 +69,7 @@ azure-mgmt-portal>=1.0
 psycopg[binary]>=3.1.0
 asyncpg>=0.29.0
 supabase>=2.0
+
+# Google Sheets integration (ControlMoraSheetsAdapter)
+gspread>=5.0
+google-auth>=2.0

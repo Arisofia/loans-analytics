@@ -144,7 +144,7 @@ def test_execute_exports_full_ml_intelligence_payload(tmp_path):
     exports = result["exports"]
 
     assert "segment_kpis" in exports
-    assert (tmp_path / "output_segment_kpis.json").exists()
+    assert (tmp_path / "segment_kpis.json").exists()
 
     assert "time_series" in exports
     assert (tmp_path / "time_series.json").exists()

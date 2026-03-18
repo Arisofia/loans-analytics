@@ -155,6 +155,7 @@ class TransformationPhase:
 
             # Apply transformations with metrics tracking
             df = self._normalize_column_names(df)
+            df = self._map_canonical_semantic_layer(df)
             df, control_metrics = self._derive_control_mora_fields(df)
             transformation_metrics["control_derivations"] = control_metrics
             df = self._collapse_duplicate_columns(df)
@@ -286,6 +287,58 @@ class TransformationPhase:
                         "Overwrote current_balance with outstanding_balance "
                         "(due to high null/zero rate)"
                     )
+
+        return df
+
+    def _map_canonical_semantic_layer(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Normalize column names to the institutional canonical semantic standard.
+
+        Applies a second-pass mapping after ``_normalize_column_names`` to
+        unify the vocabulary used by downstream calculation and output phases.
+
+        Canonical targets (currently handled)
+        -------------------------------------
+        approved_at          : timestamp when the loan was approved / application accepted
+        funded_at            : timestamp when capital was actually disbursed to the client
+        scheduled_amount     : the contractually agreed instalment or periodic payment
+        actual_payment_amount: the amount the client actually paid in the period
+        """
+        # Note: this mapping fires *after* _normalize_column_names(), so only
+        # post-normalization column names will be present in ``df.columns``.
+        # Raw aliases that _normalize_column_names() already renames (e.g.
+        # ``montototalabonado`` → ``total_payment_received``) must NOT appear
+        # here — they will never match and will silently be skipped.
+        # ``tpv`` is intentionally absent: it is the post-normalization form of
+        # ``ingreso_total_por_desembolso`` and is consumed directly by
+        # ``_derive_control_mora_fields``; renaming it here would make it
+        # unavailable to downstream KPI/NSM calculations.
+        semantic_mapping: Dict[str, str] = {
+            # approved_at
+            "application_date": "approved_at",
+            "fecha_aprobacion": "approved_at",
+            "approval_date": "approved_at",
+            # funded_at
+            "origination_date": "funded_at",
+            "disbursement_date": "funded_at",
+            "fecha_desembolso": "funded_at",
+            # scheduled_amount
+            "total_scheduled": "scheduled_amount",
+            "monto_programado": "scheduled_amount",
+            "total_due": "scheduled_amount",
+            # actual_payment_amount — map from post-normalization name only
+            "last_payment_amount": "actual_payment_amount",
+            "total_payment_received": "actual_payment_amount",
+        }
+
+        rename_dict = {
+            source: target
+            for source, target in semantic_mapping.items()
+            if source in df.columns and target not in df.columns
+        }
+
+        if rename_dict:
+            df = df.rename(columns=rename_dict)
+            logger.info("Canonical semantic layer applied: %s", rename_dict)
 
         return df
 
@@ -952,26 +1005,54 @@ class TransformationPhase:
         self, df: pd.DataFrame, null_columns: Dict[str, int]
     ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
-        Intelligent null handling based on null percentage and column importance.
+        Null handling dispatched by column dtype and null percentage.
 
-        Uses configurable thresholds:
-        - < LOW_NULL_THRESHOLD_PCT: Structural zero fill + boolean opacity flag
-        - LOW to HIGH_NULL_THRESHOLD_PCT: Fill with missing indicator
-        - > HIGH_NULL_THRESHOLD_PCT: Log warning, fill with default
+        **Numeric columns** — three tiers keyed on ``null_pct``:
 
-        No mean/median imputation is ever applied to financial numeric columns.
-        Opacity flags (``{col}_is_missing``) let downstream ML models learn from
-        the absence of data rather than being misled by statistical substitutes.
+        - ``< LOW_NULL_THRESHOLD_PCT``: structural zero fill + integer opacity
+          flag (``{col}_is_missing`` column added; 1 = was null, 0 = present).
+        - ``LOW ≤ null_pct < HIGH_NULL_THRESHOLD_PCT``: filled with the
+          ``MISSING_NUMERIC_INDICATOR`` sentinel value.  No opacity-flag column
+          is added for this tier.
+        - ``≥ HIGH_NULL_THRESHOLD_PCT``: filled with zero; warning logged for
+          columns in ``HIGH_NULL_WARNING_NUMERIC_COLUMNS``; columns that are
+          effectively all-null (> 99.5%) are left as-is (NaN preserved).
+
+        **Categorical columns** — threshold tiers do **not** apply:
+
+        All categorical nulls unconditionally receive the strict opacity
+        treatment: filled with sentinel string ``"missing_data"`` and an
+        integer flag ``{col}_is_missing``, regardless of ``null_pct``.
+
+        No mean/median/mode imputation is ever applied. Opacity flags let
+        downstream ML models learn from the absence of data rather than being
+        misled by statistical substitutes.
+
+        Returns a structured ``opacity_counts`` dict (``{flag_col: null_count}``)
+        alongside the human-readable ``smart_actions`` so that downstream phases
+        (e.g. audit_metadata export) can consume it without parsing strings.
         """
         total_rows = len(df)
-        actions = self._process_null_columns(df, null_columns, total_rows)
-        return df, {"smart_actions": actions}
+        actions, opacity_counts = self._process_null_columns(df, null_columns, total_rows)
+        return df, {"smart_actions": actions, "opacity_counts": opacity_counts}
 
     def _process_null_columns(
         self, df: pd.DataFrame, null_columns: Dict[str, int], total_rows: int
-    ) -> Dict[str, str]:
-        """Process null values for each column based on column type."""
+    ) -> Tuple[Dict[str, str], Dict[str, int]]:
+        """Process null values for each column based on column type.
+
+        Returns
+        -------
+        actions : dict
+            Human-readable action string per column.
+        opacity_counts : dict
+            Structured mapping ``{flag_col: null_count}`` for every column
+            where a ``{col}_is_missing`` opacity flag was created.  Consumers
+            (e.g. ``_build_audit_metadata_payload``) should read from this dict
+            rather than parsing the action strings.
+        """
         actions: Dict[str, str] = {}
+        opacity_counts: Dict[str, int] = {}
         for col, null_count in null_columns.items():
             null_pct = null_count / total_rows * 100
             action = (
@@ -980,7 +1061,11 @@ class TransformationPhase:
                 else self._handle_categorical_nulls(df, col, null_pct)
             )
             actions[col] = action
-        return actions
+            # Record structured count for every column that received an opacity flag
+            flag_col = f"{col}_is_missing"
+            if flag_col in df.columns:
+                opacity_counts[flag_col] = null_count
+        return actions, opacity_counts
 
     def _handle_numeric_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
         """Apply numeric null handling strategy for a column."""
@@ -995,19 +1080,19 @@ class TransformationPhase:
         return self._fill_numeric_with_zero(df, col, null_pct)
 
     def _fill_numeric_with_structural_zero(self, df: pd.DataFrame, col: str) -> str:
-        """Fill numeric nulls with structural zero and add a boolean opacity flag.
+        """Fill numeric nulls with structural zero and add an integer opacity flag.
 
         Implements the "structural zeros + opacity flag" pattern:
         - Null values are filled with 0 (structural zero, not a statistical estimate).
-        - A boolean indicator column ``{col}_is_missing`` is added so that ML models
-          can distinguish genuine zeros from imputed ones.
+        - An integer indicator column ``{col}_is_missing`` (1=missing, 0=present) is added
+          so that ML models can distinguish genuine zeros from imputed ones.
 
-        This replaces median/mean imputation to avoid injecting statistical bias
-        into financial data used for credit risk models.
+        No mean/median/mode imputation is ever applied — those substitute statistical
+        artefacts for genuine business knowledge, corrupting credit-risk models.
         """
         null_mask = df[col].isna()
         flag_col = f"{col}_is_missing"
-        df[flag_col] = null_mask
+        df[flag_col] = null_mask.astype(int)
         df[col] = df[col].fillna(0)
         return f"filled_structural_zero+flag ({null_mask.sum()} nulls → {flag_col})"
 
@@ -1029,22 +1114,27 @@ class TransformationPhase:
         return f"filled_zero (high_null: {null_pct:.1f}%)"
 
     def _handle_categorical_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
-        """Apply categorical null handling strategy for a column."""
-        if null_pct < self.LOW_NULL_THRESHOLD_PCT:
-            return self._fill_categorical_with_mode(df, col)
-        return self._fill_categorical_with_missing(df, col)
+        """Apply categorical null handling strategy for a column.
 
-    def _fill_categorical_with_mode(self, df: pd.DataFrame, col: str) -> str:
-        """Fill categorical nulls with mode value."""
-        mode_val = df[col].mode()
-        fill_val = mode_val.iloc[0] if len(mode_val) > 0 else "unknown"
-        df[col] = df[col].fillna(fill_val)
-        return f"filled_mode ({fill_val})"
+        Strict opacity rule: mode/moda imputation is never used.
+        All categorical nulls receive a ``{col}_is_missing`` integer flag and
+        are filled with the sentinel string ``"missing_data"``.
+        """
+        return self._fill_categorical_with_missing_data(df, col)
 
-    def _fill_categorical_with_missing(self, df: pd.DataFrame, col: str) -> str:
-        """Fill categorical nulls with missing label."""
-        df[col] = df[col].fillna("missing")
-        return "filled_missing_label"
+    def _fill_categorical_with_missing_data(self, df: pd.DataFrame, col: str) -> str:
+        """Fill categorical nulls with the sentinel 'missing_data' and add an opacity flag.
+
+        Creates ``{col}_is_missing`` (int 1/0) so downstream models can distinguish
+        genuine 'missing_data' values from values that were present in the source.
+        Mode imputation is explicitly forbidden here to avoid injecting distributional
+        bias into categorical features used for credit-risk segmentation.
+        """
+        null_mask = df[col].isna()
+        flag_col = f"{col}_is_missing"
+        df[flag_col] = null_mask.astype(int)
+        df[col] = df[col].fillna("missing_data")
+        return f"filled_missing_data+flag ({null_mask.sum()} nulls → {flag_col})"
 
     def _normalize_types(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
@@ -1389,7 +1479,7 @@ class TransformationPhase:
             # Whole-number percentage (e.g. 24.5 meaning 24.5% annual)
             df["interest_rate"] = rates / 100
             logger.info(
-                "Normalized interest_rate: whole %% → annual decimal " "(median %.2f%% → %.4f)",
+                "Normalized interest_rate: whole %% → annual decimal (median %.2f%% → %.4f)",
                 median_rate,
                 median_rate / 100,
             )
