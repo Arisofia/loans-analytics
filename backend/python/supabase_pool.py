@@ -62,7 +62,8 @@ class SupabaseConnectionPool:
                 "asyncpg is required for connection pooling. Install with: pip install asyncpg"
             )
 
-        # Security: Store only normalized URL, never raw URL with password
+        # Normalize to asyncpg-compatible form (postgres:// → postgresql://).
+        # Credentials are retained in the normalized URL — never pass it to untrusted callers.
         self._normalized_url = self._normalize_database_url(database_url)
         self.pool_config = settings.supabase_pool
 

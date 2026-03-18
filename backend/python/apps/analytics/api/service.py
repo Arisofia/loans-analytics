@@ -692,7 +692,13 @@ class KPIService:
                 return 75
             return 100 if "90+" in status else 0
 
-        df["days_past_due"] = df["loan_status"].apply(get_dpd)
+            # Only fill missing DPD via status inference — caller-supplied values take precedence
+            if "days_past_due" not in df.columns:
+                df["days_past_due"] = df["loan_status"].apply(get_dpd)
+            else:
+                null_mask = df["days_past_due"].isna()
+                if null_mask.any():
+                    df.loc[null_mask, "days_past_due"] = df.loc[null_mask, "loan_status"].apply(get_dpd)
         return df
 
     def _build_loan_risk_alert(

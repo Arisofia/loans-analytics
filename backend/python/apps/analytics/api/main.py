@@ -63,6 +63,7 @@ try:
     from backend.python.apps.analytics.api.service import KPIService
     from backend.python.logging_config import init_sentry, set_sentry_correlation
     from backend.src.agents.multi_agent.orchestrator import MultiAgentOrchestrator
+    from backend.python.middleware.rate_limiter import api_limiter, auth_limiter
 
     init_sentry(service_name="analytics-api")
 
@@ -244,7 +245,11 @@ def _build_full_analysis_recommendations(
 
 
 def _build_kpi_summary_text(kpis: list[Any]) -> str:
-    return "\n".join([f"{k.name}: {k.value} {k.unit} | Formula: {k.context.formula}" for k in kpis])
+    lines = []
+    for k in kpis:
+        formula = k.context.formula if k.context is not None else "n/a"
+        lines.append(f"{k.name}: {k.value} {k.unit} | Formula: {formula}")
+    return "\n".join(lines)
 
 
 def _format_transition_block(roll_rates: "RollRateAnalyticsResponse") -> str:
@@ -312,6 +317,7 @@ async def _run_local_full_analysis(
     request: "LoanPortfolioRequest",
     service: "KPIService",
     kpis: list[Any],
+    roll_rates: "RollRateAnalyticsResponse",
 ) -> tuple[str, str]:
     trace_id = str(uuid.uuid4())
     par30 = _get_kpi_value(kpis, ["par_30", "par30"], 0.0)
@@ -331,7 +337,6 @@ async def _run_local_full_analysis(
     advanced_risk = await service.calculate_advanced_risk(request.loans)
     risk_strat = await service.get_risk_stratification(request.loans)
     vintage = await service.calculate_vintage_curves(request.loans)
-    roll_rates = await service.calculate_roll_rate_analytics(request.loans)
 
     dpd_1_30 = _get_kpi_value(kpis, ["dpd_1_30", "delinq_1_30_rate"], 0.0)
     dpd_31_60 = _get_kpi_value(kpis, ["dpd_31_60", "delinq_31_60_rate"], 0.0)
@@ -382,12 +387,13 @@ async def _resolve_full_analysis_summary(
     service: "KPIService",
     kpis: list[Any],
     kpi_summary: str,
+    roll_rates: "RollRateAnalyticsResponse",
 ) -> tuple[str, str]:
     try:
         return await _run_orchestrated_full_analysis(request, service, kpi_summary)
     except Exception as orch_err:
         logger.info("Using High-Fidelity Local Analytical Engine: %s", orch_err)
-        return await _run_local_full_analysis(request, service, kpis)
+        return await _run_local_full_analysis(request, service, kpis, roll_rates)
 
 
 # ---------------------------------------------------------------------------
@@ -402,6 +408,25 @@ if app is not None:
         Instrumentator().instrument(app).expose(app, endpoint="/metrics")
     except ImportError:
         logger.warning("prometheus-fastapi-instrumentator not installed; /metrics disabled")
+
+    # --- Rate limiting middleware ---
+    _RATE_LIMIT_EXEMPT = {"/health", "/metrics", "/docs", "/openapi.json", "/redoc"}
+    _AUTH_PATHS = {"/auth/token", "/auth/login", "/auth/refresh"}
+
+    @app.middleware("http")
+    async def rate_limit_middleware(request: Request, call_next):
+        """Enforce sliding-window rate limits per client IP on all non-exempt routes."""
+        path = request.url.path
+        if path not in _RATE_LIMIT_EXEMPT and not path.startswith("/redoc") and not path.startswith("/docs"):
+            client_ip = (request.client.host if request.client else None) or "unknown"
+            limiter = auth_limiter if path in _AUTH_PATHS else api_limiter
+            if not limiter.is_allowed(client_ip):
+                return JSONResponse(
+                    status_code=429,
+                    content={"detail": "Rate limit exceeded. Please retry later."},
+                    headers={"Retry-After": "10"},
+                )
+        return await call_next(request)
 
     jwt_enabled = os.getenv("API_JWT_ENABLED", "0") == "1"
     jwt_secret = os.getenv("API_JWT_SECRET", "")
@@ -716,7 +741,14 @@ if app is not None:
             "curerate": "CURERATE",
         }
 
-        db_key = kpi_key_map.get(kpi_id.lower(), kpi_id.upper())
+        known_db_keys = set(kpi_key_map.values())
+        db_key = kpi_key_map.get(kpi_id.lower())
+        if db_key is None:
+            # Accept bare DB-key form (e.g. "PAR30") but reject anything not in the known set
+            candidate = kpi_id.upper()
+            if candidate not in known_db_keys:
+                raise HTTPException(status_code=400, detail=f"Unknown KPI identifier: {kpi_id!r}")
+            db_key = candidate
 
         try:
             if request.loans:
@@ -937,11 +969,11 @@ if app is not None:
             # Use request-scoped real-time KPIs when available, fallback to latest snapshot.
             kpis = await _resolve_analysis_kpis(request, service)
             kpi_summary = _build_kpi_summary_text(kpis)
+            roll_rates = await service.calculate_roll_rate_analytics(request.loans)
             trace_id, summary = await _resolve_full_analysis_summary(
-                request, service, kpis, kpi_summary
+                request, service, kpis, kpi_summary, roll_rates
             )
-
-            return await _map_full_analysis_response(request, service, kpis, trace_id, summary)
+            return await _map_full_analysis_response(request, service, kpis, trace_id, summary, roll_rates)
         except Exception as e:
             logger.error("Error in get_full_analysis: %s", e)
             raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
@@ -952,9 +984,9 @@ if app is not None:
         kpis: list[Any],
         trace_id: str,
         summary: str,
+        roll_rates: "RollRateAnalyticsResponse",
     ) -> FullAnalysisResponse:
         """Map raw analysis results to structured FullAnalysisResponse model."""
-        roll_rates = await service.calculate_roll_rate_analytics(request.loans)
         recommendations = _build_full_analysis_recommendations(kpis, roll_rates)
 
         risk_stratification = await service.get_risk_stratification(request.loans)

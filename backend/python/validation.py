@@ -149,10 +149,10 @@ def validate_numeric_bounds(
     validation: Dict[str, bool] = {}
     for col in cols_to_check:
         if col in df.columns:
-            # Check for NaN values and negative values
             has_nan = df[col].isna().any()
             has_negative = (df[col] < 0).any()
-            validation[f"{col}_non_negative"] = not (has_nan or has_negative)
+            validation[f"{col}_no_nulls"] = not has_nan
+            validation[f"{col}_non_negative"] = not has_negative
     return validation
 
 
@@ -215,6 +215,9 @@ def safe_decimal(value: Any) -> Decimal:
         return Decimal(str(value))
     # Handle string with currency symbols and commas
     clean = str(value).translate(str.maketrans("", "", "$€£¥₽₡,"))
+    # Convert accounting-format negatives: (1234.56) → -1234.56
+    if clean.startswith("(") and clean.endswith(")"):
+        clean = "-" + clean[1:-1]
     try:
         return Decimal(clean)
     except (InvalidOperation, ValueError):
@@ -267,9 +270,15 @@ def validate_iso8601_dates(
     validation: Dict[str, bool] = {}
     for col in columns:
         if col in df.columns:
-            # Accept both string and datetime types
-            valid = all(_is_iso8601_value(val) for val in df[col])
-            validation[f"{col}_iso8601"] = valid
+            # Fast path: already a datetime column — all values are valid
+            if pd.api.types.is_datetime64_any_dtype(df[col]):
+                validation[f"{col}_iso8601"] = True
+                continue
+            # Vectorized parse: coerce failures become NaT
+            coerced = pd.to_datetime(df[col], errors="coerce")
+            orig_null_mask = df[col].isna()
+            # A value that was not originally null but coerced to NaT is an invalid date
+            validation[f"{col}_iso8601"] = not (coerced.isna() & ~orig_null_mask).any()
     return validation
 
 
