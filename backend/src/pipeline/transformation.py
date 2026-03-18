@@ -1260,12 +1260,28 @@ class TransformationPhase:
         if "status" not in df.columns:
             return
         original_values = df["status"].unique().tolist()
-        df["status"] = df["status"].map(
-            lambda x: self.STATUS_MAPPINGS.get(
-                str(x).strip().lower() if pd.notna(x) else x,
-                str(x).strip().lower() if pd.notna(x) else x,
-            )
-        )
+
+        # Use a vectorized approach that is safe for nullable string dtypes (pd.NA).
+        original_status = df["status"]
+
+        # Normalize non-missing values to stripped, lower-cased strings.
+        normalized_status = original_status.astype("string").str.strip().str.lower()
+
+        # Map normalized values to canonical labels where available.
+        mapped_status = normalized_status.map(self.STATUS_MAPPINGS)
+
+        # Construct final status:
+        # - Keep missing values as missing.
+        # - Use mapped value when available.
+        # - For unmapped, non-missing values, fall back to the normalized string.
+        mask_missing = original_status.isna()
+        mask_unmapped = (~mask_missing) & mapped_status.isna()
+
+        final_status = mapped_status.copy()
+        final_status[mask_missing] = original_status[mask_missing]
+        final_status[mask_unmapped] = normalized_status[mask_unmapped]
+
+        df["status"] = final_status
         conversions["status"] = {"normalized_values": original_values}
 
     def _apply_business_rules(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
