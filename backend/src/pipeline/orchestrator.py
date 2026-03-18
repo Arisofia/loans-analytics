@@ -134,15 +134,18 @@ class UnifiedPipeline:
             Pipeline execution results
         """
         # Calculate deterministic run_id for idempotency.
-        # Include mode in non-full executions to avoid returning cached full results
-        # for dry-run/validate requests that use the same input artifact.
+        # run_signature = hash(data_hash + config_hash + code_version + mode)
+        # so that any change in data, config, code version, or mode produces a new run.
         mode_token = mode.replace("-", "_")
         if input_path and input_path.exists():
             data_hash = self._calculate_input_hash(input_path)
-            base_run_id = f"{datetime.now().strftime('%Y%m%d')}_{data_hash[:8]}"
         else:
-            base_run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+            data_hash = "nofile"
 
+        config_hash = self._calculate_config_hash()
+        code_version = self._get_code_version()
+        run_signature = self._calculate_run_signature(data_hash, config_hash, code_version, mode_token)
+        base_run_id = f"{datetime.now().strftime('%Y%m%d')}_{run_signature[:8]}"
         run_id = base_run_id if mode == "full" else f"{base_run_id}_{mode_token}"
 
         logger.info("Starting pipeline execution (run_id: %s, mode: %s)", run_id, mode)
@@ -381,6 +384,51 @@ class UnifiedPipeline:
         except Exception as e:
             logger.warning("Failed to hash input file: %s, using timestamp", e)
             return datetime.now().strftime("%H%M%S")
+
+    def _calculate_config_hash(self) -> str:
+        """Calculate deterministic hash of the pipeline configuration.
+
+        Ensures that a config change (e.g. new business rules, KPI thresholds)
+        forces a fresh run even when the input data has not changed.
+        """
+        try:
+            config_str = json.dumps(
+                {
+                    "transformation": self.config.transformation,
+                    "calculation": self.config.calculation,
+                    "output": self.config.output,
+                },
+                sort_keys=True,
+                default=str,
+            )
+            return hashlib.sha256(config_str.encode()).hexdigest()[:16]
+        except Exception as e:
+            logger.warning("Failed to hash pipeline config: %s, using empty string", e)
+            return "00000000"
+
+    @staticmethod
+    def _get_code_version() -> str:
+        """Return the current pipeline code version."""
+        try:
+            from backend.src.pipeline import __version__  # type: ignore[attr-defined]
+            return __version__
+        except Exception:
+            return "unknown"
+
+    @staticmethod
+    def _calculate_run_signature(
+        data_hash: str, config_hash: str, code_version: str, mode: str
+    ) -> str:
+        """Compose a cryptographic run signature from all deterministic inputs.
+
+        ``run_signature = SHA256(data_hash + config_hash + code_version + mode)``
+
+        This guarantees idempotency: two pipeline invocations with identical
+        data, config, code version, and mode always produce the same run_id
+        and therefore reuse cached results.  Any single change produces a new id.
+        """
+        composite = "|".join([data_hash, config_hash, code_version, mode])
+        return hashlib.sha256(composite.encode()).hexdigest()[:16]
 
 
 def main() -> int:

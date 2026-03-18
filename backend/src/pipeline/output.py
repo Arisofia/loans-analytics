@@ -393,7 +393,19 @@ class OutputPhase:
 
     @staticmethod
     def _derive_segment_as_of_date(df: pd.DataFrame) -> Optional[str]:
-        for date_col in ("as_of_date", "snapshot_date", "fecha_actual", "origination_date"):
+        """Derive the portfolio as-of date with a strict precedence chain.
+
+        Precedence (no statistical fallbacks):
+        1. Explicit date present in the data (``as_of_date``, ``snapshot_date``, ``fecha_actual``)
+        2. Ingest timestamp embedded in the data (``ingestion_timestamp``, ``ingest_date``)
+        3. None — caller falls back to the orchestrator's execution timestamp
+
+        ``origination_date`` is deliberately excluded: it is a loan-level disbursement date,
+        not a portfolio cutoff date.  Using it as a fallback corrupts the temporal
+        semantics of the as_of_date field.
+        """
+        for date_col in ("as_of_date", "snapshot_date", "fecha_actual",
+                         "ingestion_timestamp", "ingest_date"):
             if date_col in df.columns:
                 parsed = pd.to_datetime(df[date_col], errors="coerce", format="mixed")
                 max_dt = parsed.max()
