@@ -62,9 +62,15 @@ class OutputPhase:
         time_series: Optional[Dict[str, Any]] = None,
         anomalies: Optional[list] = None,
         nsm_recurrent_tpv: Optional[Dict[str, Any]] = None,
+        clustering_metrics: Optional[Dict[str, Any]] = None,
+        transformation_metrics: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Execute output phase.
+        Execute output phase with a structured, schema-explicit export contract.
+
+        Each analytical output is persisted to a dedicated, named JSON file so
+        that downstream consumers know exactly where to find each payload and so
+        that no data is silently discarded or buried in a monolithic blob.
 
         Args:
             kpi_results: Flat KPI calculation results from Phase 3
@@ -74,6 +80,8 @@ class OutputPhase:
             time_series: Time-series rollup data produced by CalculationPhase
             anomalies: Anomaly records produced by CalculationPhase
             nsm_recurrent_tpv: NSM recurrent TPV payload produced by CalculationPhase
+            clustering_metrics: Advanced clustering results (PCA→UMAP→HDBSCAN cohorts)
+            transformation_metrics: Metrics from TransformationPhase (includes is_opaque counts)
 
         Returns:
             Output results including export paths
@@ -85,37 +93,64 @@ class OutputPhase:
 
             # Export to multiple formats
             if run_dir:
-                # Parquet export
+                # Parquet export (machine-readable bulk KPI data)
                 parquet_path = self._export_parquet(kpi_results, run_dir)
                 exports["parquet"] = str(parquet_path)
 
-                # CSV export
+                # CSV export (human-readable KPI data with Decimal precision)
                 csv_path = self._export_csv(kpi_results, run_dir)
                 exports["csv"] = str(csv_path)
 
-                # JSON export
-                json_path = self._export_json(kpi_results, run_dir)
-                exports["json"] = str(json_path)
+                # --- Structured JSON Schema (canonical output contract) ---
 
-                segment_snapshot_path = self._export_segment_snapshot(run_dir)
-                if segment_snapshot_path is not None:
-                    exports["segment_snapshot"] = str(segment_snapshot_path)
+                # kpis.json — flat KPI dictionary for dashboards and monitoring
+                kpis_path = self._export_payload_json(kpi_results, run_dir, "kpis.json")
+                exports["kpis"] = str(kpis_path)
 
-                # Export full ML intelligence payload
+                # segment_kpis.json — per-dimension segment rollups
                 if segment_kpis is not None:
                     seg_kpi_path = self._export_payload_json(
-                        segment_kpis, run_dir, "output_segment_kpis.json"
+                        segment_kpis, run_dir, "segment_kpis.json"
                     )
                     exports["segment_kpis"] = str(seg_kpi_path)
 
+                # time_series.json — daily/weekly/monthly rollups
                 if time_series is not None:
                     ts_path = self._export_payload_json(time_series, run_dir, "time_series.json")
                     exports["time_series"] = str(ts_path)
 
+                # anomalies.json — threshold-breach anomaly records
                 if anomalies is not None:
-                    anomalies_path = self._export_payload_json(anomalies, run_dir, "anomalies.json")
+                    anomalies_path = self._export_payload_json(
+                        anomalies, run_dir, "anomalies.json"
+                    )
                     exports["anomalies"] = str(anomalies_path)
 
+                # clustering_metrics.json — advanced ML clustering (PCA→UMAP→HDBSCAN)
+                clustering_payload = clustering_metrics if clustering_metrics is not None else {}
+                clustering_path = self._export_payload_json(
+                    clustering_payload, run_dir, "clustering_metrics.json"
+                )
+                exports["clustering_metrics"] = str(clustering_path)
+
+                # audit_metadata.json — run provenance and is_opaque validation counts
+                audit_metadata_payload = self._build_audit_metadata_payload(
+                    kpi_results=kpi_results,
+                    exports=exports,
+                    kpi_engine=kpi_engine,
+                    transformation_metrics=transformation_metrics,
+                )
+                audit_meta_path = self._export_payload_json(
+                    audit_metadata_payload, run_dir, "audit_metadata.json"
+                )
+                exports["audit_metadata"] = str(audit_meta_path)
+
+                # Segment-level risk snapshot (derived from clean_data.parquet)
+                segment_snapshot_path = self._export_segment_snapshot(run_dir)
+                if segment_snapshot_path is not None:
+                    exports["segment_snapshot"] = str(segment_snapshot_path)
+
+                # NSM recurrent TPV (kept for backward compatibility)
                 if nsm_recurrent_tpv is not None:
                     nsm_path = self._export_payload_json(
                         nsm_recurrent_tpv, run_dir, "nsm_recurrent_tpv_output.json"
@@ -134,7 +169,7 @@ class OutputPhase:
             # Trigger dashboard refresh
             dashboard_result = self._trigger_dashboard_refresh()
 
-            # Generate audit metadata
+            # Generate audit metadata for pipeline result summary
             audit_trail = self._generate_audit_metadata(kpi_results, exports, kpi_engine)
 
             results = {
@@ -896,6 +931,111 @@ class OutputPhase:
             return {"status": "error", "error": str(e)}
 
     def _get_failed_kpis_from_audit(self, audit_df: pd.DataFrame) -> list:
+        """
+        Extract failed KPI names from audit trail DataFrame.
+
+        Helper method to reduce code duplication and ensure consistent
+        filtering behavior across quality score and SLA checking methods.
+
+        Args:
+            audit_df: Audit trail DataFrame from KPIEngineV2
+
+        Returns:
+            List of KPI names with failed status
+
+        Raises:
+            ValueError: If audit DataFrame has unexpected structure
+        """
+        try:
+            if audit_df.empty:
+                return []
+
+            # Validate expected columns exist
+            if "status" not in audit_df.columns or "kpi_name" not in audit_df.columns:
+                logger.warning("Audit DataFrame missing required columns")
+                return []
+
+            # Filter for failed status and extract KPI names
+            failed_mask = audit_df["status"] == "failed"
+            failed_kpis = audit_df[failed_mask]["kpi_name"].tolist()
+            return failed_kpis
+
+        except Exception as e:
+            logger.error("Error extracting failed KPIs from audit trail: %s", e)
+            return []
+
+    def _build_audit_metadata_payload(
+        self,
+        kpi_results: Dict[str, Any],
+        exports: Dict[str, str],
+        kpi_engine: Optional["KPIEngineV2"] = None,
+        transformation_metrics: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Build the structured ``audit_metadata.json`` payload.
+
+        Includes:
+        - Run provenance (timestamp, export manifest)
+        - KPI calculation quality metrics
+        - Validation counts for opacity flags (``is_opaque`` / ``is_missing``)
+          so that data stewards can audit how many observations were treated as
+          epistemically uncertain during the transformation phase.
+
+        Args:
+            kpi_results: KPI calculation results
+            exports: Mapping of export type → file path
+            kpi_engine: Optional KPIEngineV2 for detailed audit info
+            transformation_metrics: Metrics dict from TransformationPhase
+
+        Returns:
+            Structured audit metadata dict suitable for JSON serialisation
+        """
+        payload: Dict[str, Any] = {
+            "timestamp": datetime.now().isoformat(),
+            "kpis_generated": len(kpi_results),
+            "exports_created": list(exports.keys()),
+            "quality_score": self._calculate_quality_score(kpi_results, kpi_engine),
+            "sla_met": self._check_sla(kpi_results, kpi_engine),
+        }
+
+        # Count is_opaque / is_missing flags from transformation phase
+        opaque_counts: Dict[str, int] = {}
+        if transformation_metrics:
+            null_handling = transformation_metrics.get("null_handling", {})
+            smart_actions = null_handling.get("smart_actions", {})
+            for col, action in smart_actions.items():
+                if "filled_structural_zero+flag" in action or "filled_missing_data+flag" in action:
+                    # Extract null count from action string e.g. "(3 nulls → col_is_missing)"
+                    try:
+                        count_str = action.split("(")[1].split(" nulls")[0]
+                        opaque_counts[f"{col}_is_missing"] = int(count_str)
+                    except (IndexError, ValueError):
+                        opaque_counts[f"{col}_is_missing"] = -1
+            canonical_risk = transformation_metrics.get("canonical_risk_state", {})
+            if canonical_risk.get("opaque_ratio_rows", 0):
+                opaque_counts["ratio_pago_real_opaque"] = int(
+                    canonical_risk.get("opaque_ratio_rows", 0)
+                )
+
+        payload["is_opaque_validation_counts"] = opaque_counts
+        payload["total_opaque_observations"] = sum(
+            v for v in opaque_counts.values() if v > 0
+        )
+
+        # Attach KPI engine audit summary if available
+        if kpi_engine is not None:
+            try:
+                audit_df = kpi_engine.get_audit_trail()
+                if not audit_df.empty:
+                    failed_kpis = self._get_failed_kpis_from_audit(audit_df)
+                    payload["kpi_engine_used"] = True
+                    payload["total_calculations"] = len(audit_df)
+                    payload["failed_calculations"] = len(failed_kpis)
+                    if failed_kpis:
+                        payload["failed_kpis"] = failed_kpis
+            except Exception as e:
+                logger.warning("Could not add KPI engine audit info: %s", e)
+
+        return payload
         """
         Extract failed KPI names from audit trail DataFrame.
 

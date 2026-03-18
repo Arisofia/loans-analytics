@@ -293,6 +293,8 @@ class UnifiedPipeline:
                         "time_series": phase3_results.get("time_series"),
                         "anomalies": phase3_results.get("anomalies"),
                         "nsm_recurrent_tpv": phase3_results.get("nsm_recurrent_tpv"),
+                        "clustering_metrics": phase3_results.get("clustering_metrics"),
+                        "transformation_metrics": phase2_results.get("transformation_metrics"),
                     },
                 )
                 results["phases"]["output"] = phase4_results
