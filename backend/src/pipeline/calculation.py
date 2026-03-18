@@ -221,6 +221,8 @@ class CalculationPhase:
             dtype = df[col].dtype
             dtype_str = str(dtype)
             is_datetime = dtype_str.startswith("datetime64")
+            # Handle: "object" (pandas ≤2.x default), "str" (pandas 3.0 default StringDtype),
+            # "string" / "string[pyarrow]" (explicit pd.StringDtype variants).
             is_string = dtype_str in ("object", "str") or dtype_str.startswith("string")
             if not is_datetime and not is_string:
                 continue

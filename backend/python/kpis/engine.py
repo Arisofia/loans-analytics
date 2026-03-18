@@ -25,6 +25,11 @@ logger = get_logger(__name__)
 # Log message format constants
 _LOG_KPI_CALCULATED = "Calculated %s: %s"
 
+# Loan statuses considered non-performing for NPL calculations.
+# Used in both the broad (DPD≥30) and strict (DPD≥90) NPL definitions.
+_NPL_BROAD_STATUSES: tuple[str, ...] = ("delinquent", "defaulted")
+_NPL_STRICT_STATUSES: tuple[str, ...] = ("defaulted",)
+
 
 class KPIEngineV2:
     """
@@ -381,19 +386,19 @@ class KPIEngineV2:
             }
 
         # npl_90_ratio: strict NPL (DPD >= 90 or defaulted) — standard 90-day threshold
-        npl_mask = (active_df["dpd"] >= 90) | (active_df["status"] == "defaulted")
+        npl_mask = (active_df["dpd"] >= 90) | (active_df["status"].isin(_NPL_STRICT_STATUSES))
         npl_out = Decimal(str(active_df.loc[npl_mask, balance_col].sum()))
         npl_90_ratio = (npl_out / total_out) * 100
 
         # npl_ratio: broad NPL (DPD >= 30 or delinquent/defaulted) — early-warning threshold
         broad_npl_mask = (active_df["dpd"] >= 30) | (
-            active_df["status"].isin(["delinquent", "defaulted"])
+            active_df["status"].isin(_NPL_BROAD_STATUSES)
         )
         broad_npl_out = Decimal(str(active_df.loc[broad_npl_mask, balance_col].sum()))
         npl_ratio = (broad_npl_out / total_out) * 100
 
         defaulted_out = Decimal(
-            str(active_df.loc[active_df["status"] == "defaulted", balance_col].sum())
+            str(active_df.loc[active_df["status"].isin(_NPL_STRICT_STATUSES), balance_col].sum())
         )
 
         kpis: Dict[str, Decimal] = {

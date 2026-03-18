@@ -38,6 +38,12 @@ logger = logging.getLogger(__name__)
 
 _DateLike = Union[str, pd.Timestamp]
 
+# Floating-point tolerance for payment shortfall detection.
+# A loan is considered to have an unpaid installment when
+# cum_sched > cum_paid + _PAYMENT_TOLERANCE, preventing false positives
+# from floating-point rounding in payment amounts.
+_PAYMENT_TOLERANCE: float = 1e-6
+
 # DPD → mora bucket mapping
 _DPD_BUCKETS: list[tuple[int, int, str]] = [
     (0, 0, "current"),
@@ -201,7 +207,7 @@ class DPDCalculator:
         cum_paid = float(pays[pay_principal_col].sum())
 
         # Find the earliest unpaid installment
-        unpaid = sched[sched["cum_sched"] > cum_paid + 1e-6]
+        unpaid = sched[sched["cum_sched"] > cum_paid + _PAYMENT_TOLERANCE]
         if unpaid.empty:
             return 0  # Fully paid up
 
@@ -318,7 +324,7 @@ class DPDCalculator:
             sched_sorted = sched_sorted.join(total_paid, on=loan_id_col, how="left")
             sched_sorted["_total_paid"] = sched_sorted["_total_paid"].fillna(0.0)
 
-            unpaid_mask = sched_sorted["_cum_sched"] > sched_sorted["_total_paid"] + 1e-6
+            unpaid_mask = sched_sorted["_cum_sched"] > sched_sorted["_total_paid"] + _PAYMENT_TOLERANCE
             first_unpaid_date = (
                 sched_sorted[unpaid_mask]
                 .groupby(loan_id_col)[sched_date_col]
