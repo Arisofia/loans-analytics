@@ -2394,15 +2394,27 @@ def _fetch_nsm_data(api_url: str) -> dict | None:
     # prevent SSRF regardless of where this function is called from.
     parsed = urlparse(api_url)
     base_url = f"{parsed.scheme}://{parsed.netloc}" if parsed.netloc else ""
+    # Construct a logging-safe base URL that never includes user-info.
+    if parsed.hostname:
+        host_port = parsed.hostname
+        if parsed.port:
+            host_port = f"{host_port}:{parsed.port}"
+        log_base_url = f"{parsed.scheme}://{host_port}"
+    else:
+        log_base_url = "<unknown>"
+
     if sanitize_api_base(base_url) is None:
-        logger.warning("Blocked NSM fetch: invalid or unsafe URL base: %s", base_url)
+        logger.warning(
+            "Blocked NSM fetch: invalid or unsafe URL base: %s",
+            log_base_url,
+        )
         return None
     try:
         resp = requests.get(api_url, timeout=5)
         resp.raise_for_status()
         return resp.json()
     except Exception as exc:
-        logger.warning("NSM API call failed (%s): %s", api_url, exc)
+        logger.warning("NSM API call failed for base %s: %s", log_base_url, exc)
         return None
 
 
