@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 import pandas as pd
 
 from backend.python.validation import safe_numeric
@@ -14,9 +16,9 @@ def _validate_series(series: pd.Series, label: str) -> None:
         raise ValueError(f"{label} contains negative values")
 
 
-def calculate_par_90(df: pd.DataFrame | None) -> float:
+def calculate_par_90(df: pd.DataFrame | None) -> Decimal:
     if df is None or df.shape[0] == 0:
-        return 0.0
+        return Decimal("0.00")
 
     missing = [col for col in _REQUIRED_COLUMNS if col not in df.columns]
     if missing:
@@ -30,7 +32,7 @@ def calculate_par_90(df: pd.DataFrame | None) -> float:
 
     total_receivable_sum = total_receivable.sum()
     if total_receivable_sum == 0:
-        return 0.0
+        return Decimal("0.00")
 
     par_90 = dpd_90_plus.sum() / total_receivable_sum * 100.0
-    return round(float(par_90), 2)
+    return Decimal(str(par_90)).quantize(Decimal("0.01"))

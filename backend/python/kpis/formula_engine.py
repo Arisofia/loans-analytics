@@ -28,27 +28,13 @@ class KPIFormulaEngine:
 
     def calculate(self, formula: str) -> Decimal:
         """Parse and execute a KPI formula."""
-        try:
-            formula = formula.strip()
+        formula = formula.strip()
 
-            if self._is_comparison_formula(formula):
-                return self._execute_comparison_formula(formula)
-            if self._is_arithmetic_formula(formula):
-                return self._execute_arithmetic_formula(formula)
-            return self._execute_simple_formula(formula)
-        except Exception as e:
-            # Structured logging with full context
-            logger.warning(
-                "Formula execution failed",
-                extra={
-                    "formula": formula,
-                    "error": str(e),
-                    "error_type": type(e).__name__,
-                    "dataframe_shape": self.df.shape,
-                    "available_columns": list(self.df.columns),
-                },
-            )
-            return Decimal("0.0")
+        if self._is_comparison_formula(formula):
+            return self._execute_comparison_formula(formula)
+        if self._is_arithmetic_formula(formula):
+            return self._execute_arithmetic_formula(formula)
+        return self._execute_simple_formula(formula)
 
     def _is_comparison_formula(self, formula: str) -> bool:
         """Check if formula compares two periods."""
@@ -102,7 +88,9 @@ class KPIFormulaEngine:
         if isinstance(operator, ast.Mult):
             return left * right
         if isinstance(operator, ast.Div):
-            return Decimal("0.0") if right == 0 else left / right
+            if right == 0:
+                raise ZeroDivisionError("Division by zero in KPI formula")
+            return left / right
         raise ValueError(f"Unsupported binary operator: {type(operator).__name__}")
 
     @staticmethod

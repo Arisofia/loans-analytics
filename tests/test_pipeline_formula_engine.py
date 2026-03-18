@@ -25,8 +25,8 @@ def test_comparison_formula_uses_latest_and_previous_month_balances():
     assert result == pytest.approx(20.0)
 
 
-def test_comparison_formula_returns_zero_when_previous_month_is_zero():
-    """Division-by-zero in period comparisons should fail closed to 0.0."""
+def test_comparison_formula_raises_when_previous_month_is_zero():
+    """Division-by-zero in period comparisons must fail fast, not silently return 0.0."""
     df = pd.DataFrame(
         {
             "measurement_date": ["2025-02-01", "2025-02-15"],
@@ -36,10 +36,8 @@ def test_comparison_formula_returns_zero_when_previous_month_is_zero():
     formula = "(current_month_balance - previous_month_balance) / previous_month_balance * 100"
     engine = KPIEngineV2(kpi_definitions={"portfolio_kpis": {"growth": {"formula": formula}}})
 
-    results = engine.calculate(df)
-    result = results.get("growth")
-
-    assert result == 0.0
+    with pytest.raises(ValueError, match="Dynamic KPI growth calculation failed"):
+        engine.calculate(df)
 
 
 def test_comparison_formula_ignores_origination_dates_without_opt_in(monkeypatch):
@@ -54,10 +52,8 @@ def test_comparison_formula_ignores_origination_dates_without_opt_in(monkeypatch
     formula = "(current_month_balance - previous_month_balance) / previous_month_balance * 100"
     engine = KPIEngineV2(kpi_definitions={"portfolio_kpis": {"growth": {"formula": formula}}})
 
-    results = engine.calculate(df)
-    result = results.get("growth")
-
-    assert result == 0.0
+    with pytest.raises(ValueError, match="Dynamic KPI growth calculation failed"):
+        engine.calculate(df)
 
 
 def test_ingestion_without_input_fails_instead_of_using_dummy_data():

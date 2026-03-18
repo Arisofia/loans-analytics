@@ -157,7 +157,7 @@ jobs:
         run: |
           # Dynamically discover Python source directories
           SCAN_DIRS=()
-          for dir in python src app lib scripts; do
+          for dir in backend/python backend/src frontend scripts; do
             if [ -d "$dir" ]; then
               SCAN_DIRS+=("$dir")
             fi
@@ -165,10 +165,9 @@ jobs:
 
           if [ "${#SCAN_DIRS[@]}" -gt 0 ]; then
             echo "Scanning directories: ${SCAN_DIRS[*]}"
-            bandit -r "${SCAN_DIRS[@]}" -f json -o bandit-report.json \
-              || echo "Bandit JSON scan encountered issues"
+            bandit -r "${SCAN_DIRS[@]}" -f json -o bandit-report.json
             bandit -r "${SCAN_DIRS[@]}" -f sarif -o bandit-results.sarif \
-              --severity-level medium || echo "Bandit SARIF scan encountered issues"
+              --severity-level medium
           else
             echo "⚠️  No Python source directories found to scan"
             # Create empty placeholder files

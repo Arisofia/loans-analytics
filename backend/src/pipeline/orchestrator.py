@@ -414,8 +414,8 @@ class UnifiedPipeline:
             )
             return hashlib.sha256(config_str.encode()).hexdigest()[:16]
         except Exception as e:
-            logger.warning("Failed to hash pipeline config: %s, using empty string", e)
-            return "00000000"
+            logger.error("Failed to hash pipeline config", exc_info=True)
+            raise RuntimeError("Unable to hash pipeline configuration deterministically") from e
 
     @staticmethod
     def _get_code_version() -> str:
@@ -425,7 +425,25 @@ class UnifiedPipeline:
 
             return __version__
         except Exception:
-            return "unknown"
+            pass
+
+        try:
+            import tomllib
+
+            repo_root = Path(__file__).resolve().parents[3]
+            pyproject_path = repo_root / "pyproject.toml"
+            with open(pyproject_path, "rb") as pyproject_file:
+                pyproject = tomllib.load(pyproject_file)
+            version = pyproject.get("project", {}).get("version")
+            if isinstance(version, str) and version.strip():
+                return version.strip()
+        except Exception:
+            pass
+
+        raise RuntimeError(
+            "Unable to resolve pipeline code version from backend.src.pipeline.__version__ "
+            "or pyproject.toml"
+        )
 
     @staticmethod
     def _calculate_run_signature(
