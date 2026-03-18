@@ -6,8 +6,7 @@ tools:
   - read
   - edit
   - search
-  - grep
-user-invokable: true
+user-invocable: true
 ---
 
 # Code Optimizer Agent

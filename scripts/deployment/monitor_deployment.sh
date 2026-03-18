@@ -10,11 +10,11 @@
 # 4. Basic functionality tests
 #
 # Usage:
-#   ./scripts/deployment/monitor_deployment.sh [URL] [DURATION_HOURS]
+#   ABACO_APP_URL=https://your-real-app-url ./scripts/deployment/monitor_deployment.sh [URL] [DURATION_HOURS]
 #
 # Examples:
-#   ./scripts/deployment/monitor_deployment.sh https://abaco-analytics-dashboard.azurewebsites.net 1
-#   ./scripts/deployment/monitor_deployment.sh https://abaco-analytics-dashboard.azurewebsites.net 24
+#   ABACO_APP_URL=https://your-real-app-url ./scripts/deployment/monitor_deployment.sh  1
+#   ./scripts/deployment/monitor_deployment.sh https://your-real-app-url 24
 #
 # Requirements:
 #   - curl
@@ -31,10 +31,15 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Default parameters
-APP_URL="${1:-https://abaco-analytics-dashboard.azurewebsites.net}"
+APP_URL="${1:-${ABACO_APP_URL:-}}"
 MONITOR_HOURS="${2:-1}"
 HEALTH_PATH="/?page=health"
 CHECK_INTERVAL=60 # seconds
+
+if [[ -z "$APP_URL" ]]; then
+	echo -e "${RED}❌ Missing app URL. Pass URL as first arg or set ABACO_APP_URL.${NC}"
+	exit 1
+fi
 
 # Parse URL
 if [[ ! $APP_URL =~ ^https?:// ]]; then
@@ -148,10 +153,10 @@ fi
 echo ""
 echo "Recommendations:"
 if [[ $TIMEOUTS -gt 0 ]]; then
-	echo "  - Timeout detected: Check App Service CPU/memory in Azure Portal"
+	echo "  - Timeout detected: Check service CPU/memory and provider metrics dashboard"
 fi
 if [[ $ERROR_RESPONSES -gt 0 ]]; then
-	echo "  - Error responses detected: Review App Service logs for details"
+	echo "  - Error responses detected: Review service logs in your current provider"
 fi
 if [[ ${MAX_LATENCY:-0} -gt 5000 ]]; then
 	echo "  - High latency detected: Check database connections and network"

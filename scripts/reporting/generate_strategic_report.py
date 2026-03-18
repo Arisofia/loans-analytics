@@ -35,8 +35,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--streamlit-prod",
-        default="https://abaco-analytics-dashboard.azurewebsites.net",
-        help="Deployed Streamlit dashboard URL.",
+        default="",
+        help="Deployed Streamlit dashboard URL (set explicitly for production reports).",
     )
     parser.add_argument(
         "--dashboard-docs",

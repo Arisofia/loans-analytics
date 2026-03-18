@@ -6,14 +6,7 @@ tools:
   - read
   - edit
   - search
-  - grep
-  - bash
-user-invokable: true
-metadata:
-  team: Quality Assurance
-  domain: Testing & Quality
-  version: 2.0.0
-  last_updated: 2026-01-31
+user-invocable: true
 ---
 
 # TestCraftPro - QA Engineer Agent

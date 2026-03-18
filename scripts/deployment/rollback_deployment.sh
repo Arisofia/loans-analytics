@@ -37,8 +37,14 @@ NC='\033[0m'
 COMMITS_BACK="${1:-1}"
 REPO_OWNER="Arisofia"
 REPO_NAME="abaco-loans-analytics"
-APP_URL="https://abaco-analytics-dashboard.azurewebsites.net"
+APP_URL="${ABACO_APP_URL:-}"
 HEALTH_PATH="/?page=health"
+
+if [[ -z "$APP_URL" ]]; then
+	echo -e "${RED}❌ Missing ABACO_APP_URL for post-rollback health checks.${NC}"
+	echo "Set ABACO_APP_URL to your real free-tier URL (Render/Fly/Railway)."
+	exit 1
+fi
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}Deployment Rollback Utility${NC}"
@@ -112,7 +118,7 @@ if command -v gh &>/dev/null; then
 	echo "Monitor at: https://github.com/$REPO_OWNER/$REPO_NAME/actions/workflows/deploy_dashboard.yml"
 else
 	echo -e "${YELLOW}⚠️  GitHub CLI not found. Manually trigger deployment:${NC}"
-	echo "GitHub → Actions → Deploy Abaco Analytics Dashboard to Azure Web App → Run workflow"
+	echo "GitHub -> Actions -> Deploy (Zero-Cost Free Tier) -> Run workflow"
 fi
 
 echo ""
@@ -141,7 +147,7 @@ echo -e "${BLUE}========================================${NC}\n"
 echo "Next steps:"
 echo "  1. Monitor deployment at: https://github.com/$REPO_OWNER/$REPO_NAME/actions"
 echo "  2. Check app health at: $APP_URL"
-echo "  3. Review logs in Azure Portal for any issues"
+echo "  3. Review logs in the active provider dashboard for any issues"
 echo "  4. Once verified stable, investigate the cause of the failed deployment"
 echo ""
 

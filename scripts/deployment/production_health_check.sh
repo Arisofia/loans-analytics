@@ -1,7 +1,7 @@
 #!/bin/bash
 # Production Health Check Script
-# Usage: ./scripts/deployment/production_health_check.sh [app-service-url]
-# Example: ./scripts/deployment/production_health_check.sh https://abaco-loans-prod.azurewebsites.net
+# Usage: ABACO_APP_URL=https://your-real-app-url ./scripts/deployment/production_health_check.sh [app-service-url]
+# Example: ./scripts/deployment/production_health_check.sh https://your-real-app-url
 
 set -e
 
@@ -13,9 +13,14 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-APP_URL="${1:-https://abaco-loans-prod.azurewebsites.net}"
+APP_URL="${1:-${ABACO_APP_URL:-}}"
 HEALTH_ENDPOINT="/health"
 TIMEOUT=10
+
+if [ -z "$APP_URL" ]; then
+	echo "Missing app URL. Pass it as first argument or set ABACO_APP_URL."
+	exit 1
+fi
 HEALTH_RETRIES="${HEALTH_RETRIES:-20}"
 HEALTH_RETRY_DELAY="${HEALTH_RETRY_DELAY:-3}"
 PYTHON_BIN="${PYTHON_BIN:-}"

@@ -35,8 +35,8 @@ SUPABASE_DB_NAME=postgres
 SUPABASE_DB_USER=postgres.sddviizcgheusvwqpthm
 SUPABASE_DB_PASSWORD=your-postgres-password-here
 
-# Azure Credentials (optional)
-AZURE_SUBSCRIPTION_ID=your-azure-subscription-id
+# Provider-specific cloud credentials (optional)
+# Leave blank for free-tier local monitoring setup.
 EOF
     echo -e "${GREEN}✅ Created $MONITORING_ENV${NC}"
     echo -e "${YELLOW}⚠️  Please update the Supabase keys in $MONITORING_ENV${NC}"

@@ -6,15 +6,7 @@ tools:
   - read
   - edit
   - search
-  - grep
-  - bash
-  - web_search
-user-invokable: true
-metadata:
-  team: Architecture
-  domain: Distributed Systems
-  version: 1.0.0
-  last_updated: 2026-01-31
+user-invocable: true
 ---
 
 # Microservice Designer Agent (MicroArchitect)

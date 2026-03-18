@@ -129,19 +129,24 @@ jobs:
       github.event.inputs.target == 'render' ||
       github.event.inputs.target == 'all' ||
       github.event_name == 'push'
+    env:
+      ALL_SECRETS_JSON: ${{ toJson(secrets) }}
     steps:
       - name: Trigger Render deploy hook
         run: |
+          RENDER_API_KEY="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r '.RENDER_API_KEY // ""')"
+          RENDER_SERVICE_ID="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r '.RENDER_SERVICE_ID // ""')"
+
           # If Render secrets are not configured, skip this step gracefully.
-          if [ -z "${{ secrets.RENDER_API_KEY }}" ] || [ -z "${{ secrets.RENDER_SERVICE_ID }}" ]; then
+          if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
             echo "ℹ️ Render secrets not configured (RENDER_API_KEY / RENDER_SERVICE_ID); skipping Render deployment."
             exit 0
           fi
 
           # Call Render deploy API and capture the response instead of failing on jq errors.
           response="$(curl -sS -X POST \
-            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{"clearCache": false}' || true)"
 
@@ -175,8 +180,14 @@ jobs:
 
       - name: Deploy to Railway
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          ALL_SECRETS_JSON: ${{ toJson(secrets) }}
         run: |
+          RAILWAY_TOKEN="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r '.RAILWAY_TOKEN // ""')"
+
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "ℹ️ Railway secret not configured (RAILWAY_TOKEN); skipping Railway deployment."
+            exit 0
+          fi
           railway up --service "${{ github.event.inputs.service || 'api' }}" \
                      --detach
 
@@ -200,8 +211,15 @@ jobs:
 
       - name: Deploy to Fly.io
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: flyctl deploy --remote-only
+          ALL_SECRETS_JSON: ${{ toJson(secrets) }}
+        run: |
+          FLY_API_TOKEN="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r '.FLY_API_TOKEN // ""')"
+
+          if [ -z "$FLY_API_TOKEN" ]; then
+            echo "ℹ️ Fly secret not configured (FLY_API_TOKEN); skipping Fly.io deployment."
+            exit 0
+          fi
+          flyctl deploy --remote-only
 
   # ---------------------------------------------------------------------------
   # 5. Deployment summary

@@ -145,7 +145,6 @@ services:
       - SUPABASE_DB_NAME=${SUPABASE_DB_NAME:-postgres}
       - SUPABASE_DB_USER=${SUPABASE_DB_USER:-}
       - SUPABASE_DB_PASSWORD=${SUPABASE_DB_PASSWORD:-}
-      - AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID:-}
     depends_on:
       - prometheus
     restart: unless-stopped

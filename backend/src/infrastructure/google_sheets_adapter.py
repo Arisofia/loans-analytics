@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 
 try:
     import gspread  # type: ignore[import-not-found]
-    from google.oauth2.service_account import Credentials as ServiceAccountCredentials  # type: ignore[import-not-found]
+    from google.oauth2.service_account import Credentials as ServiceAccountCredentials  # type: ignore[import-not-found]  # pyright: ignore[reportMissingImports]
 except ImportError:  # pragma: no cover
     gspread = None  # type: ignore[assignment]
     ServiceAccountCredentials = None  # type: ignore[assignment]
