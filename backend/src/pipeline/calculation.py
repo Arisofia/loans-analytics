@@ -1,11 +1,15 @@
 import logging
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
 from backend.python.kpis.engine import KPIEngineV2
+from backend.python.kpis.formula_engine import KPIFormulaEngine  # re-exported as SSOT
+
+__all__ = ["CalculationPhase", "KPIFormulaEngine"]
 
 logger = logging.getLogger(__name__)
 
@@ -409,3 +413,103 @@ class CalculationPhase:
                 "calculation_engine": "kpi_engine_v2",
             },
         }
+
+    # ------------------------------------------------------------------
+    # Risk metric helpers (Fail-Fast / Single Source of Truth)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
+        """Compute Synthetic Factoring LTV per loan.
+
+        LTV Sintético = capital_desembolsado / (valor_nominal_factura * (1 - tasa_dilucion))
+
+        Returns an empty Series when required columns are absent or the DataFrame
+        is empty.  Division-by-zero (fully diluted invoices) yields 0.0.
+        """
+        required = {"capital_desembolsado", "valor_nominal_factura", "tasa_dilucion"}
+        if not required.issubset(df.columns) or df.empty:
+            return pd.Series(dtype=float)
+
+        capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce").fillna(0.0)
+        nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce").fillna(0.0)
+        dilution = pd.to_numeric(df["tasa_dilucion"], errors="coerce").fillna(0.0)
+
+        adjusted = nominal * (1.0 - dilution)
+        # Replace 0 denominators with NaN so division yields NaN, then fill with 0.0
+        ltv = (capital / adjusted.replace(0.0, np.nan)).fillna(0.0)
+        return ltv
+
+    @staticmethod
+    def _calculate_velocity_of_default(
+        df_ts: pd.DataFrame, default_rate_col: str = "default_rate"
+    ) -> pd.Series:
+        """Compute period-over-period first derivative of the default rate.
+
+        Returns an empty Series when *default_rate_col* is absent.  With a
+        single row the result contains one NaN (no prior period to diff against).
+        """
+        if default_rate_col not in df_ts.columns:
+            return pd.Series(dtype=float)
+
+        rate = pd.to_numeric(df_ts[default_rate_col], errors="coerce")
+        return rate.diff()
+
+    def _compute_portfolio_velocity_of_default(
+        self, df: pd.DataFrame
+    ) -> Optional[Decimal]:
+        """Compute portfolio-level Velocity of Default from the canonical date column.
+
+        Uses the ``as_of_date`` column (or other recognised date columns) and
+        excludes ``closed`` loans from the denominator to avoid dilution.
+
+        Returns:
+            Decimal Vd value (latest period default-rate minus prior period), or
+            ``None`` when no recognised date column exists or fewer than two
+            distinct month-periods are present.
+        """
+        _date_candidates = [
+            "as_of_date",
+            "measurement_date",
+            "snapshot_date",
+            "reporting_date",
+        ]
+        date_col = next((c for c in _date_candidates if c in df.columns), None)
+        if date_col is None:
+            return None
+
+        working = df.copy()
+        working[date_col] = pd.to_datetime(working[date_col], errors="coerce")
+        working = working.dropna(subset=[date_col])
+
+        # Exclude closed loans from the active portfolio denominator
+        if "status" in working.columns:
+            working = working[working["status"] != "closed"]
+
+        if working.empty:
+            return None
+
+        working["_period"] = working[date_col].dt.to_period("M")
+        periods = sorted(working["_period"].unique())
+        if len(periods) < 2:
+            return None
+
+        # Vectorised default-rate aggregation per period
+        if "status" in working.columns:
+            working["_is_defaulted"] = (working["status"] == "defaulted").astype(int)
+        else:
+            working["_is_defaulted"] = 0
+
+        period_agg = working.groupby("_period").agg(
+            _total=("_is_defaulted", "count"),
+            _defaulted=("_is_defaulted", "sum"),
+        )
+        rates = (period_agg["_defaulted"] / period_agg["_total"].replace(0, np.nan)).fillna(
+            0.0
+        ) * 100.0
+
+        vd_series = rates.diff()
+
+        # Return the most recent velocity value using Decimal arithmetic for precision
+        latest_vd = vd_series.iloc[-1]
+        return Decimal(latest_vd).quantize(Decimal("0.000001"))

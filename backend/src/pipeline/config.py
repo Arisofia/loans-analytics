@@ -35,7 +35,7 @@ class PipelineConfig:
             PipelineConfig instance
         """
         if config_path is None:
-            config_path = Path(__file__).parent.parent.parent / "config" / "pipeline.yml"
+            config_path = Path(__file__).parent.parent.parent.parent / "config" / "pipeline.yml"
 
         if not config_path.exists():
             raise FileNotFoundError(
@@ -67,7 +67,7 @@ def load_business_rules(rules_path: Optional[Path] = None) -> Dict[str, Any]:
         Dictionary of business rules
     """
     if rules_path is None:
-        rules_path = Path(__file__).parent.parent.parent / "config" / "business_rules.yaml"
+        rules_path = Path(__file__).parent.parent.parent.parent / "config" / "business_rules.yaml"
 
     if not rules_path.exists():
         raise FileNotFoundError(
@@ -93,7 +93,7 @@ def load_kpi_definitions(kpi_path: Optional[Path] = None) -> Dict[str, Any]:
         Dictionary of KPI definitions
     """
     if kpi_path is None:
-        kpi_path = Path(__file__).parent.parent.parent / "config" / "kpis" / "kpi_definitions.yaml"
+        kpi_path = Path(__file__).parent.parent.parent.parent / "config" / "kpis" / "kpi_definitions.yaml"
 
     if not kpi_path.exists():
         raise FileNotFoundError(

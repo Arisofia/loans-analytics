@@ -36,8 +36,9 @@ def test_pipeline_config_load_valid(tmp_path):
 
 
 def test_load_business_rules_not_found():
-    """Test loading non-existent business rules returns empty dict."""
-    assert load_business_rules(Path("non_existent_rules.yaml")) == {}
+    """Test loading non-existent business rules raises FileNotFoundError (fail-fast doctrine)."""
+    with pytest.raises(FileNotFoundError):
+        load_business_rules(Path("non_existent_rules.yaml"))
 
 
 def test_load_business_rules_valid(tmp_path):
@@ -52,8 +53,9 @@ def test_load_business_rules_valid(tmp_path):
 
 
 def test_load_kpi_definitions_not_found():
-    """Test loading non-existent KPI definitions returns empty dict."""
-    assert load_kpi_definitions(Path("non_existent_kpis.yaml")) == {}
+    """Test loading non-existent KPI definitions raises FileNotFoundError (fail-fast doctrine)."""
+    with pytest.raises(FileNotFoundError):
+        load_kpi_definitions(Path("non_existent_kpis.yaml"))
 
 
 def test_load_kpi_definitions_valid(tmp_path):

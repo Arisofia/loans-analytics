@@ -58,13 +58,11 @@ def test_comparison_formula_ignores_origination_dates_without_opt_in(monkeypatch
 
 
 def test_ingestion_without_input_fails_instead_of_using_dummy_data():
-    """Ingestion must not fallback to sample/dummy rows when input is missing."""
+    """Ingestion must not fallback to sample/dummy rows when input is missing (fail-fast doctrine)."""
     phase = IngestionPhase(config={})
 
-    result = phase.execute(input_path=None, run_dir=None)
-
-    assert result["status"] == "failed"
-    assert "dummy/sample fallback is disabled" in result["error"]
+    with pytest.raises(RuntimeError, match="dummy/sample fallback is disabled"):
+        phase.execute(input_path=None, run_dir=None)
 
 
 def test_dpd_bucket_formulas_support_range_logic_via_aggregation_deltas():
