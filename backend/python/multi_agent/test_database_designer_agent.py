@@ -17,7 +17,9 @@ class TestDatabaseDesignerAgent(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
-        self._init_client_patcher = patch("backend.python.multi_agent.base_agent.BaseAgent._init_client")
+        self._init_client_patcher = patch(
+            "backend.python.multi_agent.base_agent.BaseAgent._init_client"
+        )
         mock_init_client = self._init_client_patcher.start()
         mock_init_client.return_value = Mock()
         self.agent = DatabaseDesignerAgent(role=AgentRole.DATABASE_DESIGNER)

@@ -15,7 +15,7 @@ Single execution checklist to complete end-to-end delivery without stopping ever
 - [x] `git status --short`
 - [x] `git rev-parse --short HEAD`
 - [x] `python scripts/maintenance/validate_structure.py`
-- [x] Confirm working dataset exists: `data/raw/abaco_real_data_20260202.csv`
+- [x] Confirm working dataset exists: `data/samples/abaco_sample_data_20260202.csv`
 
 Exit criteria:
 - [x] Repository structure validation = 100%
@@ -58,11 +58,11 @@ Current notes:
 ## Phase 3 - Real Data Pipeline Validation (All Modes)
 
 - [x] Dry-run ingestion:
-- [x] `python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv --mode dry-run`
+- [x] `python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --mode dry-run`
 - [x] Validate mode:
-- [x] `python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv --mode validate`
+- [x] `python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --mode validate`
 - [x] Full mode:
-- [x] `python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv --mode full`
+- [x] `python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --mode full`
 - [x] Confirm artifacts exist under `logs/runs/<run_id>/`
 
 Calculation integrity:
@@ -163,7 +163,7 @@ Delivery report snapshot (2026-02-27):
   - Tests: `pytest tests/ -m "not integration"`, `pytest python/multi_agent/ -k "test_"`,
     and targeted advanced-risk suites.
   - Pipeline (real data): dry-run, validate, full modes over
-    `data/raw/abaco_real_data_20260202.csv`.
+    `data/samples/abaco_sample_data_20260202.csv`.
   - Security checks: `npm audit`, `safety`, `bandit`.
 - Real-data verification proof:
   - Full pipeline run ID: `20260227_1c0def53`.
@@ -190,7 +190,7 @@ ruff check .
 black --check .
 pytest tests/ -v --tb=short -m "not integration"
 pytest python/multi_agent/ -v -k "test_" --tb=short
-python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv --mode dry-run
-python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv --mode validate
-python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv --mode full
+python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --mode dry-run
+python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --mode validate
+python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --mode full
 ```

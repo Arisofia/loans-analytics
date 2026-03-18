@@ -115,7 +115,7 @@ ON CONFLICT (name) DO NOTHING;
             print(sql)
             print("\nThen run this command again to populate data:")
             print(
-                "\n  python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv\n"
+                "\n  python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv\n"
             )
             return 1
 
@@ -144,7 +144,7 @@ ON CONFLICT (name) DO NOTHING;
             print("❌ No KPI values found\n")
             print("Run the pipeline to populate data:")
             print(
-                "\n  python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv\n"
+                "\n  python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv\n"
             )
             return 1
 

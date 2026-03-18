@@ -45,7 +45,7 @@ def backend_base_url() -> str:
 
 @pytest.fixture(scope="session")
 def csv_path() -> Path:
-    path = Path(os.getenv("CSV_PATH", "data/raw/abaco_real_data_20260202.csv")).resolve()
+    path = Path(os.getenv("CSV_PATH", "data/samples/abaco_sample_data_20260202.csv")).resolve()
     if not path.exists():
         pytest.skip(f"CSV file not found for E2E flow: {path}")
     return path

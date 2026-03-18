@@ -3,7 +3,7 @@
 
 Usage:
   python3 scripts/ml/train_default_risk_model.py
-  python3 scripts/ml/train_default_risk_model.py --input data/raw/abaco_real_data_20260202.csv
+    python3 scripts/ml/train_default_risk_model.py --input data/samples/abaco_sample_data_20260202.csv
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input",
         type=Path,
-        default=Path("data/raw/abaco_real_data_20260202.csv"),
+        default=Path("data/samples/abaco_sample_data_20260202.csv"),
         help="CSV with training rows and status/current_status column",
     )
     parser.add_argument(

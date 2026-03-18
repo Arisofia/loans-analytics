@@ -28,7 +28,7 @@ x-common-env: &common-env
   DUCKDB_PATH: /app/data/duckdb/analytics.duckdb
   PARQUET_BASE_DIR: /app/data/duckdb
   # Pipeline
-  PIPELINE_INPUT: /app/data/raw/abaco_real_data_20260202.csv
+  PIPELINE_INPUT: /app/data/samples/abaco_sample_data_20260202.csv
   PIPELINE_MODE: full
   # Observability
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
@@ -104,7 +104,7 @@ services:
       <<: *common-env
     command: >
       python scripts/data/run_data_pipeline.py
-        --input ${PIPELINE_INPUT:-data/raw/abaco_real_data_20260202.csv}
+        --input ${PIPELINE_INPUT:-data/samples/abaco_sample_data_20260202.csv}
         --mode  ${PIPELINE_MODE:-full}
         --verbose
     profiles:

@@ -129,7 +129,7 @@ if [ "$kpi_vals" = "0" ] || [ -z "$kpi_vals" ]; then
     echo -e "${RED}❌ monitoring.kpi_values is empty${NC}"
     echo ""
     echo "   Run the data pipeline to populate:"
-    echo "   python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv"
+    echo "   python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv"
     echo ""
 else
     echo -e "${GREEN}✅ monitoring.kpi_values has ${kpi_vals} records${NC}"

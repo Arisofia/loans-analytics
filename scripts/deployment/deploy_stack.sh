@@ -41,7 +41,7 @@ echo -e "${GREEN}✅ Docker and Docker Compose are ready (${DOCKER_COMPOSE_CMD[*
 echo ""
 
 # Check if canonical input data exists
-CANONICAL_INPUT="data/raw/abaco_real_data_20260202.csv"
+CANONICAL_INPUT="data/samples/abaco_sample_data_20260202.csv"
 if [ ! -f "$CANONICAL_INPUT" ]; then
 	echo -e "${YELLOW}⚠️  Canonical input dataset not found: $CANONICAL_INPUT${NC}"
 	echo -e "${YELLOW}   Prepare data inputs before deploying the stack.${NC}"

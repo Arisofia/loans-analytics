@@ -160,7 +160,7 @@ After verifying the sample data works, populate with your real KPI data:
 
 ```bash
 source .venv/bin/activate
-python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
 ```
 
 This will:
@@ -205,7 +205,7 @@ Both should show `19` after running the SQL queries.
 ### Q: How to populate with real data?
 **A:** 
 ```bash
-python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
 ```
 
 ### Q: Port 8501 (Streamlit) not accessible
@@ -246,7 +246,7 @@ streamlit run streamlit_app.py
 2. **Paste into:** https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/sql
 3. **Run each query** (Query 1 → 6 in order)
 4. **Verify in Grafana:** http://localhost:3001
-5. **Run pipeline:** `python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv`
+5. **Run pipeline:** `python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv`
 
 **You're almost there!** 🎉
 

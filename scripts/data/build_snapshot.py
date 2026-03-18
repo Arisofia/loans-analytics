@@ -32,7 +32,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build monthly snapshot into DuckDB star schema")
     parser.add_argument(
         "--input",
-        default=os.environ.get("INPUT", "data/raw/abaco_real_data_20260202.csv"),
+        default=os.environ.get("INPUT", "data/samples/abaco_sample_data_20260202.csv"),
         help="Path to Control-de-Mora CSV file",
     )
     parser.add_argument(

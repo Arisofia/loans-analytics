@@ -53,7 +53,7 @@ python3 -m playwright install chromium
 # 3) Start dashboard page that includes upload + KPI cards + agent analysis
 export FRONTEND_BASE_URL="http://127.0.0.1:8501"
 export PYTHONPATH=.
-export CSV_PATH="data/raw/abaco_real_data_20260202.csv"
+export CSV_PATH="data/samples/abaco_sample_data_20260202.csv"
 mkdir -p data/agent_outputs
 BEFORE_COUNT="$(find data/agent_outputs -maxdepth 1 -type f -name '*_response.json' | wc -l | tr -d ' ')"
 

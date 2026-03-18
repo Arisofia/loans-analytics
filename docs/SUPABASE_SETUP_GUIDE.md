@@ -144,7 +144,7 @@ database:
 ### 4.2 Run Test Pipeline
 
 ```bash
-python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
 ```
 
 **Expected output:**
@@ -216,7 +216,7 @@ az container create \
 ### Option A: Manual Execution (Canonical)
 
 ```bash
-python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
 ```
 
 ### Option B: Local Cron Job
@@ -231,7 +231,7 @@ Add:
 
 ```cron
 # Run pipeline daily at 6 AM
-0 6 * * * cd /Users/jenineferderas/Documents/Documentos\ -\ MacBook\ Pro\ \(6\)/abaco-loans-analytics && .venv/bin/python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv >> logs/pipeline_cron.log 2>&1
+0 6 * * * cd /Users/jenineferderas/Documents/Documentos\ -\ MacBook\ Pro\ \(6\)/abaco-loans-analytics && .venv/bin/python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv >> logs/pipeline_cron.log 2>&1
 ```
 
 ---

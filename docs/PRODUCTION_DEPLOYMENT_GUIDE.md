@@ -532,7 +532,7 @@ Enable verbose logging:
 
 ```bash
 # Local testing
-python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv --verbose
+python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --verbose
 
 # Production (environment variable)
 export LOG_LEVEL=DEBUG
