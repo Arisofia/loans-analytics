@@ -323,6 +323,7 @@ class TransformationPhase:
             "montototalabonado": "actual_payment_amount",
             # net_injected_capital
             "ingreso_total_por_desembolso": "net_injected_capital",
+            "tpv": "net_injected_capital",
         }
 
         rename_dict = {
