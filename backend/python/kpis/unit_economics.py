@@ -84,7 +84,7 @@ def _resolve_default_mask(df: pd.DataFrame, dpd: pd.Series) -> pd.Series:
 def calculate_npl_ratio(df: pd.DataFrame) -> dict[str, Any]:
     """Non-Performing Loan ratio (broad early-warning).
 
-    NPL = SUM(balance WHERE dpd >= 30 OR status in (delinquent, default)) / SUM(total_balance) * 100
+    NPL = SUM(balance WHERE dpd >= 30 OR status in (delinquent, defaulted)) / SUM(total_balance) * 100
 
     Aligned with the engine's broad NPL threshold (DPD >= 30) so that
     ``calculate()`` and ``calculate_all()`` return consistent values for
@@ -98,7 +98,7 @@ def calculate_npl_ratio(df: pd.DataFrame) -> dict[str, Any]:
             "npl_balance": 0.0,
             "total_balance": 0.0,
             "npl_loan_count": 0,
-            "formula": "SUM(balance WHERE dpd >= 30 OR status IN (delinquent, default)) / SUM(balance) * 100",
+            "formula": "SUM(balance WHERE dpd >= 30 OR status IN (delinquent, defaulted)) / SUM(balance) * 100",
         }
 
     balance = _resolve_balance(df)
@@ -110,10 +110,8 @@ def calculate_npl_ratio(df: pd.DataFrame) -> dict[str, Any]:
     npl_mask = dpd >= 30
     status_col = _first_col(df, ["loan_status", "status", "current_status"])
     if status_col:
-        status = df[status_col].astype(str).str.lower()
-        npl_mask = npl_mask | status.str.contains(
-            r"delinquent|defaulted", regex=True, na=False
-        )
+        status = df[status_col].astype(str).str.lower().str.strip()
+        npl_mask = npl_mask | status.isin({"delinquent", "defaulted"})
 
     from decimal import Decimal
 
@@ -133,7 +131,7 @@ def calculate_npl_ratio(df: pd.DataFrame) -> dict[str, Any]:
         "npl_balance": float(round(npl_balance, 2)),
         "total_balance": float(round(total_balance, 2)),
         "npl_loan_count": npl_loan_count,
-        "formula": "SUM(balance WHERE dpd >= 30 OR status IN (delinquent, default)) / SUM(balance) * 100",
+        "formula": "SUM(balance WHERE dpd >= 30 OR status IN (delinquent, defaulted)) / SUM(balance) * 100",
     }
 
 
