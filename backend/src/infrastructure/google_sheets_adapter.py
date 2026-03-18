@@ -35,7 +35,7 @@ except ImportError:  # pragma: no cover
 
 # OAuth2 scopes required for Sheets read/write
 _SCOPES = [
-    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
 
