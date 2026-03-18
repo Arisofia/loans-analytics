@@ -233,41 +233,69 @@ class KPIEngineV2:
             df_unique = df.drop_duplicates(dedupe_col)
         return engine_full, KPIFormulaEngine(df_unique)
 
-    def _compute_portfolio_velocity_of_default(self, df: pd.DataFrame) -> Optional[Decimal]:
-        """Build a monthly default-rate series and return the latest Velocity of Default."""
+    @staticmethod
+    def _compute_portfolio_velocity_of_default(df: pd.DataFrame) -> Optional[Decimal]:
+        """Build a monthly default-rate series and return the latest Velocity of Default.
+
+        **Chronology**: Records are bucketed into calendar months (Period[M]).
+        ``groupby(..., sort=True)`` guarantees ascending period order so that
+        :py:meth:`pandas.Series.diff` produces the correct forward-looking delta.
+
+        **Units**: The returned value is the change in portfolio default rate
+        between the two most recent calendar months, expressed in percentage
+        points (pp).  1 pp = 100 basis points.
+
+        Excludes ``closed`` loans from the active-portfolio denominator.  When
+        no ``status`` column is present, all records are treated as
+        non-defaulted (default rate = 0 % in every period).
+
+        Returns:
+            ``Decimal`` Vd value quantised to 6 decimal places, or ``None``
+            when no recognised date column exists or fewer than two distinct
+            month-periods are present.
+        """
         date_col = next(
-            (c for c in ("as_of_date", "measurement_date", "snapshot_date", "origination_date", "FechaDesembolso", "application_date", "disbursement_date") if c in df.columns),
-            None
+            (c for c in (
+                "as_of_date", "measurement_date", "snapshot_date",
+                "origination_date", "FechaDesembolso", "application_date",
+                "disbursement_date", "reporting_date",
+            ) if c in df.columns),
+            None,
         )
-        if date_col is None or "status" not in df.columns:
+        if date_col is None:
             return None
 
-        active_mask = df["status"].isin(["active", "delinquent", "defaulted"])
-        work = df.loc[active_mask, [date_col, "status"]].copy()
-        if work.empty:
-            return None
-
+        work = df.copy()
         work["_date"] = pd.to_datetime(work[date_col], errors="coerce", format="mixed")
         work = work.dropna(subset=["_date"])
+
+        # Exclude closed loans from the active portfolio denominator
+        if "status" in work.columns:
+            work = work[work["status"] != "closed"]
+
         if work.empty:
             return None
 
-        work["period"] = work["_date"].dt.to_period("M").astype(str)
-        monthly = (
-            work.groupby("period")["status"]
-            .apply(lambda s: round((s == "defaulted").sum() / len(s) * 100, 6))
-            .reset_index()
-            .sort_values("period")
-            .rename(columns={"status": "default_rate"})
-        )
-
-        if len(monthly) < 2:
+        work["_period"] = work["_date"].dt.to_period("M")
+        if work["_period"].nunique() < 2:
             return None
 
-        vd = pd.to_numeric(monthly["default_rate"], errors="coerce").diff()
+        if "status" in work.columns:
+            work["_is_defaulted"] = (work["status"] == "defaulted").astype(int)
+        else:
+            work["_is_defaulted"] = 0
+
+        period_agg = work.groupby("_period", sort=True).agg(
+            _total=("_is_defaulted", "count"),
+            _defaulted=("_is_defaulted", "sum"),
+        )
+        default_ratio = period_agg["_defaulted"] / period_agg["_total"].replace(0, np.nan)
+        rates = default_ratio.fillna(0.0) * 100.0
+
+        vd = rates.diff()
         vd_clean = vd.dropna()
         latest_vd = vd_clean.iloc[-1] if not vd_clean.empty else None
-        if latest_vd is None:
+        if latest_vd is None or not np.isfinite(latest_vd):
             return None
         return Decimal(str(round(float(latest_vd), 6)))
 
@@ -311,8 +339,18 @@ class KPIEngineV2:
 
         return kpis
 
-    def _calculate_ltv_sintetico(self, df: pd.DataFrame) -> pd.Series:
-        """Calculate Synthetic Factoring LTV at the loan level."""
+    @staticmethod
+    def _calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
+        """Calculate Synthetic Factoring LTV at the loan level.
+
+        LTV Sintético = capital_desembolsado / (valor_nominal_factura * (1 - tasa_dilucion))
+
+        Invalid-denominator semantics (fail-safe opacity):
+            When the adjusted invoice value is zero the LTV is mathematically
+            undefined.  Returning 0.0 would silently encode a false low-risk
+            value.  These rows therefore yield ``np.nan`` so that callers can
+            detect and handle them explicitly.
+        """
         required = ("capital_desembolsado", "valor_nominal_factura", "tasa_dilucion")
         if not all(col in df.columns for col in required):
             return pd.Series(dtype=float)
@@ -321,8 +359,10 @@ class KPIEngineV2:
             1 - pd.to_numeric(df["tasa_dilucion"], errors="coerce").fillna(0.0)
         )
         capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce").fillna(0.0)
-        ltv = np.where(valor_ajustado > 0, capital / valor_ajustado, 0.0)
-        return pd.Series(ltv, index=df.index, dtype=float)
+        # Zero denominator → np.nan (explicit opacity; not 0.0 which encodes false low-risk)
+        safe_denominator = valor_ajustado.replace(0.0, np.nan)
+        ltv = capital / safe_denominator
+        return ltv
 
     def _top_10_borrower_concentration(self, active_df: pd.DataFrame, balance_col: str, total_out: Decimal) -> Decimal:
         """Compute top-10 borrower concentration ratio."""

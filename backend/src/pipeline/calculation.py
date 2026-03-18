@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -424,31 +424,15 @@ class CalculationPhase:
 
         LTV Sintético = capital_desembolsado / (valor_nominal_factura * (1 - tasa_dilucion))
 
-        Returns an empty Series when required columns are absent or the DataFrame
-        is empty.
+        Delegates to :class:`~backend.python.kpis.engine.KPIEngineV2` as the
+        Single Source of Truth for this metric.  Zero-denominator rows yield
+        ``np.nan``; use :py:meth:`_ltv_sintetico_invalid_mask` for the
+        companion boolean opacity flag.
 
-        Invalid-denominator semantics (fail-safe opacity):
-            When ``valor_nominal_factura * (1 - tasa_dilucion) == 0`` the LTV is
-            mathematically undefined.  Returning 0.0 would silently encode a
-            false low-risk value and collapse epistemic uncertainty.  These rows
-            therefore yield ``np.nan``.  Use
-            :py:meth:`_ltv_sintetico_invalid_mask` to produce an explicit boolean
-            opacity flag identifying which loans require manual review.
+        Returns an empty Series when required columns are absent or the
+        DataFrame is empty.
         """
-        required = {"capital_desembolsado", "valor_nominal_factura", "tasa_dilucion"}
-        if not required.issubset(df.columns) or df.empty:
-            return pd.Series(dtype=float)
-
-        capital = pd.to_numeric(df["capital_desembolsado"], errors="coerce").fillna(0.0)
-        nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce").fillna(0.0)
-        dilution = pd.to_numeric(df["tasa_dilucion"], errors="coerce").fillna(0.0)
-
-        adjusted = nominal * (1.0 - dilution)
-        # Zero denominator → np.nan (explicit opacity; see docstring).
-        # Non-parseable capital (already 0.0 from fillna) with a valid denominator
-        # returns 0.0 as expected.
-        ltv = capital / adjusted.replace(0.0, np.nan)
-        return ltv
+        return KPIEngineV2._calculate_ltv_sintetico(df)
 
     @staticmethod
     def _ltv_sintetico_invalid_mask(df: pd.DataFrame) -> pd.Series:
@@ -510,79 +494,15 @@ class CalculationPhase:
     ) -> Optional[Decimal]:
         """Compute portfolio-level Velocity of Default from the canonical date column.
 
-        **Chronology**: Records are bucketed into calendar months (Period[M]).
-        The groupby is always performed in ascending period order so that
-        :py:meth:`pandas.Series.diff` produces the correct forward-looking
-        delta between consecutive months.
+        Delegates to :class:`~backend.python.kpis.engine.KPIEngineV2` as the
+        Single Source of Truth for this metric.
 
-        **Units**: The returned value is the change in portfolio default rate
-        between the two most recent calendar months, expressed in percentage
-        points (pp).  A Vd of ``+1.5`` means the default rate rose 1.5 pp
-        (= 150 basis points) month-on-month.
-
-        Uses the ``as_of_date`` column (or other recognised date columns) and
-        excludes ``closed`` loans from the denominator to avoid dilution.
+        **Units**: percentage points per month (pp/month); 1 pp = 100 basis
+        points.  Positive values indicate a worsening default trend.
 
         Returns:
             ``Decimal`` Vd value quantised to 6 decimal places, or ``None``
             when no recognised date column exists or fewer than two distinct
             month-periods are present.
         """
-        _date_candidates = [
-            "as_of_date",
-            "measurement_date",
-            "snapshot_date",
-            "reporting_date",
-        ]
-        date_col = next((c for c in _date_candidates if c in df.columns), None)
-        if date_col is None:
-            return None
-
-        working = df.copy()
-        working[date_col] = pd.to_datetime(working[date_col], errors="coerce")
-        working = working.dropna(subset=[date_col])
-
-        # Exclude closed loans from the active portfolio denominator
-        if "status" in working.columns:
-            working = working[working["status"] != "closed"]
-
-        if working.empty:
-            return None
-
-        working["_period"] = working[date_col].dt.to_period("M")
-        periods = sorted(working["_period"].unique())
-        if len(periods) < 2:
-            return None
-
-        # Vectorised default-rate aggregation per period (ascending chronological order)
-        if "status" in working.columns:
-            working["_is_defaulted"] = (working["status"] == "defaulted").astype(int)
-        else:
-            working["_is_defaulted"] = 0
-
-        period_agg = working.groupby("_period", sort=True).agg(
-            _total=("_is_defaulted", "count"),
-            _defaulted=("_is_defaulted", "sum"),
-        )
-        rates = (period_agg["_defaulted"] / period_agg["_total"].replace(0, np.nan)).fillna(
-            0.0
-        ) * 100.0
-
-        # diff() on an ascending-sorted Series gives the correct forward delta
-        vd_series = rates.diff()
-
-        # Return the most recent velocity value using Decimal arithmetic for precision
-        latest_vd = vd_series.iloc[-1]
-        # Guard against None/NaN/inf before constructing a Decimal to avoid
-        # representation artifacts and InvalidOperation during quantize.
-        if latest_vd is None or not np.isfinite(latest_vd):
-            return None
-
-        try:
-            latest_vd_decimal = Decimal(str(latest_vd))
-            return latest_vd_decimal.quantize(Decimal("0.000001"))
-        except InvalidOperation:
-            logger.warning(
-                "Unable to quantize Velocity of Default value %r; returning None", latest_vd
-            )
-            return None
+        return KPIEngineV2._compute_portfolio_velocity_of_default(df)
