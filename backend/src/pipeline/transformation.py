@@ -304,6 +304,15 @@ class TransformationPhase:
         actual_payment_amount: the amount the client actually paid in the period
         net_injected_capital : net capital deployed (disbursement minus any immediate recovery)
         """
+        # Note: this mapping fires *after* _normalize_column_names(), so only
+        # post-normalization column names will be present in ``df.columns``.
+        # Raw aliases that _normalize_column_names() already renames (e.g.
+        # ``montototalabonado`` → ``total_payment_received``) must NOT appear
+        # here — they will never match and will silently be skipped.
+        # ``tpv`` is intentionally absent: it is the post-normalization form of
+        # ``ingreso_total_por_desembolso`` and is consumed directly by
+        # ``_derive_control_mora_fields``; renaming it here would make it
+        # unavailable to downstream KPI/NSM calculations.
         semantic_mapping: Dict[str, str] = {
             # approved_at
             "application_date": "approved_at",
@@ -317,13 +326,9 @@ class TransformationPhase:
             "total_scheduled": "scheduled_amount",
             "monto_programado": "scheduled_amount",
             "total_due": "scheduled_amount",
-            # actual_payment_amount
+            # actual_payment_amount — map from post-normalization name only
             "last_payment_amount": "actual_payment_amount",
             "total_payment_received": "actual_payment_amount",
-            "montototalabonado": "actual_payment_amount",
-            # net_injected_capital
-            "ingreso_total_por_desembolso": "net_injected_capital",
-            "tpv": "net_injected_capital",
         }
 
         rename_dict = {

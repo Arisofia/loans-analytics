@@ -384,11 +384,20 @@ class OutputPhase:
             logger.debug("Segment snapshot skipped: no segment rows generated")
             return None
 
+        as_of_date = self._derive_segment_as_of_date(working)
+        # Fallback to the run timestamp when no date column can be parsed, so
+        # ``segment_snapshot.json`` always carries a non-null as_of_date.
+        if as_of_date is None:
+            as_of_date = datetime.now().date().isoformat()
+            logger.debug(
+                "as_of_date not derivable from data; defaulting to run date %s", as_of_date
+            )
+
         payload = {
             "generated_at": datetime.now().isoformat(),
             "run_id": run_dir.name,
             "source_data_path": data_path.name,
-            "as_of_date": self._derive_segment_as_of_date(working),
+            "as_of_date": as_of_date,
             "dimensions": dimension_rows,
         }
 
