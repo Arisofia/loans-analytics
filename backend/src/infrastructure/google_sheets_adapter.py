@@ -149,7 +149,8 @@ class ControlMoraSheetsAdapter:
         ValueError
             If gspread / google-auth are not installed or auth fails.
         ValueError
-            If ``payload`` is not a non-empty list of dicts.
+            If ``payload`` is not a non-empty list of dicts, or if any row is
+            not a dict with the same key set as the first row.
         """
         self._ensure_dependencies()
 
@@ -162,10 +163,30 @@ class ControlMoraSheetsAdapter:
                 "push_gestion_mora: each row in payload must be a dict."
             )
 
+        # Determine header order from the first row and enforce a consistent key set
+        headers = list(payload[0].keys())
+        expected_keys = set(headers)
+
+        for idx, row in enumerate(payload):
+            if not isinstance(row, dict):
+                raise ValueError(
+                    f"push_gestion_mora: row at index {idx} is not a dict "
+                    f"(type={type(row)!r})."
+                )
+            row_keys = set(row.keys())
+            if row_keys != expected_keys:
+                missing = expected_keys - row_keys
+                extra = row_keys - expected_keys
+                raise ValueError(
+                    "push_gestion_mora: all rows must have the same keys as the "
+                    "first row. "
+                    f"Row index {idx} has key mismatch. "
+                    f"Missing keys: {sorted(missing) if missing else []}; "
+                    f"extra keys: {sorted(extra) if extra else []}."
+                )
+
         spreadsheet = self._get_spreadsheet()
         worksheet = self._get_or_create_worksheet(spreadsheet, self.GESTION_MORA_TAB)
-
-        headers = list(payload[0].keys())
 
         # Write in batches to stay within API quotas
         rows_written = 0
