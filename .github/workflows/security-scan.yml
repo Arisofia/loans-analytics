@@ -31,7 +31,7 @@ jobs:
           fetch-depth: 0 # Keep full history so CodeQL can build PR diff range reliably
 
       - name: Detect Code Scanning availability
-        id: code_scanning
+        id: check_sarif_api
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -48,7 +48,7 @@ jobs:
           fi
 
       - name: Initialize CodeQL
-        if: steps.code_scanning.outputs.enabled == 'true'
+        if: steps.check_sarif_api.outputs.enabled == 'true'
         uses: github/codeql-action/init@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
         with:
           languages: ${{ matrix.language }}
@@ -60,11 +60,11 @@ jobs:
           CODEQL_EXTRACTOR_PYTHON_OPTION_ANALYZE_PR_DIFF: "false"
 
       - name: Autobuild
-        if: steps.code_scanning.outputs.enabled == 'true'
+        if: steps.check_sarif_api.outputs.enabled == 'true'
         uses: github/codeql-action/autobuild@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
 
       - name: Perform CodeQL Analysis
-        if: steps.code_scanning.outputs.enabled == 'true'
+        if: steps.check_sarif_api.outputs.enabled == 'true'
         uses: github/codeql-action/analyze@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
         with:
           category: "/language:${{ matrix.language }}"
@@ -83,7 +83,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Detect Code Scanning availability
-        id: code_scanning
+        id: check_sarif_api
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -121,7 +121,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Detect Code Scanning availability
-        id: code_scanning
+        id: check_sarif_api
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -177,7 +177,7 @@ jobs:
           fi
 
       - name: Upload Bandit SARIF results
-        if: ${{ always() && steps.code_scanning.outputs.enabled == 'true' && hashFiles('bandit-results.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        if: ${{ always() && steps.check_sarif_api.outputs.enabled == 'true' && hashFiles('bandit-results.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         uses: github/codeql-action/upload-sarif@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
         with:
           sarif_file: bandit-results.sarif
