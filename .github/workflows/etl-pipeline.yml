@@ -225,7 +225,7 @@ jobs:
 
       - name: Upload pipeline artifacts
         if: always()
-        uses: actions/upload-artifact@5349c256476b7a460d23bde9dc17a612d42fbaa4 # actions/upload-artifact@v4.3.6
+        uses: actions/upload-artifact@v4
         with:
           name: pipeline-output-${{ github.run_number }}
           path: |
@@ -272,7 +272,7 @@ jobs:
 
       - name: Upload snapshot artifacts
         if: always()
-        uses: actions/upload-artifact@5349c256476b7a460d23bde9dc17a612d42fbaa4 # actions/upload-artifact@v4.3.6
+        uses: actions/upload-artifact@v4
         with:
           name: snapshot-${{ github.run_number }}
           path: |

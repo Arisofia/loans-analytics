@@ -195,7 +195,7 @@ jobs:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Install flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@cfd3bce5a47096d4b5e7d86a576c7fcbdbd9d57c # v1
+        uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Deploy to Fly.io
         env:
