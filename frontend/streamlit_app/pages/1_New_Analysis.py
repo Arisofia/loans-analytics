@@ -1,26 +1,8 @@
-import sys
-from pathlib import Path
-
 import streamlit as st
-
-# Add repository root to sys.path to ensure correct module resolution
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent  # Adjusted path for pages
-for _p in (ROOT_DIR / "backend", ROOT_DIR / "frontend", ROOT_DIR):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-
-from python.config.theme import ABACO_THEME  # noqa: E402
-from python.logging_config import get_logger  # noqa: E402
+from backend.python.config.theme import ABACO_THEME
+from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
-
-# Robust Bootstrap Import (if needed for individual page execution)
-try:
-    from streamlit_app.bootstrap import bootstrap_repo_root
-
-    bootstrap_repo_root()
-except ImportError:
-    logger.info("Bootstrap module not available; proceeding without repo bootstrap.")
 
 st.set_page_config(page_title="New Analysis", layout="wide")
 # Apply custom CSS using ABACO_THEME

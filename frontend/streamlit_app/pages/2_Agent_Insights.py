@@ -1,20 +1,15 @@
-"""Agent Insights - View AI agent feedback and conversation history."""
-
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
-from python.logging_config import get_logger
+from backend.python.logging_config import get_logger
 
-# Add project root to path
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-for _p in (ROOT_DIR / "backend", ROOT_DIR / "frontend", ROOT_DIR):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
+# AGENT_OUTPUTS_DIR requires ROOT_DIR
+ROOT_DIR = Path.cwd()
+AGENT_OUTPUTS_DIR = ROOT_DIR / "data" / "agent_outputs"
 
 logger = get_logger(__name__)
 
@@ -24,9 +19,6 @@ st.set_page_config(
     page_icon="🤖",
     layout="wide",
 )
-
-# Paths for agent data
-AGENT_OUTPUTS_DIR = ROOT_DIR / "data" / "agent_outputs"
 AGENT_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
 

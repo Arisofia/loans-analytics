@@ -13,7 +13,7 @@ Effective Annual Rate (EAR) using the compounding frequency.
 
 Usage
 -----
-    from src.zero_cost.xirr import xirr, contractual_apr, loan_xirr
+    from backend.src.zero_cost.xirr import xirr, contractual_apr, loan_xirr
 
     # Standalone XIRR
     rate = xirr([-1000, 500, 600], ["2025-01-01", "2025-07-01", "2026-01-01"])

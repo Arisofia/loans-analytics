@@ -1,19 +1,14 @@
 """Usage metrics dashboard for Abaco Loans Analytics."""
 
-import sys
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
-# Add root directory to path to allow imports
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-for _p in (ROOT_DIR / "backend", ROOT_DIR / "frontend", ROOT_DIR):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
+from backend.python.config.theme import ABACO_THEME
+from backend.python.utils.usage_tracker import UsageTracker
 
-from python.config.theme import ABACO_THEME  # noqa: E402
-from python.utils.usage_tracker import UsageTracker  # noqa: E402
+ROOT_DIR = Path.cwd()
 
 st.set_page_config(page_title="Usage Metrics - Abaco", layout="wide")
 

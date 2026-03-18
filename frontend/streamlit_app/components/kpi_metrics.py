@@ -1,16 +1,6 @@
-import sys
-from pathlib import Path
-
 import pandas as pd
 import streamlit as st
-
-# Add project root to path
-project_root = Path(__file__).parent.parent.parent.parent
-for _p in (project_root / "backend", project_root / "frontend", project_root):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-
-from python.utils.dashboard import format_kpi_value, kpi_label  # noqa: E402
+from backend.python.utils.dashboard import format_kpi_value, kpi_label
 
 
 def render_kpi_snapshot(kpi_snapshot, snapshot_month=None):

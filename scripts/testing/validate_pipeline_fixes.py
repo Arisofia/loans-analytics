@@ -3,8 +3,8 @@ from decimal import Decimal
 import numpy as np
 import pandas as pd
 
-from src.pipeline.calculation import CalculationPhase
-from src.pipeline.transformation import TransformationPhase
+from backend.src.pipeline.calculation import CalculationPhase
+from backend.src.pipeline.transformation import TransformationPhase
 
 
 def test_pipeline_fixes():

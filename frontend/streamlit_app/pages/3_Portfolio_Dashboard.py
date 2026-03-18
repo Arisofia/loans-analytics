@@ -12,7 +12,6 @@ Complete dashboard with:
 import json
 import logging
 import os
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -24,24 +23,19 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-# Add project root to path
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-REPO_ROOT = Path(__file__).resolve().parents[2]
-for _p in (ROOT_DIR / "backend", ROOT_DIR / "frontend", ROOT_DIR):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from src.agents.multi_agent.guardrails import Guardrails  # noqa: E402
-from src.agents.multi_agent.orchestrator import MultiAgentOrchestrator  # noqa: E402
-from src.agents.multi_agent.protocol import LLMProvider  # noqa: E402
-from streamlit_app.components.csv_upload import (  # noqa: E402
+from backend.src.agents.multi_agent.guardrails import Guardrails
+from backend.src.agents.multi_agent.orchestrator import MultiAgentOrchestrator
+from backend.src.agents.multi_agent.protocol import LLMProvider
+from frontend.streamlit_app.components.csv_upload import (
     BORROWER_ID_COLS,
     _classify_loan_id_duplicates,
     _coerce_numeric as _coerce_amount,
 )
-from streamlit_app.utils.security import sanitize_api_base  # noqa: E402
+from frontend.streamlit_app.utils.security import sanitize_api_base
+
+# Add project root to path
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 logger = logging.getLogger(__name__)
 

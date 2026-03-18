@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pandas as pd
 
-from python.validation import safe_decimal, validate_numeric_bounds
+from backend.python.validation import safe_decimal, validate_numeric_bounds
 
 
 def calculate_par_30(df: pd.DataFrame | None) -> Decimal:

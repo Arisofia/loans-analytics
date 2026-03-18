@@ -13,13 +13,13 @@ Features used (post-engineering):
 
 Usage:
     # Training
-    from python.models.default_risk_model import DefaultRiskModel
+    from backend.python.models.default_risk_model import DefaultRiskModel
     model = DefaultRiskModel()
     metrics = model.train(training_dataframe)
     model.save("models/risk")
 
     # Inference (API serving)
-    from python.models.default_risk_model import DefaultRiskModel
+    from backend.python.models.default_risk_model import DefaultRiskModel
     model = DefaultRiskModel.load("models/risk/default_risk_xgb.ubj")
     prob = model.predict_proba(loan_features_dict)
 

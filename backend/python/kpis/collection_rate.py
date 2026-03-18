@@ -5,7 +5,7 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 
-from python.validation import find_column, safe_decimal
+from backend.python.validation import find_column, safe_decimal
 
 _COLLECTED_CANDIDATES = [
     "payments_collected_usd",

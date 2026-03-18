@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from python.logging_config import get_logger
+from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
 

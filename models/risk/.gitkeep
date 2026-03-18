@@ -1,3 +1,0 @@
-# This directory contains trained ML model artifacts.
-# Generate models via `python.models.default_risk_model.DefaultRiskModel`.
-# Model files (*.ubj, *.bin) are gitignored; only this placeholder is tracked.

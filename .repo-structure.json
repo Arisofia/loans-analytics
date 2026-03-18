@@ -1,14 +1,14 @@
 {
   "repository": "abaco-loans-analytics",
   "unified_process_version": "v2.0",
-  "last_updated": "2026-02-19",
+  "last_updated": "2026-03-17",
   "status": "IMPLEMENTED",
   "implementation_date": "2026-01-29",
   "ACTIVE_PRODUCTION_WORKFLOW": {
     "description": "Production pipeline used in daily operations",
     "folders": [
       {
-        "path": "src/pipeline/",
+        "path": "backend/src/pipeline/",
         "purpose": "Core pipeline orchestration (ingestion, transformation, calculation, output)",
         "files": [
           "orchestrator.py",
@@ -21,7 +21,7 @@
         "stage": "PHASE 1-4 EXECUTION"
       },
       {
-        "path": "python/",
+        "path": "backend/python/",
         "purpose": "Pipeline utilities, models, logging, multi-agent orchestration",
         "subdirs": [
           "config.py - Unified configuration management",
@@ -48,16 +48,17 @@
         "stage": "EXECUTION ENTRY POINT"
       },
       {
-        "path": "apps/",
-        "purpose": "Frontend and API services",
-        "components": {
-          "apps/web/": "Next.js dashboard (frontend)",
-          "apps/analytics/": "FastAPI service (backend API)"
-        },
+        "path": "backend/python/apps/analytics/",
+        "purpose": "FastAPI service (backend API)",
         "stage": "OUTPUT LAYER"
       },
       {
-        "path": "streamlit_app.py",
+        "path": "frontend/web/",
+        "purpose": "Next.js dashboard (frontend)",
+        "stage": "OUTPUT LAYER"
+      },
+      {
+        "path": "frontend/streamlit_app/app.py",
         "purpose": "Interactive analytics dashboard for data exploration",
         "serves": "KPI visualization, growth projections, report exports",
         "stage": "OUTPUT LAYER"
@@ -122,14 +123,14 @@
       {
         "name": "OpenTelemetry / Application Insights",
         "purpose": "Distributed tracing and observability",
-        "config": "python/logging_config.py",
+        "config": "backend/python/logging_config.py",
         "integration_point": "All phases"
       }
     ]
   },
   "PROCESS_PHASES": {
     "PHASE_1_INGESTION": {
-      "location": "src/pipeline/ingestion.py",
+      "location": "backend/src/pipeline/ingestion.py",
       "support_files": [
         "config/pipeline.yml"
       ],
@@ -138,36 +139,36 @@
       "output": "Raw data stored with timestamp and immutable hash"
     },
     "PHASE_2_TRANSFORMATION": {
-      "location": "src/pipeline/transformation.py",
+      "location": "backend/src/pipeline/transformation.py",
       "support_files": [
         "config/business_rules.yaml",
-        "python/models/"
+        "backend/python/models/"
       ],
       "function": "Normalize data, handle nulls/outliers, type conversion, referential integrity",
       "validation": "Pandera schema validation, business rule enforcement",
       "output": "Clean data ready for calculation"
     },
     "PHASE_3_CALCULATION": {
-      "location": "src/pipeline/calculation.py",
+      "location": "backend/src/pipeline/calculation.py",
       "support_files": [
         "config/kpis/kpi_definitions.yaml",
-        "python/multi_agent/"
+        "backend/python/multi_agent/"
       ],
       "function": "Compute all KPIs with formula traceability, time-series rollups, anomaly detection",
       "validation": "Precision validation, threshold enforcement, AI agent enrichment",
       "output": "KPI manifest with lineage and audit trail"
     },
     "PHASE_4_OUTPUT": {
-      "location": "src/pipeline/output.py",
+      "location": "backend/src/pipeline/output.py",
       "support_files": [
-        "streamlit_app.py"
+        "frontend/streamlit_app/app.py"
       ],
       "function": "Multi-format exports (Parquet/CSV/JSON), Supabase writes, dashboard refresh",
       "validation": "Transaction safety, idempotent upserts, SLA monitoring",
       "output": "Artifacts in logs/runs/, database updates, frontend refresh"
     },
     "ORCHESTRATION": {
-      "location": "src/pipeline/orchestrator.py",
+      "location": "backend/src/pipeline/orchestrator.py",
       "trigger": "scripts/data/run_data_pipeline.py (entry point)",
       "function": "Coordinates all 4 phases, manages config, logs, error handling",
       "trigger_methods": [
@@ -180,7 +181,7 @@
   },
   "QUICK_REFERENCE": {
     "start_pipeline": "python scripts/data/run_data_pipeline.py --config config/pipeline.yml",
-    "view_dashboard": "streamlit run streamlit_app.py",
+    "view_dashboard": "streamlit run frontend/streamlit_app/app.py",
     "check_logs": "logs/runs/<timestamp>/",
     "update_kpis": "Edit config/kpis/kpi_definitions.yaml (automatically loaded)",
     "run_tests": "pytest tests/ -v"

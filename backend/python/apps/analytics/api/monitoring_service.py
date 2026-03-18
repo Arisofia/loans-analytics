@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 
-from python.apps.analytics.api.monitoring_models import (
+from backend.python.apps.analytics.api.monitoring_models import (
     CommandCreate,
     CommandResponse,
     CommandStatus,
@@ -14,9 +14,9 @@ from python.apps.analytics.api.monitoring_models import (
     OperationalEventCreate,
     OperationalEventResponse,
 )
-from python.config import settings
-from python.logging_config import get_logger
-from python.supabase_pool import get_pool
+from backend.python.config import settings
+from backend.python.logging_config import get_logger
+from backend.python.supabase_pool import get_pool
 
 logger = get_logger(__name__)
 

@@ -1,4 +1,4 @@
-from python.config.theme import ABACO_THEME
+from backend.python.config.theme import ABACO_THEME
 
 
 def apply_theme(fig):

@@ -9,9 +9,9 @@ either a single prepared file or a consolidated multi-file dataset.
 from __future__ import annotations
 
 import re
-import sys
 import json
 import warnings
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -19,24 +19,12 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-# Add project root to path
-project_root = Path(__file__).parent.parent.parent.parent
-for _p in (project_root / "backend", project_root / "frontend", project_root):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-
 # Import pipeline components
-try:
-    from src.pipeline.calculation import CalculationPhase
-    from src.pipeline.config import PipelineConfig, load_business_rules, load_kpi_definitions
-    from src.pipeline.ingestion import IngestionPhase
-    from src.pipeline.output import OutputPhase
-    from src.pipeline.transformation import TransformationPhase
-except ImportError as exc:
-    st.error(f"❌ Pipeline modules not found: {exc}")
-    st.info(f"Project root: {project_root}")
-    st.info(f"sys.path: {sys.path[:3]}")
-    st.stop()
+from backend.src.pipeline.calculation import CalculationPhase
+from backend.src.pipeline.config import PipelineConfig, load_business_rules, load_kpi_definitions
+from backend.src.pipeline.ingestion import IngestionPhase
+from backend.src.pipeline.output import OutputPhase
+from backend.src.pipeline.transformation import TransformationPhase
 
 
 PIPELINE_REQUIRED_COLUMNS = ["loan_id", "amount", "status"]

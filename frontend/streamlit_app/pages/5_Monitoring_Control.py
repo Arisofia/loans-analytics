@@ -1,8 +1,4 @@
-"""Monitoring & Control dashboard for the self-healing platform."""
-
 import os
-import sys
-from pathlib import Path
 from urllib.parse import urlparse
 from uuid import UUID
 
@@ -10,13 +6,8 @@ import pandas as pd
 import requests
 import streamlit as st
 
-# Add root directory to path to allow imports
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-for _p in (ROOT_DIR / "backend", ROOT_DIR / "frontend", ROOT_DIR):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-
-from python.config.theme import ABACO_THEME  # noqa: E402
+from backend.python.config.theme import ABACO_THEME
+from frontend.streamlit_app.utils.security import sanitize_api_base
 
 st.set_page_config(page_title="Monitoring & Control - Abaco", layout="wide")
 
@@ -38,8 +29,6 @@ st.title("Monitoring & Control")
 # Not sourced from a Streamlit widget, so CodeQL does not treat it as
 # a RemoteFlowSource. Set ABACO_API_BASE in .env or deployment config.
 API_BASE: str = os.environ.get("ABACO_API_BASE", "http://localhost:8000")
-
-from streamlit_app.utils.security import sanitize_api_base
 
 API_BASE_SAFE = sanitize_api_base(API_BASE)
 if API_BASE_SAFE is None:

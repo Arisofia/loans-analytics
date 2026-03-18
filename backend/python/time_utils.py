@@ -15,7 +15,7 @@ def get_utc_now() -> datetime:
         Current UTC time as timezone-aware datetime
 
     Example:
-        from python.time_utils import get_utc_now
+        from backend.python.time_utils import get_utc_now
         current_time = get_utc_now()
     """
     return datetime.now(timezone.utc)
@@ -29,7 +29,7 @@ def get_iso_timestamp() -> str:
         ISO 8601 formatted timestamp string (e.g., '2024-01-28T10:30:00+00:00')
 
     Example:
-        from python.time_utils import get_iso_timestamp
+        from backend.python.time_utils import get_iso_timestamp
         timestamp = get_iso_timestamp()
     """
     return get_utc_now().isoformat()
@@ -52,7 +52,7 @@ def parse_iso_timestamp(timestamp_str: str) -> datetime:
         ValueError: If timestamp string is not valid ISO 8601 format
 
     Example:
-        from python.time_utils import parse_iso_timestamp
+        from backend.python.time_utils import parse_iso_timestamp
         dt = parse_iso_timestamp('2024-01-28T10:30:00+00:00')
         dt_utc = parse_iso_timestamp('2024-01-28T10:30:00Z')
     """
@@ -75,7 +75,7 @@ def format_timestamp(dt: datetime, fmt: Optional[str] = None) -> str:
         Formatted timestamp string
 
     Example:
-        from python.time_utils import format_timestamp, get_utc_now
+        from backend.python.time_utils import format_timestamp, get_utc_now
         formatted = format_timestamp(get_utc_now(), "%Y-%m-%d")
     """
     if fmt is None:

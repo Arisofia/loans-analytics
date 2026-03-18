@@ -165,6 +165,7 @@ class HistoricalContextProvider:
         cache_ttl_seconds: int = 3600,
         mode: Optional[str] = None,
         backend: Optional[HistoricalDataBackend] = None,
+        rule_hash: Optional[str] = None,
     ) -> None:
         """
         Initialize historical context provider with backend validation and mode selection.
@@ -172,8 +173,9 @@ class HistoricalContextProvider:
         self.cache_ttl_seconds: int = cache_ttl_seconds
         self._cache: Dict[str, tuple[datetime, Any]] = {}
         self._historical_data: Dict[str, List[KpiHistoricalValue]] = {}
+        self.rule_hash: str = rule_hash or "default_v1"
 
-        env_mode = os.getenv("HISTORICAL_CONTEXT_MODE", "MOCK").upper()
+        env_mode = os.getenv("HISTORICAL_CONTEXT_MODE", "REAL").upper()
         self.mode: str = (mode or env_mode).upper()
         self._backend: Optional[HistoricalDataBackend] = backend
 
@@ -276,7 +278,8 @@ class HistoricalContextProvider:
         Returns:
             List of historical KPI values ordered by date
         """
-        cache_key = f"{kpi_id}:{start_date}:{end_date}"
+        # Rule-hash cache invalidation: include rule_hash in cache key
+        cache_key = f"{self.rule_hash}:{kpi_id}:{start_date}:{end_date}"
 
         # Check cache
         if cached_entry := self._cache.get(cache_key):
@@ -359,7 +362,7 @@ class HistoricalContextProvider:
         change_point = self.detect_change_point(kpi_id, window_size=14, periods=periods)
         return {
             "kpi_id": kpi_id,
-            "trend": trend.dict(),
+            "trend": trend.model_dump(),
             "moving_average_30d": moving_avg,
             "recent_change_point": change_point,
         }

@@ -19,7 +19,7 @@ try:
 except ImportError:
     asyncpg = None
 
-from python.config import settings
+from backend.python.config import settings
 
 logger = logging.getLogger(__name__)
 

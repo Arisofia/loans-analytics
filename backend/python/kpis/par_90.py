@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from python.validation import safe_numeric
+from backend.python.validation import safe_numeric
 
 _REQUIRED_COLUMNS = ["dpd_90_plus_usd", "total_receivable_usd"]
 

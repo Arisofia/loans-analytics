@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import numpy as np
 import pandas as pd
 
-from python.logging_config import get_logger
+from backend.python.logging_config import get_logger
 from .utils import format_error_response
 
 logger = get_logger(__name__)
@@ -1368,9 +1368,21 @@ class TransformationPhase:
     def _apply_risk_category_rule(
         self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]
     ) -> None:
-        """Apply risk categorization rule."""
+        """Apply risk categorization rule using vectorized operations."""
         if "status" in df.columns and "dpd" in df.columns:
-            df["risk_category"] = df.apply(self._calculate_risk_category, axis=1)
+            status = df["status"].fillna("").astype(str)
+            dpd = pd.to_numeric(df["dpd"], errors="coerce").fillna(0)
+            
+            conditions = [
+                (status.str.contains("default", case=False, na=False)) | (dpd >= 90),
+                (dpd >= 30) & (dpd < 90),
+                (dpd > 0) & (dpd < 30),
+                (dpd <= 0)
+            ]
+            choices = ["critical", "high", "medium", "low"]
+            
+            df["risk_category"] = np.select(conditions, choices, default="low")
+            
             fields_created.append("risk_category")
             rules_applied.append("risk_categorization")
 

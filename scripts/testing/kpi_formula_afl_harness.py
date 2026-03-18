@@ -11,7 +11,7 @@ import sys
 
 import pandas as pd
 
-from src.pipeline.calculation import KPIFormulaEngine
+from backend.src.pipeline.calculation import KPIFormulaEngine
 
 
 def main() -> int:

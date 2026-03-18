@@ -18,7 +18,7 @@ from typing import Any
 
 import pandas as pd
 
-from python.logging_config import get_logger
+from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -102,16 +102,21 @@ def calculate_npl_ratio(df: pd.DataFrame) -> dict[str, Any]:
     default_mask = _resolve_default_mask(df, dpd)
     npl_mask = (dpd > 90) | default_mask
 
-    total_balance = float(balance.sum())
-    npl_balance = float(balance[npl_mask].sum())
-    npl_loan_count = int(npl_mask.sum())
-    npl_ratio = _safe_pct(npl_balance, total_balance)
+    from decimal import Decimal
 
-    logger.debug("NPL ratio=%.4f%%, balance=%.2f, count=%d", npl_ratio, npl_balance, npl_loan_count)
+    total_balance_raw = balance.sum()
+    npl_balance_raw = balance[npl_mask].sum()
+    
+    total_balance = Decimal(str(total_balance_raw))
+    npl_balance = Decimal(str(npl_balance_raw))
+    npl_loan_count = int(npl_mask.sum())
+    npl_ratio = float(_safe_pct(float(npl_balance), float(total_balance)))
+
+    logger.debug("NPL ratio=%.4f%%, balance=%.2f, count=%d", npl_ratio, float(npl_balance), npl_loan_count)
     return {
         "npl_ratio": npl_ratio,
-        "npl_balance": round(npl_balance, 2),
-        "total_balance": round(total_balance, 2),
+        "npl_balance": float(round(npl_balance, 2)),
+        "total_balance": float(round(total_balance, 2)),
         "npl_loan_count": npl_loan_count,
         "formula": "SUM(balance WHERE dpd > 90 OR status = default) / SUM(balance) * 100",
     }

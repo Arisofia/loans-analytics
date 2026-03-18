@@ -23,7 +23,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from python.logging_config import get_logger
+from backend.python.logging_config import get_logger
 
 from .calculation import CalculationPhase
 from .config import PipelineConfig, load_business_rules, load_kpi_definitions
@@ -31,15 +31,12 @@ from .ingestion import IngestionPhase
 from .output import OutputPhase
 from .transformation import TransformationPhase
 
+from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode
+
+OTEL_AVAILABLE = True
+
 logger = get_logger(__name__)
-
-try:
-    from opentelemetry import trace
-    from opentelemetry.trace import Status, StatusCode
-
-    OTEL_AVAILABLE = True
-except ImportError:
-    OTEL_AVAILABLE = False
 
 
 class UnifiedPipeline:
@@ -288,6 +285,7 @@ class UnifiedPipeline:
                     kwargs={
                         "kpi_results": phase3_results.get("kpis", {}),
                         "run_dir": run_dir,
+                        "kpi_engine": phase3_results.get("kpi_engine"),
                         "segment_kpis": phase3_results.get("segment_kpis"),
                         "time_series": phase3_results.get("time_series"),
                         "anomalies": phase3_results.get("anomalies"),

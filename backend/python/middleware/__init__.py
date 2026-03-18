@@ -1,6 +1,6 @@
 """Middleware components for production-grade request handling."""
 
-from python.middleware.rate_limiter import (
+from backend.python.middleware.rate_limiter import (
     RateLimiter,
     TokenBucketRateLimiter,
     api_limiter,

@@ -11,7 +11,7 @@ Features:
 - Traceability for compliance and debugging
 
 Usage:
-    from python.kpis.engine import KPIEngineV2
+    from backend.python.kpis.engine import KPIEngineV2
 
     engine = KPIEngineV2(df, actor="reporting_service", run_id="2026-01-29-001")
     metrics = engine.calculate_all()
@@ -30,9 +30,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from python.kpis.collection_rate import calculate_collection_rate
-from python.kpis.par_30 import calculate_par_30
-from python.logging_config import get_logger
+from backend.python.kpis.collection_rate import calculate_collection_rate
+from backend.python.kpis.par_30 import calculate_par_30
+from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
 

@@ -3,7 +3,6 @@
 import json
 import logging
 import os
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -11,35 +10,33 @@ from typing import Optional
 import pandas as pd
 import streamlit as st
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-for _p in (ROOT_DIR / "backend", ROOT_DIR / "frontend", ROOT_DIR):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-from python.config.theme import ABACO_THEME  # noqa: E402
-from python.config.tracing_setup import enable_auto_instrumentation, init_tracing  # noqa: E402
-from python.kpis.catalog_processor import KPICatalogProcessor  # noqa: E402
-from python.kpis.strategic_reporting import (  # noqa: E402
+from backend.python.config.theme import ABACO_THEME
+from backend.python.config.tracing_setup import enable_auto_instrumentation, init_tracing
+from backend.python.kpis.catalog_processor import KPICatalogProcessor
+from backend.python.kpis.strategic_reporting import (
     build_strategic_summary,
     write_strategic_report,
 )
-from python.utils.dashboard import format_kpi_value, kpi_label  # noqa: E402
-from python.utils.normalization import normalize_dataframe_complete  # noqa: E402
-from python.utils.usage_tracker import UsageTracker  # noqa: E402
-from streamlit_app.components.analytics_tabs import render_advanced_intelligence  # noqa: E402
-from streamlit_app.components.charts import (  # noqa: E402
+from backend.python.utils.dashboard import format_kpi_value, kpi_label
+from backend.python.utils.normalization import normalize_dataframe_complete
+from backend.python.utils.usage_tracker import UsageTracker
+from frontend.streamlit_app.components.analytics_tabs import render_advanced_intelligence
+from frontend.streamlit_app.components.charts import (
     render_cashflow_trends,
     render_category_breakdown,
     render_growth_analysis,
 )
-from streamlit_app.components.kpi_metrics import (  # noqa: E402
+from frontend.streamlit_app.components.kpi_metrics import (
     render_executive_summary,
     render_kpi_snapshot,
 )
-from streamlit_app.components.sales_risk import (  # noqa: E402
+from frontend.streamlit_app.components.sales_risk import (
     render_risk_analysis,
     render_sales_performance,
 )
 
+# Use absolute paths relative to workspace root for persistence
+ROOT_DIR = Path.cwd()
 LOCAL_EXPORTS_DIR = ROOT_DIR / "local_exports"
 EXPORTS_DIR_CANDIDATES = [
     ROOT_DIR / "exports",
@@ -47,13 +44,8 @@ EXPORTS_DIR_CANDIDATES = [
 ]
 SUPPORT_DIR = ROOT_DIR / "data" / "support"
 logger = logging.getLogger(__name__)
-try:
-    init_tracing("streamlit-dashboard")
-    enable_auto_instrumentation()
-except ImportError:
-    logger.warning("Tracing setup not found, proceeding without it.")
-except Exception as exc:
-    logger.error("Error initializing tracing: %s", exc)
+init_tracing("streamlit-dashboard")
+enable_auto_instrumentation()
 
 
 # Initialize usage tracker

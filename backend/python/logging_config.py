@@ -23,7 +23,7 @@ def get_logger(name: str | None = None) -> logging.Logger:
         Configured logger instance
 
     Example:
-        from python.logging_config import get_logger
+        from backend.python.logging_config import get_logger
         logger = get_logger(__name__)
         logger.info("Application started")
     """

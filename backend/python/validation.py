@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Union
 import pandas as pd
 import polars as pl
 
-from python.config import settings
+from backend.python.config import settings
 
 # Unified required columns for both ingestion and analytics
 REQUIRED_ANALYTICS_COLUMNS: List[str] = settings.analytics.required_columns

@@ -70,10 +70,13 @@ def load_business_rules(rules_path: Optional[Path] = None) -> Dict[str, Any]:
         rules_path = Path(__file__).parent.parent.parent / "config" / "business_rules.yaml"
 
     if not rules_path.exists():
-        return {}
+        raise FileNotFoundError(
+            f"Business rules file not found at {rules_path}. "
+            "Critical business logic depends on this configuration."
+        )
 
-    with open(rules_path, "r") as f:
-        return yaml.safe_load(f)
+    with open(rules_path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
 
 
 def load_kpi_definitions(kpi_path: Optional[Path] = None) -> Dict[str, Any]:
@@ -90,7 +93,10 @@ def load_kpi_definitions(kpi_path: Optional[Path] = None) -> Dict[str, Any]:
         kpi_path = Path(__file__).parent.parent.parent / "config" / "kpis" / "kpi_definitions.yaml"
 
     if not kpi_path.exists():
-        return {}
+        raise FileNotFoundError(
+            f"KPI definitions file not found at {kpi_path}. "
+            "Pipeline cannot calculate metrics without valid definitions."
+        )
 
-    with open(kpi_path, "r") as f:
-        return yaml.safe_load(f)
+    with open(kpi_path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}

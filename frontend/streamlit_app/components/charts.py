@@ -1,20 +1,11 @@
-import sys
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# Add project root to path
-project_root = Path(__file__).parent.parent.parent.parent
-for _p in (project_root / "backend", project_root / "frontend", project_root):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
+from backend.python.utils.dashboard import compute_cat_agg, format_kpi_value
 
-from python.utils.dashboard import compute_cat_agg, format_kpi_value  # noqa: E402
-
-from .visualizations import apply_theme  # noqa: E402
+from .visualizations import apply_theme
 
 
 def render_cashflow_trends(analytics_facts):

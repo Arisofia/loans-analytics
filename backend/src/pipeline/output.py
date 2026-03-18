@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
 import pandas as pd
 
-from python.logging_config import get_logger
+from backend.python.logging_config import get_logger
 
 try:
     import httpx  # pylint: disable=unused-import  # used in _trigger_dashboard_refresh
@@ -35,7 +35,7 @@ except ImportError:
     create_client = None  # type: ignore[assignment]
 
 if TYPE_CHECKING:
-    from python.kpis.engine import KPIEngineV2
+    from backend.python.kpis.engine import KPIEngineV2
 
 logger = get_logger(__name__)
 

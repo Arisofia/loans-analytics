@@ -187,7 +187,7 @@ if command_exists python3; then
     if [[ "$DRY_RUN" == true ]]; then
         python3 - <<'PY'
 from pathlib import Path
-roots = [Path("python"), Path("src"), Path("scripts"), Path("tests"), Path("docs")]
+roots = [Path("backend/python"), Path("backend/src"), Path("frontend/streamlit_app"), Path("scripts"), Path("tests"), Path("docs")]
 suffixes = {".py", ".md", ".yml", ".yaml", ".json", ".sql", ".sh", ".txt", ".ts", ".js", ".mjs"}
 count = 0
 for root in roots:
@@ -201,7 +201,7 @@ PY
     else
         python3 - <<'PY'
 from pathlib import Path
-roots = [Path("python"), Path("src"), Path("scripts"), Path("tests"), Path("docs")]
+roots = [Path("backend/python"), Path("backend/src"), Path("frontend/streamlit_app"), Path("scripts"), Path("tests"), Path("docs")]
 suffixes = {".py", ".md", ".yml", ".yaml", ".json", ".sql", ".sh", ".txt", ".ts", ".js", ".mjs"}
 deleted = 0
 for root in roots:

@@ -19,7 +19,7 @@ try:
     from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
     from fastapi.responses import JSONResponse
 
-    from python.apps.analytics.api.models import (
+    from backend.python.apps.analytics.api.models import (
         AdvancedRiskResponse,
         CohortAnalyticsRequest,
         CohortAnalyticsResponse,
@@ -49,7 +49,7 @@ try:
         ValidationResponse,
         VintageCurveResponse,
     )
-    from python.apps.analytics.api.monitoring_models import (
+    from backend.python.apps.analytics.api.monitoring_models import (
         CommandCreate,
         CommandsListResponse,
         CommandStatus,
@@ -59,10 +59,10 @@ try:
         EventsListResponse,
         OperationalEventCreate,
     )
-    from python.apps.analytics.api.monitoring_service import MonitoringService
-    from python.apps.analytics.api.service import KPIService
-    from python.logging_config import init_sentry, set_sentry_correlation
-    from src.agents.multi_agent.orchestrator import MultiAgentOrchestrator
+    from backend.python.apps.analytics.api.monitoring_service import MonitoringService
+    from backend.python.apps.analytics.api.service import KPIService
+    from backend.python.logging_config import init_sentry, set_sentry_correlation
+    from backend.src.agents.multi_agent.orchestrator import MultiAgentOrchestrator
 
     init_sentry(service_name="analytics-api")
 

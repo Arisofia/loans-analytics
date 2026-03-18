@@ -30,7 +30,7 @@ from typing import Any
 
 import pandas as pd
 
-from python.logging_config import get_logger
+from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -278,8 +278,8 @@ def calculate_health_score_from_df(df: pd.DataFrame) -> dict[str, Any]:
     if df.empty:
         return calculate_portfolio_health_score(0.0, 100.0, 0.0, 0.0, 0.0)
 
-    from python.kpis.advanced_risk import calculate_advanced_risk_metrics
-    from python.kpis.unit_economics import calculate_cost_of_risk, calculate_npl_ratio
+    from backend.python.kpis.advanced_risk import calculate_advanced_risk_metrics
+    from backend.python.kpis.unit_economics import calculate_cost_of_risk, calculate_npl_ratio
 
     adv = calculate_advanced_risk_metrics(df)
     npl_data = calculate_npl_ratio(df)

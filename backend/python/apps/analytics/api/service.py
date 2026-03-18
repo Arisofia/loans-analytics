@@ -10,7 +10,7 @@ import uuid
 import pandas as pd
 from starlette.concurrency import run_in_threadpool
 
-from python.apps.analytics.api.models import (
+from backend.python.apps.analytics.api.models import (
     AdvancedRiskResponse,
     AnalysisLayer,
     CohortAnalyticsResponse,
@@ -50,19 +50,19 @@ from python.apps.analytics.api.models import (
     VintageCurvePoint,
     VintageCurveResponse,
 )
-from python.config import settings
-from python.kpis.advanced_risk import calculate_advanced_risk_metrics
-from python.kpis.catalog_processor import KPICatalogProcessor
-from python.kpis.health_score import calculate_portfolio_health_score
-from python.kpis.unit_economics import (
+from backend.python.config import settings
+from backend.python.kpis.advanced_risk import calculate_advanced_risk_metrics
+from backend.python.kpis.catalog_processor import KPICatalogProcessor
+from backend.python.kpis.health_score import calculate_portfolio_health_score
+from backend.python.kpis.unit_economics import (
     calculate_all_unit_economics,
     calculate_cost_of_risk,
     calculate_lgd,
     calculate_nim,
     calculate_npl_ratio,
 )
-from python.logging_config import get_logger
-from python.supabase_pool import get_pool
+from backend.python.logging_config import get_logger
+from backend.python.supabase_pool import get_pool
 
 logger = get_logger(__name__)
 
@@ -349,17 +349,31 @@ def _extract_kpi_metadata(kpi_def: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-@lru_cache(maxsize=1)
+_CATALOG_CACHE: dict[str, Any] = {}
+_CATALOG_FILE_HASH: str = ""
+
 def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
+    global _CATALOG_CACHE, _CATALOG_FILE_HASH
+    
     if yaml is None or not KPI_DEFINITIONS_PATH.exists():
         return {}
 
     try:
+        import hashlib
+        # Rule-hash cache invalidation: check if file content changed
+        with open(KPI_DEFINITIONS_PATH, "rb") as f:
+            current_hash = hashlib.md5(f.read()).hexdigest()
+        
+        if current_hash == _CATALOG_FILE_HASH:
+            return _CATALOG_CACHE
+
         with open(KPI_DEFINITIONS_PATH, encoding="utf-8") as handle:
             payload = yaml.safe_load(handle) or {}
+            
+        _CATALOG_FILE_HASH = current_hash
     except Exception as exc:  # pragma: no cover - defensive parsing fallback
         logger.warning("Failed to load KPI catalog metadata: %s", exc)
-        return {}
+        return _CATALOG_CACHE if _CATALOG_CACHE else {}
 
     metadata: dict[str, dict[str, Any]] = {}
     for top_key, section in payload.items():
@@ -370,6 +384,7 @@ def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
             if isinstance(kpi_def, dict):
                 metadata[kpi_id.lower()] = _extract_kpi_metadata(kpi_def)
 
+    _CATALOG_CACHE = metadata
     return metadata
 
 
@@ -1572,11 +1587,10 @@ class KPIService:
         now = pd.Timestamp.now().normalize()
         origination = pd.to_datetime(df["origination_date"], errors="coerce").dt.tz_localize(None)
 
-        # Fill missing origination with median or now (fallback)
-        if origination.isna().all():
-            origination = pd.Series([now] * len(df))
-        else:
-            origination = origination.fillna(origination.median())
+        # Fail-fast if origination dates are missing (no imputation)
+        if origination.isna().any():
+            missing_count = origination.isna().sum()
+            raise ValueError(f"CRITICAL: {missing_count} loans missing 'origination_date'. Statistical imputation is forbidden.")
 
         df["origination"] = origination
         df["cohort"] = df["origination"].dt.to_period("M").astype(str)
@@ -1940,56 +1954,61 @@ class KPIService:
     def _build_roll_rate_transition_matrix(
         self, matrix_df: pd.DataFrame
     ) -> list[RollRateTransition]:
-        from_totals_count = matrix_df.groupby("from_bucket")["loan_count"].sum().to_dict()
-        from_totals_exposure = matrix_df.groupby("from_bucket")["exposure_usd"].sum().to_dict()
-        transitions: list[RollRateTransition] = []
-        for _, row in matrix_df.iterrows():
-            from_bucket = str(row["from_bucket"])
-            to_bucket = str(row["to_bucket"])
-            loan_count = int(row["loan_count"])
-            exposure = float(row["exposure_usd"])
-            transitions.append(
-                RollRateTransition(
-                    from_bucket=from_bucket,
-                    to_bucket=to_bucket,
-                    loan_count=loan_count,
-                    exposure_usd=round(exposure, 2),
-                    loan_share_pct=round(
-                        self._safe_pct(loan_count, float(from_totals_count.get(from_bucket, 0))),
-                        2,
-                    ),
-                    exposure_share_pct=round(
-                        self._safe_pct(exposure, float(from_totals_exposure.get(from_bucket, 0.0))),
-                        2,
-                    ),
-                )
-            )
-        return transitions
+        from_totals_count = matrix_df.groupby("from_bucket")["loan_count"].transform("sum")
+        from_totals_exposure = matrix_df.groupby("from_bucket")["exposure_usd"].transform("sum")
+        
+        # Calculate shares in vectorized way
+        matrix_df = matrix_df.copy()
+        matrix_df["loan_share_pct"] = (matrix_df["loan_count"] / from_totals_count * 100).fillna(0.0).round(2)
+        matrix_df["exposure_share_pct"] = (matrix_df["exposure_usd"] / from_totals_exposure * 100).fillna(0.0).round(2)
+        matrix_df["exposure_usd"] = matrix_df["exposure_usd"].round(2)
+        
+        # Convert to list of Pydantic models (using model_validate for v2 if needed, 
+        # but here we construct the list)
+        return [
+            RollRateTransition(**row) 
+            for row in matrix_df[
+                ["from_bucket", "to_bucket", "loan_count", "exposure_usd", "loan_share_pct", "exposure_share_pct"]
+            ].to_dict("records")
+        ]
 
     def _build_roll_rate_bucket_summaries(self, df: pd.DataFrame) -> list[RollRateBucketSummary]:
+        # Pre-calculate counts and sums per from_bucket
+        bucket_stats = df.groupby("from_bucket").agg(
+            loan_count=("loan_count", "sum"),
+            exposure_usd=("from_exposure_usd", "sum")
+        )
+        
+        # Calculate specific counts per bucket
+        cure_counts = df[
+            (df["to_bucket"] == "current") & (df["from_bucket"] != "current")
+        ].groupby("from_bucket")["loan_count"].sum()
+        
+        roll_forward_counts = df[
+            (df["to_severity"] > df["from_severity"])
+        ].groupby("from_bucket")["loan_count"].sum()
+        
+        stable_counts = df[
+            (df["to_bucket"] == df["from_bucket"])
+        ].groupby("from_bucket")["loan_count"].sum()
+        
         summaries: list[RollRateBucketSummary] = []
         for bucket in self._bucket_order():
-            from_mask = df["from_bucket"] == bucket
-            bucket_count = int(from_mask.sum())
-            bucket_exposure = float(df.loc[from_mask, "from_exposure_usd"].sum())
-            cure_count = int(
-                (
-                    from_mask & (df["to_bucket"] == "current") & (df["from_bucket"] != "current")
-                ).sum()
-            )
-            roll_forward_count = int((from_mask & (df["to_severity"] > df["from_severity"])).sum())
-            stable_count = int((from_mask & (df["to_bucket"] == df["from_bucket"])).sum())
+            count = int(bucket_stats.loc[bucket, "loan_count"]) if bucket in bucket_stats.index else 0
+            exposure = float(bucket_stats.loc[bucket, "exposure_usd"]) if bucket in bucket_stats.index else 0.0
+            
+            cure_c = int(cure_counts.get(bucket, 0))
+            roll_f_c = int(roll_forward_counts.get(bucket, 0))
+            stable_c = int(stable_counts.get(bucket, 0))
+            
             summaries.append(
                 RollRateBucketSummary(
                     from_bucket=bucket,
-                    loan_count=bucket_count,
-                    exposure_usd=round(bucket_exposure, 2),
-                    cure_rate_pct=round(self._safe_pct(cure_count, float(bucket_count)), 2),
-                    roll_forward_rate_pct=round(
-                        self._safe_pct(roll_forward_count, float(bucket_count)),
-                        2,
-                    ),
-                    stability_rate_pct=round(self._safe_pct(stable_count, float(bucket_count)), 2),
+                    loan_count=count,
+                    exposure_usd=round(exposure, 2),
+                    cure_rate_pct=round(self._safe_pct(cure_c, float(count)), 2),
+                    roll_forward_rate_pct=round(self._safe_pct(roll_f_c, float(count)), 2),
+                    stability_rate_pct=round(self._safe_pct(stable_c, float(count)), 2),
                 )
             )
         return summaries

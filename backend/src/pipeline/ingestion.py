@@ -19,7 +19,7 @@ from typing import Any, Dict, Optional
 
 import pandas as pd
 
-from python.logging_config import get_logger
+from backend.python.logging_config import get_logger
 from .utils import format_error_response
 
 logger = get_logger(__name__)
@@ -66,6 +66,15 @@ class IngestionPhase:
 
             # Validate schema
             validation_results = self._validate_schema(df)
+            if not validation_results.get("schema_valid", False):
+                error_msg = f"SCHEMA VALIDATION FAILED: {validation_results.get('missing_columns', validation_results.get('type_errors', 'Unknown schema error'))}"
+                logger.error(error_msg)
+                return {
+                    "status": "failed",
+                    "error": error_msg,
+                    "validation": validation_results,
+                    "timestamp": datetime.now().isoformat(),
+                }
 
             # Check for duplicates
             duplicate_check = self._check_duplicates(df)
@@ -149,7 +158,7 @@ class IngestionPhase:
                     return value.decode(encoding)
                 except Exception:
                     continue
-            return repr(value)
+            raise ValueError(f"CRITICAL: decode failure for bytes value {repr(value)}. Aborting batch.")
         return str(value)
 
     def _load_from_api(self) -> pd.DataFrame:

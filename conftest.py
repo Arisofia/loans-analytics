@@ -1,15 +1,12 @@
-"""Root conftest.py — keeps pre-restructure import paths working.
+"""Standard root conftest.py for Abaco Monorepo.
 
-After the Clean Architecture directory moves (Phase 1), the packages
-``src``, ``python``, and ``streamlit_app`` now live under ``backend/``
-and ``frontend/`` respectively.  Adding those two directories to
-``sys.path`` lets every existing import statement continue to resolve
-without touching individual source files.
+Ensures the project root is in sys.path for absolute imports using
+backend.* and frontend.* prefixes.
 """
 
 import sys
 from pathlib import Path
 
-_ROOT = Path(__file__).parent
-sys.path.insert(0, str(_ROOT / "backend"))
-sys.path.insert(0, str(_ROOT / "frontend"))
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))

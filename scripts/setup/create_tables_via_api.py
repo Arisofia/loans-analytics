@@ -81,9 +81,7 @@ def create_tables_via_supabase():
         return True
 
     except ImportError:
-        print("❌ Supabase SDK not installed")
-        print("   Install with: pip install supabase")
-        return False
+        raise ValueError("CRITICAL: Supabase SDK is not installed. Non-deterministic runtime installation is forbidden.") from None
     except Exception as e:
         print(f"❌ Error: {e}")
         print("\n   Alternative: Create tables manually via Supabase UI")
@@ -97,9 +95,7 @@ def main():
     try:
         import requests
     except ImportError:
-        print("📦 Installing requests...")
-        os.system("pip install -q requests")
-        import requests
+        raise ValueError("CRITICAL: 'requests' library is not installed. Non-deterministic runtime installation is forbidden.") from None
 
     env = load_env()
     if not env:

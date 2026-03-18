@@ -168,20 +168,17 @@ class Crosswalk:
                 )
                 # Preserve original behavior of taking the first match per loan_id
                 exact_id_matches = exact_id_matches.drop_duplicates(subset=["loan_id"])
-                for _, row in exact_id_matches.iterrows():
-                    tid = str(row["loan_id"])
-                    oid = str(row["operation_id"])
-                    records.append(
-                        {
-                            "loan_id": tid,
-                            "operation_id": oid,
-                            "match_type": "exact",
-                            "reason_code": REASON_EXACT,
-                            "match_score": 100.0,
-                        }
-                    )
-                    matched_tape.add(tid)
-                    matched_mora.add(oid)
+                
+                # Vectorized record creation
+                if not exact_id_matches.empty:
+                    match_records = exact_id_matches.assign(
+                        match_type="exact",
+                        reason_code=REASON_EXACT,
+                        match_score=100.0
+                    ).to_dict("records")
+                    records.extend(match_records)
+                    matched_tape.update(exact_id_matches["loan_id"].astype(str))
+                    matched_mora.update(exact_id_matches["operation_id"].astype(str))
 
         # Exact matches against mora_numero_col (e.g., numero_desembolso) for remaining loans
         if mora_numero_col in control_mora_df.columns and not loan_ids_df.empty:
@@ -198,20 +195,17 @@ class Crosswalk:
                         how="inner",
                     )
                     exact_num_matches = exact_num_matches.drop_duplicates(subset=["loan_id"])
-                    for _, row in exact_num_matches.iterrows():
-                        tid = str(row["loan_id"])
-                        oid = str(row["operation_id"])
-                        records.append(
-                            {
-                                "loan_id": tid,
-                                "operation_id": oid,
-                                "match_type": "exact",
-                                "reason_code": REASON_EXACT,
-                                "match_score": 100.0,
-                            }
-                        )
-                        matched_tape.add(tid)
-                        matched_mora.add(oid)
+                    
+                    # Vectorized record creation
+                    if not exact_num_matches.empty:
+                        match_num_records = exact_num_matches.assign(
+                            match_type="exact",
+                            reason_code=REASON_EXACT,
+                            match_score=100.0
+                        ).to_dict("records")
+                        records.extend(match_num_records)
+                        matched_tape.update(exact_num_matches["loan_id"].astype(str))
+                        matched_mora.update(exact_num_matches["operation_id"].astype(str))
 
         # Pass 2: fuzzy match (name + date) for unmatched tape loans
         unmatched_tape = [tid for tid in tape_ids if tid not in matched_tape]

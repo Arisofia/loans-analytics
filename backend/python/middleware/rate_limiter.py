@@ -5,7 +5,7 @@ Provides two implementations:
 2. TokenBucketRateLimiter: Token bucket algorithm for burst handling
 
 Usage:
-    from python.middleware import api_limiter, rate_limit
+    from backend.python.middleware import api_limiter, rate_limit
 
     @rate_limit(api_limiter)
     def my_api_endpoint():

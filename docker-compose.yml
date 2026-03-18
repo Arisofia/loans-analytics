@@ -70,8 +70,8 @@ services:
     volumes:
       - ./data:/app/data
       - ./scripts:/app/scripts
-      - ./backend/python:/app/python
-      - ./backend/src:/app/src
+      - ./backend/python:/app/backend/python
+      - ./backend/src:/app/backend/src
     restart: unless-stopped
     depends_on:
       - dashboard

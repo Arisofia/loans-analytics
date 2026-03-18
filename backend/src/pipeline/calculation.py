@@ -25,7 +25,8 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from python.logging_config import get_logger
+from backend.python.logging_config import get_logger
+from backend.python.kpis.engine import KPIEngineV2
 
 logger = get_logger(__name__)
 
@@ -550,15 +551,25 @@ class CalculationPhase:
         try:
             df = self._load_input_dataframe(clean_data_path=clean_data_path, df=df)
 
-            # Calculate KPIs
+            # 1. Initialize KPIEngineV2 for standard metrics and audit trail
+            kpi_engine = KPIEngineV2(df, actor="pipeline_service", run_id=run_dir.name if run_dir else None)
+            engine_results = kpi_engine.calculate_all()
+
+            # 2. Extract values from engine results
+            standard_kpis = {k: v["value"] for k, v in engine_results.items()}
+
+            # 3. Calculate dynamic KPIs via Formula Engine
             kpi_results = self._calculate_kpis(df)
+
+            # 4. Merge results (dynamic takes precedence for custom metrics)
+            merged_results = {**standard_kpis, **kpi_results}
 
             # Segment-level KPIs (by company, credit_line, kam_hunter, kam_farmer)
             segment_kpis = self._calculate_segment_kpis(df)
 
             # Enriched KPIs from new CONTROL DE MORA fields
             enriched_kpis = self._calculate_enriched_kpis(df)
-            kpi_results.update(enriched_kpis)
+            merged_results.update(enriched_kpis)
 
             # Time-series rollups
             time_series = self._calculate_time_series(df)
@@ -568,16 +579,16 @@ class CalculationPhase:
             nsm_recurrent_tpv = self._calculate_recurrent_tpv(client_tpv_ts)
 
             # Anomaly detection
-            anomalies = self._detect_anomalies(kpi_results)
+            anomalies = self._detect_anomalies(merged_results)
 
             # Generate manifest
-            manifest = self._generate_manifest(kpi_results, df)
+            manifest = self._generate_manifest(merged_results, df)
 
             # Store results
             if run_dir:
                 kpi_path = run_dir / "kpi_results.parquet"
                 kpi_df = pd.DataFrame(
-                    [{k: v for k, v in kpi_results.items() if not isinstance(v, dict)}]
+                    [{k: v for k, v in merged_results.items() if not isinstance(v, (dict, list))}]
                 )
                 kpi_df.to_parquet(kpi_path, index=False)
 
@@ -600,17 +611,18 @@ class CalculationPhase:
 
             results = {
                 "status": "success",
-                "kpi_count": len(kpi_results),
-                "kpis": kpi_results,
+                "kpi_count": len(merged_results),
+                "kpis": merged_results,
                 "segment_kpis": segment_kpis,
                 "time_series": time_series,
                 "nsm_recurrent_tpv": nsm_recurrent_tpv,
                 "anomalies": anomalies,
                 "manifest": manifest,
+                "kpi_engine": kpi_engine,  # Return engine for audit trail export in Phase 4
                 "timestamp": datetime.now().isoformat(),
             }
 
-            logger.info("Calculation completed: %d KPIs computed", len(kpi_results))
+            logger.info("Calculation completed: %d KPIs computed", len(merged_results))
             return results
 
         except Exception as e:
@@ -1009,6 +1021,7 @@ class CalculationPhase:
 
         except Exception as e:
             logger.error("Anomaly detection failed: %s", e, exc_info=True)
+            raise ValueError(f"CRITICAL: Anomaly pipeline failure: {e}") from e
 
         return anomalies
 
@@ -1152,17 +1165,21 @@ class CalculationPhase:
         status_col: Optional[str],
     ) -> Optional[Dict[str, Any]]:
         """Compute KPI bundle for one segment group."""
-        total_bal = float(grp[balance_col].sum())
-        if total_bal <= 0:
+        from decimal import Decimal, ROUND_HALF_UP
+
+        total_bal_raw = grp[balance_col].sum()
+        if total_bal_raw <= 0:
             return None
 
+        total_bal = Decimal(str(total_bal_raw)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
         seg_kpis: Dict[str, Any] = {
-            "outstanding_balance": round(total_bal, 2),
+            "outstanding_balance": float(total_bal),
             "loan_count": len(grp),
         }
         if dpd_col:
             seg_kpis.update(
-                self._calculate_segment_par_metrics(grp, balance_col, dpd_col, total_bal)
+                self._calculate_segment_par_metrics(grp, balance_col, dpd_col, float(total_bal))
             )
         if status_col:
             seg_kpis["default_rate"] = self._calculate_segment_default_rate(grp, status_col)
