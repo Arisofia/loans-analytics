@@ -594,7 +594,7 @@ class CalculationPhase:
         Feature matrix
         --------------
         - All ``{col}_is_missing`` opacity flags present in *df* (integer 0/1)
-        - Winsorized/robust-scaled versions of: ``ltv_sintetico``, ``dpd_adjusted``,
+        - Robust-scaled versions of: ``ltv_sintetico``, ``dpd_adjusted``,
           ``vd_bps_month``, ``ratio_pago_real``
         - ``fillna`` is **not** used blindly; observations with NaN in any feature
           column are marked opaque and assigned the sentinel cohort "Unknown".

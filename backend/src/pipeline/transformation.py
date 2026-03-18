@@ -1005,21 +1005,28 @@ class TransformationPhase:
         self, df: pd.DataFrame, null_columns: Dict[str, int]
     ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
-        Intelligent null handling based on null percentage, column type, and importance.
+        Null handling dispatched by column dtype and null percentage.
 
-        For numeric columns, uses configurable thresholds:
-        - < LOW_NULL_THRESHOLD_PCT: Structural zero fill + integer opacity flag
-        - LOW to HIGH_NULL_THRESHOLD_PCT: Fill with a numeric missing indicator
-        - > HIGH_NULL_THRESHOLD_PCT: Log warning, fill with default
+        **Numeric columns** — three tiers keyed on ``null_pct``:
 
-        For categorical columns, nulls are always handled with a strict indicator
-        strategy regardless of ``null_pct``: missing values are filled with a
-        categorical missing token (for example, ``"missing_data"``) and an
-        opacity flag column (``{col}_is_missing``) is added.
+        - ``< LOW_NULL_THRESHOLD_PCT``: structural zero fill + integer opacity
+          flag (``{col}_is_missing`` column added; 1 = was null, 0 = present).
+        - ``LOW ≤ null_pct < HIGH_NULL_THRESHOLD_PCT``: filled with the
+          ``MISSING_NUMERIC_INDICATOR`` sentinel value.  No opacity-flag column
+          is added for this tier.
+        - ``≥ HIGH_NULL_THRESHOLD_PCT``: filled with zero; warning logged for
+          columns in ``HIGH_NULL_WARNING_NUMERIC_COLUMNS``; columns that are
+          effectively all-null (> 99.5%) are left as-is (NaN preserved).
 
-        No mean/median imputation is ever applied to financial numeric columns.
-        Opacity flags (``{col}_is_missing``) let downstream ML models learn from
-        the absence of data rather than being misled by statistical substitutes.
+        **Categorical columns** — threshold tiers do **not** apply:
+
+        All categorical nulls unconditionally receive the strict opacity
+        treatment: filled with sentinel string ``"missing_data"`` and an
+        integer flag ``{col}_is_missing``, regardless of ``null_pct``.
+
+        No mean/median/mode imputation is ever applied. Opacity flags let
+        downstream ML models learn from the absence of data rather than being
+        misled by statistical substitutes.
 
         Returns a structured ``opacity_counts`` dict (``{flag_col: null_count}``)
         alongside the human-readable ``smart_actions`` so that downstream phases
