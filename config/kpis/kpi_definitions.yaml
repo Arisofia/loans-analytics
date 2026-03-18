@@ -79,9 +79,17 @@ asset_quality_kpis:
     description: "Delinquency 31-60 days"
 
   npl_ratio:
+    formula: "SUM(outstanding_balance WHERE dpd >= 30 OR status IN ('delinquent','defaulted')) / SUM(outstanding_balance) * 100"
+    unit: "percentage"
+    description: "Non-Performing Loan ratio (broad) - balance-weighted early-warning exposure to delinquent and defaulted accounts (DPD >= 30)"
+    thresholds:
+      warning: 5
+      critical: 10
+
+  npl_90_ratio:
     formula: "SUM(outstanding_balance WHERE dpd > 90 OR status = 'defaulted') / SUM(outstanding_balance) * 100"
     unit: "percentage"
-    description: "Non-Performing Loan ratio - balance-weighted exposure to severely delinquent and defaulted accounts"
+    description: "Non-Performing Loan ratio (strict Basel 90-day) - balance-weighted exposure to severely delinquent and defaulted accounts"
     thresholds:
       warning: 5
       critical: 10
