@@ -148,7 +148,8 @@ class UnifiedPipeline:
             data_hash, config_hash, code_version, mode_token
         )
         # Use a deterministic base_run_id derived solely from the run_signature to ensure idempotency.
-        base_run_id = run_signature[:8]
+        # Use the full 16-character hex signature to minimize collision risk for run directories.
+        base_run_id = run_signature[:16]
         run_id = base_run_id if mode == "full" else f"{base_run_id}_{mode_token}"
 
         logger.info("Starting pipeline execution (run_id: %s, mode: %s)", run_id, mode)
