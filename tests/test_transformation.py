@@ -268,8 +268,33 @@ class TestCanonicalRiskState:
         assert (out["dpd_adjusted"] == out["dpd"]).all()
         assert metrics["opaque_ratio_rows"] == 2
 
+    def test_derive_canonical_risk_state_does_not_flag_new_origination_as_kiting(
+        self, default_config
+    ):
+        """New originations have ratio_pago_real = 0 (no payment received yet).
+        They must NOT be flagged as kiting — kiting requires 0 < ratio < 1 (partial payment),
+        not zero payment on a new loan whose first payment isn't due yet."""
+        transformer = TransformationPhase(default_config)
+        df = pd.DataFrame(
+            {
+                "dpd": [0.0, 10.0],
+                "last_payment_amount": [0.0, 0.0],
+                "total_scheduled": [100.0, 100.0],
+            }
+        )
 
-class TestBusinessRules:
+        out, metrics = transformer._derive_canonical_risk_state(df)
+
+        # ratio_pago_real = 0 for both rows
+        assert out["ratio_pago_real"].iloc[0] == pytest.approx(0.0)
+        assert out["ratio_pago_real"].iloc[1] == pytest.approx(0.0)
+        # Neither should be flagged as kiting (no payment was made, not a token payment)
+        assert not out["is_kiting_suspected"].iloc[0], "new origination (dpd=0) must not be kiting"
+        assert not out["is_kiting_suspected"].iloc[1], "new origination (dpd=10) must not be kiting"
+        assert metrics["kiting_rows"] == 0
+
+
+
     """Test business rules application."""
 
     def test_dpd_bucket_assignment(self, default_config, sample_loan_data):

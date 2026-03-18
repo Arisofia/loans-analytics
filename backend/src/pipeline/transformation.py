@@ -602,11 +602,33 @@ class TransformationPhase:
         )
         due_from_months = pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
         month_offsets = raw_term_months.round().astype("Int64")
-        for idx, month_val in month_offsets.dropna().items():
-            if pd.notna(final_origination.loc[idx]):
-                due_from_months.loc[idx] = final_origination.loc[idx] + pd.DateOffset(
-                    months=int(month_val)
-                )
+        valid_month_mask = month_offsets.notna() & final_origination.notna()
+        if valid_month_mask.any():
+            # Vectorized calendar-exact month addition (avoids O(N) DateOffset loop).
+            # Uses year/month integer arithmetic so Feb 29, months with 30 days, etc. are
+            # handled correctly: the day is clamped to the last valid day of the target month.
+            orig = pd.to_datetime(final_origination[valid_month_mask])
+            m = month_offsets[valid_month_mask].astype(int)
+            new_year = orig.dt.year + (orig.dt.month - 1 + m) // 12
+            new_month = (orig.dt.month - 1 + m) % 12 + 1
+            # Compute days_in_month via numpy leap-year lookup (avoids constructing a
+            # temporary full datetime series just to call .dt.days_in_month).
+            # Arrays are 0-indexed (index 0 = January, index 11 = December).
+            _dim_common = np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+            _dim_leap = np.array([31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+            is_leap = (new_year % 4 == 0) & ((new_year % 100 != 0) | (new_year % 400 == 0))
+            days_in_new_month = pd.Series(
+                np.where(
+                    is_leap.values,
+                    _dim_leap[new_month.values - 1],
+                    _dim_common[new_month.values - 1],
+                ),
+                index=orig.index,
+            )
+            new_day = orig.dt.day.clip(upper=days_in_new_month)
+            due_from_months.loc[valid_month_mask] = pd.to_datetime(
+                {"year": new_year, "month": new_month, "day": new_day}
+            )
 
         inferred_due_from_term = due_from_days.where(due_from_days.notna(), due_from_months)
         final_due = due_base.where(due_base.notna(), inferred_due_from_term)
@@ -927,7 +949,8 @@ class TransformationPhase:
             ratio_pago_real = np.where(scheduled_amount > 0, paid_amount / scheduled_amount, np.nan)
 
         is_kiting_suspected = (
-            pd.Series(ratio_pago_real, index=df.index).lt(1.0)
+            pd.Series(ratio_pago_real, index=df.index).gt(0.0)
+            & pd.Series(ratio_pago_real, index=df.index).lt(1.0)
             & pd.Series(ratio_pago_real, index=df.index).notna()
             & dpd.lt(30)
         )
