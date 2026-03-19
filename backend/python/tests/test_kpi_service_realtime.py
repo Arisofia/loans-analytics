@@ -2,9 +2,13 @@
 
 import asyncio
 from datetime import datetime
+from pathlib import Path
+
+import pytest
 
 from backend.python.apps.analytics.api.models import LoanRecord
 from backend.python.apps.analytics.api.service import KPIService
+import backend.python.apps.analytics.api.service as service_module
 
 
 def test_calculate_kpis_for_portfolio_includes_collection_rate():
@@ -141,3 +145,21 @@ def test_supported_catalog_kpis_include_remaining_catalog_ids():
     service = KPIService(actor="test_user")
     supported = set(service.get_supported_catalog_kpi_ids())
     assert {"default_rate", "total_loans_count", "customer_lifetime_value"}.issubset(supported)
+
+
+def test_catalog_metadata_parse_failure_is_fail_fast(monkeypatch, tmp_path):
+    """Malformed KPI catalog parsing must raise CRITICAL instead of returning stale/empty metadata."""
+    kpi_path = tmp_path / "kpi_definitions.yaml"
+    kpi_path.write_text("dummy: true\n", encoding="utf-8")
+
+    # Reset cache state so the patched loader path is exercised deterministically.
+    monkeypatch.setattr(service_module, "_CATALOG_STATE", {"cache": {}, "file_hash": ""})
+    monkeypatch.setattr(service_module, "KPI_DEFINITIONS_PATH", Path(kpi_path))
+
+    def _raise_parse_error(_handle):
+        raise RuntimeError("synthetic parser failure")
+
+    monkeypatch.setattr(service_module.yaml, "safe_load", _raise_parse_error)
+
+    with pytest.raises(ValueError, match="CRITICAL: Failed to load KPI catalog metadata"):
+        service_module._load_catalog_kpi_metadata()

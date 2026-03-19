@@ -380,9 +380,9 @@ def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
                 )
 
         _CATALOG_STATE["file_hash"] = current_hash
-    except Exception as exc:  # pragma: no cover - defensive parsing fallback
-        logger.warning("Failed to load KPI catalog metadata: %s", exc)
-        return _CATALOG_STATE["cache"] if _CATALOG_STATE["cache"] else {}
+    except Exception as exc:  # pragma: no cover - fail-fast on catalog parse errors
+        logger.error("Failed to load KPI catalog metadata: %s", exc, exc_info=True)
+        raise ValueError(f"CRITICAL: Failed to load KPI catalog metadata: {exc}") from exc
 
     metadata: dict[str, dict[str, Any]] = {}
     for top_key, section in payload.items():
