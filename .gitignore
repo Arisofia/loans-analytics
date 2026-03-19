@@ -79,6 +79,7 @@ data/metrics/
 data/archives/
 data/agent_outputs/
 data/usage_metrics/
+data/raw/*.csv
 exports/
 !exports/.gitkeep
 outputs/

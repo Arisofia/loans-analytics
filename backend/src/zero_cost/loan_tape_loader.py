@@ -48,6 +48,7 @@ _LOAN_ALIASES: dict[str, str] = {
     "principal0": "original_principal",
     "monto_desembolso": "original_principal",
     "interest rate": "interest_rate",
+    "interest rate apr": "interest_rate",
     "interestrate": "interest_rate",
     "tasa_interes": "interest_rate",
     "term": "term_months",
@@ -55,6 +56,7 @@ _LOAN_ALIASES: dict[str, str] = {
     "plazo": "term_months",
     "plazo_meses": "term_months",
     "currency": "currency",
+    "loan currency": "currency",
     "moneda": "currency",
     "product type": "product_type",
     "producttype": "product_type",
@@ -69,6 +71,7 @@ _LOAN_ALIASES: dict[str, str] = {
     "maturity date": "maturity_date",
     "maturitydate": "maturity_date",
     "fecha_vencimiento": "maturity_date",
+    "outstanding loan value": "outstanding_loan_value",
 }
 
 _SCHEDULE_ALIASES: dict[str, str] = {
@@ -134,6 +137,7 @@ _CUSTOMER_ALIASES: dict[str, str] = {
     "client_id": "client_id",
     "id_cliente": "client_id",
     "name": "client_name",
+    "cliente": "client_name",
     "customer name": "client_name",
     "customername": "client_name",
     "nombre_cliente": "client_name",
@@ -148,6 +152,7 @@ _CUSTOMER_ALIASES: dict[str, str] = {
     "segmento": "segment",
     "kam": "kam",
     "account manager": "kam",
+    "sales agent": "kam",
 }
 
 _COLLATERAL_ALIASES: dict[str, str] = {
@@ -158,6 +163,7 @@ _COLLATERAL_ALIASES: dict[str, str] = {
     "collateraltype": "collateral_type",
     "tipo_garantia": "collateral_type",
     "collateral value": "collateral_value",
+    "collateral current": "collateral_value",
     "collateralvalue": "collateral_value",
     "valor_garantia": "collateral_value",
     "doc type": "doc_type",
@@ -259,7 +265,7 @@ class LoanTapeLoader:
     _LOAN_NAMES = ("loan_data.csv", "loan_tape.csv", "prestamos.csv")
     _SCHED_NAMES = ("payment_schedule.csv", "schedule.csv", "cronograma.csv")
     _REAL_NAMES = ("real_payment.csv", "payments.csv", "pagos_reales.csv")
-    _CUST_NAMES = ("customer.csv", "customers.csv", "clientes.csv")
+    _CUST_NAMES = ("customer_data.csv", "customer.csv", "customers.csv", "clientes.csv")
     _COLL_NAMES = ("collateral.csv", "garantias.csv")
 
     def __init__(

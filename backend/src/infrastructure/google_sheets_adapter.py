@@ -17,13 +17,21 @@ _SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-_REQUIRED_COLUMNS = {"CodCliente", "FechaDesembolso", "ValorAprobado"}
+_DESEMBOLSOS_REQUIRED_COLUMNS = {"CodCliente", "FechaDesembolso", "ValorAprobado"}
+_INTERMEDIA_REQUIRED_COLUMNS = {
+    "CodCliente",
+    "Cliente",
+    "NumeroInterno",
+    "FechaDesembolso",
+    "TotalSaldoVigente",
+}
 
 
 class ControlMoraSheetsAdapter:
     """Fail-fast Google Sheets adapter for the institutional Control de Mora workbook."""
 
     DESEMBOLSOS_TAB = "DESEMBOLSOS"
+    INTERMEDIA_TAB = "INTERMEDIA"
 
     def __init__(self, credentials_path: str, spreadsheet_id: str) -> None:
         self._credentials_path = credentials_path
@@ -31,7 +39,17 @@ class ControlMoraSheetsAdapter:
 
     def fetch_desembolsos_raw(self) -> List[Dict[str, Any]]:
         """Fetch all rows from the DESEMBOLSOS tab with strict validation."""
-        return self.fetch_sheet_raw(self.DESEMBOLSOS_TAB, required_columns=_REQUIRED_COLUMNS)
+        return self.fetch_sheet_raw(
+            self.DESEMBOLSOS_TAB,
+            required_columns=_DESEMBOLSOS_REQUIRED_COLUMNS,
+        )
+
+    def fetch_intermedia_raw(self) -> List[Dict[str, Any]]:
+        """Fetch all rows from the INTERMEDIA tab with strict validation."""
+        return self.fetch_sheet_raw(
+            self.INTERMEDIA_TAB,
+            required_columns=_INTERMEDIA_REQUIRED_COLUMNS,
+        )
 
     def fetch_sheet_raw(
         self,

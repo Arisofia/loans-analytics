@@ -23,10 +23,13 @@ Usage
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+
+from backend.src.infrastructure.google_sheets_adapter import ControlMoraSheetsAdapter
 
 from .control_mora_adapter import ControlMoraAdapter
 from .loan_tape_loader import LoanTapeLoader
@@ -60,6 +63,7 @@ class PipelineRouter:
         self.pivot_month = pd.Timestamp(pivot_month)
         self._loader = loan_tape_loader or LoanTapeLoader()
         self._adapter = control_mora_adapter or ControlMoraAdapter()
+        self._sheets_adapter: Optional[ControlMoraSheetsAdapter] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -201,6 +205,9 @@ class PipelineRouter:
         snapshot_month: pd.Timestamp,
         control_mora_path: Optional[str | Path],
     ) -> dict[str, pd.DataFrame]:
+        if control_mora_path is not None and self._is_gsheets_source(control_mora_path):
+            return self._load_control_mora_from_gsheets(snapshot_month, str(control_mora_path))
+
         if control_mora_path is None:
             logger.warning(
                 "PipelineRouter: control_mora_path not provided for %s — " "returning empty tables",
@@ -250,6 +257,108 @@ class PipelineRouter:
             # Control de Mora does not currently provide schedule or payment
             # tables, but we return canonical-schema empties to keep
             # downstream components stable.
+            "fact_schedule": self._empty_fact_schedule(),
+            "fact_real_payment": self._empty_fact_real_payment(),
+            "_source": "control_mora",
+        }
+
+    @staticmethod
+    def _is_gsheets_source(source: str | Path) -> bool:
+        normalized = str(source).replace("\\", "/")
+        return normalized.startswith("gsheets://") or normalized.startswith("gsheets:/")
+
+    @staticmethod
+    def _extract_gsheets_tab(source: str) -> str:
+        normalized = source.replace("\\", "/")
+        if normalized.startswith("gsheets://"):
+            tail = normalized[len("gsheets://") :]
+        elif normalized.startswith("gsheets:/"):
+            tail = normalized[len("gsheets:/") :]
+        else:
+            tail = ""
+        return tail.strip("/") or ControlMoraSheetsAdapter.INTERMEDIA_TAB
+
+    @staticmethod
+    def _dpd_to_bucket(dpd: int) -> str:
+        if dpd <= 0:
+            return "current"
+        if dpd <= 30:
+            return "1-30"
+        if dpd <= 60:
+            return "31-60"
+        if dpd <= 90:
+            return "61-90"
+        if dpd <= 180:
+            return "91-180"
+        if dpd <= 360:
+            return "181-360"
+        return "360+"
+
+    def _get_sheets_adapter(self) -> ControlMoraSheetsAdapter:
+        if self._sheets_adapter is not None:
+            return self._sheets_adapter
+
+        credentials_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
+        spreadsheet_id = os.getenv("GOOGLE_SHEETS_SPREADSHEET_ID")
+        if not credentials_path or not spreadsheet_id:
+            raise ValueError(
+                "CRITICAL: gsheets source requested in PipelineRouter but "
+                "GOOGLE_SHEETS_CREDENTIALS_PATH/GOOGLE_SHEETS_SPREADSHEET_ID are missing"
+            )
+        self._sheets_adapter = ControlMoraSheetsAdapter(credentials_path, spreadsheet_id)
+        return self._sheets_adapter
+
+    def _load_control_mora_from_gsheets(
+        self,
+        snapshot_month: pd.Timestamp,
+        source: str,
+    ) -> dict[str, pd.DataFrame]:
+        tab_name = self._extract_gsheets_tab(source)
+        adapter = self._get_sheets_adapter()
+        records = adapter.fetch_intermedia_raw() if tab_name.upper() == "INTERMEDIA" else adapter.fetch_sheet_raw(tab_name)
+        df = pd.DataFrame(records)
+
+        empty = pd.Series(index=df.index, dtype="object")
+        loan_id_series = (
+            df.get("NumeroInterno", empty)
+            if "NumeroInterno" in df.columns
+            else df.get("NumeroDesembolso", empty)
+        )
+        disbursement_date = pd.to_datetime(df.get("FechaDesembolso", empty), errors="coerce")
+        principal_outstanding = pd.to_numeric(
+            df.get("TotalSaldoVigente", pd.Series(index=df.index, dtype="float64")),
+            errors="coerce",
+        ).fillna(0.0)
+        due_date = pd.to_datetime(df.get("FechaPagoProgramado", empty), errors="coerce")
+
+        # One-line behavioral fix requested: ignore pre-disbursement rows in DPD computation.
+        dpd = ((snapshot_month.normalize() - due_date).dt.days.clip(lower=0)).fillna(0)
+        dpd = dpd.where(disbursement_date.notna() & (disbursement_date <= snapshot_month), 0).astype(int)
+
+        dim_loan = pd.DataFrame(
+            {
+                "loan_id": loan_id_series.astype(str),
+                "numero_desembolso": df.get("NumeroDesembolso", loan_id_series).astype(str),
+                "client_id": df.get("CodCliente", empty).astype(str),
+                "client_name": df.get("Cliente", empty).astype(str),
+                "disbursement_date": disbursement_date,
+                "currency": "USD",
+                "principal_outstanding": principal_outstanding,
+                "total_overdue_amount": pd.Series(0.0, index=df.index),
+                "dpd": dpd,
+                "mora_bucket": dpd.map(self._dpd_to_bucket),
+                "snapshot_month": snapshot_month.normalize(),
+                "product_type": df.get("AsesoriaDigital", empty),
+                "branch_code": df.get("Cod_Kam_hunter", empty),
+            }
+        )
+
+        # Filter out empty loan identifiers while preserving deterministic shape.
+        dim_loan = dim_loan[dim_loan["loan_id"].str.strip() != ""].reset_index(drop=True)
+        dim_loan["source"] = "control_mora"
+
+        return {
+            "dim_loan": dim_loan,
             "fact_schedule": self._empty_fact_schedule(),
             "fact_real_payment": self._empty_fact_real_payment(),
             "_source": "control_mora",
