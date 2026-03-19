@@ -78,7 +78,15 @@ class ControlMoraSheetsAdapter:
                 f"CRITICAL: Tab '{normalized_tab}' not found in spreadsheet '{self._spreadsheet_id}': {exc}"
             ) from exc
 
-        records = worksheet.get_all_records()
+        try:
+            records = worksheet.get_all_records()
+        except Exception as exc:
+            # Some institutional sheets include duplicate or empty headers.
+            # Fallback to raw grid parsing with deterministic unique headers.
+            if "header row" not in str(exc).lower() and "duplicate" not in str(exc).lower():
+                raise
+            records = self._get_records_with_unique_headers(worksheet)
+
         if not records:
             raise ValueError(f"CRITICAL: Tab '{normalized_tab}' returned 0 rows")
 
@@ -91,6 +99,27 @@ class ControlMoraSheetsAdapter:
                     f"{missing}; present={sorted(present)}"
                 )
 
+        return records
+
+    @staticmethod
+    def _get_records_with_unique_headers(worksheet) -> List[Dict[str, Any]]:
+        values = worksheet.get_all_values()
+        if not values:
+            return []
+
+        raw_headers = [str(cell).strip() for cell in values[0]]
+        counts: Dict[str, int] = {}
+        headers: List[str] = []
+        for idx, header in enumerate(raw_headers):
+            base = header if header else f"column_{idx + 1}"
+            seen = counts.get(base, 0)
+            counts[base] = seen + 1
+            headers.append(base if seen == 0 else f"{base}_{seen + 1}")
+
+        records: List[Dict[str, Any]] = []
+        for row in values[1:]:
+            padded = row + [""] * max(0, len(headers) - len(row))
+            records.append(dict(zip(headers, padded)))
         return records
 
     def _ensure_dependencies(self) -> None:
