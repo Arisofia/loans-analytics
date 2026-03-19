@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -196,52 +196,105 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     runtime: EnvironmentSettings = Field(default_factory=EnvironmentSettings)
-    financial: FinancialGuardrails = FinancialGuardrails()
-    risk: RiskParameters = RiskParameters()
-    sla: SLASettings = SLASettings()
-    analytics: AnalyticsSettings = AnalyticsSettings()
-    kpis: KPISettings = KPISettings()
-    api: ApiSettings = ApiSettings()
-    supabase_pool: SupabasePoolSettings = SupabasePoolSettings()
+    financial: FinancialGuardrails = Field(default_factory=FinancialGuardrails)
+    risk: RiskParameters = Field(default_factory=RiskParameters)
+    sla: SLASettings = Field(default_factory=SLASettings)
+    analytics: AnalyticsSettings = Field(default_factory=AnalyticsSettings)
+    kpis: KPISettings = Field(default_factory=KPISettings)
+    api: ApiSettings = Field(default_factory=ApiSettings)
+    supabase_pool: SupabasePoolSettings = Field(default_factory=SupabasePoolSettings)
     database_url: Optional[str] = Field(
         default=None, description="Supabase database URL for connection pooling"
     )
 
+    @staticmethod
+    def _resolve_project_root(project_root: str | Path | None = None) -> Path:
+        """Resolve repository root from the current module path unless explicitly provided."""
+        if project_root is not None:
+            return Path(project_root).resolve()
+        return Path(__file__).resolve().parents[3]
+
     @classmethod
-    def load_settings(cls) -> "Settings":
-        """Load settings from environment and optional YAML config."""
-        # 1. Start with defaults/env
+    def _candidate_config_paths(cls, project_root: str | Path | None = None) -> list[Path]:
+        """Return config files ordered from base defaults to explicit overrides."""
+        root = cls._resolve_project_root(project_root)
+        config_dir = root / "config"
+        return [
+            config_dir / "business_rules.yaml",
+            config_dir / "business_parameters.yml",
+        ]
+
+    @staticmethod
+    def _map_guardrails_payload(yaml_data: dict[str, Any]) -> dict[str, Any]:
+        """Normalize supported guardrail schemas to FinancialGuardrails fields."""
+        if "financial_guardrails" in yaml_data:
+            return dict(yaml_data["financial_guardrails"] or {})
+
+        guardrails = dict(yaml_data.get("guardrails") or {})
+        if not guardrails:
+            return {}
+
+        mapped: dict[str, Any] = {}
+        alias_map = {
+            "target_rotation": "min_rotation",
+            "max_default_rate": "max_default_rate",
+            "max_top_10_concentration": "max_top_10_concentration",
+            "max_single_obligor": "max_single_obligor_concentration",
+            "target_apr_min": "target_apr_min",
+            "target_apr_max": "target_apr_max",
+            "min_dscr": "min_dscr",
+            "min_collection_efficiency_6m": "min_ce_6m",
+        }
+        for source_key, target_key in alias_map.items():
+            if source_key in guardrails:
+                mapped[target_key] = guardrails[source_key]
+        return mapped
+
+    @classmethod
+    def _apply_yaml_overrides(
+        cls, app_settings: "Settings", yaml_data: dict[str, Any]
+    ) -> "Settings":
+        """Apply supported YAML overrides to the in-memory settings instance."""
+        updates: dict[str, Any] = {}
+        financial_payload = cls._map_guardrails_payload(yaml_data)
+        if financial_payload:
+            updates["financial"] = FinancialGuardrails(**financial_payload)
+
+        if "risk_parameters" in yaml_data:
+            updates["risk"] = RiskParameters(**yaml_data["risk_parameters"])
+        if "sla_settings" in yaml_data:
+            updates["sla"] = SLASettings(**yaml_data["sla_settings"])
+        if "analytics_weights" in yaml_data:
+            weights = yaml_data["analytics_weights"]
+            current_analytics = app_settings.analytics.model_dump()
+            current_analytics["dq_null_weight"] = weights.get(
+                "dq_null_weight", current_analytics["dq_null_weight"]
+            )
+            current_analytics["dq_duplicate_weight"] = weights.get(
+                "dq_duplicate_weight",
+                current_analytics["dq_duplicate_weight"],
+            )
+            current_analytics["dq_invalid_numeric_weight"] = weights.get(
+                "dq_invalid_numeric_weight",
+                current_analytics["dq_invalid_numeric_weight"],
+            )
+            updates["analytics"] = AnalyticsSettings(**current_analytics)
+
+        return app_settings.model_copy(update=updates) if updates else app_settings
+
+    @classmethod
+    def load_settings(cls, project_root: str | Path | None = None) -> "Settings":
+        """Load settings from environment and repository-backed YAML config."""
         app_settings = cls()
-        # 2. Optionally override with business_parameters.yml if exists
-        config_path = os.path.join(
-            os.path.dirname(__file__), "..", "config", "business_parameters.yml"
-        )
-        if os.path.exists(config_path):
-            with open(config_path, "r", encoding="utf-8") as f:
-                yaml_data = yaml.safe_load(f)
-                if yaml_data:
-                    if "financial_guardrails" in yaml_data:
-                        app_settings.financial = FinancialGuardrails(
-                            **yaml_data["financial_guardrails"]
-                        )
-                    if "risk_parameters" in yaml_data:
-                        app_settings.risk = RiskParameters(**yaml_data["risk_parameters"])
-                    if "sla_settings" in yaml_data:
-                        app_settings.sla = SLASettings(**yaml_data["sla_settings"])
-                    if "analytics_weights" in yaml_data:
-                        # Map YAML weights to AnalyticsSettings fields
-                        weights = yaml_data["analytics_weights"]
-                        app_settings.analytics.dq_null_weight = weights.get(
-                            "dq_null_weight", app_settings.analytics.dq_null_weight
-                        )
-                        app_settings.analytics.dq_duplicate_weight = weights.get(
-                            "dq_duplicate_weight",
-                            app_settings.analytics.dq_duplicate_weight,
-                        )
-                        app_settings.analytics.dq_invalid_numeric_weight = weights.get(
-                            "dq_invalid_numeric_weight",
-                            app_settings.analytics.dq_invalid_numeric_weight,
-                        )
+
+        for config_path in cls._candidate_config_paths(project_root):
+            if not config_path.exists():
+                continue
+            with config_path.open("r", encoding="utf-8") as config_file:
+                yaml_data = yaml.safe_load(config_file) or {}
+            if isinstance(yaml_data, dict):
+                app_settings = cls._apply_yaml_overrides(app_settings, yaml_data)
+
         return app_settings
 
     @property

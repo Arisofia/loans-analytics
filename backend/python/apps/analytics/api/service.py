@@ -819,6 +819,13 @@ class KPIService:
         return {
             "strategic_confirmations": extended_kpis.get("strategic_confirmations", {}),
             "executive_strip": extended_kpis.get("executive_strip", {}),
+            "nsm_customer_types": extended_kpis.get("nsm_customer_types", {}),
+            "dpd_buckets": extended_kpis.get("dpd_buckets", {}),
+            "concentration": extended_kpis.get("concentration", {}),
+            "portfolio_rotation": extended_kpis.get("portfolio_rotation", {}),
+            "monthly_pricing": extended_kpis.get("monthly_pricing", {}),
+            "weighted_apr": float(extended_kpis.get("weighted_apr", 0.0) or 0.0),
+            "weighted_fee_rate": float(extended_kpis.get("weighted_fee_rate", 0.0) or 0.0),
             "churn_90d_metrics": extended_kpis.get("churn_90d_metrics", []),
             "unit_economics": extended_kpis.get("unit_economics", []),
             "pricing_analytics": extended_kpis.get("pricing_analytics", {}),
@@ -3147,9 +3154,11 @@ class KPIService:
     async def get_nsm_recurrent_tpv(self) -> NSMRecurrentTPVResponse:
         """Return the North Star Metric (Recurrent TPV) from the latest pipeline run.
 
-        Loads ``nsm_recurrent_tpv.json`` from the most-recently-modified pipeline
-        run directory under ``logs/runs/``.  Returns an empty response when the
-        file does not yet exist.
+        Loads the NSM artifact from the most-recently-modified pipeline run
+        directory under ``logs/runs/``. Supports both the legacy filename
+        ``nsm_recurrent_tpv.json`` and the current pipeline export filename
+        ``nsm_recurrent_tpv_output.json``. Returns an empty response when no
+        supported artifact exists.
         """
         runs_dir = Path("logs/runs")
         if not runs_dir.is_dir():
@@ -3161,6 +3170,8 @@ class KPIService:
 
         latest_run = max(run_dirs, key=lambda p: p.stat().st_mtime)
         nsm_path = latest_run / "nsm_recurrent_tpv.json"
+        if not nsm_path.exists():
+            nsm_path = latest_run / "nsm_recurrent_tpv_output.json"
         if not nsm_path.exists():
             return NSMRecurrentTPVResponse()
 

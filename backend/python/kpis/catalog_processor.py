@@ -224,7 +224,16 @@ class KPICatalogProcessor:
             "revenue_forecast_next_month_usd": latest_forecast.get("forecast_revenue_usd"),
         }
 
+        # NSM + Guardrail KPI groups (wired to business_parameters.yml)
+        nsm_customer_types = self.get_customer_types()
+        dpd_buckets        = self.get_dpd_buckets()
+        concentration      = self.get_concentration()
+        rotation           = self.get_portfolio_rotation()
+        weighted_apr       = self.get_weighted_apr()
+        weighted_fee_rate  = self.get_weighted_fee_rate()
+
         return {
+            # Legacy groups (unchanged)
             "executive_strip": executive_strip,
             "segmentation_summary": segmentation,
             "churn_90d_metrics": churn_90d,
@@ -234,6 +243,15 @@ class KPICatalogProcessor:
             "opportunity_prioritization": opportunity_prioritization,
             "data_governance": governance,
             "strategic_confirmations": strategic_confirmations,
+            # NSM + Guardrail groups (v3.1)
+            "nsm_customer_types": nsm_customer_types,
+            "dpd_buckets": dpd_buckets,
+            "concentration": concentration,
+            "portfolio_rotation": rotation,
+            "weighted_apr": weighted_apr,
+            "weighted_fee_rate": weighted_fee_rate,
+            # Monthly pricing (alias to pricing_analytics for dual-engine parity)
+            "monthly_pricing": pricing_analytics,
         }
 
     def get_monthly_revenue_df(self) -> pd.DataFrame:
@@ -665,84 +683,309 @@ class KPICatalogProcessor:
             "monthly": monthly_rows,
         }
 
-    # ------------------------------------------------------------------
-    # Backward-compatible aliases expected by changelog consumers
-    # ------------------------------------------------------------------
+    # ── NSM + GUARDRAIL KPIs ─────────────────────────────────────────────────
+    # Added to match kpi_definitions.yaml v3.1 and business_parameters.yml
+    # These are the "dual-engine Python" counterparts to the SQL views in
+    # db/migrations/20260101_analytics_kpi_views.sql
 
-    def get_monthly_pricing(self) -> dict[str, Any]:
-        """Alias for pricing analytics expected by older integrations."""
+    def get_monthly_pricing(self) -> dict:
+        """Weighted APR, fee rate, other income rate, effective rate by month.
+        SQL parity: analytics.kpi_monthly_pricing
+        """
         return self.get_pricing_analytics()
 
+    def get_dpd_buckets(self, thresholds: list[int] | None = None) -> dict:
+        """DPD bucket breakdown: % saldo at 7/15/30/60/90/180+ DPD.
+        SQL parity: analytics.kpi_monthly_risk
+        """
+        if thresholds is None:
+            thresholds = [7, 15, 30, 60, 90, 180]
+
+        loan_cols = self._loan_columns()
+        dpd_col = loan_cols.get("dpd")
+        bal_col = loan_cols.get("outstanding")
+
+        if dpd_col is None or bal_col is None:
+            return {
+                "dpd_0_7": 0.0,
+                "dpd_8_15": 0.0,
+                "dpd_16_30": 0.0,
+                "dpd_31_60": 0.0,
+                "dpd_61_90": 0.0,
+                "dpd_90_plus": 0.0,
+                "dpd_7_plus_pct": 0.0,
+                "dpd_15_plus_pct": 0.0,
+                "dpd_30_plus_pct": 0.0,
+                "dpd_60_plus_pct": 0.0,
+                "dpd_90_plus_pct": 0.0,
+                "dpd_180_plus_pct": 0.0,
+                "total_outstanding_usd": 0.0,
+            }
+
+        dpd = pd.to_numeric(self.loans_df[dpd_col], errors="coerce").fillna(0)
+        bal = pd.to_numeric(self.loans_df[bal_col], errors="coerce").fillna(0)
+        total = bal.sum()
+        if total == 0:
+            return {
+                "dpd_0_7": 0.0,
+                "dpd_8_15": 0.0,
+                "dpd_16_30": 0.0,
+                "dpd_31_60": 0.0,
+                "dpd_61_90": 0.0,
+                "dpd_90_plus": 0.0,
+                "dpd_7_plus_pct": 0.0,
+                "dpd_15_plus_pct": 0.0,
+                "dpd_30_plus_pct": 0.0,
+                "dpd_60_plus_pct": 0.0,
+                "dpd_90_plus_pct": 0.0,
+                "dpd_180_plus_pct": 0.0,
+                "total_outstanding_usd": 0.0,
+            }
+
+        result = {
+            "dpd_0_7": float(bal[(dpd >= 0) & (dpd <= 7)].sum() / total * 100),
+            "dpd_8_15": float(bal[(dpd >= 8) & (dpd <= 15)].sum() / total * 100),
+            "dpd_16_30": float(bal[(dpd >= 16) & (dpd <= 30)].sum() / total * 100),
+            "dpd_31_60": float(bal[(dpd >= 31) & (dpd <= 60)].sum() / total * 100),
+            "dpd_61_90": float(bal[(dpd >= 61) & (dpd <= 90)].sum() / total * 100),
+            "dpd_90_plus": float(bal[dpd > 90].sum() / total * 100),
+        }
+        for t in thresholds:
+            mask = dpd >= t
+            result[f"dpd_{t}_plus_pct"] = float(bal[mask].sum() / total * 100)
+            result[f"dpd_{t}_plus_usd"] = float(bal[mask].sum())
+
+        result["total_outstanding_usd"] = float(total)
+        return result
+
     def get_weighted_apr(self) -> float:
-        """Return current portfolio weighted APR."""
-        pricing = self.get_pricing_analytics()
-        return float(pricing.get("current", {}).get("weighted_apr", 0.0))
+        """Portfolio-weighted APR (monthly rate × 12 / disbursement amount weight).
+        SQL parity: analytics.kpi_weighted_apr
+        """
+        loan_cols = self._loan_columns()
+        apr_col = loan_cols.get("apr") or self._find_col(
+            ["interest_rate_apr", "interest_rate", "tasa_interes", "TasaInteres"]
+        )
+        disb_col = loan_cols.get("principal") or self._find_col(
+            ["disbursement_amount", "loan_amount", "MontoDesembolsado"]
+        )
+        if apr_col is None or disb_col is None:
+            return 0.0
+
+        apr = pd.to_numeric(self.loans_df[apr_col], errors="coerce").fillna(0)
+        disb = pd.to_numeric(self.loans_df[disb_col], errors="coerce").fillna(0)
+        denom = disb.sum()
+        if denom == 0:
+            return 0.0
+        return float((apr * disb).sum() / denom)
 
     def get_weighted_fee_rate(self) -> float:
-        """Return current portfolio weighted fee rate."""
-        pricing = self.get_pricing_analytics()
-        return float(pricing.get("current", {}).get("weighted_fee_rate", 0.0))
-
-    def get_concentration(self) -> dict[str, float]:
-        """Return concentration KPIs (Top-1, Top-10, HHI) by borrower exposure share."""
+        """Portfolio-weighted origination fee rate.
+        SQL parity: analytics.kpi_weighted_fee_rate
+        """
         loan_cols = self._loan_columns()
-        customer_col = loan_cols["customer_id"]
-        balance_col = loan_cols["outstanding"] or loan_cols["principal"]
+        fee_col = self._find_col(
+            ["origination_fee", "fee_amount", "AsesoriaDigital", "asesoria_digital"]
+        )
+        disb_col = loan_cols.get("principal") or self._find_col(
+            ["disbursement_amount", "loan_amount", "MontoDesembolsado"]
+        )
+        if fee_col is None or disb_col is None:
+            return 0.0
 
-        if self.loans_df.empty or customer_col is None or balance_col is None:
-            return {"top_1_pct": 0.0, "top_10_pct": 0.0, "hhi": 0.0}
+        fee = pd.to_numeric(self.loans_df[fee_col], errors="coerce").fillna(0)
+        disb = pd.to_numeric(self.loans_df[disb_col], errors="coerce").fillna(0)
+        denom = disb.sum()
+        if denom == 0:
+            return 0.0
+        return float(fee.sum() / denom)
 
-        base = self.loans_df[[customer_col, balance_col]].copy()
-        base[balance_col] = pd.to_numeric(base[balance_col], errors="coerce").fillna(0.0)
-        grouped = base.groupby(customer_col, dropna=False)[balance_col].sum()
-        total = float(grouped.sum())
-        if total <= 0:
-            return {"top_1_pct": 0.0, "top_10_pct": 0.0, "hhi": 0.0}
+    def get_concentration(self, top_n: list[int] | None = None) -> dict:
+        """Top-N loan/debtor concentration as % of outstanding balance.
+        SQL parity: analytics.kpi_concentration
+        Guardrails: top-1 ≤4%, top-10 ≤30% (business_parameters.yml)
+        """
+        if top_n is None:
+            top_n = [1, 3, 5, 10]
 
-        shares = grouped / total
-        top_1_pct = float(shares.nlargest(1).sum() * 100)
-        top_10_pct = float(shares.nlargest(10).sum() * 100)
-        hhi = float((shares.pow(2).sum()) * 10000)
-        return {
-            "top_1_pct": top_1_pct,
-            "top_10_pct": top_10_pct,
-            "hhi": hhi,
-        }
-
-    def get_dpd_buckets(self) -> dict[str, float]:
-        """Return DPD exposure shares by bucket (percentage of total exposure)."""
         loan_cols = self._loan_columns()
-        dpd_col = loan_cols["dpd"]
-        balance_col = loan_cols["outstanding"] or loan_cols["principal"]
+        bal_col = loan_cols.get("outstanding")
+        debtor_col = self._find_col(
+            ["debtor_id", "Emisor", "emisor", "payer_id", "pagador"]
+        ) or self._find_col(["customer_id", "borrower_id", "CodCliente"])
 
-        empty = {
-            "dpd_0_7": 0.0,
-            "dpd_8_15": 0.0,
-            "dpd_16_30": 0.0,
-            "dpd_31_60": 0.0,
-            "dpd_61_90": 0.0,
-            "dpd_90_plus": 0.0,
+        if bal_col is None:
+            return {}
+
+        bal = pd.to_numeric(self.loans_df[bal_col], errors="coerce").fillna(0)
+        total = bal.sum()
+        if total == 0:
+            return {"total_outstanding_usd": 0.0}
+
+        result: dict = {"total_outstanding_usd": float(total)}
+
+        # Loan-level concentration (always available)
+        sorted_bal = bal.sort_values(ascending=False)
+        for n in top_n:
+            pct = float(sorted_bal.head(n).sum() / total * 100)
+            result[f"top_{n}_loan_pct"] = round(pct, 2)
+
+        # Debtor-level concentration (when debtor column available)
+        if debtor_col is not None:
+            debtor_bal = (
+                self.loans_df.assign(_bal=bal)
+                .groupby(debtor_col)["_bal"]
+                .sum()
+                .sort_values(ascending=False)
+            )
+            for n in top_n:
+                pct = float(debtor_bal.head(n).sum() / total * 100)
+                result[f"top_{n}_debtor_pct"] = round(pct, 2)
+            result["top_1_debtor_name"] = str(debtor_bal.index[0]) if len(debtor_bal) > 0 else ""
+            result["top_1_debtor_usd"] = float(debtor_bal.iloc[0]) if len(debtor_bal) > 0 else 0.0
+
+        result["top_1_pct"] = result.get("top_1_debtor_pct", result.get("top_1_loan_pct", 0.0))
+        result["top_10_pct"] = result.get("top_10_debtor_pct", result.get("top_10_loan_pct", 0.0))
+        shares = (self.loans_df.assign(_bal=bal).groupby(debtor_col)["_bal"].sum() / total) if debtor_col is not None else (bal / total)
+        result["hhi"] = float((shares.pow(2).sum()) * 10000)
+
+        return result
+
+    def get_portfolio_rotation(self, months: int = 12) -> dict:
+        """Cash-weighted portfolio rotation over trailing N months.
+        Formula: SUM(disbursements in window) / AVG(outstanding in window)
+        Guardrail: ≥4.5x (business_parameters.yml → financial.min_rotation)
+        SQL parity: capital_efficiency_kpis in kpi_definitions.yaml
+        """
+        loan_cols = self._loan_columns()
+        disb_col = loan_cols.get("date") or self._find_col(
+            ["disbursement_date", "FechaDesembolso", "disburse_date"]
+        )
+        amount_col = loan_cols.get("principal") or self._find_col(
+            ["disbursement_amount", "loan_amount", "MontoDesembolsado"]
+        )
+        bal_col = loan_cols.get("outstanding")
+        term_col = self._find_col(["term", "term_days", "Term", "plazo"])
+
+        if disb_col is None or amount_col is None:
+            return {}
+
+        disb_dates = pd.to_datetime(self.loans_df[disb_col], errors="coerce")
+        cutoff = disb_dates.max()
+        window_start = cutoff - pd.DateOffset(months=months)
+
+        mask = disb_dates >= window_start
+        disb_12m = pd.to_numeric(self.loans_df.loc[mask, amount_col], errors="coerce").fillna(0).sum()
+
+        aum = (
+            pd.to_numeric(self.loans_df[bal_col], errors="coerce").fillna(0).sum()
+            if bal_col else disb_12m / max(months, 1)
+        )
+
+        rotation = float(disb_12m / aum) if aum > 0 else 0.0
+
+        result = {
+            "rotation_x": round(rotation, 2),
+            "disbursements_period_usd": float(disb_12m),
+            "aum_usd": float(aum),
+            "window_months": months,
         }
-        if self.loans_df.empty or dpd_col is None or balance_col is None:
-            return empty
 
-        dpd = pd.to_numeric(self.loans_df[dpd_col], errors="coerce").fillna(0.0)
-        exposure = pd.to_numeric(self.loans_df[balance_col], errors="coerce").fillna(0.0)
-        total = float(exposure.sum())
-        if total <= 0:
-            return empty
+        if term_col is not None:
+            median_term = pd.to_numeric(self.loans_df[term_col], errors="coerce").median()
+            result["avg_term_days"] = float(median_term) if pd.notna(median_term) else None
+            result["theoretical_rotation_x"] = round(365 / median_term, 1) if median_term > 0 else None
 
-        def _bucket_pct(mask: pd.Series) -> float:
-            return float(exposure[mask].sum() / total * 100)
+        return result
+
+    def get_customer_types(self, window_months: int = 3, recurrent_periods: int = 2,
+                           reactivation_gap_days: int = 90) -> dict:
+        """New / Recurrent / Reactivated client segmentation.
+        SQL parity: analytics.kpi_customer_types
+        NSM supporting indicator.
+        """
+        loan_cols = self._loan_columns()
+        disb_col = loan_cols.get("date") or self._find_col(
+            ["disbursement_date", "FechaDesembolso"]
+        )
+        cust_col = loan_cols.get("customer_id") or self._find_col(
+            ["customer_id", "CodCliente", "borrower_id"]
+        )
+        amount_col = loan_cols.get("principal") or self._find_col(
+            ["tpv", "TPV", "disbursement_amount", "MontoDesembolsado"]
+        )
+
+        if disb_col is None or cust_col is None:
+            return {}
+
+        dates = pd.to_datetime(self.loans_df[disb_col], errors="coerce")
+        cutoff = dates.max()
+        window_start = cutoff - pd.DateOffset(months=window_months)
+
+        df = self.loans_df.copy()
+        df["_date"] = dates
+        df["_month"] = dates.dt.to_period("M")
+
+        first_op = df.groupby(cust_col)["_date"].min()
+        last_op_before = (
+            df[df["_date"] < window_start].groupby(cust_col)["_date"].max()
+        )
+
+        recent_clients = set(df[df["_date"] >= window_start][cust_col].dropna().unique())
+        new_clients = {c for c in recent_clients if first_op.get(c, cutoff) >= window_start}
+        react_clients = {
+            c for c in recent_clients - new_clients
+            if c in last_op_before.index
+            and (window_start - last_op_before[c]).days >= reactivation_gap_days
+        }
+        recurrent_clients = recent_clients - new_clients - react_clients
+
+        # NSM: recurrent TPV (12m)
+        trailing_12m = cutoff - pd.DateOffset(months=12)
+        if amount_col:
+            tpv_col = amount_col
+            df["_tpv"] = pd.to_numeric(df[tpv_col], errors="coerce").fillna(0)
+            client_months = (
+                df[df["_date"] >= trailing_12m]
+                .groupby([cust_col, "_month"])["_tpv"].sum()
+                .reset_index()
+            )
+            active_periods = (
+                client_months[client_months["_tpv"] > 0]
+                .groupby(cust_col)["_month"].nunique()
+            )
+            recurrent_12m = set(active_periods[active_periods >= recurrent_periods].index)
+            nsm_tpv = float(df[
+                (df["_date"] >= trailing_12m) & (df[cust_col].isin(recurrent_12m))
+            ]["_tpv"].sum())
+            total_tpv = float(df[df["_date"] >= trailing_12m]["_tpv"].sum())
+        else:
+            nsm_tpv = total_tpv = 0.0
+            recurrent_12m = set()
 
         return {
-            "dpd_0_7": _bucket_pct((dpd >= 0) & (dpd <= 7)),
-            "dpd_8_15": _bucket_pct((dpd >= 8) & (dpd <= 15)),
-            "dpd_16_30": _bucket_pct((dpd >= 16) & (dpd <= 30)),
-            "dpd_31_60": _bucket_pct((dpd >= 31) & (dpd <= 60)),
-            "dpd_61_90": _bucket_pct((dpd >= 61) & (dpd <= 90)),
-            "dpd_90_plus": _bucket_pct(dpd > 90),
+            "window_months": window_months,
+            "new_count": len(new_clients),
+            "recurrent_count": len(recurrent_clients),
+            "reactivated_count": len(react_clients),
+            "total_active_period": len(recent_clients),
+            # NSM
+            "recurrent_tpv_12m_usd": round(nsm_tpv, 2),
+            "total_tpv_12m_usd": round(total_tpv, 2),
+            "recurrent_tpv_12m_pct": round(nsm_tpv / total_tpv * 100, 1) if total_tpv > 0 else 0.0,
+            "recurrent_clients_12m": len(recurrent_12m),
+            "recurrent_rate_12m_pct": round(
+                len(recurrent_12m) / max(len(first_op), 1) * 100, 1
+            ),
         }
+
+    def _find_col(self, candidates: list[str]) -> str | None:
+        """Find first matching column name in loans_df."""
+        for c in candidates:
+            if c in self.loans_df.columns:
+                return c
+        return None
+
 
     def get_revenue_forecast(
         self,

@@ -200,3 +200,43 @@ class TestCalculateRecurrentTpv:
                 "recovered_clients",
             ):
                 assert key in period_data
+
+
+class TestCalculationPhaseProcessPublishesNsmPayload:
+    def test_process_includes_nsm_recurrent_tpv(self, monkeypatch):
+        df = _make_df(
+            [
+                {
+                    "client_id": "A",
+                    "origination_date": "2026-01-10",
+                    "amount": 100.0,
+                    "days_past_due": 0.0,
+                },
+                {
+                    "client_id": "A",
+                    "origination_date": "2026-02-15",
+                    "amount": 150.0,
+                    "days_past_due": 0.0,
+                },
+                {
+                    "client_id": "B",
+                    "origination_date": "2026-02-18",
+                    "amount": 50.0,
+                    "days_past_due": 45.0,
+                },
+            ]
+        )
+
+        phase = CalculationPhase(config={}, kpi_definitions={})
+        monkeypatch.setattr(phase.engine, "calculate", lambda frame: {"portfolio": 1.0})
+        monkeypatch.setattr(phase, "_calculate_segment_kpis", lambda frame: {})
+        monkeypatch.setattr(phase, "_calculate_time_series", lambda frame: {"monthly": []})
+        monkeypatch.setattr(phase, "_run_advanced_clustering", lambda frame: {})
+        monkeypatch.setattr(phase, "_detect_anomalies", lambda kpis: [])
+        monkeypatch.setattr(phase, "_generate_manifest", lambda kpis, frame: {})
+
+        result = phase.process(df)
+
+        assert "nsm_recurrent_tpv" in result
+        assert result["nsm_recurrent_tpv"]["latest_period"] == "2026-02"
+        assert result["nsm_recurrent_tpv"]["latest"]["tpv_recurrent"] == pytest.approx(150.0)

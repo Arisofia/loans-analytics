@@ -80,6 +80,46 @@ def test_nsm_endpoint_happy_path(tmp_path, monkeypatch):
     assert body["by_period"]["2026-01"]["recurrent_clients"] == 12
 
 
+def test_nsm_endpoint_supports_current_output_filename(tmp_path, monkeypatch):
+    """Reads the NSM artifact from the current pipeline output filename."""
+    run_dir = tmp_path / "logs" / "runs" / "20260201_def67890"
+    run_dir.mkdir(parents=True)
+    nsm_payload = {
+        "latest_period": "2026-01",
+        "latest": {
+            "tpv_total": 20000.0,
+            "tpv_recurrent": 15000.0,
+            "tpv_new": 4000.0,
+            "tpv_recovered": 1000.0,
+            "active_clients": 30,
+            "recurrent_clients": 18,
+            "new_clients": 9,
+            "recovered_clients": 3,
+        },
+        "by_period": {
+            "2026-01": {
+                "tpv_total": 20000.0,
+                "tpv_recurrent": 15000.0,
+                "tpv_new": 4000.0,
+                "tpv_recovered": 1000.0,
+                "active_clients": 30,
+                "recurrent_clients": 18,
+                "new_clients": 9,
+                "recovered_clients": 3,
+            }
+        },
+    }
+    (run_dir / "nsm_recurrent_tpv_output.json").write_text(json.dumps(nsm_payload))
+    monkeypatch.chdir(tmp_path)
+
+    response = client.get("/analytics/nsm")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["latest_period"] == "2026-01"
+    assert body["latest"]["tpv_recurrent"] == 15000.0
+    assert body["by_period"]["2026-01"]["recovered_clients"] == 3
+
+
 def test_nsm_endpoint_schema_completeness(tmp_path, monkeypatch):
     """Response body always includes all NSMRecurrentTPVResponse fields."""
     monkeypatch.chdir(tmp_path)

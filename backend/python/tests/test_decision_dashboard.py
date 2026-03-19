@@ -101,6 +101,13 @@ def test_executive_summary_includes_risk_kpis_and_portfolio_health():
         "warning",
         "critical",
     }
+    assert "nsm_customer_types" in body
+    assert "dpd_buckets" in body
+    assert "concentration" in body
+    assert "portfolio_rotation" in body
+    assert "monthly_pricing" in body
+    assert "weighted_apr" in body
+    assert "weighted_fee_rate" in body
 
 
 def test_full_analysis_includes_unit_economics_and_portfolio_health():
@@ -113,3 +120,11 @@ def test_full_analysis_includes_unit_economics_and_portfolio_health():
     assert body["unit_economics"]["npl"]["npl_ratio"] >= 0.0
     assert "portfolio_health" in body
     assert body["portfolio_health"]["score"] >= 0.0
+    assert "strategic_confirmations" in body
+    assert "nsm_customer_types" in body
+    assert "dpd_buckets" in body
+    assert "concentration" in body
+    assert "portfolio_rotation" in body
+    assert "monthly_pricing" in body
+    assert "weighted_apr" in body
+    assert "weighted_fee_rate" in body

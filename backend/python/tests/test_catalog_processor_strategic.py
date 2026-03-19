@@ -76,12 +76,27 @@ class TestKPICatalogProcessorStrategic(unittest.TestCase):
         self.assertIn("unit_economics", kpis)
         self.assertIn("data_governance", kpis)
         self.assertIn("strategic_confirmations", kpis)
+        self.assertIn("nsm_customer_types", kpis)
+        self.assertIn("portfolio_rotation", kpis)
+        self.assertIn("concentration", kpis)
+        self.assertIn("dpd_buckets", kpis)
+        self.assertIn("weighted_apr", kpis)
+        self.assertIn("weighted_fee_rate", kpis)
+        self.assertIn("monthly_pricing", kpis)
 
         strategic = kpis["strategic_confirmations"]
         self.assertTrue(strategic["cac_confirmed"])
         self.assertTrue(strategic["ltv_confirmed"])
         self.assertTrue(strategic["margin_confirmed"])
         self.assertTrue(strategic["revenue_forecast_confirmed"])
+
+        nsm = kpis["nsm_customer_types"]
+        self.assertIn("recurrent_tpv_12m_usd", nsm)
+        self.assertIn("recurrent_clients_12m", nsm)
+
+        rotation = kpis["portfolio_rotation"]
+        self.assertIn("rotation_x", rotation)
+        self.assertIn("aum_usd", rotation)
 
     def test_forecast_prioritization_and_governance_are_populated(self):
         processor = KPICatalogProcessor(self.loans_df, self.payments_df, self.customers_df)
@@ -115,11 +130,22 @@ class TestKPICatalogProcessorStrategic(unittest.TestCase):
         concentration = processor.get_concentration()
         self.assertIn("top_1_pct", concentration)
         self.assertIn("top_10_pct", concentration)
+        self.assertIn("top_1_debtor_pct", concentration)
+        self.assertIn("top_10_debtor_pct", concentration)
         self.assertIn("hhi", concentration)
 
         dpd_buckets = processor.get_dpd_buckets()
         self.assertIn("dpd_0_7", dpd_buckets)
         self.assertIn("dpd_90_plus", dpd_buckets)
+        self.assertIn("dpd_30_plus_pct", dpd_buckets)
+        self.assertIn("dpd_180_plus_pct", dpd_buckets)
+
+        customer_types = processor.get_customer_types()
+        self.assertIn("new_count", customer_types)
+        self.assertIn("recurrent_tpv_12m_pct", customer_types)
+
+        rotation = processor.get_portfolio_rotation()
+        self.assertIn("rotation_x", rotation)
 
 
 if __name__ == "__main__":

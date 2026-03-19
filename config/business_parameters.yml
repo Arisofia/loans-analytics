@@ -1,0 +1,29 @@
+financial_guardrails:
+  min_rotation: 4.5
+  max_default_rate: 0.04
+  max_top_10_concentration: 0.30
+  max_single_obligor_concentration: 0.04
+  target_apr_min: 0.34
+  target_apr_max: 0.40
+  max_cost_of_debt: 0.13
+  min_dscr: 1.2
+  utilization_min: 0.75
+  utilization_max: 0.90
+  min_ce_6m: 0.96
+  max_replines_deviation: 0.02
+
+risk_parameters:
+  dilution_threshold: 0.05
+  recourse_cap: 100000
+  loss_given_default: 0.10
+
+sla_settings:
+  decision_sla_hours: 24
+  funding_sla_hours: 48
+  sla_compliance_target: 0.90
+  min_slo: 0.995
+
+analytics_weights:
+  dq_null_weight: 1.0
+  dq_duplicate_weight: 0.5
+  dq_invalid_numeric_weight: 0.6

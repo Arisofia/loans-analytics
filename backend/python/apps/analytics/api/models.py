@@ -607,6 +607,19 @@ class FullAnalysisResponse(BaseModel):
         default_factory=list,
         description="KPI snapshot used by the analysis, including formulas and implications",
     )
+    strategic_confirmations: Dict[str, Any] = Field(default_factory=dict)
+    executive_strip: Dict[str, Any] = Field(default_factory=dict)
+    nsm_customer_types: Dict[str, Any] = Field(default_factory=dict)
+    dpd_buckets: Dict[str, Any] = Field(default_factory=dict)
+    concentration: Dict[str, Any] = Field(default_factory=dict)
+    portfolio_rotation: Dict[str, Any] = Field(default_factory=dict)
+    monthly_pricing: Dict[str, Any] = Field(default_factory=dict)
+    weighted_apr: float = 0.0
+    weighted_fee_rate: float = 0.0
+    churn_90d_metrics: List[Dict[str, Any]] = Field(default_factory=list)
+    revenue_forecast_6m: List[Dict[str, Any]] = Field(default_factory=list)
+    opportunity_prioritization: List[Dict[str, Any]] = Field(default_factory=list)
+    data_governance: Dict[str, Any] = Field(default_factory=dict)
     unit_economics: Optional[UnitEconomicsResponse] = None
     portfolio_health: Optional[PortfolioHealthScore] = None
 
@@ -775,6 +788,13 @@ class ExecutiveAnalyticsResponse(BaseModel):
 
     strategic_confirmations: Dict[str, Any] = Field(default_factory=dict)
     executive_strip: Dict[str, Any] = Field(default_factory=dict)
+    nsm_customer_types: Dict[str, Any] = Field(default_factory=dict)
+    dpd_buckets: Dict[str, Any] = Field(default_factory=dict)
+    concentration: Dict[str, Any] = Field(default_factory=dict)
+    portfolio_rotation: Dict[str, Any] = Field(default_factory=dict)
+    monthly_pricing: Dict[str, Any] = Field(default_factory=dict)
+    weighted_apr: float = 0.0
+    weighted_fee_rate: float = 0.0
     churn_90d_metrics: List[Dict[str, Any]] = Field(default_factory=list)
     unit_economics: List[Dict[str, Any]] = Field(default_factory=list)
     pricing_analytics: Dict[str, Any] = Field(default_factory=dict)

@@ -995,6 +995,7 @@ if app is not None:
         layered_analysis = await service.get_layered_insights(request.loans)
         unit_economics = await service.calculate_unit_economics(request.loans)
         portfolio_health = await service.get_portfolio_health_score(request.loans)
+        strategic_data = await service.get_executive_analytics(request.loans)
 
         return FullAnalysisResponse(
             analysis_id=trace_id,
@@ -1011,6 +1012,19 @@ if app is not None:
             risk_heatmap=risk_heatmap_data,
             vintage_curves=vintage_curves_data,
             layered_analysis=layered_analysis,
+            strategic_confirmations=strategic_data.get("strategic_confirmations", {}),
+            executive_strip=strategic_data.get("executive_strip", {}),
+            nsm_customer_types=strategic_data.get("nsm_customer_types", {}),
+            dpd_buckets=strategic_data.get("dpd_buckets", {}),
+            concentration=strategic_data.get("concentration", {}),
+            portfolio_rotation=strategic_data.get("portfolio_rotation", {}),
+            monthly_pricing=strategic_data.get("monthly_pricing", {}),
+            weighted_apr=float(strategic_data.get("weighted_apr", 0.0) or 0.0),
+            weighted_fee_rate=float(strategic_data.get("weighted_fee_rate", 0.0) or 0.0),
+            churn_90d_metrics=strategic_data.get("churn_90d_metrics", []),
+            revenue_forecast_6m=strategic_data.get("revenue_forecast_6m", []),
+            opportunity_prioritization=strategic_data.get("opportunity_prioritization", []),
+            data_governance=strategic_data.get("data_governance", {}),
             unit_economics=unit_economics,
             portfolio_health=portfolio_health,
         )

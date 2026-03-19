@@ -9,6 +9,7 @@ from typing import Any
 
 import pandas as pd
 
+from backend.python.config import settings
 from backend.python.kpis.catalog_processor import KPICatalogProcessor
 
 
@@ -223,6 +224,142 @@ def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     return normalized
 
 
+def _build_guardrails() -> dict[str, float]:
+    """Return guardrail thresholds used by official dashboard exports."""
+    return {
+        "min_rotation_x": settings.financial.min_rotation,
+        "max_default_rate_pct": settings.financial.max_default_rate * 100,
+        "max_top1_concentration_pct": settings.financial.max_single_obligor_concentration * 100,
+        "max_top10_concentration_pct": settings.financial.max_top_10_concentration * 100,
+        "target_apr_min_pct": settings.financial.target_apr_min * 100,
+        "target_apr_max_pct": settings.financial.target_apr_max * 100,
+        "max_cost_of_debt_pct": settings.financial.max_cost_of_debt * 100,
+        "min_dscr": settings.financial.min_dscr,
+        "utilization_min_pct": settings.financial.utilization_min * 100,
+        "utilization_max_pct": settings.financial.utilization_max * 100,
+        "min_ce_6m_pct": settings.financial.min_ce_6m * 100,
+    }
+
+
+def _status(ok: bool) -> str:
+    """Return normalized dashboard status value."""
+    return "ok" if ok else "breach"
+
+
+def _build_guardrail_status(extended_kpis: dict[str, Any]) -> dict[str, dict[str, float | str | None]]:
+    """Evaluate current KPI values against configured thresholds."""
+    rotation = extended_kpis.get("portfolio_rotation", {})
+    concentration = extended_kpis.get("concentration", {})
+    dpd_buckets = extended_kpis.get("dpd_buckets", {})
+
+    rotation_value = _to_float(rotation.get("rotation_x"))
+    top1_value = _to_float(
+        concentration.get("top_1_debtor_pct", concentration.get("top_1_pct"))
+    )
+    top10_value = _to_float(
+        concentration.get("top_10_debtor_pct", concentration.get("top_10_pct"))
+    )
+    par30_value = _to_float(dpd_buckets.get("dpd_30_plus_pct"))
+    par90_value = _to_float(dpd_buckets.get("dpd_90_plus_pct", dpd_buckets.get("dpd_90_plus")))
+    npl180_value = _to_float(dpd_buckets.get("dpd_180_plus_pct"))
+
+    return {
+        "rotation": {
+            "value": rotation_value,
+            "target": settings.financial.min_rotation,
+            "status": _status((rotation_value or 0.0) >= settings.financial.min_rotation),
+        },
+        "top1_debtor": {
+            "value": top1_value,
+            "target": settings.financial.max_single_obligor_concentration * 100,
+            "status": _status(
+                (top1_value or 100.0)
+                <= (settings.financial.max_single_obligor_concentration * 100)
+            ),
+        },
+        "top10_debtor": {
+            "value": top10_value,
+            "target": settings.financial.max_top_10_concentration * 100,
+            "status": _status(
+                (top10_value or 100.0) <= (settings.financial.max_top_10_concentration * 100)
+            ),
+        },
+        "par30": {
+            "value": par30_value,
+            "target": 5.0,
+            "status": _status((par30_value or 100.0) <= 5.0),
+        },
+        "par90": {
+            "value": par90_value,
+            "target": 2.0,
+            "status": _status((par90_value or 100.0) <= 2.0),
+        },
+        "npl_180": {
+            "value": npl180_value,
+            "target": settings.financial.max_default_rate * 100,
+            "status": _status((npl180_value or 100.0) <= (settings.financial.max_default_rate * 100)),
+        },
+    }
+
+
+def _build_sql_view_mirrors(extended_kpis: dict[str, Any]) -> dict[str, Any]:
+    """Return dashboard mirrors aligned with SQL KPI view naming."""
+    executive_strip = extended_kpis.get("executive_strip", {})
+    return {
+        "kpi_monthly_pricing": extended_kpis.get("monthly_pricing", {}),
+        "kpi_monthly_risk": extended_kpis.get("dpd_buckets", {}),
+        "kpi_customer_types": extended_kpis.get("nsm_customer_types", {}),
+        "kpi_concentration": extended_kpis.get("concentration", {}),
+        "kpi_weighted_apr": {"weighted_apr": extended_kpis.get("weighted_apr", 0.0)},
+        "kpi_weighted_fee_rate": {
+            "weighted_fee_rate": extended_kpis.get("weighted_fee_rate", 0.0)
+        },
+        "kpi_active_unique_customers": {
+            "count": executive_strip.get("total_customers", 0)
+        },
+        "kpi_average_ticket": {
+            "avg_ticket_usd": _to_float(executive_strip.get("total_outstanding_loan_value")),
+            "total_loans": executive_strip.get("total_loans", 0),
+        },
+    }
+
+
+def _build_dashboard_payload(data_root: Path, extended_kpis: dict[str, Any]) -> dict[str, Any]:
+    """Assemble the official KPI dashboard export payload."""
+    executive_strip = extended_kpis.get("executive_strip", {})
+    nsm = extended_kpis.get("nsm_customer_types", {})
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source_data_dir": str(data_root),
+        "data_sources": [
+            "loan_data.csv",
+            "real_payment.csv",
+            "customer_data.csv",
+            "payment_schedule.csv",
+        ],
+        "kpi_groups_count": len([key for key in extended_kpis if not key.startswith("_")]),
+        "extended_kpis": extended_kpis,
+        "nsm": {
+            "metric": "recurrent_tpv_12m_usd",
+            "value": nsm.get("recurrent_tpv_12m_usd"),
+            "pct_of_total": nsm.get("recurrent_tpv_12m_pct"),
+            "recurrent_clients": nsm.get("recurrent_clients_12m"),
+            "recurrent_rate_pct": nsm.get("recurrent_rate_12m_pct"),
+            "new_clients_3m": nsm.get("new_count"),
+            "recurrent_3m": nsm.get("recurrent_count"),
+            "reactivated_3m": nsm.get("reactivated_count"),
+        },
+        "guardrails": _build_guardrails(),
+        "guardrail_status": _build_guardrail_status(extended_kpis),
+        "sql_view_mirrors": _build_sql_view_mirrors(extended_kpis),
+        "aum_snapshot": {
+            "total_outstanding_usd": executive_strip.get("total_outstanding_loan_value"),
+            "total_loans": executive_strip.get("total_loans"),
+            "total_customers": executive_strip.get("total_customers"),
+        },
+    }
+
+
 def generate_strategic_report(data_dir: str | Path, exports_dir: str | Path) -> dict[str, str]:
     """Generate complete KPI dashboard JSON and strategic report artifacts.
 
@@ -236,7 +373,11 @@ def generate_strategic_report(data_dir: str | Path, exports_dir: str | Path) -> 
 
     loans_df = _normalize_columns(_read_optional_table(data_root / "loan_data.csv"))
     payments_df = _normalize_columns(_read_optional_table(data_root / "real_payment.csv"))
-    customers_df = _normalize_columns(_read_optional_table(data_root / "customer_data.csv"))
+    customer_source = data_root / "customer_data.csv"
+    if not customer_source.exists():
+        customer_source = data_root / "customer.csv"
+
+    customers_df = _normalize_columns(_read_optional_table(customer_source))
     schedule_df = _normalize_columns(_read_optional_table(data_root / "payment_schedule.csv"))
 
     if loans_df.empty and payments_df.empty and customers_df.empty:
@@ -253,11 +394,7 @@ def generate_strategic_report(data_dir: str | Path, exports_dir: str | Path) -> 
     )
     extended_kpis = processor.get_all_kpis()
 
-    dashboard_payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "source_data_dir": str(data_root),
-        "extended_kpis": extended_kpis,
-    }
+    dashboard_payload = _build_dashboard_payload(data_root, extended_kpis)
     dashboard_path = exports_root / "complete_kpi_dashboard.json"
     with dashboard_path.open("w", encoding="utf-8") as dashboard_file:
         json.dump(dashboard_payload, dashboard_file, indent=2, default=str)

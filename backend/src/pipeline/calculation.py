@@ -131,6 +131,10 @@ class CalculationPhase:
             # 3. Time-series rollups (Daily, Weekly, Monthly)
             time_series = self._calculate_time_series(df)
 
+            # 3.1. NSM recurrent TPV payload for downstream output/API consumers
+            client_tpv_timeseries = self._build_client_tpv_timeseries(df)
+            nsm_recurrent_tpv = self._calculate_recurrent_tpv(client_tpv_timeseries)
+
             # 3.5. Advanced Clustering — PCA → UMAP → HDBSCAN
             # Runs before Phase 4 (Output) so clustering_metrics are
             # available for the structured audit_metadata.json export.
@@ -147,6 +151,7 @@ class CalculationPhase:
                 "segments": segments,
                 "segment_kpis": segments,
                 "time_series": time_series,
+                "nsm_recurrent_tpv": nsm_recurrent_tpv,
                 "anomalies": anomalies,
                 "clustering_metrics": clustering_metrics,
                 "manifest": manifest,

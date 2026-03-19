@@ -118,6 +118,10 @@ class TestStrategicReporting(unittest.TestCase):
             payload = json.loads(dashboard_json.read_text(encoding="utf-8"))
             self.assertIn("extended_kpis", payload)
             self.assertIn("executive_strip", payload["extended_kpis"])
+            self.assertIn("nsm", payload)
+            self.assertIn("guardrails", payload)
+            self.assertIn("guardrail_status", payload)
+            self.assertIn("sql_view_mirrors", payload)
 
 
 if __name__ == "__main__":
