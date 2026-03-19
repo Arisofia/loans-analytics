@@ -6,8 +6,13 @@ from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
+import sys
 
 import pandas as pd
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from backend.src.infrastructure.google_sheets_adapter import ControlMoraSheetsAdapter
 
@@ -33,16 +38,18 @@ def _build_kam_map(desembolsos_df: pd.DataFrame) -> pd.Series:
     return mapped
 
 
+def _build_overrides_from_intermedia(intermedia_df: pd.DataFrame) -> pd.DataFrame:
+    cod_cliente = _first_non_empty(intermedia_df, ["CodCliente", "cod_cliente"]).astype(str).str.strip()
+    cod_cliente = cod_cliente[~cod_cliente.str.lower().isin({"", "nan", "none", "null"})]
+    base = pd.DataFrame({"cod_cliente": sorted(cod_cliente.unique().tolist())})
+    base["industry"] = ""
+    base["kam"] = ""
+    base["lt_customer_id"] = ""
+    return base
+
+
 def run(args: argparse.Namespace) -> None:
     overrides_path = Path(args.overrides_csv)
-    if not overrides_path.exists():
-        raise FileNotFoundError(f"Overrides file not found: {overrides_path}")
-
-    overrides_df = pd.read_csv(overrides_path, dtype=str)
-    if "cod_cliente" not in overrides_df.columns:
-        raise ValueError("Overrides CSV must include 'cod_cliente' column")
-    if "kam" not in overrides_df.columns:
-        overrides_df["kam"] = ""
 
     creds = args.credentials_path or os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
     spreadsheet_id = args.spreadsheet_id or os.getenv("GOOGLE_SHEETS_SPREADSHEET_ID")
@@ -56,6 +63,23 @@ def run(args: argparse.Namespace) -> None:
     desembolsos_df = pd.DataFrame(adapter.fetch_desembolsos_raw())
     kam_map = _build_kam_map(desembolsos_df)
 
+    if overrides_path.exists():
+        overrides_df = pd.read_csv(overrides_path, dtype=str)
+        source = f"existing file ({overrides_path})"
+    else:
+        intermedia_df = pd.DataFrame(adapter.fetch_intermedia_raw())
+        overrides_df = _build_overrides_from_intermedia(intermedia_df)
+        source = "auto-generated from INTERMEDIA"
+
+    if "cod_cliente" not in overrides_df.columns:
+        raise ValueError("Overrides CSV must include 'cod_cliente' column")
+    if "kam" not in overrides_df.columns:
+        overrides_df["kam"] = ""
+    if "industry" not in overrides_df.columns:
+        overrides_df["industry"] = ""
+    if "lt_customer_id" not in overrides_df.columns:
+        overrides_df["lt_customer_id"] = ""
+
     before_missing = overrides_df["kam"].fillna("").astype(str).str.strip().eq("").sum()
 
     empty_mask = overrides_df["kam"].fillna("").astype(str).str.strip().eq("")
@@ -68,7 +92,8 @@ def run(args: argparse.Namespace) -> None:
     overrides_df.to_csv(overrides_path, index=False)
 
     print(
-        f"KAM backfill complete. Filled={filled}, still_missing={int(after_missing)}, total={len(overrides_df)}"
+        f"KAM backfill complete from {source}. Filled={filled}, "
+        f"still_missing={int(after_missing)}, total={len(overrides_df)}"
     )
 
 
