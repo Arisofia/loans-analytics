@@ -62,7 +62,7 @@ jobs:
       api_image: ${{ steps.meta-api.outputs.tags }}
       dashboard_image: ${{ steps.meta-dash.outputs.tags }}
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v6.0.2
 
       - name: Log in to GHCR
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.2.0
@@ -173,7 +173,7 @@ jobs:
       github.event.inputs.target == 'railway' ||
       github.event.inputs.target == 'all'
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v6.0.2
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
@@ -204,7 +204,7 @@ jobs:
       github.event.inputs.target == 'fly' ||
       github.event.inputs.target == 'all'
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v6.0.2
 
       - name: Install flyctl
         uses: superfly/flyctl-actions/setup-flyctl@fc53c09e1bc3be6f54706524e3b82c4f462f77be # v1

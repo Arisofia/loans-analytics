@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0 # Keep full history so CodeQL can build PR diff range reliably
 
@@ -80,7 +80,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v6.0.2
 
       - name: Detect Code Scanning availability
         id: check_code_scanning_availability
@@ -118,7 +118,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v6.0.2
 
       - name: Detect Code Scanning availability
         id: check_code_scanning_availability

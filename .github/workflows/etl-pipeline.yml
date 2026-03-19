@@ -79,7 +79,7 @@ jobs:
       mode: ${{ steps.resolve.outputs.mode }}
       run_type: ${{ steps.resolve.outputs.run_type }}
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v6.0.2
 
       - name: Check required secrets
         env:
@@ -138,7 +138,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v6.0.2
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
@@ -168,7 +168,7 @@ jobs:
       needs.preflight.outputs.run_type == 'ingest' ||
       needs.preflight.outputs.run_type == 'both'
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v6.0.2
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # actions/setup-python@v6
@@ -246,7 +246,7 @@ jobs:
       needs.preflight.outputs.run_type == 'snapshot' ||
       needs.preflight.outputs.run_type == 'both'
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v6.0.2
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # actions/setup-python@v6
