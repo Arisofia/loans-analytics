@@ -114,6 +114,54 @@ class TestStrategicModules(unittest.TestCase):
         self.assertIn("par", forecast["data_notes"])
         self.assertEqual(len(forecast["aum_forecast"]), 3)
 
+    def test_compliance_numeric_regression_par_and_concentration(self):
+        loans = self._sample_loans()
+        payments = self._sample_payments()
+
+        report = build_compliance_dashboard(loans, payments)
+        by_metric = {row["metric"]: row for row in report["metrics"]}
+
+        # Deterministic checks from sample fixture:
+        # total balance = 6100
+        # PAR30 balance = 1500 + 1200 + 700 = 3400 => 55.7%
+        # PAR90 balance = 1200 + 700 = 1900 => 31.1%
+        # Top-1 debtor balance = 2500 (P1) => 41.0%
+        # Top-10 concentration includes all debtors in fixture => 100.0%
+        self.assertEqual(by_metric["par30_pct"]["actual"], 55.7)
+        self.assertEqual(by_metric["par90_pct"]["actual"], 31.1)
+        self.assertEqual(by_metric["top1_concentration_pct"]["actual"], 41.0)
+        self.assertEqual(by_metric["top10_concentration_pct"]["actual"], 100.0)
+
+    def test_compliance_output_contract_shape(self):
+        loans = self._sample_loans()
+        payments = self._sample_payments()
+
+        report = build_compliance_dashboard(loans, payments)
+
+        self.assertIn("generated_at", report)
+        self.assertIn("summary", report)
+        self.assertIn("metrics", report)
+        self.assertIn("actuals", report)
+        self.assertIn("data_sources", report)
+        self.assertIn("variance_decomposition", report)
+
+        self.assertTrue(isinstance(report["metrics"], list))
+        self.assertTrue(isinstance(report["actuals"], dict))
+        self.assertTrue(isinstance(report["data_sources"], dict))
+
+        required_metric_keys = {
+            "metric",
+            "actual",
+            "target",
+            "variance",
+            "variance_pct",
+            "status",
+            "lower_is_better",
+            "owner",
+        }
+        for row in report["metrics"]:
+            self.assertTrue(required_metric_keys.issubset(set(row.keys())))
+
 
 if __name__ == "__main__":
     unittest.main()

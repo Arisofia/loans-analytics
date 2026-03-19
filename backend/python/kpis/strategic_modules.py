@@ -33,7 +33,6 @@ Usage
 from __future__ import annotations
 
 import logging
-import warnings
 from datetime import datetime, timezone
 from typing import Any
 
