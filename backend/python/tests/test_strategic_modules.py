@@ -324,6 +324,34 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(apr_actions[0]["variance"], 5.4)
         self.assertIn("Pricing above target ceiling", apr_actions[0]["action"])
 
+    def test_next_steps_plan_consolidates_semantic_duplicates_across_sources(self):
+        compliance = {
+            "metrics": [
+                {"metric": "par30_pct", "status": "breach", "variance": 3.0},
+            ],
+            "variance_decomposition": {
+                "par30_pct": {
+                    "driver": "Rising delinquency in key segment",
+                    "explanation": "PAR30 above threshold",
+                }
+            },
+        }
+        forecast = {
+            "par30_forecast": [
+                {"month": "M+1", "value": 20.0},
+                {"month": "M+2", "value": 24.0},
+            ]
+        }
+
+        plan = build_next_steps_plan(forecast=forecast, compliance=compliance)
+        par30_like_actions = [
+            a for a in plan["actions"] if a["metric"] in ("par30_pct", "par30")
+        ]
+
+        self.assertEqual(len(par30_like_actions), 1)
+        self.assertEqual(par30_like_actions[0]["source"], "compliance+forecast")
+        self.assertIn("Additional context", par30_like_actions[0]["action"])
+
 
 if __name__ == "__main__":
     unittest.main()

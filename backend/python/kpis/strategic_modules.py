@@ -872,6 +872,16 @@ def build_next_steps_plan(
         curr_mag = abs(float(curr_var)) if isinstance(curr_var, (int, float)) else 0.0
         return cand_mag > curr_mag
 
+    def _canonical_metric_name(metric: Any) -> str:
+        metric_s = str(metric).strip().lower()
+        aliases = {
+            "par30_pct": "par30",
+            "par90_pct": "par90",
+            "revenue_usd": "revenue",
+            "apr_pct_ann": "apr",
+        }
+        return aliases.get(metric_s, metric_s)
+
     # ── Source 1: Compliance breaches ──────────────────────────────────
     for row in compliance.get("metrics", []):
         metric_name = row.get("metric")
@@ -994,18 +1004,17 @@ def build_next_steps_plan(
                 "_sort_key": (0, -len(top_pd)),
             })
 
-    # ── Consolidate duplicate actions by area+metric ─────────────────
-    consolidated: dict[tuple[str, str], dict[str, Any]] = {}
+    # ── Consolidate duplicate actions by canonical metric ────────────
+    consolidated: dict[str, dict[str, Any]] = {}
     passthrough: list[dict[str, Any]] = []
 
     for action in actions:
         metric = action.get("metric")
-        area = action.get("area")
-        if metric is None or area is None:
+        if metric is None:
             passthrough.append(action)
             continue
 
-        key = (str(area), str(metric))
+        key = _canonical_metric_name(metric)
         current = consolidated.get(key)
         if current is None:
             consolidated[key] = action
