@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 import pandas as pd
 
+from backend.python.financial_precision import safe_decimal_divide, safe_decimal_sum
 from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 
 
@@ -20,10 +22,13 @@ def _to_numeric(series: pd.Series | None) -> pd.Series:
     return pd.to_numeric(series, errors="coerce").fillna(0.0)
 
 
-def _safe_pct(numerator: float, denominator: float) -> float:
-    if denominator <= 0:
-        return 0.0
-    return (numerator / denominator) * 100.0
+def _safe_pct(numerator: float | Decimal, denominator: float | Decimal) -> Decimal:
+    """Calculate percentage using Decimal for precision. Return as Decimal."""
+    num_dec = Decimal(str(numerator)) if isinstance(numerator, float) else Decimal(numerator)
+    denom_dec = Decimal(str(denominator)) if isinstance(denominator, float) else Decimal(denominator)
+    if denom_dec <= 0:
+        return Decimal('0')
+    return (num_dec / denom_dec) * Decimal('100')
 
 
 def _normalize_interest_rate(series: pd.Series) -> pd.Series:
@@ -58,14 +63,15 @@ def _build_dpd_bucket(
     bucket_name: str,
     mask: pd.Series,
     balance: pd.Series,
-    total_balance: float,
+    total_balance: Decimal,
 ) -> dict[str, float | int | str]:
-    bucket_balance = float(balance[mask].sum())
+    bucket_balance = Decimal(str(balance[mask].sum()))
+    balance_share = _safe_pct(bucket_balance, total_balance)
     return {
         "bucket": bucket_name,
         "loan_count": int(mask.sum()),
-        "balance": round(bucket_balance, 2),
-        "balance_share_pct": round(_safe_pct(bucket_balance, total_balance), 2),
+        "balance": round(float(bucket_balance), 2),
+        "balance_share_pct": round(float(balance_share), 2),
     }
 
 
@@ -172,7 +178,8 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
         df,
         ["borrower_id", "customer_id", "Customer ID_cust", "borrower_name"],
     )
-    total_balance = float(balance.sum())
+    # Use Decimal for all monetary aggregations
+    total_balance = Decimal(str(balance.sum()))
     total_loans = int(len(df))
 
     try:
@@ -182,43 +189,55 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
         par90 = par_metrics["par90"]
     except Exception:
         # Compatibility fallback during staged consolidation.
-        par30 = round(_safe_pct(float(balance[dpd >= 30].sum()), total_balance), 2)
-        par60 = round(_safe_pct(float(balance[dpd >= 60].sum()), total_balance), 2)
-        par90 = round(_safe_pct(float(balance[dpd >= 90].sum()), total_balance), 2)
-    default_rate = round(_safe_pct(float(default_mask.sum()), float(total_loans)), 2)
+        par30_pct = _safe_pct(Decimal(str(balance[dpd >= 30].sum())), total_balance)
+        par60_pct = _safe_pct(Decimal(str(balance[dpd >= 60].sum())), total_balance)
+        par90_pct = _safe_pct(Decimal(str(balance[dpd >= 90].sum())), total_balance)
+        par30 = round(float(par30_pct), 2)
+        par60 = round(float(par60_pct), 2)
+        par90 = round(float(par90_pct), 2)
+    
+    default_count = Decimal(str(default_mask.sum()))
+    default_rate_pct = _safe_pct(default_count, Decimal(str(total_loans)))
+    default_rate = round(float(default_rate_pct), 2)
 
     collected = _resolve_series(df, ["last_payment_amount", "payment_amount", "payments_collected"])
     scheduled = _resolve_series(df, ["total_scheduled", "scheduled_amount", "payments_due"])
-    collections_coverage = round(_safe_pct(float(collected.sum()), float(scheduled.sum())), 2)
+    collected_sum = Decimal(str(collected.sum()))
+    scheduled_sum = Decimal(str(scheduled.sum()))
+    collections_coverage_pct = _safe_pct(collected_sum, scheduled_sum)
+    collections_coverage = round(float(collections_coverage_pct), 2)
 
     fee = _resolve_series(df, ["origination_fee", "fee_amount"])
     fee_taxes = _resolve_series(df, ["origination_fee_taxes", "fee_taxes"])
-    fee_yield = round(_safe_pct(float((fee + fee_taxes).sum()), float(principal.sum())), 2)
-    interest_yield = _safe_pct(float((interest_rate * balance).sum()), total_balance)
-    total_yield = round(interest_yield + fee_yield, 2)
+    fee_sum = Decimal(str((fee + fee_taxes).sum()))
+    principal_sum = Decimal(str(principal.sum()))
+    fee_yield_pct = _safe_pct(fee_sum, principal_sum)
+    fee_yield = round(float(fee_yield_pct), 2)
+    
+    interest_yield_pct = _safe_pct(Decimal(str((interest_rate * balance).sum())), total_balance)
+    interest_yield = float(interest_yield_pct)  # Keep as Decimal for addition
+    total_yield = round(float(Decimal(str(interest_yield)) + Decimal(str(fee_yield))), 2)
 
     recovery = _resolve_series(df, ["recovery_value", "Recovery Value", "recovery_amount"])
-    default_balance = float(balance[default_mask].sum())
-    recovery_numerator = (
-        float(recovery[default_mask].sum()) if default_mask.any() else float(recovery.sum())
-    )
-    recovery_rate = round(_safe_pct(recovery_numerator, default_balance), 2)
+    default_balance = Decimal(str(balance[default_mask].sum()))
+    recovery_sum = Decimal(str(recovery[default_mask].sum())) if default_mask.any() else Decimal(str(recovery.sum()))
+    recovery_rate_pct = _safe_pct(recovery_sum, default_balance)
+    recovery_rate = round(float(recovery_rate_pct), 2)
 
     exposure_by_borrower = pd.DataFrame({"borrower_id": borrower_id, "balance": balance})
     exposure_by_borrower = exposure_by_borrower.groupby("borrower_id", dropna=False)[
         "balance"
     ].sum()
     if total_balance > 0 and not exposure_by_borrower.empty:
-        shares = exposure_by_borrower / total_balance
-        concentration_hhi = round(float((shares.pow(2).sum()) * 10000.0), 2)
+        shares = exposure_by_borrower / float(total_balance)
+        concentration_hhi = round(float((Decimal(str(shares.pow(2).sum())) * Decimal('10000'))), 2)
     else:
         concentration_hhi = 0.0
 
     loans_per_borrower = borrower_id.value_counts(dropna=False)
     repeat_borrowers = int((loans_per_borrower > 1).sum())
-    repeat_borrower_rate = round(
-        _safe_pct(float(repeat_borrowers), float(len(loans_per_borrower))), 2
-    )
+    repeat_borrower_pct = _safe_pct(Decimal(str(repeat_borrowers)), Decimal(str(len(loans_per_borrower))))
+    repeat_borrower_rate = round(float(repeat_borrower_pct), 2)
 
     dpd_buckets = [
         _build_dpd_bucket("current", dpd <= 0, balance, total_balance),
