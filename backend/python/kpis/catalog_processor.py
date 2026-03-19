@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from backend.python.kpis.graph_analytics import build_graph_kpi_report
+from backend.python.kpis.lending_kpis import build_lending_kpi_report
 from backend.python.kpis.portfolio_analytics import build_portfolio_analytics_report
 
 
@@ -240,6 +241,7 @@ class KPICatalogProcessor:
         weighted_fee_rate  = self.get_weighted_fee_rate()
         graph_analytics    = self.get_graph_analytics()
         portfolio_analytics = self.get_portfolio_analytics()
+        lending_kpis = self.get_lending_kpis()
 
         return {
             # Legacy groups (unchanged)
@@ -264,6 +266,7 @@ class KPICatalogProcessor:
             # Graph Analytics & Fintech Thesis (2026)
             "graph_analytics": graph_analytics,
             "portfolio_analytics": portfolio_analytics,
+            "lending_kpis": lending_kpis,
         }
 
     def get_monthly_revenue_df(self) -> pd.DataFrame:
@@ -1160,6 +1163,15 @@ class KPICatalogProcessor:
             schedule_df=self.schedule_df,
             customer_df=self.customers_df,
             collateral_df=self.collateral_df,
+        )
+
+    def get_lending_kpis(self) -> dict[str, Any]:
+        """Compute lending KPI modules that are not covered by core strategic outputs."""
+        return build_lending_kpi_report(
+            loans_df=self.loans_df,
+            payments_df=self.payments_df,
+            schedule_df=self.schedule_df,
+            customer_df=self.customers_df,
         )
 
     def get_quarterly_scorecard(self) -> pd.DataFrame:

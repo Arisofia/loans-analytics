@@ -83,6 +83,7 @@ class TestKPICatalogProcessorStrategic(unittest.TestCase):
         self.assertIn("weighted_apr", kpis)
         self.assertIn("weighted_fee_rate", kpis)
         self.assertIn("monthly_pricing", kpis)
+        self.assertIn("lending_kpis", kpis)
 
         strategic = kpis["strategic_confirmations"]
         self.assertTrue(strategic["cac_confirmed"])
@@ -97,6 +98,11 @@ class TestKPICatalogProcessorStrategic(unittest.TestCase):
         rotation = kpis["portfolio_rotation"]
         self.assertIn("rotation_x", rotation)
         self.assertIn("aum_usd", rotation)
+
+        lending = kpis["lending_kpis"]
+        self.assertIn("cdr_curves", lending)
+        self.assertIn("liquidation_rate", lending)
+        self.assertIn("mype_decisions", lending)
 
     def test_forecast_prioritization_and_governance_are_populated(self):
         processor = KPICatalogProcessor(self.loans_df, self.payments_df, self.customers_df)
