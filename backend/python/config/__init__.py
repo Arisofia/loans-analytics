@@ -284,8 +284,9 @@ class Settings(BaseSettings):
         portfolio_targets = yaml_data.get("portfolio_targets_2026")
         if isinstance(portfolio_targets, dict):
             updates["portfolio_targets_2026"] = {
-                str(month): int(value)
+                str(month): int(str(value).replace("_", ""))
                 for month, value in portfolio_targets.items()
+                if len(str(month)) == 7 and str(month)[:4].isdigit() and str(month)[4] == "-"
             }
 
         return app_settings.model_copy(update=updates) if updates else app_settings

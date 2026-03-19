@@ -9,6 +9,8 @@ Covers:
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -227,6 +229,26 @@ class TestSettings2026Targets:
     def test_guardrails_still_loaded(self):
         assert settings.financial.min_rotation == 4.5
         assert settings.financial.max_default_rate == 0.04
+
+    def test_loader_ignores_helper_keys_and_parses_underscore_values(self, tmp_path: Path):
+        config_dir = tmp_path / "config"
+        config_dir.mkdir()
+        (config_dir / "business_parameters.yml").write_text(
+            """
+portfolio_targets_2026:
+  '2026-01': '8_500_000'
+  '2026-12': '12_000_000'
+  required_monthly_net_growth_usd: 300000
+""".strip(),
+            encoding="utf-8",
+        )
+
+        loaded = type(settings).load_settings(project_root=tmp_path)
+
+        assert loaded.portfolio_targets_2026 == {
+            "2026-01": 8_500_000,
+            "2026-12": 12_000_000,
+        }
 
 
 # -----------------------------------------------------------------------------
