@@ -816,6 +816,7 @@ _IMPACT_MAP = {
     "par30_pct":               ("high",   "medium", "Collections",        "Launch DPD 15+ early warning workflow. Assign KAM follow-up for outstanding ops."),
     "par90_pct":               ("high",   "high",   "Collections / Risk", "Escalate 90+ DPD bucket to recovery team. Review provisions and LGD assumptions."),
     "npl_180_pct":             ("medium", "medium", "Risk / Finance",     "Review NPL provisioning; confirm write-off criteria and recovery pipeline status."),
+    "revenue_usd":             ("high",   "medium", "Sales",              "Revenue under target trajectory. Activate KAM recovery plan and prioritize quick-conversion opportunities."),
     "rotation_x":              ("medium", "medium", "Operations",         "Reduce average term by 5–10 days on new originations. Prioritise faster-cycling segments."),
     "ce_6m_pct":               ("high",   "medium", "Collections",        "Audit 6M collection shortfall by KAM and debtor. Escalate top-5 lagging accounts."),
     "apr_pct_ann":             ("medium", "low",    "Pricing",            "Recalibrate APR corridor by segment/channel. Review floor exceptions and competitiveness trade-offs."),
@@ -882,6 +883,26 @@ def build_next_steps_plan(
         }
         return aliases.get(metric_s, metric_s)
 
+    def _policy_lookup(metric: Any, policy_map: dict[str, Any]) -> Any:
+        metric_s = str(metric).strip().lower()
+        if metric_s in policy_map:
+            return policy_map[metric_s]
+
+        canonical = _canonical_metric_name(metric_s)
+        if canonical in policy_map:
+            return policy_map[canonical]
+
+        canonical_to_source = {
+            "par30": "par30_pct",
+            "par90": "par90_pct",
+            "revenue": "revenue_usd",
+            "apr": "apr_pct_ann",
+        }
+        fallback = canonical_to_source.get(canonical)
+        if fallback and fallback in policy_map:
+            return policy_map[fallback]
+        return None
+
     # ── Source 1: Compliance breaches ──────────────────────────────────
     for row in compliance.get("metrics", []):
         metric_name = row.get("metric")
@@ -890,7 +911,7 @@ def build_next_steps_plan(
         vd_expl = vd.get("explanation") if isinstance(vd, dict) else None
 
         if row["status"] in ("breach", "warning"):
-            meta = _IMPACT_MAP.get(row["metric"])
+            meta = _policy_lookup(row.get("metric"), _IMPACT_MAP)
             if not meta:
                 continue
             impact, effort, area, action_text = meta
@@ -908,8 +929,11 @@ def build_next_steps_plan(
                 "variance": row.get("variance"),
                 "_sort_key": (0 if impact == "high" else 1, row.get("variance", 0)),
             })
-        elif row["status"] == "no_data" and row.get("metric") in _NO_DATA_ACTION_MAP:
-            impact, effort, area, action_text = _NO_DATA_ACTION_MAP[row["metric"]]
+        elif row["status"] == "no_data":
+            no_data_meta = _policy_lookup(row.get("metric"), _NO_DATA_ACTION_MAP)
+            if not no_data_meta:
+                continue
+            impact, effort, area, action_text = no_data_meta
             if vd_driver:
                 action_text = f"{action_text} Driver: {vd_driver}."
             elif vd_expl:

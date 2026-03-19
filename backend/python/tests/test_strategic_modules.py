@@ -352,6 +352,54 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(par30_like_actions[0]["source"], "compliance+forecast")
         self.assertIn("Additional context", par30_like_actions[0]["action"])
 
+    def test_next_steps_plan_supports_alias_metric_for_apr(self):
+        compliance = {
+            "metrics": [
+                {"metric": "apr", "status": "breach", "variance": 4.2},
+            ],
+            "variance_decomposition": {
+                "apr": {
+                    "driver": "Pricing above target ceiling",
+                    "explanation": "Alias metric received from upstream",
+                }
+            },
+        }
+
+        plan = build_next_steps_plan(forecast={}, compliance=compliance)
+        apr_actions = [a for a in plan["actions"] if a["metric"] == "apr"]
+
+        self.assertEqual(len(apr_actions), 1)
+        self.assertEqual(apr_actions[0]["source"], "compliance")
+        self.assertIn("Pricing above target ceiling", apr_actions[0]["action"])
+
+    def test_next_steps_plan_consolidates_revenue_alias_across_sources(self):
+        compliance = {
+            "metrics": [
+                {"metric": "revenue_usd", "status": "warning", "variance": -1200.0},
+            ],
+            "variance_decomposition": {
+                "revenue_usd": {
+                    "driver": "Pipeline conversion slowdown",
+                    "explanation": "Monthly revenue below target",
+                }
+            },
+        }
+        forecast = {
+            "revenue_forecast": [
+                {"month": "M+1", "value": 10000.0},
+                {"month": "M+2", "value": 8500.0},
+            ]
+        }
+
+        plan = build_next_steps_plan(forecast=forecast, compliance=compliance)
+        revenue_actions = [
+            a for a in plan["actions"] if a["metric"] in ("revenue_usd", "revenue")
+        ]
+
+        self.assertEqual(len(revenue_actions), 1)
+        self.assertEqual(revenue_actions[0]["source"], "compliance+forecast")
+        self.assertIn("Additional context", revenue_actions[0]["action"])
+
 
 if __name__ == "__main__":
     unittest.main()
