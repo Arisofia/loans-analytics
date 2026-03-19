@@ -5,12 +5,17 @@ import re
 import sys
 import uuid
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 try:
-    import jwt
+    import jwt as _jwt
+
+    jwt: Any = _jwt
 except ImportError:  # pragma: no cover - optional dependency in some test envs
     jwt = None
+
+if TYPE_CHECKING:
+    from backend.python.apps.analytics.api.models import LoanRecord
 
 # Avoid importing FastAPI at module import time so tests don't require
 # fastapi installed. Use a lazy import and a lightweight HTTPException
@@ -36,6 +41,7 @@ try:
         LoanPortfolioRequest,
         NSMRecurrentTPVResponse,
         RiskAlertsResponse,
+        RiskHeatmapResponse,
         RiskLoan,
         RiskStratificationResponse,
         RollRateAnalyticsRequest,
@@ -62,7 +68,7 @@ try:
     from backend.python.apps.analytics.api.monitoring_service import MonitoringService
     from backend.python.apps.analytics.api.service import KPIService
     from backend.python.logging_config import init_sentry, set_sentry_correlation
-    from backend.src.agents.multi_agent.orchestrator import MultiAgentOrchestrator
+    from backend.python.multi_agent.orchestrator import MultiAgentOrchestrator
     from backend.python.middleware.rate_limiter import api_limiter, auth_limiter
 
     init_sentry(service_name="analytics-api")
@@ -97,6 +103,10 @@ except ImportError:  # pragma: no cover - fallback in tests/environments without
     app = None
 
 logger = logging.getLogger("apps.analytics.api")
+# Module-level constants for API paths
+DOCS_PATH = "/docs"  # Swagger UI documentation endpoint
+REDOC_PATH = "/redoc"  # ReDoc documentation endpoint
+EMPTY_PATH_ERROR = "empty path"  # Error message for empty/invalid paths
 # Directory that contains allowed data files (must be absolute)
 ALLOWED_DATA_DIR = Path("/data/archives").resolve()
 INTERNAL_SERVER_ERROR = "Internal server error"
@@ -110,6 +120,10 @@ def get_kpi_service():
 def get_monitoring_service():
     # In a real scenario, we'd extract the user/actor from the auth token
     return MonitoringService(actor="api_user")
+
+
+def _loan_records_or_empty(request: "LoanPortfolioRequest") -> list["LoanRecord"]:
+    return request.loans or []
 
 
 def _safe_log_value(value: Any, max_length: int = 200) -> str:
@@ -282,13 +296,12 @@ async def _run_orchestrated_full_analysis(
 
     orchestrator = MultiAgentOrchestrator()
     trace_id = str(uuid.uuid4())
-    loan_ids_from_request = (
-        [loan.id for loan in request.loans if loan.id is not None] if request.loans else []
-    )
+    loans = _loan_records_or_empty(request)
+    loan_ids_from_request = [loan.id for loan in loans if loan.id is not None]
 
-    risk_stratification = await service.get_risk_stratification(request.loans)
-    vintage_curves = await service.calculate_vintage_curves(request.loans)
-    risk_heatmap = await service.get_risk_heatmap_summary(request.loans)
+    risk_stratification = await service.get_risk_stratification(loans)
+    vintage_curves = await service.calculate_vintage_curves(loans)
+    risk_heatmap = await service.get_risk_heatmap_summary(loans)
 
     initial_context = {
         "portfolio_data": (
@@ -320,12 +333,13 @@ async def _run_local_full_analysis(
     roll_rates: "RollRateAnalyticsResponse",
 ) -> tuple[str, str]:
     trace_id = str(uuid.uuid4())
+    loans = _loan_records_or_empty(request)
     par30 = _get_kpi_value(kpis, ["par_30", "par30"], 0.0)
     yield_val = _get_kpi_value(kpis, ["portfolio_yield"], 0.0)
     loans_count = _get_kpi_value(
         kpis,
         ["total_loans_count"],
-        float(len(request.loans)) if request.loans else 0.0,
+        float(len(loans)),
     )
     cac = _get_kpi_value(kpis, ["cac"], 0.0)
     gross_margin = _get_kpi_value(kpis, ["gross_margin_pct"], 0.0)
@@ -334,9 +348,9 @@ async def _run_local_full_analysis(
     clv = _get_kpi_value(kpis, ["customer_lifetime_value"], 0.0)
     clv_cac_ratio = (clv / cac) if cac > 0 else 0.0
 
-    advanced_risk = await service.calculate_advanced_risk(request.loans)
-    risk_strat = await service.get_risk_stratification(request.loans)
-    vintage = await service.calculate_vintage_curves(request.loans)
+    advanced_risk = await service.calculate_advanced_risk(loans)
+    risk_strat = await service.get_risk_stratification(loans)
+    vintage = await service.calculate_vintage_curves(loans)
 
     dpd_1_30 = _get_kpi_value(kpis, ["dpd_1_30", "delinq_1_30_rate"], 0.0)
     dpd_31_60 = _get_kpi_value(kpis, ["dpd_31_60", "delinq_31_60_rate"], 0.0)
@@ -410,14 +424,14 @@ if app is not None:
         logger.warning("prometheus-fastapi-instrumentator not installed; /metrics disabled")
 
     # --- Rate limiting middleware ---
-    _RATE_LIMIT_EXEMPT = {"/health", "/metrics", "/docs", "/openapi.json", "/redoc"}
+    _RATE_LIMIT_EXEMPT = {"/health", "/metrics", DOCS_PATH, "/openapi.json", REDOC_PATH}
     _AUTH_PATHS = {"/auth/token", "/auth/login", "/auth/refresh"}
 
     @app.middleware("http")
     async def rate_limit_middleware(request: Request, call_next):
         """Enforce sliding-window rate limits per client IP on all non-exempt routes."""
         path = request.url.path
-        if path not in _RATE_LIMIT_EXEMPT and not path.startswith("/redoc") and not path.startswith("/docs"):
+        if path not in _RATE_LIMIT_EXEMPT and not path.startswith(REDOC_PATH) and not path.startswith(DOCS_PATH):
             client_ip = (request.client.host if request.client else None) or "unknown"
             limiter = auth_limiter if path in _AUTH_PATHS else api_limiter
             if not limiter.is_allowed(client_ip):
@@ -437,7 +451,7 @@ if app is not None:
         item.strip()
         for item in os.getenv(
             "API_JWT_EXEMPT_PATHS",
-            "/health,/metrics,/docs,/openapi.json,/redoc",
+            f"/health,/metrics,{DOCS_PATH},/openapi.json,{REDOC_PATH}",
         ).split(",")
         if item.strip()
     }
@@ -454,8 +468,8 @@ if app is not None:
             path = request.url.path
             if (
                 path in jwt_exempt_paths
-                or path.startswith("/docs")
-                or path.startswith("/redoc")
+                or path.startswith(DOCS_PATH)
+                or path.startswith(REDOC_PATH)
                 or path.startswith("/openapi")
             ):
                 return await call_next(request)
@@ -468,7 +482,7 @@ if app is not None:
             if not token:
                 return JSONResponse(status_code=401, content={"detail": "Missing bearer token"})
 
-            decode_kwargs = {"algorithms": [jwt_algorithm]}
+            decode_kwargs: dict[str, Any] = {"algorithms": [jwt_algorithm]}
             if jwt_audience:
                 decode_kwargs["audience"] = jwt_audience
             if jwt_issuer:
@@ -988,14 +1002,18 @@ if app is not None:
     ) -> FullAnalysisResponse:
         """Map raw analysis results to structured FullAnalysisResponse model."""
         recommendations = _build_full_analysis_recommendations(kpis, roll_rates)
+        loans = _loan_records_or_empty(request)
 
-        risk_stratification = await service.get_risk_stratification(request.loans)
-        risk_heatmap_data = await service.get_risk_heatmap_summary(request.loans)
-        vintage_curves_data = await service.calculate_vintage_curves(request.loans)
-        layered_analysis = await service.get_layered_insights(request.loans)
-        unit_economics = await service.calculate_unit_economics(request.loans)
-        portfolio_health = await service.get_portfolio_health_score(request.loans)
-        strategic_data = await service.get_executive_analytics(request.loans)
+        risk_stratification = await service.get_risk_stratification(loans)
+        risk_heatmap_data = await service.get_risk_heatmap_summary(loans)
+        risk_heatmap_response = (
+            RiskHeatmapResponse.model_validate(risk_heatmap_data) if risk_heatmap_data else None
+        )
+        vintage_curves_data = await service.calculate_vintage_curves(loans)
+        layered_analysis = await service.get_layered_insights(loans)
+        unit_economics = await service.calculate_unit_economics(loans)
+        portfolio_health = await service.get_portfolio_health_score(loans)
+        strategic_data = await service.get_executive_analytics(loans)
 
         return FullAnalysisResponse(
             analysis_id=trace_id,
@@ -1004,12 +1022,12 @@ if app is not None:
             kpis=kpis,
             risk_assessment=RiskAlertsResponse(
                 high_risk_count=0,
-                total_loans=len(request.loans) if request.loans else 0,
+                total_loans=len(loans),
                 risk_ratio=0.0,
                 high_risk_loans=[],
             ),
             risk_stratification=risk_stratification,
-            risk_heatmap=risk_heatmap_data,
+            risk_heatmap=risk_heatmap_response,
             vintage_curves=vintage_curves_data,
             layered_analysis=layered_analysis,
             strategic_confirmations=strategic_data.get("strategic_confirmations", {}),
@@ -1267,10 +1285,10 @@ def _sanitize_for_logging(value: str, max_length: int = 200) -> str:
 
 def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     if not candidate:
-        raise ValueError("empty path")
+        raise ValueError(EMPTY_PATH_ERROR)
     normalized = candidate.replace("\\", "/").strip()
     if not normalized:
-        raise ValueError("empty path")
+        raise ValueError(EMPTY_PATH_ERROR)
     if normalized.startswith("/"):
         raise ValueError("absolute paths are not allowed")
     if not re.match(r"^[a-zA-Z0-9_./\-]+$", normalized):
@@ -1285,7 +1303,7 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
             raise ValueError("invalid path segment")
         safe_parts.append(part)
     if not safe_parts:
-        raise ValueError("empty path")
+        raise ValueError(EMPTY_PATH_ERROR)
     resolved = allowed_dir.resolve().joinpath(*safe_parts).resolve(strict=False)
     try:
         resolved.relative_to(allowed_dir.resolve())

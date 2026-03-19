@@ -34,7 +34,7 @@ REASON_UNMATCHED_MORA = "unmatched_control_mora"
 REASON_NOT_SPECIFIED = "not_specified"
 
 try:
-    from rapidfuzz import fuzz  # type: ignore[import]
+    from rapidfuzz import fuzz
 
     _RAPIDFUZZ = True
 except ImportError:

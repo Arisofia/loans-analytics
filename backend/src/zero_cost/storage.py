@@ -28,7 +28,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 try:
-    import duckdb  # type: ignore[import]
+    import duckdb
 
     _ = duckdb
     DUCKDB_AVAILABLE = True

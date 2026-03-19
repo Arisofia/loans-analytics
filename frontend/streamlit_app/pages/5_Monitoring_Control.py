@@ -227,7 +227,7 @@ status_filter = st.selectbox(
 )
 
 if st.button("Refresh Commands", key="refresh_cmds"):
-    cmd_query_params = {"limit": 50}
+    cmd_query_params: dict[str, int | str] = {"limit": 50}
     if status_filter != "all":
         cmd_query_params["status"] = status_filter
 

@@ -94,7 +94,7 @@ def xirr(
     parsed_dates = [_to_date(d) for d in dates]
 
     # Sort (cashflows, dates) by date so the result is independent of input order.
-    order = np.argsort(parsed_dates)
+    order = np.argsort(np.array(parsed_dates, dtype="datetime64[D]"))
     cfs = cfs_raw[order]
     parsed_dates = [parsed_dates[i] for i in order]
     t0 = parsed_dates[0]  # earliest date after sorting

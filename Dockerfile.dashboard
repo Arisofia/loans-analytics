@@ -30,7 +30,8 @@ FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app:/app/backend:/app/frontend \
-    PORT=8501
+    PORT=8000 \
+    STREAMLIT_SERVER_PORT=8000
 
 WORKDIR /app
 
@@ -54,12 +55,12 @@ RUN useradd --system --create-home --home-dir /app appuser \
     && chown -R appuser:appuser /app
 USER appuser
 
-# Expose Streamlit port
-EXPOSE 8501
+# Expose Streamlit port (canonical: 8000, aligns with startup.sh and API)
+EXPOSE 8000
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+    CMD curl -f http://localhost:8000/_stcore/health || exit 1
 
-# Run Streamlit
-ENTRYPOINT ["streamlit", "run", "frontend/streamlit_app/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Run Streamlit (port is configurable via PORT env var, defaults to 8000)
+ENTRYPOINT ["streamlit", "run", "frontend/streamlit_app/app.py", "--server.port=${PORT:-8000}", "--server.address=0.0.0.0"]

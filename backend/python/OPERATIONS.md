@@ -106,7 +106,13 @@ print(report.to_markdown())
 make run-dashboard
 ```
 
-The dashboard will be available at `http://localhost:8501`.
+The dashboard will be available at `http://localhost:8000` (canonical port, aligns with API service).
+
+To override the port, set the `STREAMLIT_SERVER_PORT` environment variable:
+
+```bash
+STREAMLIT_SERVER_PORT=8501 make run-dashboard  # Use alternate port if needed
+```
 
 ### Production Deployment
 
@@ -115,6 +121,7 @@ The dashboard is hosted on Azure App Service.
 - **Service Name**: `abaco-analytics-dashboard`
 - **Deployment**: Automatic via GitHub Actions on push to `main`.
 - **Startup Command**: `bash startup.sh`
+- **Port**: 8000 (configurable via `STREAMLIT_SERVER_PORT` env var)
 
 ---
 

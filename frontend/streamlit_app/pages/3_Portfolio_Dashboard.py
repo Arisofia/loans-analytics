@@ -23,9 +23,9 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-from backend.src.agents.multi_agent.guardrails import Guardrails
-from backend.src.agents.multi_agent.orchestrator import MultiAgentOrchestrator
-from backend.src.agents.multi_agent.protocol import LLMProvider
+from backend.python.multi_agent.guardrails import Guardrails
+from backend.python.multi_agent.orchestrator import MultiAgentOrchestrator
+from backend.python.multi_agent.protocol import LLMProvider
 from frontend.streamlit_app.components.csv_upload import (
     BORROWER_ID_COLS,
     classify_loan_id_duplicates as _classify_loan_id_duplicates,

@@ -17,13 +17,12 @@ import pytest
 
 # -- imports from canonical locations ----------------------------------------
 from backend.python.config.mype_rules import (
-    ApprovalDecision,
     IndustryType,
     MYPEBusinessRules,
     RiskLevel,
 )
 from backend.python.config import settings
-from src.analytics import (
+from backend.src.analytics import (
     calculate_quality_score,
     portfolio_kpis,
     project_growth,

@@ -209,9 +209,10 @@ python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_
 ```
 
 ### Q: Port 8501 (Streamlit) not accessible
-**A:** Streamlit dashboard is separate from Grafana. To start it:
+**A:** Streamlit dashboard is separate from Grafana, now runs on canonical port 8000. To start it:
 ```bash
-streamlit run streamlit_app.py
+streamlit run streamlit_app.py  # Listens on http://localhost:8000 by default
+# Or override: STREAMLIT_SERVER_PORT=8501 streamlit run streamlit_app.py
 ```
 
 ---

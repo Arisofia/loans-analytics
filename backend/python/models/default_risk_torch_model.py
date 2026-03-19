@@ -8,6 +8,14 @@ from typing import Any
 
 import numpy as np
 
+torch: Any
+try:
+    import torch as _torch
+
+    torch = _torch
+except ImportError:
+    torch = None
+
 FEATURE_ORDER = [
     "loan_amount",
     "interest_rate",
@@ -32,13 +40,11 @@ class TorchDefaultRiskModel:
 
     @staticmethod
     def _require_torch():
-        try:
-            import torch
-        except ImportError as exc:
+        if torch is None:
             raise ImportError(
                 "PyTorch backend requested but torch is not installed. "
                 "Install with: pip install torch"
-            ) from exc
+            )
         return torch
 
     @classmethod
@@ -65,7 +71,7 @@ class TorchDefaultRiskModel:
         input_dim = int(payload.get("input_dim", len(FEATURE_ORDER)))
         hidden_dim = int(payload.get("hidden_dim", 64))
 
-        class _MLP(torch.nn.Module):
+        class _MLP(torch.nn.Module):  # type: ignore[name-defined]
             def __init__(self, in_features: int, hidden: int):
                 super().__init__()
                 self.net = torch.nn.Sequential(
@@ -76,7 +82,7 @@ class TorchDefaultRiskModel:
                     torch.nn.Linear(hidden // 2, 1),
                 )
 
-            def forward(self, x):  # type: ignore[no-untyped-def]
+            def forward(self, x: Any) -> Any:
                 return self.net(x)
 
         model = _MLP(input_dim, hidden_dim)

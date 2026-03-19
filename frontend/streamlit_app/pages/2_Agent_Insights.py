@@ -1,6 +1,7 @@
 import json
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import streamlit as st
@@ -31,7 +32,7 @@ def get_agent_output_files() -> list[Path]:
     return sorted(files, key=lambda f: f.stat().st_mtime, reverse=True)
 
 
-def parse_agent_output(file_path: Path) -> dict[str, str]:
+def parse_agent_output(file_path: Path) -> dict[str, Any]:
     """Parse agent output JSON file."""
     try:
         with open(file_path, encoding="utf-8") as f:
@@ -296,7 +297,7 @@ else:  # Analytics view
 
         with col1:
             st.markdown("#### Interactions by Agent")
-            agent_counts = {}
+            agent_counts: dict[str, int] = {}
             for output in filtered_outputs:
                 agent_counts[output["agent"]] = agent_counts.get(output["agent"], 0) + 1
 
@@ -308,7 +309,7 @@ else:  # Analytics view
 
         with col2:
             st.markdown("#### Cost by Agent")
-            agent_costs = {}
+            agent_costs: dict[str, float] = {}
             for output in filtered_outputs:
                 agent_costs[output["agent"]] = agent_costs.get(output["agent"], 0) + output["cost"]
 
@@ -322,12 +323,12 @@ else:  # Analytics view
         st.markdown("#### Interaction Timeline")
 
         # Group by date
-        timeline_data = {}
+        timeline_data: dict[date, int] = {}
         for output in filtered_outputs:
             if output["timestamp"] != "Error":
                 try:
-                    date = datetime.fromisoformat(output["timestamp"]).date()
-                    timeline_data[date] = timeline_data.get(date, 0) + 1
+                    date_key = datetime.fromisoformat(output["timestamp"]).date()
+                    timeline_data[date_key] = timeline_data.get(date_key, 0) + 1
                 except (ValueError, OSError):
                     continue
 

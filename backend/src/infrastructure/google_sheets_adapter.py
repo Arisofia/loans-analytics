@@ -4,12 +4,17 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+gspread: Any
+ServiceAccountCredentials: Any
+
 try:
-    import gspread  # type: ignore[import-not-found]
-    from google.oauth2.service_account import Credentials as ServiceAccountCredentials  # type: ignore[import-not-found]  # pyright: ignore[reportMissingImports]
+    import gspread
+    from google.oauth2.service_account import Credentials as _ServiceAccountCredentials
+
+    ServiceAccountCredentials = _ServiceAccountCredentials
 except ImportError:  # pragma: no cover
-    gspread = None  # type: ignore[assignment]
-    ServiceAccountCredentials = None  # type: ignore[assignment]
+    gspread = None
+    ServiceAccountCredentials = None
 
 
 _SCOPES = [

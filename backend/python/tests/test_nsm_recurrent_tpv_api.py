@@ -2,12 +2,13 @@
 
 import json
 import time
+from typing import Any, cast
 
 from fastapi.testclient import TestClient
 
 from backend.python.apps.analytics.api.main import app
 
-client = TestClient(app)
+client = TestClient(cast(Any, app))
 
 
 def test_nsm_endpoint_returns_empty_response_when_no_runs_dir(tmp_path, monkeypatch):

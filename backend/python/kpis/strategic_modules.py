@@ -39,7 +39,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+
 logger = logging.getLogger(__name__)
+
+# Module-level constants for role/owner names
+HEAD_OF_RISK = "Head of Risk"  # KPI owner for risk-related metrics (PAR30, PAR90, NPL)
+HEAD_OF_PRICING = "Head of Pricing"  # KPI owner for pricing-related metrics (APR)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Shared helpers
@@ -53,6 +59,26 @@ def _col(df: pd.DataFrame, candidates: list[str]) -> str | None:
 
 def _num(df: pd.DataFrame, col: str) -> pd.Series:
     return pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+
+
+def _calculate_ssot_asset_quality_metrics(
+    balance: pd.Series,
+    dpd: pd.Series,
+    status: pd.Series,
+) -> dict[str, float]:
+    """Calculate PAR/NPL ratios via SSOT formula engine."""
+    values = calculate_asset_quality_metrics(
+        balance,
+        dpd,
+        actor="strategic_modules",
+        metric_aliases=("par30", "par90", "npl180"),
+        status=status,
+    )
+    return {
+        "par30": values.get("par30", 0.0),
+        "par90": values.get("par90", 0.0),
+        "npl180": values.get("npl180", 0.0),
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -155,6 +181,79 @@ def detect_exposure_weighted_outliers(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 3.2  Private helpers for build_pd_model
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _detect_pd_columns(
+    loans_df: pd.DataFrame,
+) -> tuple[str | None, str | None, str | None]:
+    """Return (status_col, bal_col, loan_id_col) from the loan tape."""
+    return (
+        _col(loans_df, ["loan_status", "Loan Status", "status"]),
+        _col(loans_df, ["outstanding_loan_value", "outstanding_balance"]),
+        _col(loans_df, ["loan_id", "Loan ID", "id"]),
+    )
+
+
+def _build_pd_feature_matrix(
+    loans_df: pd.DataFrame,
+) -> tuple[pd.DataFrame, dict[str, str]]:
+    """Build feature matrix from loan tape. DPD excluded to avoid target leakage."""
+    feature_cols: dict[str, str] = {}
+    for fname, aliases in [
+        ("apr",         ["interest_rate_apr", "interest_rate", "TasaInteres"]),
+        ("term",        ["term", "Term", "term_days"]),
+        ("disb_amount", ["disbursement_amount", "MontoDesembolsado"]),
+        ("outstanding", ["outstanding_loan_value", "TotalSaldoVigente"]),
+        ("tpv",         ["tpv", "TPV", "total_portfolio_value"]),
+    ]:
+        c = _col(loans_df, aliases)
+        if c:
+            feature_cols[fname] = c
+    X_raw = pd.DataFrame(
+        {fname: _num(loans_df, col) for fname, col in feature_cols.items()}
+    ).fillna(0)
+    return X_raw, feature_cols
+
+
+def _build_pd_weights(loans_df: pd.DataFrame, bal_col: str | None) -> pd.Series:
+    """Return exposure weights (outstanding balance ≥ 1); uniform when no balance column."""
+    if bal_col:
+        return _num(loans_df, bal_col).clip(lower=1.0)
+    return pd.Series(np.ones(len(loans_df)), index=loans_df.index)
+
+
+def _run_pd_cross_validation(
+    clf: Any,
+    X_scaled: Any,
+    y: pd.Series,
+    weights: pd.Series,
+    cv_folds: int,
+) -> Any:
+    """Stratified k-fold AUC; falls back to unweighted CV when sklearn < 1.4."""
+    from sklearn.model_selection import StratifiedKFold, cross_val_score
+    skf = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=42)
+    try:
+        return cross_val_score(
+            clf, X_scaled, y, cv=skf, scoring="roc_auc",
+            params={"sample_weight": weights.values},
+        )
+    except TypeError:
+        return cross_val_score(clf, X_scaled, y, cv=skf, scoring="roc_auc")
+
+
+def _compute_pd_calibration(y: pd.Series, pd_scores: Any) -> float | None:
+    """Fit calibration curve and return slope; returns None on failure."""
+    try:
+        from sklearn.calibration import calibration_curve
+        from numpy.polynomial.polynomial import polyfit as npfit
+        frac_pos, mean_pred = calibration_curve(y, pd_scores, n_bins=5)
+        return float(npfit(mean_pred, frac_pos, 1)[1]) if len(frac_pos) > 1 else 1.0
+    except Exception:
+        return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 3.2  Guarded Probability of Default (PD) Model
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -192,108 +291,55 @@ def build_pd_model(
     """
     try:
         from sklearn.linear_model import LogisticRegression
-        from sklearn.model_selection import StratifiedKFold, cross_val_score
         from sklearn.preprocessing import StandardScaler
-        from sklearn.calibration import calibration_curve
     except ImportError:
         return {"status": "error", "message": "scikit-learn not installed"}
 
-    status_col = _col(loans_df, ["loan_status", "Loan Status", "status"])
-    bal_col    = _col(loans_df, ["outstanding_loan_value", "outstanding_balance"])
-    loan_id_col= _col(loans_df, ["loan_id", "Loan ID", "id"])
-
+    status_col, bal_col, loan_id_col = _detect_pd_columns(loans_df)
     if status_col is None:
         return {"status": "error", "message": "No status column found"}
 
-    # Build target
+    # Build and guard target
     status_series = loans_df[status_col].astype(str).str.lower()
     y = (status_series.str.contains("default|defaulted", regex=True, na=False)).astype(int)
-
     n_pos = int(y.sum())
     n_neg = int((y == 0).sum())
-
     if n_pos < min_defaults or n_neg < min_non_defaults:
         return {
-            "status":          "insufficient_data",
-            "n_defaults":      n_pos,
-            "n_non_defaults":  n_neg,
-            "min_required":    f"{min_defaults} defaults + {min_non_defaults} non-defaults",
-            "message":         "Dataset does not meet minimum class size for stable PD model.",
+            "status":         "insufficient_data",
+            "n_defaults":     n_pos,
+            "n_non_defaults": n_neg,
+            "min_required":   f"{min_defaults} defaults + {min_non_defaults} non-defaults",
+            "message":        "Dataset does not meet minimum class size for stable PD model.",
         }
 
-    # Build features.
-    # DPD/days_in_default is intentionally excluded to avoid target leakage:
-    # it directly encodes loan_status==Default in this tape.
-    feature_cols = {}
-    for fname, aliases in [
-        ("apr",          ["interest_rate_apr", "interest_rate", "TasaInteres"]),
-        ("term",         ["term", "Term", "term_days"]),
-        ("disb_amount",  ["disbursement_amount", "MontoDesembolsado"]),
-        ("outstanding",  ["outstanding_loan_value", "TotalSaldoVigente"]),
-        ("tpv",          ["tpv", "TPV", "total_portfolio_value"]),
-    ]:
-        c = _col(loans_df, aliases)
-        if c:
-            feature_cols[fname] = c
-
+    X_raw, feature_cols = _build_pd_feature_matrix(loans_df)
     if len(feature_cols) < 2:
         return {"status": "error", "message": f"Insufficient features: {list(feature_cols)}"}
 
-    X_raw = pd.DataFrame({
-        fname: _num(loans_df, col) for fname, col in feature_cols.items()
-    }).fillna(0)
-
-    # Exposure weights
-    weights = _num(loans_df, bal_col).clip(lower=1.0) if bal_col else pd.Series(
-        np.ones(len(loans_df)), index=loans_df.index
-    )
-
+    weights = _build_pd_weights(loans_df, bal_col)
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_raw)
 
-    # k-fold CV
-    skf = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=42)
     clf = LogisticRegression(max_iter=1000, class_weight="balanced", solver="lbfgs")
-    # sklearn 1.4+ removed fit_params from cross_val_score; use metadata routing
-    # Fallback: unweighted CV for AUC, weighted fit for final model
-    try:
-        auc_scores = cross_val_score(
-            clf, X_scaled, y, cv=skf, scoring="roc_auc",
-            params={"sample_weight": weights.values},
-        )
-    except TypeError:
-        # sklearn < 1.4 or routing disabled — run unweighted CV
-        auc_scores = cross_val_score(clf, X_scaled, y, cv=skf, scoring="roc_auc")
-
-    # Fit final model (always exposure-weighted)
+    auc_scores = _run_pd_cross_validation(clf, X_scaled, y, weights, cv_folds)
     clf.fit(X_scaled, y, sample_weight=weights.values)
     pd_scores = clf.predict_proba(X_scaled)[:, 1]
+    calib_slope = _compute_pd_calibration(y, pd_scores)
 
-    # Calibration (reliability)
-    try:
-        frac_pos, mean_pred = calibration_curve(y, pd_scores, n_bins=5)
-        from numpy.polynomial.polynomial import polyfit as npfit
-        calib_slope = float(npfit(mean_pred, frac_pos, 1)[1]) if len(frac_pos) > 1 else 1.0
-    except Exception:
-        calib_slope = None
-
-    # Feature importance (coefficients)
     feature_importance = {
         fname: round(float(coef), 4)
         for fname, coef in zip(feature_cols.keys(), clf.coef_[0])
     }
-
-    # Per-loan scores
     loan_ids = (
         loans_df[loan_id_col].astype(str).tolist()
         if loan_id_col else [str(i) for i in range(len(loans_df))]
     )
-    pd_output = [
-        {"loan_id": lid, "pd_score": round(float(s), 4)}
-        for lid, s in zip(loan_ids, pd_scores)
-    ]
-    # Sort by risk desc for output
-    pd_output.sort(key=lambda x: x["pd_score"], reverse=True)
+    pd_output = sorted(
+        [{"loan_id": lid, "pd_score": round(float(s), 4)} for lid, s in zip(loan_ids, pd_scores)],
+        key=lambda x: x["pd_score"],
+        reverse=True,
+    )
 
     return {
         "status":              "ok",
@@ -308,7 +354,7 @@ def build_pd_model(
         "default_rate_actual": round(n_pos / (n_pos + n_neg) * 100, 2),
         "cv_folds":            cv_folds,
         "model_type":          "logistic_regression_exposure_weighted",
-        "pd_scores":           pd_output[:500],  # top 500 highest risk for export
+        "pd_scores":           pd_output[:500],
     }
 
 
@@ -392,6 +438,7 @@ def predict_kpis(
     # ── PAR series (requires DPD column) ──────────────────────────────
     # Approximation from current snapshot by origination cohort.
     dpd_col = _col(loans_df, ["days_past_due", "dpd", "days_in_default"])
+    status_col = _col(loans_df, ["loan_status", "status", "current_status"])
     par30_series: pd.Series = pd.Series(dtype=float)
     par90_series: pd.Series = pd.Series(dtype=float)
     if dpd_col and disb_col and bal_col:
@@ -400,12 +447,39 @@ def predict_kpis(
         df_par["_bal"] = pd.to_numeric(df_par[bal_col], errors="coerce").fillna(0)
         df_par["_month"] = pd.to_datetime(df_par[disb_col], errors="coerce").dt.to_period("M")
 
-        monthly_total = df_par.groupby("_month")["_bal"].sum().replace(0, np.nan)
-        par30_bal = df_par.assign(_v=np.where(df_par["_dpd"] >= 30, df_par["_bal"], 0.0)).groupby("_month")["_v"].sum()
-        par90_bal = df_par.assign(_v=np.where(df_par["_dpd"] >= 90, df_par["_bal"], 0.0)).groupby("_month")["_v"].sum()
+        month_rows: list[dict[str, float | pd.Period]] = []
+        for month, month_df in df_par.groupby("_month"):
+            month_status = (
+                month_df[status_col].astype(str)
+                if status_col and status_col in month_df.columns
+                else pd.Series(["active"] * len(month_df), index=month_df.index)
+            )
+            try:
+                month_metrics = _calculate_ssot_asset_quality_metrics(
+                    balance=month_df["_bal"],
+                    dpd=month_df["_dpd"],
+                    status=month_status,
+                )
+                par30_value = month_metrics["par30"]
+                par90_value = month_metrics["par90"]
+            except Exception:
+                monthly_total = float(month_df["_bal"].sum())
+                par30_value = (
+                    float(month_df.loc[month_df["_dpd"] >= 30, "_bal"].sum() / monthly_total * 100)
+                    if monthly_total > 0
+                    else 0.0
+                )
+                par90_value = (
+                    float(month_df.loc[month_df["_dpd"] >= 90, "_bal"].sum() / monthly_total * 100)
+                    if monthly_total > 0
+                    else 0.0
+                )
+            month_rows.append({"_month": month, "par30": par30_value, "par90": par90_value})
 
-        par30_series = (par30_bal / monthly_total * 100).fillna(0).tail(12)
-        par90_series = (par90_bal / monthly_total * 100).fillna(0).tail(12)
+        if month_rows:
+            monthly_df = pd.DataFrame(month_rows).sort_values("_month")
+            par30_series = monthly_df.set_index("_month")["par30"].astype(float).tail(12)
+            par90_series = monthly_df.set_index("_month")["par90"].astype(float).tail(12)
 
     return {
         "horizon_months":  horizon_months,
@@ -487,14 +561,14 @@ def build_compliance_dashboard(
             "rotation_x":              "CFO",
             "top1_concentration_pct":  "CRO",
             "top10_concentration_pct": "CRO",
-            "par30_pct":               "Head of Risk",
-            "par90_pct":               "Head of Risk",
-            "npl_180_pct":             "Head of Risk",
+            "par30_pct":               HEAD_OF_RISK,
+            "par90_pct":               HEAD_OF_RISK,
+            "npl_180_pct":             HEAD_OF_RISK,
             "utilization_pct":         "CFO",
-            "apr_pct_ann":             "Head of Pricing",
+            "apr_pct_ann":             HEAD_OF_PRICING,
             "dscr":                    "Finance",
             "utilization_pct_min":     "CFO",
-            "apr_pct_min":             "Head of Pricing",
+            "apr_pct_min":             HEAD_OF_PRICING,
             "ce_6m_pct":               "Head of Collections",
         }
 
@@ -533,10 +607,22 @@ def build_compliance_dashboard(
         top1_pct  = float(deb_bal.iloc[0] / total_bal * 100) if len(deb_bal) > 0 else 0.0
         top10_pct = float(deb_bal.head(10).sum() / total_bal * 100)
 
-    # PAR
-    par30 = float(bal[dpd >= 30].sum() / total_bal * 100) if total_bal > 0 else 0.0
-    par90 = float(bal[dpd >= 90].sum() / total_bal * 100) if total_bal > 0 else 0.0
-    npl180= float(bal[dpd >= 180].sum() / total_bal * 100) if total_bal > 0 else 0.0
+    # PAR/NPL via SSOT-first path with compatibility fallback.
+    status_col = _col(loans_df, ["loan_status", "status", "current_status"])
+    status_series = (
+        loans_df[status_col].astype(str)
+        if status_col and status_col in loans_df.columns
+        else pd.Series(["active"] * len(loans_df), index=loans_df.index)
+    )
+    try:
+        quality_metrics = _calculate_ssot_asset_quality_metrics(bal, dpd, status_series)
+        par30 = quality_metrics["par30"]
+        par90 = quality_metrics["par90"]
+        npl180 = quality_metrics["npl180"]
+    except Exception:
+        par30 = float(bal[dpd >= 30].sum() / total_bal * 100) if total_bal > 0 else 0.0
+        par90 = float(bal[dpd >= 90].sum() / total_bal * 100) if total_bal > 0 else 0.0
+        npl180 = float(bal[dpd >= 180].sum() / total_bal * 100) if total_bal > 0 else 0.0
 
     # APR is stored as annual decimal in loan_data (e.g., 0.53 => 53%).
     apr_ann = float((apr * bal).sum() / total_bal * 100) if (total_bal > 0 and apr_col) else None
@@ -679,7 +765,7 @@ def build_compliance_dashboard(
             "variance_pct": None,
             "status":       "no_data",
             "lower_is_better": False,
-            "owner":        owners.get("apr_pct_ann", owners.get("apr_pct_min", "Head of Pricing")),
+            "owner":        owners.get("apr_pct_ann", owners.get("apr_pct_min", HEAD_OF_PRICING)),
         })
     else:
         apr_warn_band = 2.0
@@ -705,7 +791,7 @@ def build_compliance_dashboard(
             "variance_pct": apr_var_pct,
             "status":       apr_stat,
             "lower_is_better": False,
-            "owner":        owners.get("apr_pct_ann", owners.get("apr_pct_min", "Head of Pricing")),
+            "owner":        owners.get("apr_pct_ann", owners.get("apr_pct_min", HEAD_OF_PRICING)),
         })
 
     # ── Variance decomposition (qualitative drivers) ───────────────────
@@ -828,6 +914,199 @@ _NO_DATA_ACTION_MAP = {
     "dscr":        ("high",   "medium", "Finance / Risk", "DSCR data unavailable. Integrate NOI and debt service fields from borrower financials to enable covenant monitoring."),
 }
 
+
+# ── 7.2 Private helpers ────────────────────────────────────────────────────────
+
+def _plan_impact_rank(impact: str) -> int:
+    return {"high": 0, "medium": 1, "low": 2}.get(str(impact).lower(), 3)
+
+
+def _plan_is_stronger(candidate: dict[str, Any], current: dict[str, Any]) -> bool:
+    """Return True if candidate action has higher impact or larger variance than current."""
+    cand_rank = _plan_impact_rank(candidate.get("impact", "low"))
+    curr_rank = _plan_impact_rank(current.get("impact", "low"))
+    if cand_rank != curr_rank:
+        return cand_rank < curr_rank
+    cand_var = candidate.get("variance")
+    curr_var = current.get("variance")
+    cand_mag = abs(float(cand_var)) if isinstance(cand_var, (int, float)) else 0.0
+    curr_mag = abs(float(curr_var)) if isinstance(curr_var, (int, float)) else 0.0
+    return cand_mag > curr_mag
+
+
+def _canonical_plan_metric(metric: Any) -> str:
+    metric_s = str(metric).strip().lower()
+    return {
+        "par30_pct": "par30", "par90_pct": "par90",
+        "revenue_usd": "revenue", "apr_pct_ann": "apr",
+    }.get(metric_s, metric_s)
+
+
+def _plan_policy_lookup(metric: Any, policy_map: dict[str, Any]) -> Any:
+    metric_s = str(metric).strip().lower()
+    if metric_s in policy_map:
+        return policy_map[metric_s]
+    canonical = _canonical_plan_metric(metric_s)
+    if canonical in policy_map:
+        return policy_map[canonical]
+    fallback = {
+        "par30": "par30_pct", "par90": "par90_pct",
+        "revenue": "revenue_usd", "apr": "apr_pct_ann",
+    }.get(canonical)
+    if fallback and fallback in policy_map:
+        return policy_map[fallback]
+    return None
+
+
+def _load_compliance_actions(
+    compliance: dict[str, Any],
+    variance_decomp: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Build action entries from compliance breach and no-data rows."""
+    actions: list[dict[str, Any]] = []
+    for row in compliance.get("metrics", []):
+        metric_name = row.get("metric")
+        vd = variance_decomp.get(metric_name, {}) if isinstance(variance_decomp, dict) else {}
+        vd_driver = vd.get("driver") if isinstance(vd, dict) else None
+        vd_expl = vd.get("explanation") if isinstance(vd, dict) else None
+        if row["status"] in ("breach", "warning"):
+            meta = _plan_policy_lookup(row.get("metric"), _IMPACT_MAP)
+            if not meta:
+                continue
+            impact, effort, area, action_text = meta
+            if vd_driver:
+                action_text = f"{action_text} Driver: {vd_driver}."
+            elif vd_expl:
+                action_text = f"{action_text} Context: {vd_expl}"
+            actions.append({
+                "area": area, "action": action_text, "impact": impact, "effort": effort,
+                "source": "compliance", "metric": row["metric"],
+                "variance": row.get("variance"),
+                "_sort_key": (0 if impact == "high" else 1, row.get("variance", 0)),
+            })
+        elif row["status"] == "no_data":
+            no_data_meta = _plan_policy_lookup(row.get("metric"), _NO_DATA_ACTION_MAP)
+            if not no_data_meta:
+                continue
+            impact, effort, area, action_text = no_data_meta
+            if vd_driver:
+                action_text = f"{action_text} Driver: {vd_driver}."
+            elif vd_expl:
+                action_text = f"{action_text} Context: {vd_expl}"
+            actions.append({
+                "area": area, "action": action_text, "impact": impact, "effort": effort,
+                "source": "compliance", "metric": row["metric"], "variance": None,
+                "_sort_key": (0 if impact == "high" else 1, 0),
+            })
+    return actions
+
+
+def _load_forecast_actions(forecast: dict[str, Any]) -> list[dict[str, Any]]:
+    """Build action entries from forecast deterioration signals."""
+    actions: list[dict[str, Any]] = []
+    for kpi_name, forecast_key in [
+        ("PAR30", "par30_forecast"),
+        ("PAR90", "par90_forecast"),
+        ("Revenue", "revenue_forecast"),
+    ]:
+        rows = forecast.get(forecast_key, [])
+        if len(rows) < 2:
+            continue
+        first_val = rows[0].get("value", 0)
+        last_val  = rows[-1].get("value", 0)
+        if kpi_name in ("PAR30", "PAR90") and last_val > first_val * 1.1:
+            actions.append({
+                "area": "Risk",
+                "action": (
+                    f"{kpi_name} forecast rises {first_val:.1f}% → {last_val:.1f}% over "
+                    f"{len(rows)} months. Pre-emptively tighten underwriting for "
+                    "high-DPD segments."
+                ),
+                "impact": "high", "effort": "medium", "source": "forecast",
+                "metric": kpi_name.lower(), "variance": round(last_val - first_val, 2),
+                "_sort_key": (0, last_val - first_val),
+            })
+        elif kpi_name == "Revenue" and last_val < first_val * 0.9:
+            actions.append({
+                "area": "Sales",
+                "action": (
+                    f"Revenue forecast declines ${first_val:,.0f} → ${last_val:,.0f}/month. "
+                    "Activate KAM pipeline review; prioritise upgrades in $50–150K bucket."
+                ),
+                "impact": "high", "effort": "medium", "source": "forecast",
+                "metric": "revenue", "variance": round(last_val - first_val, 2),
+                "_sort_key": (0, first_val - last_val),
+            })
+    return actions
+
+
+def _load_outlier_actions(outlier_alerts: list[dict] | None) -> list[dict[str, Any]]:
+    """Build action entry from exposure-weighted outlier alerts."""
+    if not outlier_alerts:
+        return []
+    total_flagged_bal = sum(a.get("outstanding_usd", 0) for a in outlier_alerts[:20])
+    top_var = outlier_alerts[0].get("variable", "unknown")
+    return [{
+        "area": "Risk",
+        "action": (
+            f"{len(outlier_alerts)} exposure-weighted outliers flagged "
+            f"(total ${total_flagged_bal:,.0f} outstanding). "
+            f"Top anomaly variable: {top_var}. "
+            "Review weekly watchlist in CRO pack."
+        ),
+        "impact": "medium", "effort": "low", "source": "outlier",
+        "metric": "outlier_detection", "variance": None,
+        "_sort_key": (1, -total_flagged_bal),
+    }]
+
+
+def _load_pd_model_actions(pd_result: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Build action entry from PD model high-risk loans."""
+    if not (pd_result and pd_result.get("status") == "ok"):
+        return []
+    top_pd = [r for r in pd_result.get("pd_scores", []) if r["pd_score"] >= 0.50]
+    if not top_pd:
+        return []
+    return [{
+        "area": "Credit",
+        "action": (
+            f"PD model identifies {len(top_pd)} loans with PD >= 50% "
+            f"(AUC {pd_result.get('auc_mean', 0):.3f}). "
+            "Flag for enhanced monitoring, provisioning review, and collections escalation."
+        ),
+        "impact": "high", "effort": "low", "source": "pd_model",
+        "metric": "probability_of_default", "variance": None,
+        "_sort_key": (0, -len(top_pd)),
+    }]
+
+
+def _consolidate_plan_actions(actions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Deduplicate actions by canonical metric; merge context from secondary source."""
+    consolidated: dict[str, dict[str, Any]] = {}
+    passthrough: list[dict[str, Any]] = []
+    for action in actions:
+        metric = action.get("metric")
+        if metric is None:
+            passthrough.append(action)
+            continue
+        key = _canonical_plan_metric(metric)
+        current = consolidated.get(key)
+        if current is None:
+            consolidated[key] = action
+            continue
+        primary = action if _plan_is_stronger(action, current) else current
+        secondary = current if primary is action else action
+        if secondary.get("action") and secondary["action"] not in primary.get("action", ""):
+            primary["action"] = f"{primary['action']} Additional context: {secondary['action']}"
+        primary_sources = {s.strip() for s in str(primary.get("source", "")).split("+") if s.strip()}
+        secondary_sources = {s.strip() for s in str(secondary.get("source", "")).split("+") if s.strip()}
+        primary["source"] = "+".join(sorted(primary_sources | secondary_sources)) or "compliance"
+        if primary.get("variance") is None and secondary.get("variance") is not None:
+            primary["variance"] = secondary.get("variance")
+        consolidated[key] = primary
+    return passthrough + list(consolidated.values())
+
+
 def build_next_steps_plan(
     forecast:    dict[str, Any],
     compliance:  dict[str, Any],
@@ -855,218 +1134,17 @@ def build_next_steps_plan(
         }],
     }
     """
-    actions: list[dict] = []
     variance_decomp = compliance.get("variance_decomposition", {})
-
-    def _impact_rank(impact: str) -> int:
-        return {"high": 0, "medium": 1, "low": 2}.get(str(impact).lower(), 3)
-
-    def _is_stronger(candidate: dict[str, Any], current: dict[str, Any]) -> bool:
-        cand_rank = _impact_rank(candidate.get("impact", "low"))
-        curr_rank = _impact_rank(current.get("impact", "low"))
-        if cand_rank != curr_rank:
-            return cand_rank < curr_rank
-
-        cand_var = candidate.get("variance")
-        curr_var = current.get("variance")
-        cand_mag = abs(float(cand_var)) if isinstance(cand_var, (int, float)) else 0.0
-        curr_mag = abs(float(curr_var)) if isinstance(curr_var, (int, float)) else 0.0
-        return cand_mag > curr_mag
-
-    def _canonical_metric_name(metric: Any) -> str:
-        metric_s = str(metric).strip().lower()
-        aliases = {
-            "par30_pct": "par30",
-            "par90_pct": "par90",
-            "revenue_usd": "revenue",
-            "apr_pct_ann": "apr",
-        }
-        return aliases.get(metric_s, metric_s)
-
-    def _policy_lookup(metric: Any, policy_map: dict[str, Any]) -> Any:
-        metric_s = str(metric).strip().lower()
-        if metric_s in policy_map:
-            return policy_map[metric_s]
-
-        canonical = _canonical_metric_name(metric_s)
-        if canonical in policy_map:
-            return policy_map[canonical]
-
-        canonical_to_source = {
-            "par30": "par30_pct",
-            "par90": "par90_pct",
-            "revenue": "revenue_usd",
-            "apr": "apr_pct_ann",
-        }
-        fallback = canonical_to_source.get(canonical)
-        if fallback and fallback in policy_map:
-            return policy_map[fallback]
-        return None
-
-    # ── Source 1: Compliance breaches ──────────────────────────────────
-    for row in compliance.get("metrics", []):
-        metric_name = row.get("metric")
-        vd = variance_decomp.get(metric_name, {}) if isinstance(variance_decomp, dict) else {}
-        vd_driver = vd.get("driver") if isinstance(vd, dict) else None
-        vd_expl = vd.get("explanation") if isinstance(vd, dict) else None
-
-        if row["status"] in ("breach", "warning"):
-            meta = _policy_lookup(row.get("metric"), _IMPACT_MAP)
-            if not meta:
-                continue
-            impact, effort, area, action_text = meta
-            if vd_driver:
-                action_text = f"{action_text} Driver: {vd_driver}."
-            elif vd_expl:
-                action_text = f"{action_text} Context: {vd_expl}"
-            actions.append({
-                "area":     area,
-                "action":   action_text,
-                "impact":   impact,
-                "effort":   effort,
-                "source":   "compliance",
-                "metric":   row["metric"],
-                "variance": row.get("variance"),
-                "_sort_key": (0 if impact == "high" else 1, row.get("variance", 0)),
-            })
-        elif row["status"] == "no_data":
-            no_data_meta = _policy_lookup(row.get("metric"), _NO_DATA_ACTION_MAP)
-            if not no_data_meta:
-                continue
-            impact, effort, area, action_text = no_data_meta
-            if vd_driver:
-                action_text = f"{action_text} Driver: {vd_driver}."
-            elif vd_expl:
-                action_text = f"{action_text} Context: {vd_expl}"
-            actions.append({
-                "area":     area,
-                "action":   action_text,
-                "impact":   impact,
-                "effort":   effort,
-                "source":   "compliance",
-                "metric":   row["metric"],
-                "variance": None,
-                "_sort_key": (0 if impact == "high" else 1, 0),
-            })
-
-    # ── Source 2: Forecast signals (deterioration) ────────────────────
-    for kpi_name, forecast_key in [
-        ("PAR30", "par30_forecast"),
-        ("PAR90", "par90_forecast"),
-        ("Revenue", "revenue_forecast"),
-    ]:
-        rows = forecast.get(forecast_key, [])
-        if len(rows) >= 2:
-            first_val = rows[0].get("value", 0)
-            last_val  = rows[-1].get("value", 0)
-            if kpi_name in ("PAR30", "PAR90") and last_val > first_val * 1.1:
-                actions.append({
-                    "area":     "Risk",
-                    "action":   (
-                        f"{kpi_name} forecast rises {first_val:.1f}% → {last_val:.1f}% over "
-                        f"{len(rows)} months. Pre-emptively tighten underwriting for "
-                        "high-DPD segments."
-                    ),
-                    "impact":   "high",
-                    "effort":   "medium",
-                    "source":   "forecast",
-                    "metric":   kpi_name.lower(),
-                    "variance": round(last_val - first_val, 2),
-                    "_sort_key": (0, last_val - first_val),
-                })
-            elif kpi_name == "Revenue" and last_val < first_val * 0.9:
-                actions.append({
-                    "area":     "Sales",
-                    "action":   (
-                        f"Revenue forecast declines ${first_val:,.0f} → ${last_val:,.0f}/month. "
-                        "Activate KAM pipeline review; prioritise upgrades in $50–150K bucket."
-                    ),
-                    "impact":   "high",
-                    "effort":   "medium",
-                    "source":   "forecast",
-                    "metric":   "revenue",
-                    "variance": round(last_val - first_val, 2),
-                    "_sort_key": (0, first_val - last_val),
-                })
-
-    # ── Source 3: Exposure-weighted outlier alerts ─────────────────────
-    if outlier_alerts:
-        total_flagged_bal = sum(a.get("outstanding_usd", 0) for a in outlier_alerts[:20])
-        top_var = outlier_alerts[0].get("variable", "unknown") if outlier_alerts else "unknown"
-        actions.append({
-            "area":     "Risk",
-            "action":   (
-                f"{len(outlier_alerts)} exposure-weighted outliers flagged "
-                f"(total ${total_flagged_bal:,.0f} outstanding). "
-                f"Top anomaly variable: {top_var}. "
-                "Review weekly watchlist in CRO pack."
-            ),
-            "impact":   "medium",
-            "effort":   "low",
-            "source":   "outlier",
-            "metric":   "outlier_detection",
-            "variance": None,
-            "_sort_key": (1, -total_flagged_bal),
-        })
-
-    # ── Source 4: PD model — high-risk loans ──────────────────────────
-    if pd_result and pd_result.get("status") == "ok":
-        top_pd = [r for r in pd_result.get("pd_scores", []) if r["pd_score"] >= 0.50]
-        if top_pd:
-            actions.append({
-                "area":     "Credit",
-                "action":   (
-                    f"PD model identifies {len(top_pd)} loans with PD >= 50% "
-                    f"(AUC {pd_result.get('auc_mean', 0):.3f}). "
-                    "Flag for enhanced monitoring, provisioning review, and collections escalation."
-                ),
-                "impact":   "high",
-                "effort":   "low",
-                "source":   "pd_model",
-                "metric":   "probability_of_default",
-                "variance": None,
-                "_sort_key": (0, -len(top_pd)),
-            })
-
-    # ── Consolidate duplicate actions by canonical metric ────────────
-    consolidated: dict[str, dict[str, Any]] = {}
-    passthrough: list[dict[str, Any]] = []
-
-    for action in actions:
-        metric = action.get("metric")
-        if metric is None:
-            passthrough.append(action)
-            continue
-
-        key = _canonical_metric_name(metric)
-        current = consolidated.get(key)
-        if current is None:
-            consolidated[key] = action
-            continue
-
-        primary = action if _is_stronger(action, current) else current
-        secondary = current if primary is action else action
-
-        if secondary.get("action") and secondary["action"] not in primary.get("action", ""):
-            primary["action"] = f"{primary['action']} Additional context: {secondary['action']}"
-
-        primary_sources = {s.strip() for s in str(primary.get("source", "")).split("+") if s.strip()}
-        secondary_sources = {s.strip() for s in str(secondary.get("source", "")).split("+") if s.strip()}
-        all_sources = sorted(primary_sources | secondary_sources)
-        primary["source"] = "+".join(all_sources) if all_sources else "compliance"
-
-        if primary.get("variance") is None and secondary.get("variance") is not None:
-            primary["variance"] = secondary.get("variance")
-
-        consolidated[key] = primary
-
-    actions = passthrough + list(consolidated.values())
-
-    # ── Sort: impact first, then magnitude of variance ─────────────────
+    actions = (
+        _load_compliance_actions(compliance, variance_decomp)
+        + _load_forecast_actions(forecast)
+        + _load_outlier_actions(outlier_alerts)
+        + _load_pd_model_actions(pd_result)
+    )
+    actions = _consolidate_plan_actions(actions)
     actions.sort(key=lambda x: x.pop("_sort_key", (9, 0)))
     for i, action in enumerate(actions, 1):
         action["priority"] = i
-
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "action_count": len(actions),

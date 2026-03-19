@@ -1,14 +1,34 @@
 """Tests for roll-rate and cure-rate analytics in KPI service."""
 
 import asyncio
+from datetime import datetime
+from typing import Any
 
 from backend.python.apps.analytics.api.models import LoanRecord, RollRateAnalyticsResponse
 from backend.python.apps.analytics.api.service import KPIService
 
 
+def _loan_record(**overrides: Any) -> LoanRecord:
+    base_payload = {
+        "id": "L0",
+        "borrower_id": "B0",
+        "loan_amount": 1000.0,
+        "principal_balance": 900.0,
+        "interest_rate": 0.2,
+        "loan_status": "current",
+        "days_past_due": 0,
+        "previous_loan_status": "current",
+        "previous_days_past_due": 0,
+        "previous_principal_balance": 900.0,
+        "origination_date": datetime(2026, 1, 1),
+    }
+    base_payload.update(overrides)
+    return LoanRecord.model_validate(base_payload)
+
+
 def _roll_rate_loans() -> list[LoanRecord]:
     return [
-        LoanRecord(
+        _loan_record(
             id="L1",
             borrower_id="B1",
             loan_amount=1200.0,
@@ -20,7 +40,7 @@ def _roll_rate_loans() -> list[LoanRecord]:
             previous_days_past_due=0,
             previous_principal_balance=1000.0,
         ),
-        LoanRecord(
+        _loan_record(
             id="L2",
             borrower_id="B2",
             loan_amount=2400.0,
@@ -32,7 +52,7 @@ def _roll_rate_loans() -> list[LoanRecord]:
             previous_days_past_due=0,
             previous_principal_balance=2100.0,
         ),
-        LoanRecord(
+        _loan_record(
             id="L3",
             borrower_id="B3",
             loan_amount=2100.0,
@@ -44,7 +64,7 @@ def _roll_rate_loans() -> list[LoanRecord]:
             previous_days_past_due=45,
             previous_principal_balance=1800.0,
         ),
-        LoanRecord(
+        _loan_record(
             id="L4",
             borrower_id="B4",
             loan_amount=6200.0,
@@ -56,7 +76,7 @@ def _roll_rate_loans() -> list[LoanRecord]:
             previous_days_past_due=75,
             previous_principal_balance=5200.0,
         ),
-        LoanRecord(
+        _loan_record(
             id="L5",
             borrower_id="B5",
             loan_amount=4600.0,

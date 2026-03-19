@@ -2,16 +2,34 @@
 
 import asyncio
 from datetime import datetime
+from typing import Any
 
 from backend.python.apps.analytics.api.models import CohortAnalyticsResponse, LoanRecord
 from backend.python.apps.analytics.api.service import KPIService
+
+
+def _loan_record(**overrides: Any) -> LoanRecord:
+    base_payload = {
+        "id": "L0",
+        "borrower_id": "B0",
+        "loan_amount": 1000.0,
+        "principal_balance": 900.0,
+        "interest_rate": 0.2,
+        "loan_status": "current",
+        "days_past_due": 0,
+        "origination_date": datetime(2026, 1, 1),
+        "total_scheduled": 200.0,
+        "last_payment_amount": 190.0,
+    }
+    base_payload.update(overrides)
+    return LoanRecord.model_validate(base_payload)
 
 
 def _cohort_loans() -> list[LoanRecord]:
     jan = datetime(2026, 1, 15)
     feb = datetime(2026, 2, 10)
     return [
-        LoanRecord(
+        _loan_record(
             id="L1",
             borrower_id="B1",
             loan_amount=1000.0,
@@ -23,7 +41,7 @@ def _cohort_loans() -> list[LoanRecord]:
             total_scheduled=200.0,
             last_payment_amount=190.0,
         ),
-        LoanRecord(
+        _loan_record(
             id="L2",
             borrower_id="B2",
             loan_amount=1500.0,
@@ -35,7 +53,7 @@ def _cohort_loans() -> list[LoanRecord]:
             total_scheduled=300.0,
             last_payment_amount=120.0,
         ),
-        LoanRecord(
+        _loan_record(
             id="L3",
             borrower_id="B3",
             loan_amount=800.0,

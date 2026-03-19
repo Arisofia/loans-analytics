@@ -405,10 +405,12 @@ _dash_spec = _ilu.spec_from_file_location(
         / "3_Portfolio_Dashboard.py"
     ),
 )
+assert _dash_spec is not None
 _dash_mod = _ilu.module_from_spec(_dash_spec)
 # Patch Path.mkdir so module-level directory creation (AGENT_OUTPUTS_DIR) does not
 # touch the filesystem during import, keeping tests hermetic and faster.
 with _patch("pathlib.Path.mkdir"):
+    assert _dash_spec.loader is not None
     _dash_spec.loader.exec_module(_dash_mod)
 
 

@@ -5,11 +5,15 @@ KPI Formula Engine for parsing and executing SQL-like KPI formulas on DataFrames
 import ast
 import os
 import re
+from datetime import datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import pandas as pd
+import yaml
 
+from backend.python.financial_precision import safe_decimal_divide, safe_decimal_sum
 from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -22,13 +26,126 @@ class KPIFormulaError(ValueError):
 class KPIFormulaEngine:
     """Engine for parsing and executing KPI formulas on DataFrames."""
 
-    def __init__(self, df: pd.DataFrame):
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        *,
+        actor: str = "system",
+        run_id: Optional[str] = None,
+        registry_path: Optional[str] = None,
+        registry_data: Optional[dict] = None,
+    ):
         self.df = df
         self.month_start = pd.Timestamp.now().replace(day=1)
         self._where_cache: Dict[str, pd.Series] = {}
         self._numeric_cache: Dict[str, pd.Series] = {}
         self._datetime_cache: Dict[str, pd.Series] = {}
         self._polars_enabled = os.getenv("KPI_ENGINE_USE_POLARS", "1") == "1"
+        self.actor = actor
+        self.run_id = run_id or datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        self._registry_path = registry_path
+        self._registry_data = registry_data
+        self._registry_index: Optional[dict] = None
+        self._audit_records: List[dict] = []
+
+    def calculate_kpi(
+        self,
+        kpi_name: str,
+        *,
+        strict_comparison_errors: bool = False,
+    ) -> dict:
+        """Calculate a KPI by name from the registry and return a metadata-rich result."""
+        start = datetime.now(timezone.utc)
+        formula_version = self._registry_version()
+        kpi_definition = self._get_kpi_definition(kpi_name)
+        formula = str(kpi_definition.get("formula", "")).strip()
+        if not formula:
+            raise KPIFormulaError(f"KPI '{kpi_name}' has no formula in registry")
+
+        value = self.calculate(formula, strict_comparison_errors=strict_comparison_errors)
+        self._validate_kpi_value(kpi_name, value)
+
+        end = datetime.now(timezone.utc)
+        execution_time_ms = max(int((end - start).total_seconds() * 1000), 0)
+        result = {
+            "value": value,
+            "unit": str(kpi_definition.get("unit", "unknown")),
+            "formula_version": formula_version,
+            "execution_time_ms": execution_time_ms,
+            "data_rows": int(len(self.df)),
+            "actor": self.actor,
+            "timestamp": end.isoformat(),
+            "kpi_name": kpi_name,
+            "run_id": self.run_id,
+        }
+        self._record_audit(kpi_name=kpi_name, formula=formula, result=result)
+        return result
+
+    def get_audit_records(self) -> List[dict]:
+        """Return in-memory audit records for this engine instance."""
+        return list(self._audit_records)
+
+    def _registry_version(self) -> str:
+        return str(self._get_registry_data().get("version", "unknown"))
+
+    def _get_registry_data(self) -> dict:
+        if self._registry_data is not None:
+            return self._registry_data
+
+        path = (
+            Path(self._registry_path)
+            if self._registry_path
+            else Path(__file__).resolve().parents[3] / "config" / "kpis" / "kpi_definitions.yaml"
+        )
+        with path.open("r", encoding="utf-8") as handle:
+            self._registry_data = yaml.safe_load(handle) or {}
+        return self._registry_data
+
+    def _build_registry_index(self) -> dict:
+        index: dict = {}
+        for key, section in self._get_registry_data().items():
+            if not key.endswith("_kpis") or not isinstance(section, dict):
+                continue
+            for kpi_name, kpi_def in section.items():
+                if isinstance(kpi_def, dict):
+                    index[kpi_name] = kpi_def
+        return index
+
+    def _get_kpi_definition(self, kpi_name: str) -> dict:
+        if self._registry_index is None:
+            self._registry_index = self._build_registry_index()
+        if kpi_name not in self._registry_index:
+            raise KPIFormulaError(f"KPI '{kpi_name}' not found in registry")
+        return self._registry_index[kpi_name]
+
+    def has_kpi_definition(self, kpi_name: str) -> bool:
+        """Return True when a KPI is present in the loaded registry index."""
+        if self._registry_index is None:
+            self._registry_index = self._build_registry_index()
+        return kpi_name in self._registry_index
+
+    @staticmethod
+    def _validate_kpi_value(kpi_name: str, value: Decimal) -> None:
+        if not isinstance(value, Decimal):
+            raise KPIFormulaError(f"KPI '{kpi_name}' returned non-Decimal value")
+        if not value.is_finite():
+            raise KPIFormulaError(f"KPI '{kpi_name}' returned non-finite value")
+
+    def _record_audit(self, *, kpi_name: str, formula: str, result: dict) -> None:
+        self._audit_records.append(
+            {
+                "timestamp": result["timestamp"],
+                "kpi_name": kpi_name,
+                "formula": formula,
+                "formula_version": result["formula_version"],
+                "actor": result["actor"],
+                "run_id": result["run_id"],
+                "data_rows": result["data_rows"],
+                "execution_time_ms": result["execution_time_ms"],
+                "result": str(result["value"]),
+                "unit": result["unit"],
+            }
+        )
 
     def calculate(self, formula: str, *, strict_comparison_errors: bool = False) -> Decimal:
         """Parse and execute a KPI formula.
@@ -120,7 +237,7 @@ class KPIFormulaEngine:
                 if strict:
                     raise KPIFormulaError("Division by zero in KPI formula")
                 return Decimal("0.0")
-            return left / right
+            return safe_decimal_divide(left, right, precision=8)
         raise ValueError(f"Unsupported binary operator: {type(operator).__name__}")
 
     @staticmethod
@@ -288,10 +405,15 @@ class KPIFormulaEngine:
                 logger.debug("Column '%s' not found in data", column)
             return result
 
+        numeric_values = pd.to_numeric(filtered_df[column], errors="coerce").dropna().tolist()
+
         if agg_func == "SUM":
-            result = Decimal(str(filtered_df[column].sum()))
+            result = safe_decimal_sum(numeric_values)
         elif agg_func == "AVG":
-            result = Decimal(str(filtered_df[column].mean()))
+            if not numeric_values:
+                return Decimal("0.0")
+            total = safe_decimal_sum(numeric_values)
+            result = safe_decimal_divide(total, Decimal(len(numeric_values)), precision=8)
         elif agg_func == "COUNT":
             result = Decimal(
                 str(filtered_df[column].nunique() if distinct else filtered_df[column].count())

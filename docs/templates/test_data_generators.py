@@ -336,7 +336,7 @@ if __name__ == "__main__":
     # Save to CSV
     csv_data = loan_gen.generate_loans(count=1000, output_format="csv")
     with open(out_dir / "loans_test_data.csv", "w", encoding="utf-8") as f:
-        f.write(csv_data)
+        f.write(str(csv_data))
     print("Saved to data/test/loans_test_data.csv")
 
     # Generate user data with PII masking
@@ -347,7 +347,11 @@ if __name__ == "__main__":
 
     # Generate payment data
     print("\nGenerating payment data...")
-    loan_ids = [loan["loan_id"] for loan in loans[:100]]
+    loan_ids = [
+        str(loan["loan_id"])
+        for loan in loans[:100]
+        if isinstance(loan, dict) and "loan_id" in loan
+    ]
     payment_gen = PaymentDataGenerator(seed=42)
     payments = payment_gen.generate_payments(loan_ids, payments_per_loan=(3, 12))
     print(f"Generated {len(payments)} payments")

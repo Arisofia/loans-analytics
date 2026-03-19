@@ -8,7 +8,10 @@ import argparse
 import os
 import sys
 import time
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
+
+CostTracker: Any
+PerformanceTracker: Any
 
 try:
     import requests
@@ -17,7 +20,11 @@ except ImportError:
     sys.exit(1)
 
 try:
-    from backend.src.agents.monitoring import CostTracker, PerformanceTracker
+    from backend.src.agents.monitoring import CostTracker as _CostTracker
+    from backend.src.agents.monitoring import PerformanceTracker as _PerformanceTracker
+
+    CostTracker = _CostTracker
+    PerformanceTracker = _PerformanceTracker
 except ImportError:
     CostTracker = None
     PerformanceTracker = None

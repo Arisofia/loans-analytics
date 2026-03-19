@@ -2,6 +2,7 @@
 
 import asyncio
 import unittest
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -65,6 +66,20 @@ class TestAdvancedRiskMetrics(unittest.TestCase):
         self.assertEqual(metrics["par60"], 0.0)
         self.assertEqual(metrics["par90"], 0.0)
         self.assertEqual(metrics["dpd_buckets"], [])
+
+    def test_par_metrics_use_ssot_formula_engine(self):
+        with patch("backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi") as mock_calc:
+            mock_calc.side_effect = [
+                {"value": 11.11},
+                {"value": 22.22},
+                {"value": 33.33},
+            ]
+            metrics = calculate_advanced_risk_metrics(self.df)
+
+        self.assertEqual(metrics["par30"], 11.11)
+        self.assertEqual(metrics["par60"], 22.22)
+        self.assertEqual(metrics["par90"], 33.33)
+        self.assertEqual(mock_calc.call_count, 3)
 
 
 class TestAdvancedRiskService(unittest.TestCase):

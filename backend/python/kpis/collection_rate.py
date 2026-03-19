@@ -73,7 +73,8 @@ def calculate_collection_rate(df: pd.DataFrame | None) -> Tuple[Decimal, Dict[st
             "calculation_status": "zero_due",
         }
 
-    value = (collected_total / due_total) * Decimal("100.0")
+    ratio = safe_decimal(collected_total / due_total)
+    value = ratio * Decimal("100.0")
     return (
         value.quantize(Decimal("0.01")),
         {

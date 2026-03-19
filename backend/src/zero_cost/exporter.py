@@ -117,7 +117,7 @@ class Exporter:
         Path
             Path to the written manifest.
         """
-        manifest = {
+        manifest: dict[str, Any] = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "snapshot_month": snapshot_month,
             "source": source,

@@ -33,7 +33,7 @@ from backend.src.infrastructure.google_sheets_adapter import ControlMoraSheetsAd
 
 from .control_mora_adapter import ControlMoraAdapter
 from .loan_tape_loader import LoanTapeLoader
-from backend.python.kpis.dpd_calculator import DPDCalculator, dpd_to_bucket
+from backend.python.kpis.dpd_calculator import dpd_to_bucket
 
 logger = logging.getLogger(__name__)
 

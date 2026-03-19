@@ -155,7 +155,7 @@ def main() -> int:
                 f"median={median_seconds:.3f}s status={trial_status}"
             )
 
-    summary_by_backend: dict[str, dict[int, float]] = {}
+    summary_by_backend: dict[str, dict[int, list[float]]] = {}
     for run in runs:
         backend = run["backend"]
         rows = int(run["rows"])

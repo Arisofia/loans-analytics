@@ -1,6 +1,7 @@
 """Unit tests for strategic KPI module fixes and guardrails."""
 
 import unittest
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -199,6 +200,24 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(by_metric["par90_pct"]["actual"], 31.1)
         self.assertEqual(by_metric["top1_concentration_pct"]["actual"], 41.0)
         self.assertEqual(by_metric["top10_concentration_pct"]["actual"], 100.0)
+
+    def test_compliance_par_and_npl_use_ssot_formula_engine(self):
+        loans = self._sample_loans()
+        payments = self._sample_payments()
+
+        with patch("backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi") as mock_calc:
+            mock_calc.side_effect = [
+                {"value": 10.1},
+                {"value": 5.2},
+                {"value": 1.7},
+            ]
+            report = build_compliance_dashboard(loans, payments)
+
+        by_metric = {row["metric"]: row for row in report["metrics"]}
+        self.assertEqual(by_metric["par30_pct"]["actual"], 10.1)
+        self.assertEqual(by_metric["par90_pct"]["actual"], 5.2)
+        self.assertEqual(by_metric["npl_180_pct"]["actual"], 1.7)
+        self.assertEqual(mock_calc.call_count, 3)
 
     def test_compliance_output_contract_shape(self):
         loans = self._sample_loans()

@@ -82,7 +82,13 @@ def generate_duration_chart(metrics: Dict[str, Any], output_dir: Path):
 
         # Only plot top 20 slowest tests
         sorted_data = sorted(zip(durations, test_names, strict=False), reverse=True)[:20]
-        durations, test_names = zip(*sorted_data, strict=False) if sorted_data else ([], [])
+        if sorted_data:
+            duration_vals, name_vals = zip(*sorted_data, strict=False)
+            durations = list(duration_vals)
+            test_names = list(name_vals)
+        else:
+            durations = []
+            test_names = []
 
         _, ax = plt.subplots(figsize=(10, 8))
         ax.barh(range(len(test_names)), durations)

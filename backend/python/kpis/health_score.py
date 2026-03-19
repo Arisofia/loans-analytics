@@ -232,9 +232,9 @@ def calculate_portfolio_health_score(
         },
     ]
 
-    critical_components = [c["dimension"] for c in components if c["status"] == "critical"]
+    critical_components = [str(c["dimension"]) for c in components if c["status"] == "critical"]
     at_risk_components = [
-        c["dimension"] for c in components if c["status"] in ("at_risk", "warning")
+        str(c["dimension"]) for c in components if c["status"] in ("at_risk", "warning")
     ]
 
     if critical_components:

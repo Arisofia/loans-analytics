@@ -141,3 +141,35 @@ def test_where_clause_supports_and_conditions():
 
     # Only second row matches both predicates.
     assert float(result) == pytest.approx(33.3333333333)
+
+
+def test_dynamic_kpi_audit_context_includes_formula_version_metadata():
+    """Dynamic KPI runs should propagate SSOT formula metadata into audit context."""
+    df = pd.DataFrame(
+        {
+            "outstanding_balance": [100.0, 200.0],
+            "loan_id": ["L1", "L2"],
+        }
+    )
+    engine = KPIEngineV2(
+        actor="integration-test",
+        run_id="run-meta-1",
+        kpi_definitions={
+            "version": "test-1.0",
+            "portfolio_kpis": {
+                "total_outstanding_balance": {
+                    "formula": "SUM(outstanding_balance)",
+                    "unit": "USD",
+                }
+            },
+        },
+    )
+
+    _ = engine.calculate(df)
+    audit = engine.get_audit_trail()
+    matching = audit[audit["kpi_name"] == "total_outstanding_balance"]
+
+    assert not matching.empty
+    context = matching.iloc[-1]["context"]
+    assert '"formula_version": "test-1.0"' in context
+    assert '"execution_time_ms":' in context

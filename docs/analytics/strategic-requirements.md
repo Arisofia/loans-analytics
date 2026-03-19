@@ -31,7 +31,7 @@ This document maps implementation outputs to the strategic requirements:
 
 ## Dashboard Links
 
-- Streamlit local: `http://localhost:8501`
+- Streamlit local: `http://localhost:8000` (canonical port, aligns with API and startup.sh)
 - Grafana local: `http://localhost:3001/dashboards`
 - Streamlit deployed: `https://abaco-analytics-dashboard.azurewebsites.net`
 - Dashboard docs: `docs/analytics/dashboards.md`

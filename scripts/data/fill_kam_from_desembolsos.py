@@ -7,16 +7,9 @@ import argparse
 import os
 from pathlib import Path
 import re
-import sys
 import unicodedata
 
 import pandas as pd
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from backend.src.infrastructure.google_sheets_adapter import ControlMoraSheetsAdapter
 
 
 def _first_non_empty(df: pd.DataFrame, candidates: list[str]) -> pd.Series:
@@ -93,6 +86,8 @@ def _build_overrides_from_intermedia(intermedia_df: pd.DataFrame) -> pd.DataFram
 
 
 def run(args: argparse.Namespace) -> None:
+    from backend.src.infrastructure.google_sheets_adapter import ControlMoraSheetsAdapter
+
     overrides_path = Path(args.overrides_csv)
 
     creds = args.credentials_path or os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")

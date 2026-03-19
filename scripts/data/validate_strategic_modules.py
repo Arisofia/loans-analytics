@@ -1,28 +1,34 @@
 """Full validation of strategic_modules.py against real Abaco data."""
-import sys, warnings, json
-warnings.filterwarnings('ignore')
-sys.path.insert(0, '.')
-import pandas as pd, numpy as np
-from datetime import datetime, timezone
-from pathlib import Path
+import warnings
+
+import pandas as pd
+
+from backend.python.kpis.strategic_modules import (
+    build_compliance_dashboard,
+    build_next_steps_plan,
+    build_pd_model,
+    detect_exposure_weighted_outliers,
+    predict_kpis,
+)
+
+warnings.filterwarnings("ignore")
 
 loan = pd.read_csv('data/raw/loan_data.csv', low_memory=False)
 real = pd.read_csv('data/raw/real_payment.csv', low_memory=False)
 loan.columns = [c.strip().lower().replace(' ','_') for c in loan.columns]
 real.columns = [c.strip().lower().replace(' ','_') for c in real.columns]
 for c in ['disbursement_date']:
-    if c in loan.columns: loan[c] = pd.to_datetime(loan[c], errors='coerce')
+    if c in loan.columns:
+        loan[c] = pd.to_datetime(loan[c], errors='coerce')
 for c in ['true_payment_date']:
-    if c in real.columns: real[c] = pd.to_datetime(real[c], errors='coerce')
+    if c in real.columns:
+        real[c] = pd.to_datetime(real[c], errors='coerce')
 for nc in ['outstanding_loan_value','disbursement_amount','tpv','interest_rate_apr','term','days_in_default']:
-    if nc in loan.columns: loan[nc] = pd.to_numeric(loan[nc], errors='coerce').fillna(0)
+    if nc in loan.columns:
+        loan[nc] = pd.to_numeric(loan[nc], errors='coerce').fillna(0)
 for nc in ['true_total_payment']:
-    if nc in real.columns: real[nc] = pd.to_numeric(real[nc], errors='coerce').fillna(0)
-
-from backend.python.kpis.strategic_modules import (
-    predict_kpis, build_compliance_dashboard, build_next_steps_plan,
-    detect_exposure_weighted_outliers, build_pd_model,
-)
+    if nc in real.columns:
+        real[nc] = pd.to_numeric(real[nc], errors='coerce').fillna(0)
 
 print("=" * 70)
 print("3.1 OUTLIER DETECTION (exposure-weighted Z-score)")

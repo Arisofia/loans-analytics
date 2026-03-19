@@ -45,6 +45,8 @@ from typing import Any, cast
 import numpy as np
 import pandas as pd
 
+from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+
 logger = logging.getLogger(__name__)
 
 
@@ -57,6 +59,19 @@ def _col(df: pd.DataFrame, candidates: list[str]) -> str | None:
 
 def _num(df: pd.DataFrame, col: str) -> pd.Series:
     return pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+
+
+def _calculate_ssot_par_percentages(balance: pd.Series, dpd: pd.Series) -> tuple[float, float]:
+    """Compute PAR-30/PAR-90 via SSOT formula engine for a grouped subset."""
+    values = calculate_asset_quality_metrics(
+        balance,
+        dpd,
+        actor="portfolio_analytics",
+        metric_aliases=("par30", "par90"),
+    )
+    par30 = round(values.get("par30", 0.0), 1)
+    par90 = round(values.get("par90", 0.0), 1)
+    return par30, par90
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -634,6 +649,94 @@ def equifax_vs_dpd_scatter(
 # F. Credit Line Category KPIs (A–H buckets)
 # ─────────────────────────────────────────────────────────────────────────────
 
+_CREDIT_LINE_STRATEGY_TARGETS: dict[str, dict[str, float]] = {
+    ">$200K":    {"target_rotation": 4.9, "max_default": 1.8},
+    "$150-200K": {"target_rotation": 5.1, "max_default": 2.5},
+    "$100-150K": {"target_rotation": 5.4, "max_default": 3.1},
+    "$75-100K":  {"target_rotation": 5.6, "max_default": 3.5},
+    "$50-75K":   {"target_rotation": 6.0, "max_default": 3.8},
+    "$25-50K":   {"target_rotation": 6.3, "max_default": 4.2},
+    "$10-25K":   {"target_rotation": 6.6, "max_default": 4.5},
+    "< $10K":    {"target_rotation": 7.0, "max_default": 4.9},
+}
+
+
+def _revenue_by_loan(payments_df: pd.DataFrame | None) -> dict:
+    """Aggregate total payment revenue per loan from payments dataframe."""
+    if payments_df is None:
+        return {}
+    pay_lid = _col(payments_df, ["loan_id"])
+    pay_amt = _col(payments_df, ["true_total_payment", "payment_amount"])
+    if not (pay_lid and pay_amt):
+        return {}
+    return (
+        payments_df.groupby(pay_lid)[pay_amt]
+        .apply(lambda s: pd.to_numeric(s, errors="coerce").sum())
+        .to_dict()
+    )
+
+
+def _category_kpi_row(
+    cat: Any,
+    grp: pd.DataFrame,
+    bal_col: str | None,
+    disb_col: str | None,
+    apr_col: str | None,
+    term_col: str | None,
+    dpd_col: str | None,
+) -> dict[str, Any]:
+    """Build KPI dict for a single credit-line category group."""
+    bal  = _num(grp, bal_col)  if bal_col  else pd.Series([0.0])
+    disb = _num(grp, disb_col) if disb_col else pd.Series([0.0])
+    apr  = _num(grp, apr_col)  if apr_col  else pd.Series([0.0])
+    term = _num(grp, term_col) if term_col else pd.Series([0.0])
+    dpd  = _num(grp, dpd_col)  if dpd_col  else pd.Series([0.0])
+    total = float(bal.sum())
+    try:
+        par30_pct, par90_pct = _calculate_ssot_par_percentages(bal, dpd)
+    except Exception:
+        par30_pct = round(float(bal[dpd >= 30].sum() / total * 100), 1) if total > 0 else 0.0
+        par90_pct = round(float(bal[dpd >= 90].sum() / total * 100), 1) if total > 0 else 0.0
+    return {
+        "category":          str(cat),
+        "loan_count":        int(len(grp)),
+        "aum_usd":           round(float(bal.sum()), 2),
+        "avg_ticket_usd":    round(float(disb.mean()), 2),
+        "median_ticket_usd": round(float(disb.median()), 2),
+        "apr_weighted":      round(float((apr * disb).sum() / max(disb.sum(), 1)), 4),
+        "avg_term_days":     round(float(term.mean()), 1),
+        "rotation_x":        round(365 / term.mean(), 1) if term.mean() > 0 else None,
+        "default_rate_pct":  round(float(grp["_default"].mean() * 100), 2),
+        "par30_pct":         par30_pct,
+        "par90_pct":         par90_pct,
+        "revenue_usd":       round(float(grp["_rev"].sum()), 2),
+        "revenue_per_loan":  round(float(grp["_rev"].mean()), 2),
+    }
+
+
+def _apply_strategy_benchmarks(rows: list[dict[str, Any]]) -> None:
+    """Annotate each category row with strategy target status (mutates in place)."""
+    for row in rows:
+        targets = _CREDIT_LINE_STRATEGY_TARGETS.get(str(row["category"]), {})
+        if not targets:
+            row["target_rotation"] = None
+            row["rotation_status"] = None
+            row["default_status"] = None
+            continue
+        tgt_rot = targets["target_rotation"]
+        max_def = targets["max_default"]
+        act_rot = row.get("rotation_x")
+        row["target_rotation"] = tgt_rot
+        row["rotation_status"] = (
+            "ok" if act_rot is not None and float(cast(float, act_rot)) >= tgt_rot
+            else "below_target"
+        )
+        row["default_status"] = (
+            "ok" if float(cast(float, row["default_rate_pct"])) <= max_def
+            else "breach"
+        )
+
+
 def credit_line_category_kpis(
     loans_df: pd.DataFrame,
     payments_df: pd.DataFrame | None = None,
@@ -669,85 +772,18 @@ def credit_line_category_kpis(
     else:
         df["_default"] = 0
 
-    # Revenue by loan from payments
-    rev_by_loan: dict = {}
-    if payments_df is not None:
-        pay_lid = _col(payments_df, ["loan_id"])
-        pay_amt = _col(payments_df, ["true_total_payment", "payment_amount"])
-        if pay_lid and pay_amt:
-            rev_by_loan = (
-                payments_df.groupby(pay_lid)[pay_amt]
-                .apply(lambda s: pd.to_numeric(s, errors="coerce").sum())
-                .to_dict()
-            )
-    if loan_id:
-        df["_rev"] = df[loan_id].map(rev_by_loan).fillna(0)
-    else:
-        df["_rev"] = 0.0
+    rev_by_loan = _revenue_by_loan(payments_df)
+    df["_rev"] = df[loan_id].map(rev_by_loan).fillna(0) if loan_id else 0.0
 
-    rows = []
-    for cat, grp in df.groupby(cat_col, dropna=False):
-        bal   = _num(grp, bal_col)  if bal_col  else pd.Series([0.0])
-        disb  = _num(grp, disb_col) if disb_col else pd.Series([0.0])
-        apr   = _num(grp, apr_col)  if apr_col  else pd.Series([0.0])
-        term  = _num(grp, term_col) if term_col else pd.Series([0.0])
-        dpd   = _num(grp, dpd_col)  if dpd_col  else pd.Series([0.0])
-        total = float(bal.sum())
-
-        rows.append({
-            "category":           str(cat),
-            "loan_count":         int(len(grp)),
-            "aum_usd":            round(float(bal.sum()), 2),
-            "avg_ticket_usd":     round(float(disb.mean()), 2),
-            "median_ticket_usd":  round(float(disb.median()), 2),
-            "apr_weighted":       round(float((apr * disb).sum() / max(disb.sum(), 1)), 4),
-            "avg_term_days":      round(float(term.mean()), 1),
-            "rotation_x":         round(365 / term.mean(), 1) if term.mean() > 0 else None,
-            "default_rate_pct":   round(float(grp["_default"].mean() * 100), 2),
-            "par30_pct":          round(float(bal[dpd >= 30].sum() / total * 100), 1) if total > 0 else 0.0,
-            "par90_pct":          round(float(bal[dpd >= 90].sum() / total * 100), 1) if total > 0 else 0.0,
-            "revenue_usd":        round(float(grp["_rev"].sum()), 2),
-            "revenue_per_loan":   round(float(grp["_rev"].mean()), 2),
-        })
-
+    rows = [
+        _category_kpi_row(cat, grp, bal_col, disb_col, apr_col, term_col, dpd_col)
+        for cat, grp in df.groupby(cat_col, dropna=False)
+    ]
     rows.sort(key=lambda x: float(cast(float, x["aum_usd"])), reverse=True)
-
-    # Strategy doc benchmarks by bucket
-    _STRATEGY_TARGETS: dict[str, dict[str, float]] = {
-        ">$200K":    {"target_rotation": 4.9, "max_default": 1.8},
-        "$150-200K": {"target_rotation": 5.1, "max_default": 2.5},
-        "$100-150K": {"target_rotation": 5.4, "max_default": 3.1},
-        "$75-100K":  {"target_rotation": 5.6, "max_default": 3.5},
-        "$50-75K":   {"target_rotation": 6.0, "max_default": 3.8},
-        "$25-50K":   {"target_rotation": 6.3, "max_default": 4.2},
-        "$10-25K":   {"target_rotation": 6.6, "max_default": 4.5},
-        "< $10K":    {"target_rotation": 7.0, "max_default": 4.9},
-    }
-    for row in rows:
-        cat_s = str(row["category"])
-        targets = _STRATEGY_TARGETS.get(cat_s, {})
-        if targets:
-            tgt_rot = targets.get("target_rotation", 0.0)
-            max_def = targets.get("max_default", 99.0)
-            act_rot = row.get("rotation_x")
-
-            row["target_rotation"] = tgt_rot
-            row["rotation_status"] = (
-                "ok" if act_rot is not None and float(cast(float, act_rot)) >= tgt_rot
-                else "below_target"
-            )
-            row["default_status"] = (
-                "ok" if float(cast(float, row["default_rate_pct"])) <= max_def
-                else "breach"
-            )
-        else:
-            row["target_rotation"] = None
-            row["rotation_status"] = None
-            row["default_status"] = None
-
+    _apply_strategy_benchmarks(rows)
     return {
-        "status":    "ok",
-        "by_category": rows,
+        "status":           "ok",
+        "by_category":      rows,
         "total_categories": len(rows),
     }
 

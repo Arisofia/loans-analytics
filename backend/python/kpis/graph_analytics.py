@@ -37,10 +37,10 @@ Usage
         build_graph_kpi_report,
     )
 
-    G       = build_transaction_graph(intermedia_df)
-    pr      = pagerank_scores(G)
-    comms   = detect_communities(G)
-    rings   = detect_fraud_rings(G, intermedia_df)
+    graph   = build_transaction_graph(intermedia_df)
+    pr      = pagerank_scores(graph)
+    comms   = detect_communities(graph)
+    rings   = detect_fraud_rings(graph, intermedia_df)
     ue      = calc_unit_economics(loans_df, payments_df)
     k       = viral_k_factor(loans_df)
     hhi     = concentration_hhi(intermedia_df)
@@ -49,6 +49,7 @@ Usage
 
 from __future__ import annotations
 
+import importlib
 import logging
 import warnings
 from datetime import datetime, timezone
@@ -57,21 +58,26 @@ from typing import Any, cast
 import numpy as np
 import pandas as pd
 
+from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+
 logger = logging.getLogger(__name__)
 
 # ── Optional heavy dependencies — degrade gracefully ─────────────────────────
 try:
-    import networkx as nx
+    nx = importlib.import_module("networkx")
     _NX = True
 except ImportError:  # pragma: no cover
+    nx = cast(Any, None)
     _NX = False
     logger.warning("networkx not installed — graph modules will return empty results. "
                    "Install with: pip install networkx")
 
 try:
-    from community import best_partition as _louvain_partition
+    _community = importlib.import_module("community")
+    _louvain_partition = getattr(_community, "best_partition")
     _LOUVAIN = True
 except ImportError:
+    _louvain_partition = cast(Any, None)
     _LOUVAIN = False  # fall back to greedy modularity in networkx
 
 
@@ -90,15 +96,99 @@ def _num(df: pd.DataFrame, col: str) -> pd.Series:
     return pd.to_numeric(df[col], errors="coerce").fillna(0.0)
 
 
+def _calculate_ssot_npl_metrics(balance: pd.Series, dpd: pd.Series) -> tuple[float, float]:
+    """Compute NPL-90 and NPL-180 percentages through SSOT formula execution."""
+    values = calculate_asset_quality_metrics(
+        balance,
+        dpd,
+        actor="graph_analytics",
+        metric_aliases=("npl90", "npl180"),
+    )
+    npl_90 = values.get("npl90", 0.0)
+    npl_180 = values.get("npl180", 0.0)
+    return npl_90, npl_180
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Build transaction graph (bipartite: clients ↔ emisores/pagadores)
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _build_intermedia_edges(
+    graph: Any,
+    intermedia_df: pd.DataFrame,
+    active_only: bool = True,
+) -> None:
+    """Extract and add INTERMEDIA client-debtor edges to graph."""
+    bal_col = _col(intermedia_df, ["TotalSaldoVigente", "outstanding_balance"])
+    cod_col = _col(intermedia_df, ["CodCliente", "customer_id", "cod_cliente"])
+    emi_col = _col(intermedia_df, ["Emisor", "emisor", "debtor", "pagador"])
+
+    if not (cod_col and emi_col):
+        return
+
+    df = intermedia_df.copy()
+    if active_only and bal_col:
+        df["_bal"] = _num(df, bal_col)
+        df = df[df["_bal"] > 0]
+
+    df["_cod"] = df[cod_col].astype(str).str.strip()
+    df["_emi"] = df[emi_col].astype(str).str.strip()
+    df["_w"] = _num(df, bal_col) if bal_col else pd.Series(1.0, index=df.index)
+
+    # Add nodes with type attribute
+    for cod in df["_cod"].unique():
+        graph.add_node(f"C:{cod}", node_type="client", id=cod)
+    for emi in df["_emi"].unique():
+        graph.add_node(f"D:{emi}", node_type="debtor", id=emi)
+
+    # Add edges, accumulating weight
+    for (cod, emi), grp in df.groupby(["_cod", "_emi"]):
+        w = float(grp["_w"].sum())
+        src, dst = f"C:{cod}", f"D:{emi}"
+        if graph.has_edge(src, dst):
+            graph[src][dst]["weight"] += w
+        else:
+            graph.add_edge(src, dst, weight=w)
+
+
+def _build_loan_edges(
+    graph: Any,
+    loans_df: pd.DataFrame,
+) -> None:
+    """Extract and add loan-based client-debtor edges to graph."""
+    lc = _col(loans_df, ["customer_id", "Customer ID", "borrower_id"])
+    pag = _col(loans_df, ["pagador", "Pagador", "debtor_id", "payer"])
+    tpv = _col(loans_df, ["tpv", "TPV", "disbursement_amount"])
+
+    if not (lc and pag):
+        return
+
+    lt = loans_df[[lc, pag]].copy()
+    lt["_w"] = _num(loans_df, tpv) if tpv else pd.Series(1.0, index=loans_df.index)
+    lt["_cod"] = lt[lc].astype(str).str.strip()
+    lt["_pag"] = lt[pag].astype(str).str.strip()
+
+    for cod in lt["_cod"].unique():
+        if f"C:{cod}" not in graph:
+            graph.add_node(f"C:{cod}", node_type="client", id=cod)
+    for pag_id in lt["_pag"].unique():
+        if f"D:{pag_id}" not in graph:
+            graph.add_node(f"D:{pag_id}", node_type="debtor", id=pag_id)
+
+    for (cod, pag_id), grp in lt.groupby(["_cod", "_pag"]):
+        w = float(grp["_w"].sum())
+        src, dst = f"C:{cod}", f"D:{pag_id}"
+        if graph.has_edge(src, dst):
+            graph[src][dst]["weight"] += w
+        else:
+            graph.add_edge(src, dst, weight=w)
+
 
 def build_transaction_graph(
     intermedia_df: pd.DataFrame,
     loans_df: pd.DataFrame | None = None,
     active_only: bool = True,
-) -> "nx.Graph | None":
+) -> Any | None:
     """
     Build a bipartite graph where:
         - Client nodes (prefix 'C:')  = CodCliente / customer_id
@@ -116,70 +206,23 @@ def build_transaction_graph(
     if not _NX:
         return None
 
-    G = nx.Graph()
+    graph = nx.Graph()
 
     # ── INTERMEDIA edges: CodCliente ↔ Emisor ─────────────────────────
-    bal_col  = _col(intermedia_df, ["TotalSaldoVigente", "outstanding_balance"])
-    cod_col  = _col(intermedia_df, ["CodCliente", "customer_id", "cod_cliente"])
-    emi_col  = _col(intermedia_df, ["Emisor", "emisor", "debtor", "pagador"])
-
-    if cod_col and emi_col:
-        df = intermedia_df.copy()
-        if active_only and bal_col:
-            df["_bal"] = _num(df, bal_col)
-            df = df[df["_bal"] > 0]
-
-        df["_cod"] = df[cod_col].astype(str).str.strip()
-        df["_emi"] = df[emi_col].astype(str).str.strip()
-        df["_w"]   = _num(df, bal_col) if bal_col else pd.Series(1.0, index=df.index)
-
-        # Add nodes with type attribute
-        for cod in df["_cod"].unique():
-            G.add_node(f"C:{cod}", node_type="client", id=cod)
-        for emi in df["_emi"].unique():
-            G.add_node(f"D:{emi}", node_type="debtor", id=emi)
-
-        # Add edges, accumulating weight
-        for (cod, emi), grp in df.groupby(["_cod", "_emi"]):
-            w = float(grp["_w"].sum())
-            src, dst = f"C:{cod}", f"D:{emi}"
-            if G.has_edge(src, dst):
-                G[src][dst]["weight"] += w
-            else:
-                G.add_edge(src, dst, weight=w)
+    _build_intermedia_edges(graph, intermedia_df, active_only)
 
     # ── Loan tape edges: customer_id ↔ pagador ────────────────────────
     if loans_df is not None:
-        lc  = _col(loans_df, ["customer_id", "Customer ID", "borrower_id"])
-        pag = _col(loans_df, ["pagador", "Pagador", "debtor_id", "payer"])
-        tpv = _col(loans_df, ["tpv", "TPV", "disbursement_amount"])
-        if lc and pag:
-            lt = loans_df[[lc, pag]].copy()
-            lt["_w"] = _num(loans_df, tpv) if tpv else pd.Series(1.0, index=loans_df.index)
-            lt["_cod"] = lt[lc].astype(str).str.strip()
-            lt["_pag"] = lt[pag].astype(str).str.strip()
-            for cod in lt["_cod"].unique():
-                if f"C:{cod}" not in G:
-                    G.add_node(f"C:{cod}", node_type="client", id=cod)
-            for pag_id in lt["_pag"].unique():
-                if f"D:{pag_id}" not in G:
-                    G.add_node(f"D:{pag_id}", node_type="debtor", id=pag_id)
-            for (cod, pag_id), grp in lt.groupby(["_cod", "_pag"]):
-                w = float(grp["_w"].sum())
-                src, dst = f"C:{cod}", f"D:{pag_id}"
-                if G.has_edge(src, dst):
-                    G[src][dst]["weight"] += w
-                else:
-                    G.add_edge(src, dst, weight=w)
+        _build_loan_edges(graph, loans_df)
 
     logger.info(
         "build_transaction_graph: %d nodes (%d clients, %d debtors), %d edges",
-        G.number_of_nodes(),
-        sum(1 for n, d in G.nodes(data=True) if d.get("node_type") == "client"),
-        sum(1 for n, d in G.nodes(data=True) if d.get("node_type") == "debtor"),
-        G.number_of_edges(),
+        graph.number_of_nodes(),
+        sum(1 for n, d in graph.nodes(data=True) if d.get("node_type") == "client"),
+        sum(1 for n, d in graph.nodes(data=True) if d.get("node_type") == "debtor"),
+        graph.number_of_edges(),
     )
-    return G
+    return graph
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -187,7 +230,7 @@ def build_transaction_graph(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def pagerank_scores(
-    G: "nx.Graph | None",
+    graph: Any | None,
     alpha: float = 0.85,
     weight: str = "weight",
 ) -> dict[str, Any]:
@@ -211,20 +254,20 @@ def pagerank_scores(
         "top_debtors":    [{id, pagerank}],
     }
     """
-    if G is None or not _NX or G.number_of_nodes() == 0:
+    if graph is None or not _NX or graph.number_of_nodes() == 0:
         return {"status": "unavailable", "reason": "networkx not installed or empty graph"}
 
-    pr = nx.pagerank(G, alpha=alpha, weight=weight)
+    pr = nx.pagerank(graph, alpha=alpha, weight=weight)
 
     # Separate client and debtor scores
     client_rows, debtor_rows = [], []
 
     for node, score in pr.items():
-        ndata = G.nodes[node]
+        ndata = graph.nodes[node]
         ntype = ndata.get("node_type")
         nid   = ndata.get("id", node)
-        deg   = G.degree(node)
-        exp   = sum(d.get("weight", 1) for _, _, d in G.edges(node, data=True))
+        deg   = graph.degree(node)
+        exp   = sum(d.get("weight", 1) for _, _, d in graph.edges(node, data=True))
 
         if ntype == "client":
             client_rows.append({
@@ -264,10 +307,10 @@ def pagerank_scores(
         "debtor_scores":        debtor_rows[:50],
         "high_trust_threshold": high_thresh,
         "graph_stats": {
-            "nodes":           G.number_of_nodes(),
-            "edges":           G.number_of_edges(),
-            "density":         round(nx.density(G), 6),
-            "avg_degree":      round(sum(d for _, d in G.degree()) / max(G.number_of_nodes(), 1), 2),
+            "nodes":           graph.number_of_nodes(),
+            "edges":           graph.number_of_edges(),
+            "density":         round(nx.density(graph), 6),
+            "avg_degree":      round(sum(d for _, d in graph.degree()) / max(graph.number_of_nodes(), 1), 2),
         },
         "top_clients": client_rows[:10],
         "top_debtors": debtor_rows[:10],
@@ -279,7 +322,7 @@ def pagerank_scores(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def detect_communities(
-    G: "nx.Graph | None",
+    graph: Any | None,
 ) -> dict[str, Any]:
     """
     Detect communities in the transaction graph using Louvain algorithm
@@ -298,12 +341,12 @@ def detect_communities(
         "algorithm": "louvain"|"greedy_modularity",
     }
     """
-    if G is None or not _NX or G.number_of_nodes() == 0:
+    if graph is None or not _NX or graph.number_of_nodes() == 0:
         return {"status": "unavailable", "reason": "networkx not installed or empty graph"}
 
     # Run detection
     if _LOUVAIN:
-        partition = _louvain_partition(G, weight="weight", random_state=42)
+        partition = _louvain_partition(graph, weight="weight", random_state=42)
         algo = "louvain"
         community_map: dict[int, set] = {}
         for node, comm_id in partition.items():
@@ -312,29 +355,29 @@ def detect_communities(
         # networkx greedy modularity
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            comms_gen = nx.community.greedy_modularity_communities(G, weight="weight")
+            comms_gen = nx.community.greedy_modularity_communities(graph, weight="weight")
         community_map = {i: set(c) for i, c in enumerate(comms_gen)}
         algo = "greedy_modularity"
 
     # Compute modularity
     try:
         communities_list_sets = list(community_map.values())
-        modularity = nx.community.modularity(G, communities_list_sets, weight="weight")
+        modularity = nx.community.modularity(graph, communities_list_sets, weight="weight")
     except Exception:
         modularity = None
 
     # Build community summaries
     rows = []
     for comm_id, nodes in community_map.items():
-        clients = [n for n in nodes if G.nodes[n].get("node_type") == "client"]
-        debtors = [n for n in nodes if G.nodes[n].get("node_type") == "debtor"]
+        clients = [n for n in nodes if graph.nodes[n].get("node_type") == "client"]
+        debtors = [n for n in nodes if graph.nodes[n].get("node_type") == "debtor"]
         rows.append({
             "community_id":  comm_id,
             "size":          len(nodes),
             "client_count":  len(clients),
             "debtor_count":  len(debtors),
-            "client_ids":    [G.nodes[n].get("id", n) for n in clients][:20],
-            "debtor_ids":    [G.nodes[n].get("id", n) for n in debtors][:10],
+            "client_ids":    [graph.nodes[n].get("id", n) for n in clients][:20],
+            "debtor_ids":    [graph.nodes[n].get("id", n) for n in debtors][:10],
             "flag_review":   len(clients) >= 3 and len(debtors) >= 2,
         })
 
@@ -355,7 +398,7 @@ def detect_communities(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def detect_fraud_rings(
-    G: "nx.Graph | None",
+    graph: Any | None,
     intermedia_df: pd.DataFrame | None = None,
     dpd_threshold: int = 30,
     min_community_size: int = 3,
@@ -378,10 +421,10 @@ def detect_fraud_rings(
         "flagged_balance_usd": float,
     }
     """
-    if G is None or not _NX:
+    if graph is None or not _NX:
         return {"status": "unavailable", "reason": "networkx not installed"}
 
-    comm_result = detect_communities(G)
+    comm_result = detect_communities(graph)
     if comm_result.get("status") != "ok":
         return {"status": "unavailable", "reason": "community detection failed"}
 
@@ -414,7 +457,7 @@ def detect_fraud_rings(
             dpd_by_client  = active.groupby("_cod")["_dpd"].mean().to_dict()
             bal_by_client  = active.groupby("_cod")["_bal"].sum().to_dict()
 
-    avg_density = nx.density(G)
+    avg_density = nx.density(graph)
     rings: list[dict] = []
 
     for comm in comm_result["communities"]:
@@ -437,7 +480,7 @@ def detect_fraud_rings(
             [f"C:{cid}" for cid in client_ids] +
             [f"D:{did}" for did in comm.get("debtor_ids", [])]
         )
-        sub = G.subgraph([n for n in sub_nodes if n in G])
+        sub = graph.subgraph([n for n in sub_nodes if n in graph])
         if sub.number_of_nodes() > 1:
             sub_density = nx.density(sub)
             if sub_density > 2 * avg_density:
@@ -806,8 +849,12 @@ def npl_benchmarks(
     else:
         active["_dpd"] = 0.0
 
-    npl_180 = float(active[active["_dpd"] >= 180]["_bal"].sum() / total * 100)
-    npl_90  = float(active[active["_dpd"] >= 90]["_bal"].sum()  / total * 100)
+    npl_180 = 0.0
+    try:
+        npl_90, npl_180 = _calculate_ssot_npl_metrics(active["_bal"], active["_dpd"])
+    except Exception:
+        npl_90 = float(active[active["_dpd"] >= 90]["_bal"].sum() / total * 100)
+        npl_180 = float(active[active["_dpd"] >= 180]["_bal"].sum() / total * 100)
 
     # Loss rate estimate: NPL × LGD
     try:

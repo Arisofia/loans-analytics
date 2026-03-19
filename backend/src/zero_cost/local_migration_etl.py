@@ -356,7 +356,7 @@ class LocalMonthlySnapshotETL:
                 _sample = _f.read(4096)
                 _f.seek(0)
                 try:
-                    _dialect = csv.Sniffer().sniff(_sample, delimiters=[",", ";", "\t", "|"])
+                    _dialect = csv.Sniffer().sniff(_sample, delimiters=",;\t|")
                     delimiter = _dialect.delimiter
                 except csv.Error:
                     # Fallback to comma if sniffing fails.

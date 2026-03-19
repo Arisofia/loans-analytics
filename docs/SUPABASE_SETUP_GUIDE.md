@@ -184,25 +184,26 @@ The Azure container running the dashboard needs Supabase credentials to query KP
 cd /Users/jenineferderas/Documents/Documentos\ -\ MacBook\ Pro\ \(6\)/abaco-loans-analytics
 
 # Update container environment variables
+# Note: Canonical port is now 8000 (configurable via STREAMLIT_SERVER_PORT env var)
 az container create \
   --resource-group AI-MultiAgent-Ecosystem-RG \
   --name abaco-analytics-streamlit \
   --image ghcr.io/arisofia/abaco-loans-analytics:latest \
   --dns-name-label abaco-analytics \
-  --ports 8501 \
+  --ports 8000 \
   --cpu 1 \
   --memory 2 \
   --environment-variables \
     SUPABASE_URL=https://goxdevkqozomyhsyxhte.supabase.co \
     SUPABASE_ANON_KEY=<your-anon-key> \
-    STREAMLIT_SERVER_PORT=8501
+    STREAMLIT_SERVER_PORT=8000
 ```
 
 **⚠️ Security Note**: Never commit the anon key to git! Use Azure Key Vault for production.
 
 ### 5.3 Verify Dashboard Data
 
-1. Navigate to: http://4.248.240.207:8501
+1. Navigate to: http://4.248.240.207:8000 (canonical port, previously 8501)
 2. The dashboard should now display KPIs instead of "Logs directory not found"
 3. Check for metrics like:
    - **Portfolio Metrics**: PAR-30, PAR-90, NPL Rate

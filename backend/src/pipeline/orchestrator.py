@@ -450,7 +450,7 @@ class UnifiedPipeline:
     def _get_code_version() -> str:
         """Return the current pipeline code version."""
         try:
-            from backend.src.pipeline import __version__  # type: ignore[attr-defined]
+            from backend.src.pipeline import __version__
 
             return __version__
         except Exception:

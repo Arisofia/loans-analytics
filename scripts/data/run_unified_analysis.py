@@ -5,16 +5,8 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-import sys
 
 import pandas as pd
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from backend.src.zero_cost.loan_tape_loader import LoanTapeLoader
-from backend.src.zero_cost.pipeline_router import PipelineRouter
 
 
 def compute_dpd_loan_tape(row: pd.Series, reference_date: pd.Timestamp) -> int:
@@ -94,6 +86,9 @@ def monthly_from_control_mora(dim_loan: pd.DataFrame, cutoff: pd.Timestamp) -> p
 
 
 def run(args: argparse.Namespace) -> None:
+    from backend.src.zero_cost.loan_tape_loader import LoanTapeLoader
+    from backend.src.zero_cost.pipeline_router import PipelineRouter
+
     data_dir = Path(args.data_dir)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -102,7 +97,7 @@ def run(args: argparse.Namespace) -> None:
     snapshot_month = pd.Timestamp(args.snapshot_month)
 
     loader = LoanTapeLoader(data_dir=data_dir)
-    tables = loader.load_all(data_dir)
+    loader.load_all(data_dir)
 
     raw_loan_data_path = data_dir / "loan_data.csv"
     if not raw_loan_data_path.exists():

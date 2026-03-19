@@ -22,7 +22,7 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        import duckdb  # type: ignore[import]
+        import duckdb
     except ImportError:
         print("ERROR: duckdb is not installed. Run: pip install duckdb", file=sys.stderr)
         sys.exit(1)

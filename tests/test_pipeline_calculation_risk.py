@@ -6,10 +6,13 @@ Covers:
 - _calculate_segment_par_metrics: Kiting/carousel adjustment via dpd_adjusted
 """
 
+import types
+
 import pandas as pd
 import pytest
 import numpy as np
 
+import backend.src.pipeline.calculation as calc_module
 from backend.src.pipeline.calculation import CalculationPhase
 from backend.python.kpis.engine import KPIEngineV2
 
@@ -845,10 +848,6 @@ def test_status_normalization_english_values():
 # ---------------------------------------------------------------------------
 # Silent-handler hardening regression tests (Block 3b)
 # ---------------------------------------------------------------------------
-
-import types
-
-import backend.src.pipeline.calculation as calc_module
 
 
 class TestSilentHandlerHardening:

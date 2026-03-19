@@ -4,6 +4,8 @@ from typing import Any
 
 import pandas as pd
 
+from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+
 
 def _first_existing_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
     for col in candidates:
@@ -92,6 +94,29 @@ def _resolve_identifier(df: pd.DataFrame, candidates: list[str]) -> pd.Series:
     return pd.Series([f"loan-{idx + 1}" for idx in range(len(df))], index=df.index)
 
 
+def _status_series(df: pd.DataFrame) -> pd.Series:
+    status_col = _first_existing_column(df, ["status", "loan_status", "current_status"])
+    if status_col is None:
+        return pd.Series(["active"] * len(df), index=df.index, dtype=str)
+    return df[status_col].astype(str).str.lower().fillna("active")
+
+
+def _calculate_ssot_par_metrics(balance: pd.Series, dpd: pd.Series, status: pd.Series) -> dict[str, float]:
+    """Calculate PAR metrics via SSOT formula engine and return rounded floats."""
+    values = calculate_asset_quality_metrics(
+        balance,
+        dpd,
+        actor="advanced_risk",
+        metric_aliases=("par30", "par60", "par90"),
+        status=status,
+    )
+    return {
+        "par30": round(values.get("par30", 0.0), 2),
+        "par60": round(values.get("par60", 0.0), 2),
+        "par90": round(values.get("par90", 0.0), 2),
+    }
+
+
 def _build_credit_quality_index(df: pd.DataFrame) -> float:
     score_col = _first_existing_column(df, ["credit_score", "equifax_score", "Equifax Score"])
     if not score_col:
@@ -141,6 +166,7 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
         _resolve_series(df, ["interest_rate", "interest_rate_apr"])
     )
     dpd = _extract_dpd(df)
+    status = _status_series(df)
     default_mask = _build_default_mask(df, dpd)
     borrower_id = _resolve_identifier(
         df,
@@ -149,9 +175,16 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
     total_balance = float(balance.sum())
     total_loans = int(len(df))
 
-    par30 = round(_safe_pct(float(balance[dpd >= 30].sum()), total_balance), 2)
-    par60 = round(_safe_pct(float(balance[dpd >= 60].sum()), total_balance), 2)
-    par90 = round(_safe_pct(float(balance[dpd >= 90].sum()), total_balance), 2)
+    try:
+        par_metrics = _calculate_ssot_par_metrics(balance, dpd, status)
+        par30 = par_metrics["par30"]
+        par60 = par_metrics["par60"]
+        par90 = par_metrics["par90"]
+    except Exception:
+        # Compatibility fallback during staged consolidation.
+        par30 = round(_safe_pct(float(balance[dpd >= 30].sum()), total_balance), 2)
+        par60 = round(_safe_pct(float(balance[dpd >= 60].sum()), total_balance), 2)
+        par90 = round(_safe_pct(float(balance[dpd >= 90].sum()), total_balance), 2)
     default_rate = round(_safe_pct(float(default_mask.sum()), float(total_loans)), 2)
 
     collected = _resolve_series(df, ["last_payment_amount", "payment_amount", "payments_collected"])

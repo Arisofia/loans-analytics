@@ -10,7 +10,7 @@ Principles: every chart links to a drill-down table, owner, runbook, SLA, and ne
 
 ## Streamlit Executive Dashboard (ABACO Financial Intelligence)
 
-- Local URL: `http://localhost:8501`
+- Local URL: `http://localhost:8000` (canonical port, aligns with API)
 - Deployed URL: `https://abaco-analytics-dashboard.azurewebsites.net`
 - Grafana URL: `http://localhost:3001/dashboards`
 - Strategic report output: `reports/strategic/strategic_report_latest.md`

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -55,7 +55,7 @@ def cdr_by_cohort(loans_df: pd.DataFrame) -> dict[str, Any]:
     default_disb = df[df["_default"]]["_disb"].sum()
     portfolio_cdr = float(default_disb / max(total_disb, 1) * 100)
 
-    by_cohort = []
+    by_cohort: list[dict[str, float | int | str]] = []
     for cohort, grp in df.groupby("_cohort"):
         orig = float(grp["_disb"].sum())
         defs = float(grp.loc[grp["_default"], "_disb"].sum())
@@ -69,12 +69,20 @@ def cdr_by_cohort(loans_df: pd.DataFrame) -> dict[str, Any]:
             }
         )
 
-    by_cohort.sort(key=lambda x: x["cohort"])
+    by_cohort.sort(key=lambda x: str(x["cohort"]))
 
     trend: dict[str, Any] = {}
     if len(by_cohort) >= 6:
-        latest3 = [r["cdr_pct"] for r in by_cohort[-3:] if r["originations_usd"] > 0]
-        prev3 = [r["cdr_pct"] for r in by_cohort[-6:-3] if r["originations_usd"] > 0]
+        latest3 = [
+            float(cast(float, r["cdr_pct"]))
+            for r in by_cohort[-3:]
+            if float(cast(float, r["originations_usd"])) > 0
+        ]
+        prev3 = [
+            float(cast(float, r["cdr_pct"]))
+            for r in by_cohort[-6:-3]
+            if float(cast(float, r["originations_usd"])) > 0
+        ]
         if latest3 and prev3:
             l_avg = round(float(np.mean(latest3)), 2)
             p_avg = round(float(np.mean(prev3)), 2)
@@ -364,8 +372,6 @@ def approval_metrics(customer_df: pd.DataFrame, loans_df: pd.DataFrame | None = 
 
 def cure_rate_by_period(
     payments_df: pd.DataFrame,
-    loans_df: pd.DataFrame,
-    dpd_threshold: int = 30,
 ) -> dict[str, Any]:
     cust_col = _col(payments_df, ["customer_id", "CodCliente"])
     stat_col = _col(payments_df, ["true_payment_status"])
@@ -471,7 +477,6 @@ def promise_to_pay_metrics(payments_df: pd.DataFrame) -> dict[str, Any]:
 def mype_approval_batch(
     loans_df: pd.DataFrame,
     payments_df: pd.DataFrame | None = None,
-    customer_df: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     cust_col = _col(loans_df, ["customer_id"])
     bal_col = _col(loans_df, ["outstanding_loan_value"])
@@ -519,7 +524,7 @@ def mype_approval_batch(
                 .to_dict()
             )
 
-    decisions = []
+    decisions: list[dict[str, float | str]] = []
     counts = {"APPROVE": 0, "REVIEW": 0, "DECLINE": 0}
 
     for _, row in clients.iterrows():
@@ -564,7 +569,7 @@ def mype_approval_batch(
             }
         )
 
-    decisions.sort(key=lambda x: x["pod"], reverse=True)
+    decisions.sort(key=lambda x: float(cast(float, x["pod"])), reverse=True)
 
     return {
         "status": "ok",
@@ -572,7 +577,11 @@ def mype_approval_batch(
         "summary": counts,
         "approve_rate_pct": round(counts["APPROVE"] / max(len(decisions), 1) * 100, 1),
         "high_risk_balance_usd": round(
-            sum(d["outstanding_usd"] for d in decisions if d["risk_level"] in ("HIGH", "CRITICAL")),
+            sum(
+                float(cast(float, d["outstanding_usd"]))
+                for d in decisions
+                if str(cast(str, d["risk_level"])) in ("HIGH", "CRITICAL")
+            ),
             2,
         ),
         "decisions": decisions[:100],
@@ -590,7 +599,6 @@ def mype_approval_batch(
 def build_lending_kpi_report(
     loans_df: pd.DataFrame,
     payments_df: pd.DataFrame,
-    schedule_df: pd.DataFrame | None = None,
     customer_df: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     cdr = cdr_by_cohort(loans_df)

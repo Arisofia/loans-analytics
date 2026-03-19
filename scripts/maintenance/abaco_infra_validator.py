@@ -350,13 +350,13 @@ class AbacoInfraValidator:
 
         if self.manifest_changes:
             print("\nManifest updates:")
-            for item in self.manifest_changes:
-                print(f"- {item}")
+            for change in self.manifest_changes:
+                print(f"- {change}")
 
         if self.consolidation_changes:
             print("\nConsolidation updates:")
-            for item in self.consolidation_changes:
-                print(f"- {item}")
+            for change in self.consolidation_changes:
+                print(f"- {change}")
 
         if self.commit_hash:
             print(f"\nCommit: {self.commit_hash}")

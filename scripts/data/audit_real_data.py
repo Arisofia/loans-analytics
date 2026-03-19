@@ -1,8 +1,10 @@
 """Audit real data fields for strategic_modules validation."""
-import sys, warnings
-warnings.filterwarnings('ignore')
-sys.path.insert(0, '.')
-import pandas as pd, numpy as np
+import os
+import warnings
+
+import pandas as pd
+
+warnings.filterwarnings("ignore")
 
 loan = pd.read_csv('data/raw/loan_data.csv', low_memory=False)
 real = pd.read_csv('data/raw/real_payment.csv', low_memory=False)
@@ -60,7 +62,7 @@ print("\n=== APR ===")
 apr = loan['interest_rate_apr']
 print(f"  mean={apr.mean():.4f}, median={apr.median():.4f}, min={apr.min():.4f}, max={apr.max():.4f}")
 print(f"  Interpreted as monthly: annualized effective = {((1+apr.mean())**12-1)*100:.1f}%")
-print(f"  Weighted annualized effective APR:")
+print("  Weighted annualized effective APR:")
 w_apr = float((apr * bal).sum() / total)
 print(f"    portfolio avg monthly rate: {w_apr:.4f} -> annual: {((1+w_apr)**12-1)*100:.1f}%")
 
@@ -91,7 +93,6 @@ y_default = (loan['loan_status'].astype(str).str.lower() == 'default').astype(in
 print(f"  Defaults: {y_default.sum()}, Non-defaults: {(y_default==0).sum()}")
 
 print("\n=== DATA FILES AVAILABLE ===")
-import os
 for path in ['data/raw/loan_data.csv','data/raw/real_payment.csv','data/raw/customer.csv',
              'data/abaco/CONTROL_DE_MORA__VENTA_Y_RECUPERACION_-_INTERMEDIA.csv',
              'data/samples/abaco_sample_data_20260202.csv']:

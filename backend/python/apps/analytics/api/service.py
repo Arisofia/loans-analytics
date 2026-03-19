@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Literal, cast
 import uuid
 
 import pandas as pd
@@ -65,8 +65,13 @@ from backend.python.supabase_pool import get_pool
 
 logger = get_logger(__name__)
 
+# Module-level constants for common response messages
+NO_LOANS_HEALTH_INTERPRETATION = "No loans provided; score defaults to healthy baseline."  # Default interpretation when portfolio is empty
+
 try:
-    import yaml
+    import yaml as _yaml
+
+    yaml: Any = _yaml
 except ImportError:  # pragma: no cover - optional dependency for catalog enrichment
     yaml = None
 
@@ -113,7 +118,7 @@ STATUS_PATTERN_60_89 = r"60-89|60\+"
 STATUS_PATTERN_30_59 = r"30-59|30\+"
 STATUS_PATTERN_DEFAULT = r"default|charged"
 
-DEFAULT_KPI_METADATA = {
+DEFAULT_KPI_METADATA: dict[str, dict[str, Any]] = {
     "PAR30": {
         "formula": "SUM(principal_balance WHERE dpd >= 30) / SUM(principal_balance) * 100",
         "definition": "Portfolio at Risk with more than 30 days past due.",
@@ -451,7 +456,7 @@ class KPIService:
         normalized = _normalize_kpi_key(kpi_id)
         catalog_key = KPI_API_TO_CATALOG_ID.get(normalized, str(kpi_id).lower())
         catalog_metadata = _load_catalog_kpi_metadata().get(catalog_key, {})
-        default_metadata = DEFAULT_KPI_METADATA.get(normalized, {})
+        default_metadata: dict[str, Any] = DEFAULT_KPI_METADATA.get(normalized, {})
         definition_fallback = kpi_name or str(kpi_id)
         thresholds = catalog_metadata.get("thresholds")
         if not isinstance(thresholds, dict):
@@ -481,7 +486,10 @@ class KPIService:
         }
 
     @staticmethod
-    def _evaluate_kpi_status(value: float, thresholds: dict[str, float]) -> str:
+    def _evaluate_kpi_status(
+        value: float,
+        thresholds: dict[str, float],
+    ) -> Literal["below_target", "on_target", "warning", "critical", "unknown"]:
         """Evaluate KPI status from configured thresholds.
 
         Direction inference:
@@ -805,7 +813,7 @@ class KPIService:
                     "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
                     "CostOfRisk(15pts) + DefaultRate(15pts)"
                 ),
-                interpretation="No loans provided; score defaults to healthy baseline.",
+                interpretation=NO_LOANS_HEALTH_INTERPRETATION,
             )
         else:
             metrics = self._calculate_portfolio_performance_metrics(loans_df.copy())
@@ -880,9 +888,15 @@ class KPIService:
             default_rate=float(metrics.get("default_rate", 0.0)),
         )
         components = [PortfolioHealthComponent(**item) for item in payload.get("components", [])]
+        traffic_light_value = str(payload.get("traffic_light", "critical"))
+        if traffic_light_value not in {"healthy", "at_risk", "warning", "critical"}:
+            traffic_light_value = "critical"
         return PortfolioHealthScore(
             score=float(payload.get("score", 0.0)),
-            traffic_light=str(payload.get("traffic_light", "critical")),
+            traffic_light=cast(
+                Literal["healthy", "at_risk", "warning", "critical"],
+                traffic_light_value,
+            ),
             components=components,
             formula=str(payload.get("formula", "")),
             interpretation=str(payload.get("interpretation", "")),
@@ -902,7 +916,7 @@ class KPIService:
                     "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
                     "CostOfRisk(15pts) + DefaultRate(15pts)"
                 ),
-                interpretation="No loans provided; score defaults to healthy baseline.",
+                interpretation=NO_LOANS_HEALTH_INTERPRETATION,
             )
 
         df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
@@ -915,7 +929,7 @@ class KPIService:
                     "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
                     "CostOfRisk(15pts) + DefaultRate(15pts)"
                 ),
-                interpretation="No loans provided; score defaults to healthy baseline.",
+                interpretation=NO_LOANS_HEALTH_INTERPRETATION,
             )
         metrics = self._calculate_portfolio_performance_metrics(df)
         return self._build_portfolio_health_score_from_metrics(metrics)

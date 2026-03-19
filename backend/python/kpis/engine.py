@@ -53,6 +53,7 @@ logger = get_logger(__name__)
 
 # Log message format constants
 _LOG_KPI_CALCULATED = "Calculated %s: %s"
+_LOG_KPI_CALCULATION_ERROR = "Failed to calculate %s: %s"  # Error message template for KPI calculation failures
 
 # Loan statuses considered non-performing for NPL calculations.
 # Used in both the broad (DPD≥30) and strict (DPD≥90) NPL definitions.
@@ -178,7 +179,7 @@ class KPIEngineV2:
             return value, context
         except Exception as e:
             error_msg = str(e)
-            logger.error("Failed to calculate %s: %s", kpi_name, error_msg)
+            logger.error(_LOG_KPI_CALCULATION_ERROR, kpi_name, error_msg)
             raise ValueError(f"CRITICAL: {kpi_name} calculation failed: {e}") from e
 
     def calculate_par_90(self) -> Tuple[Decimal, Dict[str, Any]]:
@@ -221,10 +222,10 @@ class KPIEngineV2:
             return value, context
         except Exception as e:
             error_msg = str(e)
-            logger.error("Failed to calculate %s: %s", kpi_name, error_msg)
+            logger.error(_LOG_KPI_CALCULATION_ERROR, kpi_name, error_msg)
             raise ValueError(f"CRITICAL: {kpi_name} calculation failed: {e}") from e
 
-    def calculate_collection_rate(self) -> Tuple[float, Dict[str, Any]]:
+    def calculate_collection_rate(self) -> Tuple[Decimal, Dict[str, Any]]:
         """Calculate collection rate."""
         kpi_name = "COLLECTION_RATE"
         try:
@@ -239,7 +240,7 @@ class KPIEngineV2:
             return value, context
         except Exception as e:
             error_msg = str(e)
-            logger.error("Failed to calculate %s: %s", kpi_name, error_msg)
+            logger.error(_LOG_KPI_CALCULATION_ERROR, kpi_name, error_msg)
             # Fail-fast mandate: do not return partial/silent failures
             raise ValueError(f"CRITICAL: {kpi_name} calculation failed: {e}") from e
 
@@ -385,12 +386,31 @@ class KPIEngineV2:
         for category, kpi_name, formula in self._iter_kpi_formulas():
             engine = engine_unique if kpi_name in unique_grain_kpis else engine_full
             try:
-                value = engine.calculate(formula, strict_comparison_errors=True)
+                if engine.has_kpi_definition(kpi_name):
+                    ssot_result = engine.calculate_kpi(
+                        kpi_name,
+                        strict_comparison_errors=True,
+                    )
+                    value = ssot_result["value"]
+                    context = {
+                        "category": category,
+                        "formula": formula,
+                        "type": "dynamic",
+                        "formula_version": ssot_result.get("formula_version", "unknown"),
+                        "execution_time_ms": ssot_result.get("execution_time_ms", 0),
+                    }
+                else:
+                    value = engine.calculate(formula, strict_comparison_errors=True)
+                    context = {
+                        "category": category,
+                        "formula": formula,
+                        "type": "dynamic",
+                    }
                 kpis[kpi_name] = value
                 self._record_calculation(
                     kpi_name,
                     float(value),
-                    {"category": category, "formula": formula, "type": "dynamic"},
+                    context,
                 )
             except Exception as e:
                 logger.error("Dynamic KPI %s failed: %s", kpi_name, e)
@@ -401,7 +421,12 @@ class KPIEngineV2:
 
     def _build_kpi_engines(self, df: pd.DataFrame) -> tuple[KPIFormulaEngine, KPIFormulaEngine]:
         """Build full and grain-aware KPI engines."""
-        engine_full = KPIFormulaEngine(df)
+        engine_full = KPIFormulaEngine(
+            df,
+            actor=self.actor,
+            run_id=self.run_id,
+            registry_data=self.kpi_definitions,
+        )
         dedupe_col = "loan_uid" if "loan_uid" in df.columns else "loan_id"
         if dedupe_col not in df.columns:
             return engine_full, engine_full
@@ -410,7 +435,12 @@ class KPIEngineV2:
             df_unique = df.sort_values("origination_date").drop_duplicates(dedupe_col)
         else:
             df_unique = df.drop_duplicates(dedupe_col)
-        return engine_full, KPIFormulaEngine(df_unique)
+        return engine_full, KPIFormulaEngine(
+            df_unique,
+            actor=self.actor,
+            run_id=self.run_id,
+            registry_data=self.kpi_definitions,
+        )
 
     @staticmethod
     def _compute_portfolio_velocity_of_default(df: pd.DataFrame) -> Optional[Decimal]:

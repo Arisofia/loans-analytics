@@ -22,15 +22,15 @@ This directory contains E2E tests for both the backend (FastAPI) and frontend (S
    python3 -m playwright install
    ```
 3. Ensure backend (FastAPI) is running at `http://localhost:8000`
-4. Ensure frontend is reachable:
-   - Local Docker/dashboard default: `http://localhost:8501`
-   - Azure startup default: `http://localhost:8000`
+4. Ensure frontend is reachable at canonical port:
+   - Default (local or Azure): `http://localhost:8000`
+   - Override to alternate port if needed: Set `STREAMLIT_SERVER_PORT` environment variable
 5. Export E2E flags (tests are opt-in):
    ```sh
    export RUN_E2E=1
    # Optional overrides:
    export BACKEND_BASE_URL=http://localhost:8000
-   export FRONTEND_BASE_URL=http://localhost:8501
+   export FRONTEND_BASE_URL=http://localhost:8000  # Canonical port (previously 8501)
    ```
 
 ## Running Tests
@@ -51,21 +51,22 @@ python3 -m playwright install chromium
 # export OPENAI_API_KEY="sk-..."
 
 # 3) Start dashboard page that includes upload + KPI cards + agent analysis
-export FRONTEND_BASE_URL="http://127.0.0.1:8501"
+# Use canonical port 8000 (can override with STREAMLIT_SERVER_PORT env var)
+export FRONTEND_BASE_URL="http://127.0.0.1:8000"
 export PYTHONPATH=.
 export CSV_PATH="data/samples/abaco_sample_data_20260202.csv"
 mkdir -p data/agent_outputs
 BEFORE_COUNT="$(find data/agent_outputs -maxdepth 1 -type f -name '*_response.json' | wc -l | tr -d ' ')"
 
 nohup streamlit run streamlit_app/pages/3_Portfolio_Dashboard.py \
-  --server.port=8501 \
+  --server.port=8000 \
   --server.address=127.0.0.1 \
   > /tmp/abaco_e2e_dashboard.log 2>&1 &
 DASH_PID=$!
 trap 'kill ${DASH_PID} >/dev/null 2>&1 || true' EXIT
 
 for i in $(seq 1 60); do
-  if curl -fsS "http://127.0.0.1:8501/_stcore/health" >/dev/null; then
+  if curl -fsS "http://127.0.0.1:8000/_stcore/health" >/dev/null; then
     break
   fi
   sleep 2

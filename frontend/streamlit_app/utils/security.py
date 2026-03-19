@@ -29,6 +29,8 @@ def sanitize_api_base(base: str) -> Optional[str]:
 
         # Optional extra validation: reject IPs in known private ranges unless explicitly allowed
         host = parsed.hostname
+        if host is None:
+            return None
         try:
             # Try to parse the host directly as a literal IP address.
             # Literal IPs are validated here without any DNS round-trip.

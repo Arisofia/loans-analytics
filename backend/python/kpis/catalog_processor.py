@@ -324,6 +324,23 @@ class KPICatalogProcessor:
         else:
             summary = self._fallback_revenue_from_loans()
 
+        if summary.empty:
+            return pd.DataFrame(
+                columns=[
+                    "month",
+                    "recv_revenue_for_month",
+                    "recv_interest_for_month",
+                    "recv_fee_for_month",
+                    "sched_revenue",
+                ]
+            )
+
+        if "recv_revenue_for_month" not in summary.columns:
+            summary["recv_revenue_for_month"] = (
+                pd.to_numeric(summary.get("recv_interest_for_month", 0), errors="coerce").fillna(0)
+                + pd.to_numeric(summary.get("recv_fee_for_month", 0), errors="coerce").fillna(0)
+            )
+
         summary["sched_revenue"] = summary["recv_revenue_for_month"]
         return summary
 
@@ -899,7 +916,7 @@ class KPICatalogProcessor:
 
         rotation = float(disb_12m / aum) if aum > 0 else 0.0
 
-        result = {
+        result: dict[str, float | int | None] = {
             "rotation_x": round(rotation, 2),
             "disbursements_period_usd": float(disb_12m),
             "aum_usd": float(aum),
@@ -908,8 +925,11 @@ class KPICatalogProcessor:
 
         if term_col is not None:
             median_term = pd.to_numeric(self.loans_df[term_col], errors="coerce").median()
-            result["avg_term_days"] = float(median_term) if pd.notna(median_term) else None
-            result["theoretical_rotation_x"] = round(365 / median_term, 1) if median_term > 0 else None
+            median_term_value = float(median_term) if pd.notna(median_term) else None
+            result["avg_term_days"] = median_term_value
+            result["theoretical_rotation_x"] = (
+                round(365 / median_term_value, 1) if median_term_value and median_term_value > 0 else None
+            )
 
         return result
 

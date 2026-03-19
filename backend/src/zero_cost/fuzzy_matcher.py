@@ -29,7 +29,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 try:
-    from rapidfuzz import fuzz, process  # type: ignore[import]
+    from rapidfuzz import fuzz, process
 
     RAPIDFUZZ_AVAILABLE = True
     logger.debug("RapidFuzz available — using optimised fuzzy matching")
@@ -286,7 +286,7 @@ class FuzzyIncomeMatcher:
         original_choices: list[str],
     ) -> list[tuple[str, Optional[int], float]]:
         scorer_fn = getattr(fuzz, self.scorer, fuzz.token_sort_ratio)
-        results = []
+        results: list[tuple[str, Optional[int], float]] = []
         for query in queries:
             match = process.extractOne(query, choices, scorer=scorer_fn)
             if match is None:
@@ -302,7 +302,7 @@ class FuzzyIncomeMatcher:
         choices: list[str],
         original_choices: list[str],
     ) -> list[tuple[str, Optional[int], float]]:
-        results = []
+        results: list[tuple[str, Optional[int], float]] = []
         for query in queries:
             matches = difflib.get_close_matches(query, choices, n=1, cutoff=self.threshold / 100)
             if matches:

@@ -16,23 +16,23 @@ class LoanRecord(BaseModel):
     invoice factoring datasets — defaults provided for LTV/DTI calculations).
     """
 
-    id: Optional[str] = Field(None, description="Loan identifier")
+    id: Optional[str] = Field(default=None, description="Loan identifier")
     loan_amount: float = Field(..., description="Original loan amount")
     appraised_value: Optional[float] = Field(
-        None,
+        default=None,
         description=(
             "Appraised value of the collateral. "
             "Optional for invoice factoring; defaults to collateral_value if available."
         ),
     )
     borrower_income: Optional[float] = Field(
-        None,
+        default=None,
         description=(
             "Annual borrower income. Optional for invoice factoring (not typically available)."
         ),
     )
     monthly_debt: Optional[float] = Field(
-        None,
+        default=None,
         description=(
             "Monthly debt obligations. Optional for invoice factoring (not typically available)."
         ),
@@ -49,72 +49,72 @@ class LoanRecord(BaseModel):
         le=1,
     )
     principal_balance: float = Field(..., description="Current outstanding principal balance")
-    borrower_id: Optional[str] = Field(None, description="Borrower identifier")
-    days_past_due: Optional[float] = Field(None, description="Current days past due")
+    borrower_id: Optional[str] = Field(default=None, description="Borrower identifier")
+    days_past_due: Optional[float] = Field(default=None, description="Current days past due")
     previous_days_past_due: Optional[float] = Field(
-        None,
+        default=None,
         description=(
             "Prior observation days past due used for roll-rate/cure-rate transition analytics."
         ),
     )
     previous_loan_status: Optional[str] = Field(
-        None,
+        default=None,
         description="Prior observation loan status for transition analytics when previous DPD is absent.",
     )
     previous_principal_balance: Optional[float] = Field(
-        None,
+        default=None,
         description="Prior observation outstanding principal used as from-bucket exposure weight.",
     )
-    payment_frequency: Optional[str] = Field(None, description="Payment frequency descriptor")
-    term_months: Optional[float] = Field(None, description="Loan term in months")
-    origination_date: Optional[datetime] = Field(None, description="Loan origination timestamp")
+    payment_frequency: Optional[str] = Field(default=None, description="Payment frequency descriptor")
+    term_months: Optional[float] = Field(default=None, description="Loan term in months")
+    origination_date: Optional[datetime] = Field(default=None, description="Loan origination timestamp")
     application_date: Optional[datetime] = Field(
-        None, description="Loan application timestamp when available"
+        default=None, description="Loan application timestamp when available"
     )
-    origination_fee: Optional[float] = Field(None, description="Origination fee amount")
-    origination_fee_taxes: Optional[float] = Field(None, description="Taxes charged over fees")
-    total_scheduled: Optional[float] = Field(None, description="Total scheduled collections amount")
-    last_payment_amount: Optional[float] = Field(None, description="Last collected payment amount")
+    origination_fee: Optional[float] = Field(default=None, description="Origination fee amount")
+    origination_fee_taxes: Optional[float] = Field(default=None, description="Taxes charged over fees")
+    total_scheduled: Optional[float] = Field(default=None, description="Total scheduled collections amount")
+    last_payment_amount: Optional[float] = Field(default=None, description="Last collected payment amount")
     recovery_value: Optional[float] = Field(
-        None, description="Recovered amount from defaulted loans"
+        default=None, description="Recovered amount from defaulted loans"
     )
-    credit_score: Optional[float] = Field(None, description="Primary credit bureau score")
-    equifax_score: Optional[float] = Field(None, description="Equifax score when available")
+    credit_score: Optional[float] = Field(default=None, description="Primary credit bureau score")
+    equifax_score: Optional[float] = Field(default=None, description="Equifax score when available")
     current_balance: Optional[float] = Field(
-        None, description="Current balance proxy for cash position"
+        default=None, description="Current balance proxy for cash position"
     )
     tpv: Optional[float] = Field(
-        None, description="Total processed value attributed to the loan/borrower"
+        default=None, description="Total processed value attributed to the loan/borrower"
     )
     # Optional segmentation fields from CONTROL DE MORA / DESEMBOLSOS homologation.
-    company: Optional[str] = Field(None, description="Company/portfolio owner segment")
-    credit_line: Optional[str] = Field(None, description="Credit line segment")
-    client_code: Optional[str] = Field(None, description="Client code segment")
-    issuer: Optional[str] = Field(None, description="Issuer segment")
-    issuer_name: Optional[str] = Field(None, description="Issuer display name segment")
-    kam_hunter: Optional[str] = Field(None, description="KAM hunter segment")
-    kam_farmer: Optional[str] = Field(None, description="KAM farmer segment")
-    advisory_channel: Optional[str] = Field(None, description="Advisory/digital channel segment")
+    company: Optional[str] = Field(default=None, description="Company/portfolio owner segment")
+    credit_line: Optional[str] = Field(default=None, description="Credit line segment")
+    client_code: Optional[str] = Field(default=None, description="Client code segment")
+    issuer: Optional[str] = Field(default=None, description="Issuer segment")
+    issuer_name: Optional[str] = Field(default=None, description="Issuer display name segment")
+    kam_hunter: Optional[str] = Field(default=None, description="KAM hunter segment")
+    kam_farmer: Optional[str] = Field(default=None, description="KAM farmer segment")
+    advisory_channel: Optional[str] = Field(default=None, description="Advisory/digital channel segment")
     utilization_pct: Optional[float] = Field(
-        None, description="Utilization percentage for utilization-band segmentation"
+        default=None, description="Utilization percentage for utilization-band segmentation"
     )
     # Enriched fields from CONTROL DE MORA new format (run 20260301_181356+)
     collections_eligible: Optional[str] = Field(
-        None,
+        default=None,
         description="Y/N flag — whether this loan is eligible for active collection (procede_a_cobrar)",
     )
     government_sector: Optional[str] = Field(
-        None, description="GOES flag — identifies government-sector employer"
+        default=None, description="GOES flag — identifies government-sector employer"
     )
-    ministry: Optional[str] = Field(None, description="Government ministry or institution name")
+    ministry: Optional[str] = Field(default=None, description="Government ministry or institution name")
     capital_collected: Optional[float] = Field(
-        None, description="Principal already collected (capitalcobrado)"
+        default=None, description="Principal already collected (capitalcobrado)"
     )
     total_payment_received: Optional[float] = Field(
-        None, description="Total payments received (montototalabonado)"
+        default=None, description="Total payments received (montototalabonado)"
     )
     mdsc_posted: Optional[float] = Field(
-        None, description="1 if MDSC debit authorization posted, 0 otherwise"
+        default=None, description="1 if MDSC debit authorization posted, 0 otherwise"
     )
 
 
