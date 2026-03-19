@@ -6,6 +6,7 @@ import pandas as pd
 
 from backend.python.kpis.strategic_modules import (
     build_compliance_dashboard,
+    build_next_steps_plan,
     build_pd_model,
     predict_kpis,
 )
@@ -253,6 +254,40 @@ class TestStrategicModules(unittest.TestCase):
 
         self.assertEqual(decomp["dscr"]["driver"], "Income coverage vs debt service")
         self.assertAlmostEqual(decomp["dscr"]["magnitude"], 0.1, places=2)
+
+    def test_next_steps_plan_includes_apr_breach_action(self):
+        compliance = {
+            "metrics": [
+                {
+                    "metric": "apr_pct_ann",
+                    "status": "breach",
+                    "variance": 5.4,
+                }
+            ]
+        }
+
+        plan = build_next_steps_plan(forecast={}, compliance=compliance)
+        metrics = [a["metric"] for a in plan["actions"]]
+
+        self.assertIn("apr_pct_ann", metrics)
+
+    def test_next_steps_plan_includes_dscr_no_data_action(self):
+        compliance = {
+            "metrics": [
+                {
+                    "metric": "dscr",
+                    "status": "no_data",
+                    "variance": None,
+                }
+            ]
+        }
+
+        plan = build_next_steps_plan(forecast={}, compliance=compliance)
+        dscr_actions = [a for a in plan["actions"] if a["metric"] == "dscr"]
+
+        self.assertEqual(len(dscr_actions), 1)
+        self.assertEqual(dscr_actions[0]["source"], "compliance")
+        self.assertIn("DSCR data unavailable", dscr_actions[0]["action"])
 
 
 if __name__ == "__main__":

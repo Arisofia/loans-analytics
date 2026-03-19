@@ -818,6 +818,13 @@ _IMPACT_MAP = {
     "npl_180_pct":             ("medium", "medium", "Risk / Finance",     "Review NPL provisioning; confirm write-off criteria and recovery pipeline status."),
     "rotation_x":              ("medium", "medium", "Operations",         "Reduce average term by 5–10 days on new originations. Prioritise faster-cycling segments."),
     "ce_6m_pct":               ("high",   "medium", "Collections",        "Audit 6M collection shortfall by KAM and debtor. Escalate top-5 lagging accounts."),
+    "apr_pct_ann":             ("medium", "low",    "Pricing",            "Recalibrate APR corridor by segment/channel. Review floor exceptions and competitiveness trade-offs."),
+    "dscr":                    ("high",   "medium", "Finance / Risk",     "Improve debt-service coverage by tightening affordability policy and restructuring weak cash-flow profiles."),
+}
+
+_NO_DATA_ACTION_MAP = {
+    "apr_pct_ann": ("medium", "low", "Pricing", "APR data unavailable. Complete APR field mapping in loan tape and backfill historical values for policy monitoring."),
+    "dscr":        ("high",   "medium", "Finance / Risk", "DSCR data unavailable. Integrate NOI and debt service fields from borrower financials to enable covenant monitoring."),
 }
 
 def build_next_steps_plan(
@@ -865,6 +872,18 @@ def build_next_steps_plan(
                 "metric":   row["metric"],
                 "variance": row.get("variance"),
                 "_sort_key": (0 if impact == "high" else 1, row.get("variance", 0)),
+            })
+        elif row["status"] == "no_data" and row.get("metric") in _NO_DATA_ACTION_MAP:
+            impact, effort, area, action_text = _NO_DATA_ACTION_MAP[row["metric"]]
+            actions.append({
+                "area":     area,
+                "action":   action_text,
+                "impact":   impact,
+                "effort":   effort,
+                "source":   "compliance",
+                "metric":   row["metric"],
+                "variance": None,
+                "_sort_key": (0 if impact == "high" else 1, 0),
             })
 
     # ── Source 2: Forecast signals (deterioration) ────────────────────
