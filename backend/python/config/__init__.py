@@ -203,6 +203,7 @@ class Settings(BaseSettings):
     kpis: KPISettings = Field(default_factory=KPISettings)
     api: ApiSettings = Field(default_factory=ApiSettings)
     supabase_pool: SupabasePoolSettings = Field(default_factory=SupabasePoolSettings)
+    portfolio_targets_2026: dict[str, int] = Field(default_factory=dict)
     database_url: Optional[str] = Field(
         default=None, description="Supabase database URL for connection pooling"
     )
@@ -279,6 +280,13 @@ class Settings(BaseSettings):
                 current_analytics["dq_invalid_numeric_weight"],
             )
             updates["analytics"] = AnalyticsSettings(**current_analytics)
+
+        portfolio_targets = yaml_data.get("portfolio_targets_2026")
+        if isinstance(portfolio_targets, dict):
+            updates["portfolio_targets_2026"] = {
+                str(month): int(value)
+                for month, value in portfolio_targets.items()
+            }
 
         return app_settings.model_copy(update=updates) if updates else app_settings
 
