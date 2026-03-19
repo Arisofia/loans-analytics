@@ -52,7 +52,7 @@ from __future__ import annotations
 import logging
 import warnings
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -338,7 +338,7 @@ def detect_communities(
             "flag_review":   len(clients) >= 3 and len(debtors) >= 2,
         })
 
-    rows.sort(key=lambda x: x["size"], reverse=True)
+    rows.sort(key=lambda x: int(cast(int, x["size"])), reverse=True)
 
     return {
         "status":          "ok",
@@ -616,11 +616,15 @@ def calc_unit_economics(
     new_clients = int((all_first >= window_start).sum())
 
     # Marketing spend estimate
-    if marketing_spend_usd is None and amt_col:
-        total_disb = _num(loans_df[dates >= window_start], amt_col).sum()
-        marketing_spend_usd = float(total_disb * 0.01)  # ~1% cost-of-acquisition proxy
+    marketing_val = marketing_spend_usd
+    if marketing_val is None:
+        if amt_col:
+            total_disb = _num(loans_df[dates >= window_start], amt_col).sum()
+            marketing_val = float(total_disb * 0.01)  # ~1% cost-of-acquisition proxy
+        else:
+            marketing_val = 0.0
 
-    cac = marketing_spend_usd / max(new_clients, 1)
+    cac = marketing_val / max(new_clients, 1)
 
     # LTV: total payment revenue / total active clients × avg lifetime months
     ltv = 0.0
@@ -632,7 +636,7 @@ def calc_unit_economics(
         n_clients = int(loans_df[cust_col].nunique())
         monthly_rev_per_client = float(total_rev / max(n_clients, 1) / trailing_months)
         # Avg lifetime = total loan months per client
-        if disb_col in loans_df.columns:
+        if disb_col and disb_col in loans_df.columns:
             term_col = _col(loans_df, ["term", "Term"])
             if term_col:
                 avg_term_days = float(_num(loans_df, term_col).median())
@@ -652,11 +656,11 @@ def calc_unit_economics(
         "trailing_months":          trailing_months,
         "new_clients_acquired":     new_clients,
         "total_clients":            int(loans_df[cust_col].nunique()),
-        "marketing_spend_est_usd":  round(marketing_spend_usd, 2),
-        "cac_usd":                  round(cac, 2),
-        "ltv_usd":                  round(ltv, 2),
-        "ltv_cac_ratio":            round(ltv_cac, 2),
-        "avg_lifetime_months":      round(avg_lifetime_months, 1),
+        "marketing_spend_est_usd":  round(float(marketing_val), 2),
+        "cac_usd":                  round(float(cac), 2),
+        "ltv_usd":                  round(float(ltv), 2),
+        "ltv_cac_ratio":            round(float(ltv_cac), 2),
+        "avg_lifetime_months":      round(float(avg_lifetime_months), 1),
         # Benchmarks
         "benchmarks": _BENCHMARKS,
         "vs_benchmark": {
@@ -699,8 +703,6 @@ def viral_k_factor(
     """
     cust_col  = _col(loans_df, ["customer_id", "CodCliente"])
     ch_col    = _col(loans_df, ["sales_channel", "Sales Channel", "canal"])
-    ag_col    = _col(loans_df, ["sales_agent",   "Sales Agent",   "agente"])
-    disb_col  = _col(loans_df, ["disbursement_date"])
 
     result: dict[str, Any] = {
         "status": "ok",

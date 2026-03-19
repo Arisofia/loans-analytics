@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -93,14 +93,20 @@ def cohort_pancake_analysis(
     if not all([disb_col, loan_id, pay_date, pay_amt]):
         return {"status": "missing_columns"}
 
-    loans = loans_df[[loan_id, cust_col, disb_col]].copy() if cust_col else loans_df[[loan_id, disb_col]].copy()
-    loans["_cohort"] = pd.to_datetime(loans[disb_col], errors="coerce").dt.to_period("M")
+    # Ensure columns are strings for Mypy
+    disb_col_s = str(disb_col)
+    loan_id_s = str(loan_id)
+    pay_date_s = str(pay_date)
+    pay_amt_s = str(pay_amt)
 
-    pay = payments_df[[loan_id, pay_date, pay_amt]].copy()
-    pay["_pay_month"] = pd.to_datetime(pay[pay_date], errors="coerce").dt.to_period("M")
-    pay["_amt"] = _num(pay, pay_amt)
+    loans = loans_df[[loan_id_s, cust_col, disb_col_s]].copy() if cust_col else loans_df[[loan_id_s, disb_col_s]].copy()
+    loans["_cohort"] = pd.to_datetime(loans[disb_col_s], errors="coerce").dt.to_period("M")
 
-    merged = pay.merge(loans[[loan_id, "_cohort"]], on=loan_id, how="left").dropna(subset=["_cohort"])
+    pay = payments_df[[loan_id_s, pay_date_s, pay_amt_s]].copy()
+    pay["_pay_month"] = pd.to_datetime(pay[pay_date_s], errors="coerce").dt.to_period("M")
+    pay["_amt"] = _num(pay, pay_amt_s)
+
+    merged = pay.merge(loans[[loan_id_s, "_cohort"]], on=loan_id_s, how="left").dropna(subset=["_cohort"])
     merged["_age"] = (merged["_pay_month"] - merged["_cohort"]).apply(
         lambda x: x.n if hasattr(x, "n") else 0
     ).clip(lower=0, upper=max_age_months)
@@ -112,7 +118,7 @@ def cohort_pancake_analysis(
     # Client count per cohort
     if cust_col in loans_df.columns:
         coh_clients = loans_df.groupby(
-            pd.to_datetime(loans_df[disb_col], errors="coerce").dt.to_period("M")
+            pd.to_datetime(loans_df[disb_col_s], errors="coerce").dt.to_period("M")
         )[cust_col].nunique().rename("client_count")
     else:
         coh_clients = pd.Series(dtype=int)
@@ -144,27 +150,27 @@ def cohort_pancake_analysis(
     # LTV by cohort
     ltv_rows = [
         {
-            "cohort":       row["cohort"],
-            "ltv_usd":      round(row["total_rev_usd"] / max(row["client_count"], 1), 2),
-            "total_rev_usd": row["total_rev_usd"],
+            "cohort":       str(row["cohort"]),
+            "ltv_usd":      round(float(cast(float, row["total_rev_usd"])) / max(int(cast(int, row["client_count"])), 1), 2),
+            "total_rev_usd": float(cast(float, row["total_rev_usd"])),
         }
-        for row in cohort_rows if row["client_count"] > 0
+        for row in cohort_rows if int(cast(int, row["client_count"])) > 0
     ]
 
     # Pancake summary: first vs most recent non-zero cohort
-    non_zero = [r for r in cohort_rows if r["total_rev_usd"] > 0]
+    non_zero = [r for r in cohort_rows if float(cast(float, r["total_rev_usd"])) > 0]
     pancake_summary = {}
     if len(non_zero) >= 2:
-        oldest_rev = non_zero[0]["total_rev_usd"]
-        newest_rev = non_zero[-1]["total_rev_usd"]
+        oldest_rev = float(cast(float, non_zero[0]["total_rev_usd"]))
+        newest_rev = float(cast(float, non_zero[-1]["total_rev_usd"]))
         pancake_summary = {
-            "oldest_cohort":      non_zero[0]["cohort"],
+            "oldest_cohort":      str(non_zero[0]["cohort"]),
             "oldest_rev_usd":     oldest_rev,
-            "newest_cohort":      non_zero[-1]["cohort"],
+            "newest_cohort":      str(non_zero[-1]["cohort"]),
             "newest_rev_usd":     newest_rev,
-            "growth_factor":      round(newest_rev / max(oldest_rev, 1), 2),
+            "growth_factor":      round(newest_rev / max(oldest_rev, 1.0), 2),
             "total_cohorts":      len(non_zero),
-            "stacked_rev_total":  round(sum(r["total_rev_usd"] for r in non_zero), 2),
+            "stacked_rev_total":  round(sum(float(cast(float, r["total_rev_usd"])) for r in non_zero), 2),
         }
 
     return {
@@ -457,7 +463,7 @@ def collateral_coverage(
                 .rename(columns={col_orig: "coll_orig", col_curr: "coll_curr"}))
 
     df = loans_df[[loan_id] + [c for c in [bal_col, cat_col] if c]].copy()
-    df["_bal"] = _num(df, bal_col)
+    df["_bal"] = _num(df, str(bal_col))
     df = df.merge(coll_agg, on=loan_id, how="left").fillna(0)
     df["ltc_ratio"]     = df["_bal"] / df["coll_curr"].replace(0, np.nan)
     df["haircut_pct"]   = (1 - df["coll_curr"] / df["coll_orig"].replace(0, np.nan)) * 100
@@ -481,7 +487,8 @@ def collateral_coverage(
     # By category
     by_cat: list[dict] = []
     if cat_col and cat_col in df.columns:
-        for cat, grp in df.groupby(cat_col, dropna=False):
+        cat_col_s = str(cat_col)
+        for cat, grp in df.groupby(cat_col_s, dropna=False):
             by_cat.append({
                 "category":          str(cat),
                 "median_ltc_ratio":  round(float(grp["ltc_ratio"].median()), 3),
@@ -489,7 +496,7 @@ def collateral_coverage(
                 "loan_count":        int(len(grp)),
                 "total_balance_usd": round(float(grp["_bal"].sum()), 2),
             })
-        by_cat.sort(key=lambda x: x["median_ltc_ratio"], reverse=True)
+        by_cat.sort(key=lambda x: float(x["median_ltc_ratio"]), reverse=True)
 
     return {
         "status":       "ok",
@@ -593,7 +600,7 @@ def equifax_vs_dpd_scatter(
     alpha_clients = [s for s in scatter_data if s["alpha_flag"]]
     risk_clients  = [s for s in scatter_data if s["risk_flag"]]
 
-    alpha_balance = sum(s["total_balance_usd"] for s in alpha_clients)
+    alpha_balance = sum(float(cast(float, s["total_balance_usd"])) for s in alpha_clients)
 
     return {
         "status": "ok",
@@ -609,8 +616,8 @@ def equifax_vs_dpd_scatter(
                 + " predictive power."
             ),
         },
-        "alpha_clients":  sorted(alpha_clients, key=lambda x: x["residual"])[:30],
-        "risk_clients":   sorted(risk_clients,  key=lambda x: x["residual"], reverse=True)[:30],
+        "alpha_clients":  sorted(alpha_clients, key=lambda x: float(cast(float, x["residual"])))[:30],
+        "risk_clients":   sorted(risk_clients,  key=lambda x: float(cast(float, x["residual"])), reverse=True)[:30],
         "summary": {
             "n_total":           len(scatter_data),
             "n_alpha":           len(alpha_clients),
@@ -703,10 +710,10 @@ def credit_line_category_kpis(
             "revenue_per_loan":   round(float(grp["_rev"].mean()), 2),
         })
 
-    rows.sort(key=lambda x: x["aum_usd"], reverse=True)
+    rows.sort(key=lambda x: float(cast(float, x["aum_usd"])), reverse=True)
 
     # Strategy doc benchmarks by bucket
-    _STRATEGY_TARGETS = {
+    _STRATEGY_TARGETS: dict[str, dict[str, float]] = {
         ">$200K":    {"target_rotation": 4.9, "max_default": 1.8},
         "$150-200K": {"target_rotation": 5.1, "max_default": 2.5},
         "$100-150K": {"target_rotation": 5.4, "max_default": 3.1},
@@ -717,16 +724,26 @@ def credit_line_category_kpis(
         "< $10K":    {"target_rotation": 7.0, "max_default": 4.9},
     }
     for row in rows:
-        targets = _STRATEGY_TARGETS.get(row["category"], {})
-        row["target_rotation"] = targets.get("target_rotation")
-        row["rotation_status"] = (
-            "ok" if (row.get("rotation_x") or 0) >= (targets.get("target_rotation") or 0)
-            else "below_target"
-        ) if targets else None
-        row["default_status"] = (
-            "ok" if row["default_rate_pct"] <= (targets.get("max_default") or 99)
-            else "breach"
-        ) if targets else None
+        cat_s = str(row["category"])
+        targets = _STRATEGY_TARGETS.get(cat_s, {})
+        if targets:
+            tgt_rot = targets.get("target_rotation", 0.0)
+            max_def = targets.get("max_default", 99.0)
+            act_rot = row.get("rotation_x")
+            
+            row["target_rotation"] = tgt_rot
+            row["rotation_status"] = (
+                "ok" if act_rot is not None and float(cast(float, act_rot)) >= tgt_rot
+                else "below_target"
+            )
+            row["default_status"] = (
+                "ok" if float(cast(float, row["default_rate_pct"])) <= max_def
+                else "breach"
+            )
+        else:
+            row["target_rotation"] = None
+            row["rotation_status"] = None
+            row["default_status"] = None
 
     return {
         "status":    "ok",
