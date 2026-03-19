@@ -248,8 +248,11 @@ class IngestionPhase:
                     }
                 )
             else:
-                # Conservative default keeps records in-scope while preserving fail-fast checks downstream.
-                df["status"] = "active"
+                raise ValueError(
+                    "CRITICAL: Google Sheets data cannot be normalized to canonical schema; "
+                    "missing status source column (expected one of: status, mdscPosteado, "
+                    "mdscposteado, infoclientefinal)."
+                )
 
         missing = [col for col in ("loan_id", "amount", "status", "borrower_id") if col not in df.columns]
         if missing:
