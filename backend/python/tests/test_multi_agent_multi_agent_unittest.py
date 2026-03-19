@@ -8,9 +8,9 @@ import unittest
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-from .guardrails import Guardrails
-from .orchestrator import MultiAgentOrchestrator
-from .protocol import (
+from backend.python.multi_agent.guardrails import Guardrails
+from backend.python.multi_agent.orchestrator import MultiAgentOrchestrator
+from backend.python.multi_agent.protocol import (
     AgentRequest,
     AgentResponse,
     AgentRole,
@@ -20,7 +20,7 @@ from .protocol import (
     ScenarioStep,
     Tool,
 )
-from .tracing import AgentTracer
+from backend.python.multi_agent.tracing import AgentTracer
 
 
 class TestProtocol(unittest.TestCase):

@@ -600,15 +600,16 @@ def build_lending_kpi_report(
     loans_df: pd.DataFrame,
     payments_df: pd.DataFrame,
     customer_df: pd.DataFrame | None = None,
+    schedule_df: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     cdr = cdr_by_cohort(loans_df)
     liq = liquidation_rate(loans_df, payments_df)
     ecl = lgd_ecl_by_segment(loans_df, customer_df)
     bs = balance_sheet_proxy(loans_df, payments_df)
     appr = approval_metrics(customer_df) if customer_df is not None else {"status": "no_customer_data"}
-    cure = cure_rate_by_period(payments_df, loans_df)
+    cure = cure_rate_by_period(payments_df)
     ptp = promise_to_pay_metrics(payments_df)
-    mype = mype_approval_batch(loans_df, payments_df, customer_df)
+    mype = mype_approval_batch(loans_df, payments_df)
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),

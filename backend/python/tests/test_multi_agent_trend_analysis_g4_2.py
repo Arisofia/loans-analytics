@@ -10,7 +10,7 @@ This module extends Phase G4.1 with advanced statistical methods.
 
 import unittest
 
-from .historical_context import (
+from backend.python.multi_agent.historical_context import (
     HistoricalContextProvider,
     TrendDirection,
     TrendStrength,

@@ -5,7 +5,6 @@ from typing import Any
 
 import pandas as pd
 
-from backend.python.financial_precision import safe_decimal_divide, safe_decimal_sum
 from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 
 
