@@ -307,7 +307,7 @@ class KPIEngineV2:
         for category, kpi_name, formula in self._iter_kpi_formulas():
             engine = engine_unique if kpi_name in unique_grain_kpis else engine_full
             try:
-                value = engine.calculate(formula)
+                value = engine.calculate(formula, strict_comparison_errors=True)
                 kpis[kpi_name] = value
                 self._record_calculation(
                     kpi_name,

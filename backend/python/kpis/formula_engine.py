@@ -15,6 +15,10 @@ from backend.python.logging_config import get_logger
 logger = get_logger(__name__)
 
 
+class KPIFormulaError(ValueError):
+    """Typed formula-evaluation error for fail-fast comparison KPI paths."""
+
+
 class KPIFormulaEngine:
     """Engine for parsing and executing KPI formulas on DataFrames."""
 
@@ -26,15 +30,34 @@ class KPIFormulaEngine:
         self._datetime_cache: Dict[str, pd.Series] = {}
         self._polars_enabled = os.getenv("KPI_ENGINE_USE_POLARS", "1") == "1"
 
-    def calculate(self, formula: str) -> Decimal:
-        """Parse and execute a KPI formula."""
+    def calculate(self, formula: str, *, strict_comparison_errors: bool = False) -> Decimal:
+        """Parse and execute a KPI formula.
+
+        Args:
+            formula: SQL-like KPI expression.
+            strict_comparison_errors: When True, division-by-zero and structural
+                errors in comparison formulas raise KPIFormulaError instead of
+                being converted to Decimal('0.0').
+        """
         formula = formula.strip()
 
-        if self._is_comparison_formula(formula):
-            return self._execute_comparison_formula(formula)
-        if self._is_arithmetic_formula(formula):
-            return self._execute_arithmetic_formula(formula)
-        return self._execute_simple_formula(formula)
+        try:
+            if self._is_comparison_formula(formula):
+                return self._execute_comparison_formula(
+                    formula,
+                    strict_errors=strict_comparison_errors,
+                )
+            if self._is_arithmetic_formula(formula):
+                return self._execute_arithmetic_formula(formula)
+            return self._execute_simple_formula(formula)
+        except KPIFormulaError:
+            if strict_comparison_errors:
+                raise
+            logger.debug("Comparison formula failed closed for '%s'", formula)
+            return Decimal("0.0")
+        except Exception as exc:
+            logger.debug("Formula evaluation failed closed for '%s': %s", formula, exc)
+            return Decimal("0.0")
 
     def _is_comparison_formula(self, formula: str) -> bool:
         """Check if formula compares two periods."""
@@ -44,7 +67,7 @@ class KPIFormulaEngine:
         """Check if formula contains arithmetic operations between aggregations."""
         return any(op in formula for op in [" + ", " - ", " * ", " / "]) and "(" in formula
 
-    def _execute_comparison_formula(self, formula: str) -> Decimal:
+    def _execute_comparison_formula(self, formula: str, *, strict_errors: bool = False) -> Decimal:
         """Execute formulas that compare period-level balance variables."""
         expression = formula
         context = self._build_comparison_context()
@@ -52,43 +75,39 @@ class KPIFormulaEngine:
         for variable, value in context.items():
             expression = re.sub(rf"\b{re.escape(variable)}\b", str(value), expression)
 
-        try:
-            return self._safe_eval_numeric_expression(expression)
-        except ZeroDivisionError:
-            logger.warning(
-                "Comparison KPI formula hit division by zero; returning 0.0. "
-                "formula=%s, context=%s",
-                formula,
-                context,
-            )
-            return Decimal("0.0")
+        return self._safe_eval_numeric_expression(expression, strict=strict_errors)
 
-    def _safe_eval_numeric_expression(self, expression: str) -> Decimal:
+    def _safe_eval_numeric_expression(self, expression: str, strict: bool = False) -> Decimal:
         """
         Safely evaluate a numeric expression.
 
         Supported operations: +, -, *, /, parentheses, unary +/-.
         """
         parsed = ast.parse(expression, mode="eval")
-        return self._eval_numeric_ast(parsed)
+        return self._eval_numeric_ast(parsed, strict=strict)
 
-    def _eval_numeric_ast(self, node: ast.AST) -> Decimal:
+    def _eval_numeric_ast(self, node: ast.AST, strict: bool = False) -> Decimal:
         """Recursively evaluate supported numeric AST nodes."""
         if isinstance(node, ast.Expression):
-            return self._eval_numeric_ast(node.body)
+            return self._eval_numeric_ast(node.body, strict=strict)
         if isinstance(node, ast.BinOp):
-            left = self._eval_numeric_ast(node.left)
-            right = self._eval_numeric_ast(node.right)
-            return self._eval_binary_operation(node.op, left, right)
+            left = self._eval_numeric_ast(node.left, strict=strict)
+            right = self._eval_numeric_ast(node.right, strict=strict)
+            return self._eval_binary_operation(node.op, left, right, strict=strict)
         if isinstance(node, ast.UnaryOp):
-            value = self._eval_numeric_ast(node.operand)
+            value = self._eval_numeric_ast(node.operand, strict=strict)
             return self._eval_unary_operation(node.op, value)
         if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
             return Decimal(str(node.value))
         raise ValueError(f"Unsupported expression node: {type(node).__name__}")
 
     @staticmethod
-    def _eval_binary_operation(operator: ast.AST, left: Decimal, right: Decimal) -> Decimal:
+    def _eval_binary_operation(
+        operator: ast.AST,
+        left: Decimal,
+        right: Decimal,
+        strict: bool = False,
+    ) -> Decimal:
         """Evaluate a supported binary operation."""
         if isinstance(operator, ast.Add):
             return left + right
@@ -98,7 +117,9 @@ class KPIFormulaEngine:
             return left * right
         if isinstance(operator, ast.Div):
             if right == 0:
-                raise ZeroDivisionError("Division by zero in KPI formula")
+                if strict:
+                    raise KPIFormulaError("Division by zero in KPI formula")
+                return Decimal("0.0")
             return left / right
         raise ValueError(f"Unsupported binary operator: {type(operator).__name__}")
 
