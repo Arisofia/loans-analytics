@@ -96,10 +96,14 @@ def detect_exposure_weighted_outliers(
         return {"alerts": [], "summary": {}, "total_flagged": 0, "total_flagged_balance_usd": 0.0}
 
     variables = {}
-    if apr_col:  variables["apr"]           = _num(loans_df, apr_col)
-    if dpd_col:  variables["dpd"]           = _num(loans_df, dpd_col)
-    if term_col: variables["term_days"]     = _num(loans_df, term_col)
-    if util_col: variables["line_util_pct"] = _num(loans_df, util_col)
+    if apr_col:
+        variables["apr"] = _num(loans_df, apr_col)
+    if dpd_col:
+        variables["dpd"] = _num(loans_df, dpd_col)
+    if term_col:
+        variables["term_days"] = _num(loans_df, term_col)
+    if util_col:
+        variables["line_util_pct"] = _num(loans_df, util_col)
 
     alerts:  list[dict] = []
     summary: dict[str, dict] = {}
@@ -486,6 +490,7 @@ def build_compliance_dashboard(
             "par30_pct":               "Head of Risk",
             "par90_pct":               "Head of Risk",
             "npl_180_pct":             "Head of Risk",
+            "utilization_pct":         "CFO",
             "utilization_pct_min":     "CFO",
             "apr_pct_min":             "Head of Pricing",
             "ce_6m_pct":               "Head of Collections",
@@ -592,6 +597,7 @@ def build_compliance_dashboard(
         "par30_pct":              ("par30_pct",               5.0,  True,  1.0),
         "par90_pct":              ("par90_pct",               2.0,  True,  0.5),
         "npl_180_pct":            ("npl_180_pct",             4.0,  True,  0.5),
+        "utilization_pct":        ("utilization_pct",         75.0, False, 5.0),
         "ce_6m_pct":              ("ce_6m_pct",               96.0, False, 2.0),
     }
 

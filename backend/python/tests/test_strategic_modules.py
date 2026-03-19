@@ -76,6 +76,16 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(ce_row["actual"], "NO_DATA")
         self.assertGreaterEqual(report["summary"].get("no_data", 0), 1)
 
+    def test_compliance_marks_utilization_as_no_data_when_line_missing(self):
+        loans = self._sample_loans()
+        payments = self._sample_payments()
+
+        report = build_compliance_dashboard(loans, payments)
+
+        util_row = next(row for row in report["metrics"] if row["metric"] == "utilization_pct")
+        self.assertEqual(util_row["status"], "no_data")
+        self.assertEqual(util_row["actual"], "NO_DATA")
+
     def test_pd_model_excludes_dpd_like_leakage_features(self):
         # Build enough rows for guarded CV thresholds.
         rows = []
