@@ -33,7 +33,7 @@ from backend.src.infrastructure.google_sheets_adapter import ControlMoraSheetsAd
 
 from .control_mora_adapter import ControlMoraAdapter
 from .loan_tape_loader import LoanTapeLoader
-from backend.python.kpis.dpd_calculator import DPDCalculator
+from backend.python.kpis.dpd_calculator import DPDCalculator, dpd_to_bucket
 
 logger = logging.getLogger(__name__)
 
@@ -279,22 +279,6 @@ class PipelineRouter:
             tail = ""
         return tail.strip("/") or ControlMoraSheetsAdapter.INTERMEDIA_TAB
 
-    @staticmethod
-    def _dpd_to_bucket(dpd: int) -> str:
-        if dpd <= 0:
-            return "current"
-        if dpd <= 30:
-            return "1-30"
-        if dpd <= 60:
-            return "31-60"
-        if dpd <= 90:
-            return "61-90"
-        if dpd <= 180:
-            return "91-180"
-        if dpd <= 360:
-            return "181-360"
-        return "360+"
-
     def _get_sheets_adapter(self) -> ControlMoraSheetsAdapter:
         if self._sheets_adapter is not None:
             return self._sheets_adapter
@@ -389,7 +373,7 @@ class PipelineRouter:
                 "principal_outstanding": principal_outstanding,
                 "total_overdue_amount": pd.Series(0.0, index=df.index),
                 "dpd": dpd,
-                "mora_bucket": dpd.map(self._dpd_to_bucket),
+                "mora_bucket": dpd.map(dpd_to_bucket),
                 "snapshot_month": snapshot_month.normalize(),
                 "product_type": df.get("AsesoriaDigital", empty),
                 "branch_code": resolved_kam,

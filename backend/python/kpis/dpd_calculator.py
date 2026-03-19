@@ -47,7 +47,7 @@ _DateLike = Union[str, pd.Timestamp]
 _PAYMENT_TOLERANCE: float = 1e-6
 
 # DPD → mora bucket mapping
-_DPD_BUCKETS: list[tuple[int, int, str]] = [
+DPD_BUCKETS: list[tuple[int, int, str]] = [
     (0, 0, "current"),
     (1, 30, "1-30"),
     (31, 60, "31-60"),
@@ -58,11 +58,11 @@ _DPD_BUCKETS: list[tuple[int, int, str]] = [
 ]
 
 
-def _dpd_to_bucket(dpd: Optional[int]) -> str:
+def dpd_to_bucket(dpd: Optional[int]) -> str:
     if dpd is None or pd.isna(dpd):
         return "unknown"
     dpd = int(dpd)
-    for lo, hi, label in _DPD_BUCKETS:
+    for lo, hi, label in DPD_BUCKETS:
         if lo <= dpd <= hi:
             return label
     return "360+"
@@ -161,7 +161,7 @@ class DPDCalculator:
             return pd.DataFrame()
 
         result = pd.concat(rows, ignore_index=True)
-        result["mora_bucket"] = result["dpd"].apply(_dpd_to_bucket)
+        result["mora_bucket"] = result["dpd"].apply(dpd_to_bucket)
         for t in self.par_thresholds:
             result[f"par_{t}"] = result["dpd"].fillna(0) >= t
 

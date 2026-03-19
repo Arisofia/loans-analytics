@@ -26,30 +26,10 @@ from decimal import Decimal
 
 import pandas as pd
 
+from backend.python.kpis.dpd_calculator import dpd_to_bucket
 from .storage import ZeroCostStorage
 
 logger = logging.getLogger(__name__)
-
-# DPD → mora bucket mapping (industry standard for microfinance)
-_DPD_BUCKETS: list[tuple[int, int, str]] = [
-    (0, 0, "current"),
-    (1, 30, "1-30"),
-    (31, 60, "31-60"),
-    (61, 90, "61-90"),
-    (91, 180, "91-180"),
-    (181, 360, "181-360"),
-    (361, 9999, "360+"),
-]
-
-
-def _dpd_to_bucket(dpd: float | int | None) -> str:
-    if dpd is None or pd.isna(dpd):
-        return "unknown"
-    dpd = int(dpd)
-    for lo, hi, label in _DPD_BUCKETS:
-        if lo <= dpd <= hi:
-            return label
-    return "360+"
 
 
 class MonthlySnapshotBuilder:
@@ -113,7 +93,7 @@ class MonthlySnapshotBuilder:
 
         # Mora bucket
         if "dpd" in df.columns:
-            df["mora_bucket"] = df["dpd"].apply(_dpd_to_bucket)
+            df["mora_bucket"] = df["dpd"].apply(dpd_to_bucket)
         elif "mora_bucket" not in df.columns:
             df["mora_bucket"] = "unknown"
 

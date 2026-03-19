@@ -6,7 +6,6 @@ Produces:
   exports/fact_schedule.{csv,parquet}
   exports/fact_real_payment.{csv,parquet}
   exports/fact_monthly_snapshot.{csv,parquet}
-  exports/crosswalk.{csv,parquet}
   exports/unmatched_records.csv
   exports/kpi_summary.{csv,parquet}
   exports/run_manifest.json
@@ -15,7 +14,7 @@ Usage
 -----
     exporter = Exporter("exports/")
     exporter.export_tables(tables)
-    exporter.export_unmatched(crosswalk)
+    exporter.export_unmatched(unmatched_df)
     exporter.write_manifest(meta)
 """
 
@@ -89,10 +88,6 @@ class Exporter:
         """Export a KPI dict as a single-row CSV/Parquet."""
         df = pd.DataFrame([kpis])
         self._write(df, name)
-
-    def export_crosswalk(self, crosswalk_df: pd.DataFrame) -> None:
-        """Export the loan_id ↔ operation_id crosswalk."""
-        self._write(crosswalk_df, "crosswalk")
 
     def export_unmatched(self, unmatched_df: pd.DataFrame) -> None:
         """Export unmatched records to CSV only (reason_code populated)."""
