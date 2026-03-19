@@ -855,14 +855,24 @@ def build_next_steps_plan(
     }
     """
     actions: list[dict] = []
+    variance_decomp = compliance.get("variance_decomposition", {})
 
     # ── Source 1: Compliance breaches ──────────────────────────────────
     for row in compliance.get("metrics", []):
+        metric_name = row.get("metric")
+        vd = variance_decomp.get(metric_name, {}) if isinstance(variance_decomp, dict) else {}
+        vd_driver = vd.get("driver") if isinstance(vd, dict) else None
+        vd_expl = vd.get("explanation") if isinstance(vd, dict) else None
+
         if row["status"] in ("breach", "warning"):
             meta = _IMPACT_MAP.get(row["metric"])
             if not meta:
                 continue
             impact, effort, area, action_text = meta
+            if vd_driver:
+                action_text = f"{action_text} Driver: {vd_driver}."
+            elif vd_expl:
+                action_text = f"{action_text} Context: {vd_expl}"
             actions.append({
                 "area":     area,
                 "action":   action_text,
@@ -875,6 +885,10 @@ def build_next_steps_plan(
             })
         elif row["status"] == "no_data" and row.get("metric") in _NO_DATA_ACTION_MAP:
             impact, effort, area, action_text = _NO_DATA_ACTION_MAP[row["metric"]]
+            if vd_driver:
+                action_text = f"{action_text} Driver: {vd_driver}."
+            elif vd_expl:
+                action_text = f"{action_text} Context: {vd_expl}"
             actions.append({
                 "area":     area,
                 "action":   action_text,

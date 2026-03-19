@@ -263,13 +263,20 @@ class TestStrategicModules(unittest.TestCase):
                     "status": "breach",
                     "variance": 5.4,
                 }
-            ]
+            ],
+            "variance_decomposition": {
+                "apr_pct_ann": {
+                    "driver": "Pricing above target ceiling",
+                    "explanation": "Weighted APR exceeds pricing corridor",
+                }
+            },
         }
 
         plan = build_next_steps_plan(forecast={}, compliance=compliance)
-        metrics = [a["metric"] for a in plan["actions"]]
+        apr_actions = [a for a in plan["actions"] if a["metric"] == "apr_pct_ann"]
 
-        self.assertIn("apr_pct_ann", metrics)
+        self.assertEqual(len(apr_actions), 1)
+        self.assertIn("Pricing above target ceiling", apr_actions[0]["action"])
 
     def test_next_steps_plan_includes_dscr_no_data_action(self):
         compliance = {
@@ -279,7 +286,13 @@ class TestStrategicModules(unittest.TestCase):
                     "status": "no_data",
                     "variance": None,
                 }
-            ]
+            ],
+            "variance_decomposition": {
+                "dscr": {
+                    "driver": "DSCR inputs unavailable",
+                    "explanation": "NOI/debt_service fields missing",
+                }
+            },
         }
 
         plan = build_next_steps_plan(forecast={}, compliance=compliance)
@@ -288,6 +301,7 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(len(dscr_actions), 1)
         self.assertEqual(dscr_actions[0]["source"], "compliance")
         self.assertIn("DSCR data unavailable", dscr_actions[0]["action"])
+        self.assertIn("DSCR inputs unavailable", dscr_actions[0]["action"])
 
 
 if __name__ == "__main__":
