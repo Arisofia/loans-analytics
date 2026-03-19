@@ -71,7 +71,7 @@ azure-mgmt-core==1.6.0
     # via azure-mgmt-portal
 azure-mgmt-portal==1.0.0
     # via -r requirements.txt
-azure-monitor-opentelemetry-exporter==1.0.0b48
+azure-monitor-opentelemetry-exporter==1.0.0b49
     # via -r requirements.txt
 azure-storage-blob==12.28.0
     # via -r requirements.txt
