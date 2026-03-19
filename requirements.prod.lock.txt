@@ -817,7 +817,7 @@ uvicorn==0.42.0
     #   prefect
 watchdog==6.0.0
     # via streamlit
-websockets==15.0.1
+websockets==16.0
     # via
     #   -r requirements.txt
     #   google-genai
