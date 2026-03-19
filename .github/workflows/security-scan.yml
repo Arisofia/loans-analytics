@@ -200,3 +200,48 @@ jobs:
             bandit-report.json
             bandit-results.sarif
           retention-days: 30
+
+  secret-scanning:
+    name: Secret Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.7
+        with:
+          fetch-depth: 0 # Full history for gitleaks to scan all commits
+
+      - name: Run Gitleaks scan
+        id: gitleaks
+        uses: gitleaks/gitleaks-action@4c2a3d0d72c78f89e1ed29d46c96eaa8c5c19dc4 # v2.4.3
+        with:
+          config: .gitleaks.toml
+          # Scan commits on main, develop, and all PR branches
+          # By default scans between current commit and main
+          fail: true
+          verbose: false
+
+      - name: Output Gitleaks results
+        id: save_results
+        if: always()
+        run: |
+          echo "=== Gitleaks Scan Results ==="
+          if [ ${{ steps.gitleaks.outcome }} = "success" ]; then
+            echo "✅ No secrets detected"
+          else
+            echo "❌ Secrets detected - see action logs for details"
+            exit 1
+          fi
+
+      - name: Upload Gitleaks report
+        if: always()
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # actions/upload-artifact@v4.3.6
+        with:
+          name: gitleaks-report
+          path: |
+            gitleaks-report.json
+            gitleaks-report.sarif
+          retention-days: 30
+          if-no-files-found: ignore
