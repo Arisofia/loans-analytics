@@ -141,6 +141,10 @@ def run(args: argparse.Namespace) -> None:
 
     # 3) KPIs by KAM (branch_code used as KAM code in INTERMEDIA mapping)
     if "branch_code" in snapshot_current.columns:
+        snapshot_current = snapshot_current.copy()
+        snapshot_current["branch_code"] = (
+            snapshot_current["branch_code"].astype(str).str.strip().replace({"": "Sin KAM", "nan": "Sin KAM"})
+        )
         by_kam = (
             snapshot_current.groupby("branch_code", dropna=False, as_index=False)
             .agg(

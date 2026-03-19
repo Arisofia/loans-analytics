@@ -254,6 +254,97 @@ class CalculationPhase:
             return numeric_cols
         return ["amount"] if "amount" in df_ts.columns else []
 
+    @staticmethod
+    def _build_client_tpv_timeseries(df: pd.DataFrame) -> pd.DataFrame:
+        """Build monthly TPV per client for recurrent TPV analysis."""
+        empty = pd.DataFrame(columns=["period", "client_id", "tpv"])
+        if df.empty:
+            return empty
+
+        client_col = next((col for col in ("client_id", "borrower_id") if col in df.columns), None)
+        date_col = next(
+            (col for col in ("origination_date", "FechaDesembolso") if col in df.columns), None
+        )
+        amount_col = next((col for col in ("amount", "MontoDesembolsado") if col in df.columns), None)
+
+        if not client_col or not date_col or not amount_col:
+            return empty
+
+        work = df[[client_col, date_col, amount_col]].copy()
+        work["_date"] = pd.to_datetime(work[date_col], errors="coerce")
+        work = work.dropna(subset=["_date"])
+        if work.empty:
+            return empty
+
+        work["period"] = work["_date"].dt.to_period("M").astype(str)
+        work["tpv"] = pd.to_numeric(work[amount_col], errors="coerce").fillna(0.0)
+        work = work.rename(columns={client_col: "client_id"})
+
+        result = work.groupby(["period", "client_id"], as_index=False)["tpv"].sum()
+        return result[["period", "client_id", "tpv"]]
+
+    @staticmethod
+    def _calculate_recurrent_tpv(timeseries: pd.DataFrame) -> Dict[str, Any]:
+        """Classify period TPV into new, recurrent and recovered cohorts."""
+        if timeseries.empty or "period" not in timeseries.columns:
+            return {}
+
+        periods = sorted(timeseries["period"].dropna().unique().tolist())
+        if not periods:
+            return {}
+
+        by_period: Dict[str, Dict[str, Any]] = {}
+        ever_seen: set[str] = set()
+        prev_active: set[str] = set()
+
+        for period in periods:
+            period_df = timeseries[timeseries["period"] == period].copy()
+            if period_df.empty:
+                continue
+
+            period_df["tpv"] = pd.to_numeric(period_df["tpv"], errors="coerce").fillna(0.0)
+            current_clients = set(period_df["client_id"].dropna().astype(str).unique().tolist())
+
+            new_clients = current_clients - ever_seen
+            recurrent_clients = current_clients & prev_active
+            recovered_clients = (current_clients - prev_active) - new_clients
+
+            tpv_by_client = period_df.groupby("client_id", dropna=False)["tpv"].sum().to_dict()
+            tpv_new = round(sum(float(tpv_by_client.get(client, 0.0)) for client in new_clients), 2)
+            tpv_recurrent = round(
+                sum(float(tpv_by_client.get(client, 0.0)) for client in recurrent_clients),
+                2,
+            )
+            tpv_recovered = round(
+                sum(float(tpv_by_client.get(client, 0.0)) for client in recovered_clients),
+                2,
+            )
+            tpv_total = round(float(period_df["tpv"].sum()), 2)
+
+            by_period[period] = {
+                "tpv_total": tpv_total,
+                "tpv_new": tpv_new,
+                "tpv_recurrent": tpv_recurrent,
+                "tpv_recovered": tpv_recovered,
+                "active_clients": len(current_clients),
+                "new_clients": len(new_clients),
+                "recurrent_clients": len(recurrent_clients),
+                "recovered_clients": len(recovered_clients),
+            }
+
+            ever_seen |= current_clients
+            prev_active = current_clients
+
+        if not by_period:
+            return {}
+
+        latest_period = sorted(by_period.keys())[-1]
+        return {
+            "by_period": by_period,
+            "latest_period": latest_period,
+            "latest": by_period[latest_period],
+        }
+
     def _rollup_sum(
         self, df_ts: pd.DataFrame, date_col: str, numeric_cols: List[str], period: str, limit: int
     ) -> List[Dict[str, Any]]:

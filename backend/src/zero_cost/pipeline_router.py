@@ -319,6 +319,19 @@ class PipelineRouter:
         df = pd.DataFrame(records)
 
         empty = pd.Series(index=df.index, dtype="object")
+
+        def _first_non_empty(frame: pd.DataFrame, candidates: list[str]) -> pd.Series:
+            result = pd.Series(index=frame.index, dtype="object")
+            for col in candidates:
+                if col not in frame.columns:
+                    continue
+                candidate = frame[col].astype(str).str.strip()
+                candidate = candidate.mask(
+                    candidate.str.lower().isin({"", "nan", "none", "null"})
+                )
+                result = result.fillna(candidate)
+            return result
+
         loan_id_series = (
             df.get("NumeroInterno", empty)
             if "NumeroInterno" in df.columns
@@ -335,6 +348,35 @@ class PipelineRouter:
         dpd = ((snapshot_month.normalize() - due_date).dt.days.clip(lower=0)).fillna(0)
         dpd = dpd.where(disbursement_date.notna() & (disbursement_date <= snapshot_month), 0).astype(int)
 
+        # KAM resolution from INTERMEDIA first, then fallback from DESEMBOLSOS (CJ/CL).
+        kam_hunter = _first_non_empty(df, ["Cod_Kam_hunter", "CJ"])
+        kam_farmer = _first_non_empty(df, ["Cod_Kam_farmer", "CL"])
+        resolved_kam = kam_hunter.fillna(kam_farmer)
+
+        try:
+            desembolsos_df = pd.DataFrame(adapter.fetch_desembolsos_raw())
+        except Exception as exc:
+            logger.warning("DESEMBOLSOS fallback unavailable for KAM enrichment: %s", exc)
+            desembolsos_df = pd.DataFrame()
+
+        if not desembolsos_df.empty:
+            des_kam_hunter = _first_non_empty(desembolsos_df, ["Cod_Kam_hunter", "CJ"])
+            des_kam_farmer = _first_non_empty(desembolsos_df, ["Cod_Kam_farmer", "CL"])
+            des_kam = des_kam_hunter.fillna(des_kam_farmer)
+
+            des_client = _first_non_empty(desembolsos_df, ["CodCliente"]).astype(str)
+            des_numero = _first_non_empty(desembolsos_df, ["NumeroDesembolso", "NumeroInterno"]).astype(str)
+
+            map_by_client = pd.Series(des_kam.values, index=des_client).dropna()
+            map_by_numero = pd.Series(des_kam.values, index=des_numero).dropna()
+
+            current_numero = df.get("NumeroDesembolso", empty).astype(str).str.strip()
+            current_client = df.get("CodCliente", empty).astype(str).str.strip()
+            fallback_numero = current_numero.map(map_by_numero)
+            fallback_client = current_client.map(map_by_client)
+
+            resolved_kam = resolved_kam.fillna(fallback_numero).fillna(fallback_client)
+
         dim_loan = pd.DataFrame(
             {
                 "loan_id": loan_id_series.astype(str),
@@ -349,7 +391,7 @@ class PipelineRouter:
                 "mora_bucket": dpd.map(self._dpd_to_bucket),
                 "snapshot_month": snapshot_month.normalize(),
                 "product_type": df.get("AsesoriaDigital", empty),
-                "branch_code": df.get("Cod_Kam_hunter", empty),
+                "branch_code": resolved_kam,
             }
         )
 

@@ -128,6 +128,7 @@ DEFAULT_KPI_METADATA = {
         "formula": "SUM(principal_balance WHERE dpd >= 60) / SUM(principal_balance) * 100",
         "definition": "Portfolio at Risk with more than 60 days past due.",
         "implications": "Rising PAR60 is an early warning for migration into severe delinquency buckets.",
+        "thresholds": {"warning": 2.0, "critical": 4.0},
     },
     "DPD_1_30": {
         "formula": "SUM(principal_balance WHERE 0 < dpd <= 30) / SUM(principal_balance) * 100",
@@ -153,6 +154,8 @@ DEFAULT_KPI_METADATA = {
         "formula": "SUM(collected_amount) / SUM(scheduled_amount) * 100",
         "definition": "Collection efficiency against scheduled amounts.",
         "implications": "Lower collection rate reduces cash conversion and may indicate process weaknesses.",
+        "thresholds": {"warning": 85.0, "target": 95.0, "critical": 80.0},
+        "benchmark": 95.0,
     },
     "LOSS_RATE": {
         "formula": "SUM(principal_balance WHERE status = defaulted) / SUM(loan_amount) * 100",
@@ -193,6 +196,7 @@ DEFAULT_KPI_METADATA = {
         "formula": "COUNT(loans WHERE status = defaulted) / COUNT(loans) * 100",
         "definition": "Share of loans in default status.",
         "implications": "Rising default rate typically requires underwriting and collections adjustments.",
+        "thresholds": {"warning": 2.0, "critical": 5.0},
     },
     "COLLECTIONS_COVERAGE": {
         "formula": "SUM(last_payment_amount) / SUM(total_scheduled) * 100",
@@ -452,7 +456,13 @@ class KPIService:
         thresholds = catalog_metadata.get("thresholds")
         if not isinstance(thresholds, dict):
             thresholds = {}
+        if not thresholds:
+            default_thresholds = default_metadata.get("thresholds")
+            if isinstance(default_thresholds, dict):
+                thresholds = {str(key): float(value) for key, value in default_thresholds.items()}
         benchmark = catalog_metadata.get("benchmark")
+        if benchmark is None:
+            benchmark = default_metadata.get("benchmark")
         if benchmark is None and "target" in thresholds:
             benchmark = thresholds.get("target")
 
@@ -1598,12 +1608,21 @@ class KPIService:
         now = pd.Timestamp.now().normalize()
         origination = pd.to_datetime(df["origination_date"], errors="coerce").dt.tz_localize(None)
 
-        # Fail-fast if origination dates are missing (no imputation)
         if origination.isna().any():
-            missing_count = origination.isna().sum()
-            raise ValueError(
-                f"CRITICAL: {missing_count} loans missing 'origination_date'. Statistical imputation is forbidden."
+            missing_count = int(origination.isna().sum())
+            logger.warning(
+                "Vintage curves: dropping %d loans missing origination_date",
+                missing_count,
             )
+            keep_mask = origination.notna()
+            df = df.loc[keep_mask].copy()
+            origination = origination.loc[keep_mask]
+            if df.empty:
+                return VintageCurveResponse(
+                    generated_at=datetime.now(),
+                    curves={},
+                    portfolio_average_curve=[],
+                )
 
         df["origination"] = origination
         df["cohort"] = df["origination"].dt.to_period("M").astype(str)
@@ -1997,6 +2016,10 @@ class KPIService:
         ]
 
     def _build_roll_rate_bucket_summaries(self, df: pd.DataFrame) -> list[RollRateBucketSummary]:
+        if "loan_count" not in df.columns:
+            df = df.copy()
+            df["loan_count"] = 1
+
         # Pre-calculate counts and sums per from_bucket
         bucket_stats = df.groupby("from_bucket").agg(
             loan_count=("loan_count", "sum"), exposure_usd=("from_exposure_usd", "sum")
