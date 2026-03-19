@@ -91,3 +91,32 @@ def test_pipeline_dry_run(mock_pipeline_deps, tmp_path):
     assert "ingestion" in results["phases"]
     assert "transformation" not in results["phases"]
     mock_pipeline_deps["transformation"].return_value.execute.assert_not_called()
+
+
+def test_pipeline_execute_fails_fast_when_explicit_input_missing(mock_pipeline_deps, tmp_path):
+    pipeline = UnifiedPipeline(base_log_dir=tmp_path)
+
+    with pytest.raises(FileNotFoundError, match="Input file not found"):
+        pipeline.execute(input_path=tmp_path / "missing.csv", mode="full")
+
+
+def test_pipeline_uses_deterministic_hash_for_config_only_runs(mock_pipeline_deps, tmp_path):
+    mock_pipeline_deps["ingestion"].return_value.execute.return_value = {
+        "status": "success",
+        "output_path": "raw.csv",
+    }
+    mock_pipeline_deps["transformation"].return_value.execute.return_value = {
+        "status": "success",
+        "output_path": "clean.csv",
+    }
+    mock_pipeline_deps["calculation"].return_value.execute.return_value = {
+        "status": "success",
+        "kpis": {"par30": 5.0},
+    }
+    mock_pipeline_deps["output"].return_value.execute.return_value = {"status": "success"}
+
+    pipeline = UnifiedPipeline(base_log_dir=tmp_path)
+    first = pipeline.execute(mode="full")
+    second = pipeline.execute(mode="full")
+
+    assert first["run_id"] == second["run_id"]

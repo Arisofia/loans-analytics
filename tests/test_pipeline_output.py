@@ -199,3 +199,35 @@ def test_execute_omits_payload_keys_when_not_supplied(tmp_path):
     assert "time_series" not in result["exports"]
     assert "anomalies" not in result["exports"]
     assert "nsm_recurrent_tpv" not in result["exports"]
+
+
+def test_quality_score_is_fail_closed_without_kpi_engine():
+    output = OutputPhase({"database": {"enabled": False}})
+
+    score = output._calculate_quality_score({"par_30": 4.2}, kpi_engine=None)
+
+    assert score == 0.0
+
+
+def test_check_sla_is_fail_closed_without_kpi_engine():
+    output = OutputPhase({"database": {"enabled": False}})
+
+    assert output._check_sla({"par_30": 4.2}, kpi_engine=None) is False
+
+
+def test_quality_score_is_fail_closed_for_malformed_audit_trail():
+    output = OutputPhase({"database": {"enabled": False}})
+    kpi_engine = MagicMock()
+    kpi_engine.get_audit_trail.return_value = pd.DataFrame([{"unexpected": "column"}])
+
+    score = output._calculate_quality_score({"par_30": 4.2}, kpi_engine=kpi_engine)
+
+    assert score == 0.0
+
+
+def test_check_sla_is_fail_closed_for_malformed_audit_trail():
+    output = OutputPhase({"database": {"enabled": False}})
+    kpi_engine = MagicMock()
+    kpi_engine.get_audit_trail.return_value = pd.DataFrame([{"unexpected": "column"}])
+
+    assert output._check_sla({"par_30": 4.2}, kpi_engine=kpi_engine) is False

@@ -145,7 +145,7 @@ class IngestionPhase:
             for encoding in ("utf-8", "latin-1"):
                 try:
                     return value.decode(encoding)
-                except Exception:
+                except UnicodeDecodeError:
                     continue
             raise ValueError(
                 f"CRITICAL: decode failure for bytes value {repr(value)}. Aborting batch."
@@ -256,5 +256,7 @@ class IngestionPhase:
 
     def _calculate_hash(self, df: pd.DataFrame) -> str:
         """Calculate hash of DataFrame contents."""
-        data_str = df.to_json(orient="records", date_format="iso")
+        # Canonicalize column order so semantically identical frames hash identically.
+        canonical_df = df.reindex(sorted(df.columns), axis=1)
+        data_str = canonical_df.to_json(orient="records", date_format="iso")
         return hashlib.sha256(data_str.encode()).hexdigest()[:16]

@@ -13,9 +13,17 @@ from datetime import date, timedelta
 
 from backend.python.multi_agent.historical_context import (
     HistoricalContextProvider,
+    KpiProjection,
     TrendDirection,
     TrendStrength,
 )
+
+
+class EmptyHistoricalBackend:
+    """Backend test double that always returns empty historical series."""
+
+    def get_kpi_history(self, kpi_id: str, start_date: date, end_date: date):
+        return []
 
 
 class TestHistoricalContextProvider(unittest.TestCase):
@@ -438,6 +446,45 @@ class TestForecasting(unittest.TestCase):
         self.assertGreaterEqual(metrics["mae"], 0.0)
         self.assertGreaterEqual(metrics["rmse"], 0.0)
         self.assertGreaterEqual(metrics["mape"], 0.0)
+
+    def test_validate_forecast_empty_projections_raises(self):
+        """validate_forecast should fail fast when called with empty projections."""
+        with self.assertRaises(ValueError) as context:
+            self.provider.validate_forecast("default_rate", [])
+
+        self.assertIn("empty projections", str(context.exception))
+
+class TestHistoricalContextFailFast(unittest.TestCase):
+    """Fail-fast behavior for no-data scenarios in REAL mode."""
+
+    def setUp(self):
+        self.provider = HistoricalContextProvider(mode="REAL", backend=EmptyHistoricalBackend())
+
+    def test_standard_deviation_bands_without_history_raises(self):
+        """Standard deviation bands should raise when no historical data exists."""
+        with self.assertRaises(ValueError) as context:
+            self.provider.get_standard_deviation_bands("default_rate", window_days=30)
+
+        self.assertIn("No historical data available", str(context.exception))
+
+    def test_validate_forecast_without_actuals_raises(self):
+        """Forecast validation should raise when the backend has no actual values."""
+        projections = [
+            KpiProjection(
+                kpi_id="default_rate",
+                projection_date=date.today() - timedelta(days=1),
+                predicted_value=100.0,
+                lower_bound=95.0,
+                upper_bound=105.0,
+                confidence_level=0.95,
+                method="linear",
+            )
+        ]
+
+        with self.assertRaises(ValueError) as context:
+            self.provider.validate_forecast("default_rate", projections)
+
+        self.assertIn("No actual values available", str(context.exception))
 
 
 class TestBenchmarking(unittest.TestCase):

@@ -685,6 +685,29 @@ def test_rollup_sum_daily_includes_date_key():
         assert "payment_date" in record, f"Date key missing from daily record: {record}"
 
 
+def test_dimension_segment_kpis_are_sorted_deterministically():
+    """Segment dimension keys should be deterministic regardless of input row order."""
+    work = pd.DataFrame(
+        {
+            "company": ["Zeta", "Alpha"],
+            "outstanding_balance": [100.0, 200.0],
+            "dpd": [0.0, 45.0],
+            "status": ["active", "delinquent"],
+        }
+    )
+    phase = object.__new__(CalculationPhase)
+
+    result = phase._calculate_dimension_segment_kpis(
+        work,
+        dim="company",
+        balance_col="outstanding_balance",
+        dpd_col="dpd",
+        status_col="status",
+    )
+
+    assert list(result.keys()) == ["Alpha", "Zeta"]
+
+
 # ---------------------------------------------------------------------------
 # _calculate_derived_risk_kpis — npl_ratio vs npl_90_ratio divergence
 # ---------------------------------------------------------------------------

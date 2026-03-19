@@ -52,5 +52,5 @@ def sanitize_api_base(base: str) -> Optional[str]:
                 pass
 
         return safe
-    except Exception:
+    except (TypeError, ValueError, AttributeError):
         return None

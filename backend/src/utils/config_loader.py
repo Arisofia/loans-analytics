@@ -27,8 +27,18 @@ def load_config(config_path: str) -> Dict[str, Any]:
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
-    with open(config_path, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Configuration YAML malformed: {config_path}: {exc}") from exc
+
+    if config is None:
+        raise ValueError(f"Configuration YAML is empty: {config_path}")
+    if not isinstance(config, dict):
+        raise ValueError(f"Configuration YAML must be a mapping: {config_path}")
+    if not config:
+        raise ValueError(f"Configuration YAML contains no keys: {config_path}")
 
     # 1. Supabase credentials
     if "supabase" in config:

@@ -106,7 +106,6 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Dashboard image
-        continue-on-error: true
         uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56 # v5.4.0
         with:
           context: .
@@ -137,10 +136,10 @@ jobs:
           RENDER_API_KEY="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r '.RENDER_API_KEY // ""')"
           RENDER_SERVICE_ID="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r '.RENDER_SERVICE_ID // ""')"
 
-          # If Render secrets are not configured, skip this step gracefully.
+          # Render deployment must fail fast if required secrets are missing.
           if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
-            echo "ℹ️ Render secrets not configured (RENDER_API_KEY / RENDER_SERVICE_ID); skipping Render deployment."
-            exit 0
+            echo "❌ Render secrets not configured (RENDER_API_KEY / RENDER_SERVICE_ID)."
+            exit 1
           fi
 
           # Call Render deploy API and fail closed on transport or non-2xx errors.
@@ -186,8 +185,8 @@ jobs:
           RAILWAY_TOKEN="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r '.RAILWAY_TOKEN // ""')"
 
           if [ -z "$RAILWAY_TOKEN" ]; then
-            echo "ℹ️ Railway secret not configured (RAILWAY_TOKEN); skipping Railway deployment."
-            exit 0
+            echo "❌ Railway secret not configured (RAILWAY_TOKEN)."
+            exit 1
           fi
           railway up --service "${{ github.event.inputs.service || 'api' }}" \
                      --detach
@@ -217,8 +216,8 @@ jobs:
           FLY_API_TOKEN="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r '.FLY_API_TOKEN // ""')"
 
           if [ -z "$FLY_API_TOKEN" ]; then
-            echo "ℹ️ Fly secret not configured (FLY_API_TOKEN); skipping Fly.io deployment."
-            exit 0
+            echo "❌ Fly secret not configured (FLY_API_TOKEN)."
+            exit 1
           fi
           flyctl deploy --remote-only
 

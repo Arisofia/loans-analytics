@@ -2935,7 +2935,7 @@ class KPIService:
             if candidate is None or pd.isna(candidate):
                 return 0.0
             return float(candidate)
-        except Exception:
+        except (TypeError, ValueError, OverflowError):
             return 0.0
 
     @staticmethod
@@ -2945,7 +2945,7 @@ class KPIService:
             if value is None or pd.isna(value):
                 return default
             return int(float(value))
-        except Exception:
+        except (TypeError, ValueError, OverflowError):
             return default
 
     @staticmethod

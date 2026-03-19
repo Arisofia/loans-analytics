@@ -520,7 +520,7 @@ class HistoricalContextProvider:
 
     def get_standard_deviation_bands(
         self, kpi_id: str, window_days: int = 30, num_std: float = 2.0
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, float]:
         """
         Calculate standard deviation bands (Bollinger-style).
 
@@ -531,6 +531,9 @@ class HistoricalContextProvider:
 
         Returns:
             Dictionary with moving_average, upper_band, and lower_band
+
+        Raises:
+            ValueError: If no historical data is available for the requested window
         """
         end_date = date.today()
         start_date = end_date - timedelta(days=window_days)
@@ -538,7 +541,9 @@ class HistoricalContextProvider:
         history = self.get_kpi_history(kpi_id, start_date, end_date)
 
         if not history:
-            return {}
+            raise ValueError(
+                f"No historical data available for KPI '{kpi_id}' in the last {window_days} days"
+            )
 
         values = np.array([h.value for h in history])
         mean = np.mean(values)
@@ -1048,16 +1053,22 @@ class HistoricalContextProvider:
 
         Returns:
             Dictionary with accuracy metrics (MAE, RMSE, MAPE)
+
+        Raises:
+            ValueError: If projections are empty, there are no actuals for the projection range,
+                or no overlapping dates exist between projections and actuals
         """
         if not projections:
-            return {}
+            raise ValueError(f"Cannot validate forecast for KPI '{kpi_id}' with empty projections")
 
         start_date = projections[0].projection_date
         end_date = projections[-1].projection_date
 
         actuals = self.get_kpi_history(kpi_id, start_date, end_date)
         if not actuals:
-            return {}
+            raise ValueError(
+                f"No actual values available to validate KPI '{kpi_id}' between {start_date} and {end_date}"
+            )
 
         actual_map = {a.date: a.value for a in actuals}
         errors = []
@@ -1072,7 +1083,9 @@ class HistoricalContextProvider:
                     pct_errors.append(abs(error / actual))
 
         if not errors:
-            return {}
+            raise ValueError(
+                f"No overlapping dates between projections and actuals for KPI '{kpi_id}'"
+            )
 
         errors_np = np.array(errors)
         return {

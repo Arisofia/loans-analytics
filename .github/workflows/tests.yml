@@ -70,9 +70,9 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           if [ -z "$SUPABASE_URL" ]; then
-            echo "::notice title=Integration tests skipped::SUPABASE_URL not configured"
-            echo "Integration tests skipped: SUPABASE_URL secret is missing." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+            echo "::error title=Integration tests blocked::SUPABASE_URL not configured"
+            echo "Integration tests require SUPABASE_URL secret and cannot run in skip mode." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
           pytest tests/ -v -m "integration" --tb=short
 

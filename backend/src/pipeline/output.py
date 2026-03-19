@@ -968,8 +968,7 @@ class OutputPhase:
 
             # Validate expected columns exist
             if "status" not in audit_df.columns or "kpi_name" not in audit_df.columns:
-                logger.warning("Audit DataFrame missing required columns")
-                return []
+                raise ValueError("Audit DataFrame missing required columns: status, kpi_name")
 
             # Filter for failed status and extract KPI names
             failed_mask = audit_df["status"] == "failed"
@@ -978,7 +977,7 @@ class OutputPhase:
 
         except Exception as e:
             logger.error("Error extracting failed KPIs from audit trail: %s", e)
-            return []
+            raise RuntimeError(f"Could not extract failed KPI audit data: {e}") from e
 
     def _build_audit_metadata_payload(
         self,
@@ -1114,10 +1113,9 @@ class OutputPhase:
         - Data completeness
         - Error rate
 
-        Fallback behavior:
-        - Returns 0.0 if no kpi_results (no KPIs to calculate is considered failure)
-        - Returns 1.0 if kpi_engine is None but kpi_results exist (optimistic assumption:
-          results are present and valid when audit trail is unavailable for verification)
+            Fallback behavior:
+            - Returns 0.0 if no kpi_results (no KPIs to calculate is considered failure)
+            - Returns 0.0 if audit verification is unavailable or unusable (fail-closed)
 
         Returns:
             Quality score between 0.0 and 1.0
@@ -1136,11 +1134,11 @@ class OutputPhase:
                     successful = total - len(failed_kpis)
                     return round(successful / total, 2) if total > 0 else 0.0
             except Exception as e:
-                logger.debug("Could not calculate quality score from audit trail: %s", e)
+                logger.warning("Could not calculate quality score from audit trail: %s", e)
+                return 0.0
 
-        # Fallback: kpi_results exist but audit data unavailable - assume all successful
-        # This optimistic fallback treats "results exist but unverified" as valid
-        return 1.0
+        # Fail-closed: unverified results must not be treated as high-quality by default.
+        return 0.0
 
     def _check_sla(
         self, kpi_results: Dict[str, Any], kpi_engine: Optional["KPIEngineV2"] = None
@@ -1152,11 +1150,9 @@ class OutputPhase:
         - All critical KPIs were calculated successfully
         - No errors in the calculation process
 
-        Fallback behavior:
-        - Returns False if no kpi_results (no KPIs calculated is an SLA violation)
-        - Returns True if kpi_engine is None but kpi_results exist (optimistic assumption:
-          at this point we know results exist, so treat "unverified results" as SLA-compliant
-          since we cannot prove otherwise)
+            Fallback behavior:
+            - Returns False if no kpi_results (no KPIs calculated is an SLA violation)
+            - Returns False if audit verification is unavailable or unusable (fail-closed)
 
         Returns:
             True if SLA was met, False otherwise
@@ -1174,8 +1170,8 @@ class OutputPhase:
                     failed_kpis = self._get_failed_kpis_from_audit(audit_df)
                     return len(failed_kpis) == 0
             except Exception as e:
-                logger.debug("Could not check SLA from audit trail: %s", e)
+                logger.warning("Could not check SLA from audit trail: %s", e)
+                return False
 
-        # Fallback: results exist but audit data is missing/unusable
-        # Since kpi_results is non-empty (early return above), treat this as SLA-compliant
-        return True
+        # Fail-closed: results without verifiable audit data are not SLA-compliant.
+        return False

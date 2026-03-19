@@ -432,6 +432,31 @@ class TestCustomRules:
         # The malicious rule should NOT be in the applied rules list
         assert "malicious_rule" not in metrics["rule_names"]
 
+    def test_derived_field_rejected_when_referencing_pii_column(self, default_config):
+        """Derived expressions must not evaluate when they reference PII-like columns."""
+        df = pd.DataFrame(
+            {
+                "loan_id": ["L001"],
+                "name": ["Alice"],
+                "principal": [10000],
+            }
+        )
+        business_rules = {
+            "transformations": [
+                {
+                    "name": "pii_rule",
+                    "type": "derived_field",
+                    "target_column": "risk_feature",
+                    "expression": "principal + name",
+                }
+            ]
+        }
+        transformer = TransformationPhase(default_config, business_rules=business_rules)
+        df_result, metrics = transformer._apply_business_rules(df)
+
+        assert "risk_feature" not in df_result.columns
+        assert "pii_rule" not in metrics["rule_names"]
+
     def test_invalid_column_mapping_configuration(self, default_config):
         """Test handling of missing/invalid configuration parameters."""
         df = pd.DataFrame(

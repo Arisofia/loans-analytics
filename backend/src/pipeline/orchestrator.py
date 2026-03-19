@@ -137,10 +137,12 @@ class UnifiedPipeline:
         # run_signature = hash(data_hash + config_hash + code_version + mode)
         # so that any change in data, config, code version, or mode produces a new run.
         mode_token = mode.replace("-", "_")
-        if input_path and input_path.exists():
+        if input_path is not None:
+            if not input_path.exists():
+                raise FileNotFoundError(f"Input file not found: {input_path}")
             data_hash = self._calculate_input_hash(input_path)
         else:
-            data_hash = "nofile"
+            data_hash = self._calculate_ingestion_source_hash()
 
         config_hash = self._calculate_config_hash()
         code_version = self._get_code_version()
@@ -416,6 +418,20 @@ class UnifiedPipeline:
         except Exception as e:
             logger.error("Failed to hash pipeline config", exc_info=True)
             raise RuntimeError("Unable to hash pipeline configuration deterministically") from e
+
+    def _calculate_ingestion_source_hash(self) -> str:
+        """Calculate deterministic hash for non-file ingestion sources.
+
+        When no explicit input file is provided, idempotency remains deterministic by
+        hashing the ingestion configuration instead of using an opaque sentinel value.
+        """
+        try:
+            ingestion_config = self.config.ingestion if isinstance(self.config.ingestion, dict) else {}
+            canonical_ingestion = json.dumps(ingestion_config, sort_keys=True, default=str)
+            return hashlib.sha256(f"ingestion_config|{canonical_ingestion}".encode()).hexdigest()[:16]
+        except Exception as e:
+            logger.error("Failed to hash ingestion source configuration", exc_info=True)
+            raise RuntimeError("Unable to hash ingestion source deterministically") from e
 
     @staticmethod
     def _get_code_version() -> str:

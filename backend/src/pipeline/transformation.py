@@ -28,12 +28,13 @@ logger = get_logger(__name__)
 class TransformationPhase:
     """Phase 2: Data Transformation"""
 
-# Column names matching these patterns are treated as PII and blocked from df.eval expressions.
-_PII_COLUMN_RE = re.compile(
-    r"\b(name|nombre|apellido|surname|email|phone|telefono|celular|ssn|cedula|dni|"
-    r"passport|pasaporte|address|direccion|rfc|curp|nss|cuenta|account)\b",
-    re.IGNORECASE,
-)
+    # Column names matching these patterns are treated as PII and blocked from
+    # df.eval expressions.
+    _PII_COLUMN_RE = re.compile(
+        r"\b(name|nombre|apellido|surname|email|phone|telefono|celular|ssn|cedula|dni|"
+        r"passport|pasaporte|address|direccion|rfc|curp|nss|cuenta|account)\b",
+        re.IGNORECASE,
+    )
 
     # Default numeric columns for financial data
     NUMERIC_COLUMNS: Set[str] = {
@@ -1766,7 +1767,7 @@ _PII_COLUMN_RE = re.compile(
 
         # Block expressions that reference PII columns by name
         tokens = re.findall(r"[A-Za-z_][A-Za-z0-9_]*", expression)
-        pii_cols = [t for t in tokens if t in df.columns and _PII_COLUMN_RE.search(t)]
+        pii_cols = [t for t in tokens if t in df.columns and self._PII_COLUMN_RE.search(t)]
         if pii_cols:
             logger.warning(
                 "Derived field expression '%s' references potential PII column(s) %s — skipping",

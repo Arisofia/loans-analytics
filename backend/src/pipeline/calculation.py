@@ -437,7 +437,7 @@ class CalculationPhase:
         if not resolved_dim:
             return {}
 
-        for seg_val, grp in work.groupby(resolved_dim, sort=False):
+        for seg_val, grp in work.groupby(resolved_dim, sort=True):
             if seg_kpis := self._calculate_segment_group_kpis(
                 grp, balance_col, dpd_col, status_col
             ):

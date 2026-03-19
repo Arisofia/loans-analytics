@@ -15,6 +15,10 @@ def test_sanitize_invalid_netloc():
     assert sanitize_api_base("http:///nohost") is None
 
 
+def test_sanitize_invalid_input_type():
+    assert sanitize_api_base(None) is None
+
+
 def test_private_blocked_by_default(monkeypatch):
     # Point to an IP in private range - use string '10.0.0.1' to simulate
     assert sanitize_api_base("http://10.0.0.1") is None
