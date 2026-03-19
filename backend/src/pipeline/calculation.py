@@ -358,14 +358,9 @@ class CalculationPhase:
                 grouped = df_ts.groupby(df_ts[date_col].dt.to_period("M"))[numeric_cols].sum()
             return grouped.reset_index().to_dict("records")[:limit]
         except Exception as exc:
-            logger.warning(
-                "%s rollup failed for %s: %s",
-                period.capitalize(),
-                date_col,
-                exc,
-                exc_info=True,
-            )
-            return []
+            raise ValueError(
+                f"CRITICAL: {period.capitalize()} rollup failed for column '{date_col}': {exc}"
+            ) from exc
 
     def _detect_anomalies(self, kpi_results: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Detect anomalies in KPI values."""
@@ -765,8 +760,9 @@ class CalculationPhase:
             metrics["cluster_centroids"] = centroids
 
         except Exception as exc:
-            logger.error("Advanced clustering failed: %s", exc, exc_info=True)
-            metrics["error"] = str(exc)
+            raise ValueError(
+                f"CRITICAL: Advanced clustering pipeline failed: {exc}"
+            ) from exc
 
         return metrics
 
@@ -868,8 +864,7 @@ class CalculationPhase:
             metrics["umap_n_components"] = 2
             return X_embed
         except Exception as exc:
-            logger.warning("UMAP failed (%s); falling back to PCA output.", exc)
-            return X_pca
+            raise ValueError(f"CRITICAL: UMAP dimensionality reduction failed: {exc}") from exc
 
     @staticmethod
     def _apply_hdbscan(
@@ -904,9 +899,7 @@ class CalculationPhase:
             metrics["n_noise"] = int((labels == -1).sum())
             return labels
         except Exception as exc:
-            logger.warning("HDBSCAN failed (%s); falling back to single cluster.", exc)
-            metrics["hdbscan_error"] = str(exc)
-            return np.zeros(X_embed.shape[0], dtype=int)
+            raise ValueError(f"CRITICAL: HDBSCAN clustering failed: {exc}") from exc
 
     def _map_cohorts(
         self,

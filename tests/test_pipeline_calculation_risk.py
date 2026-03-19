@@ -840,3 +840,78 @@ def test_status_normalization_english_values():
 
     for (raw, expected), got in zip(cases, df["status"].tolist()):
         assert got == expected, f"'{raw}' mapped to '{got}', expected '{expected}'"
+
+
+# ---------------------------------------------------------------------------
+# Silent-handler hardening regression tests (Block 3b)
+# ---------------------------------------------------------------------------
+
+import types
+
+import backend.src.pipeline.calculation as calc_module
+
+
+class TestSilentHandlerHardening:
+    """Regression tests: previously-silent exception paths now raise CRITICAL errors."""
+
+    def test_rollup_sum_raises_on_nonexistent_date_column(self):
+        """_rollup_sum must raise CRITICAL ValueError if the date column does not exist."""
+        df = pd.DataFrame({"amount": [100.0, 200.0]})
+        phase = object.__new__(CalculationPhase)
+        with pytest.raises(ValueError, match="CRITICAL:"):
+            phase._rollup_sum(df, "nonexistent_date_col", ["amount"], "monthly", 12)
+
+    def test_rollup_sum_raises_on_non_datetime_column(self):
+        """_rollup_sum must raise CRITICAL ValueError when the date column is not datetime-like."""
+        df = pd.DataFrame(
+            {"txn_date": ["not-a-date", "also-not-a-date"], "amount": [100.0, 200.0]}
+        )
+        phase = object.__new__(CalculationPhase)
+        with pytest.raises(ValueError, match="CRITICAL:"):
+            phase._rollup_sum(df, "txn_date", ["amount"], "daily", 30)
+
+    def test_apply_umap_raises_when_umap_errors_while_available(self, monkeypatch):
+        """When UMAP is available but raises, _apply_umap must re-raise CRITICAL ValueError."""
+
+        class FakeUMAP:
+            def __init__(self, **kwargs):
+                raise RuntimeError("UMAP internal error")
+
+        fake_umap_module = types.SimpleNamespace(UMAP=FakeUMAP)
+        monkeypatch.setattr(calc_module, "_UMAP_AVAILABLE", True)
+        monkeypatch.setattr(calc_module, "umap", fake_umap_module, raising=False)
+
+        X_pca = np.zeros((20, 2))
+        metrics: dict = {}
+        with pytest.raises(ValueError, match="CRITICAL:.*UMAP"):
+            CalculationPhase._apply_umap(X_pca, metrics)
+
+    def test_apply_hdbscan_raises_when_hdbscan_errors_while_available(self, monkeypatch):
+        """When HDBSCAN is available but raises, _apply_hdbscan must re-raise CRITICAL ValueError."""
+
+        class FakeHDBSCAN:
+            def __init__(self, **kwargs):
+                raise RuntimeError("HDBSCAN internal error")
+
+        fake_hdbscan_module = types.SimpleNamespace(HDBSCAN=FakeHDBSCAN)
+        monkeypatch.setattr(calc_module, "_HDBSCAN_AVAILABLE", True)
+        monkeypatch.setattr(calc_module, "hdbscan_module", fake_hdbscan_module, raising=False)
+
+        X_embed = np.zeros((20, 2))
+        X_fallback = np.zeros((20, 2))
+        metrics: dict = {}
+        with pytest.raises(ValueError, match="CRITICAL:.*HDBSCAN"):
+            CalculationPhase._apply_hdbscan(X_embed, X_fallback, metrics)
+
+    def test_run_advanced_clustering_propagates_critical_on_inner_failure(self, monkeypatch):
+        """_run_advanced_clustering must propagate CRITICAL ValueError when a step fails."""
+        phase = object.__new__(CalculationPhase)
+
+        def _bad_build(df):
+            raise RuntimeError("simulated feature-matrix failure")
+
+        monkeypatch.setattr(phase, "_build_feature_matrix", _bad_build)
+
+        df = pd.DataFrame({"ltv_sintetico": [1.0, 2.0, 3.0] * 5})
+        with pytest.raises(ValueError, match="CRITICAL:"):
+            phase._run_advanced_clustering(df)
