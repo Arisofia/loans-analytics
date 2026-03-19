@@ -86,6 +86,35 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(util_row["status"], "no_data")
         self.assertEqual(util_row["actual"], "NO_DATA")
 
+    def test_compliance_apr_range_metric_ok_with_custom_guardrails(self):
+        loans = self._sample_loans()
+        payments = self._sample_payments()
+
+        report = build_compliance_dashboard(
+            loans,
+            payments,
+            guardrails={"apr_pct_min": 30.0, "apr_pct_max": 40.0},
+        )
+
+        apr_row = next(row for row in report["metrics"] if row["metric"] == "apr_pct_ann")
+        self.assertEqual(apr_row["status"], "ok")
+        self.assertEqual(apr_row["target"], "30.0-40.0")
+        self.assertEqual(apr_row["variance"], 0.0)
+
+    def test_compliance_apr_range_metric_breach_below_min(self):
+        loans = self._sample_loans()
+        payments = self._sample_payments()
+
+        report = build_compliance_dashboard(
+            loans,
+            payments,
+            guardrails={"apr_pct_min": 40.0, "apr_pct_max": 60.0},
+        )
+
+        apr_row = next(row for row in report["metrics"] if row["metric"] == "apr_pct_ann")
+        self.assertEqual(apr_row["status"], "breach")
+        self.assertLess(apr_row["variance"], 0)
+
     def test_pd_model_excludes_dpd_like_leakage_features(self):
         # Build enough rows for guarded CV thresholds.
         rows = []

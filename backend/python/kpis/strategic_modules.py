@@ -491,6 +491,7 @@ def build_compliance_dashboard(
             "par90_pct":               "Head of Risk",
             "npl_180_pct":             "Head of Risk",
             "utilization_pct":         "CFO",
+            "apr_pct_ann":             "Head of Pricing",
             "utilization_pct_min":     "CFO",
             "apr_pct_min":             "Head of Pricing",
             "ce_6m_pct":               "Head of Collections",
@@ -535,7 +536,7 @@ def build_compliance_dashboard(
     npl180= float(bal[dpd >= 180].sum() / total_bal * 100) if total_bal > 0 else 0.0
 
     # APR is stored as annual decimal in loan_data (e.g., 0.53 => 53%).
-    apr_ann = float((apr * bal).sum() / total_bal * 100) if total_bal > 0 else 0.0
+    apr_ann = float((apr * bal).sum() / total_bal * 100) if (total_bal > 0 and apr_col) else None
 
     # Utilization
     util_actual: float | None = None
@@ -577,7 +578,7 @@ def build_compliance_dashboard(
         "par90_pct":               round(par90, 1),
         "npl_180_pct":             round(npl180, 1),
         "utilization_pct":         round(util_actual, 1) if util_actual is not None else None,
-        "apr_pct_ann":             round(apr_ann, 1),
+        "apr_pct_ann":             round(apr_ann, 1) if apr_ann is not None else None,
         "ce_6m_pct":               round(ce_actual, 1) if ce_actual is not None else None,
     }
     data_sources = {
@@ -600,6 +601,9 @@ def build_compliance_dashboard(
         "utilization_pct":        ("utilization_pct",         75.0, False, 5.0),
         "ce_6m_pct":              ("ce_6m_pct",               96.0, False, 2.0),
     }
+
+    apr_min = float(guardrails.get("apr_pct_min", 36.0)) if guardrails else 36.0
+    apr_max = float(guardrails.get("apr_pct_max", 99.0)) if guardrails else 99.0
 
     rows = []
     counts = {"ok": 0, "warning": 0, "breach": 0, "no_data": 0}
@@ -641,6 +645,47 @@ def build_compliance_dashboard(
             "status":       stat,
             "lower_is_better": lower_is_better,
             "owner":        owners.get(metric, "—"),
+        })
+
+    # APR range check (min <= APR <= max) as explicit compliance metric.
+    apr_actual = actuals.get("apr_pct_ann")
+    if apr_actual is None:
+        counts["no_data"] += 1
+        rows.append({
+            "metric":       "apr_pct_ann",
+            "actual":       "NO_DATA",
+            "target":       f"{apr_min:.1f}-{apr_max:.1f}",
+            "variance":     None,
+            "variance_pct": None,
+            "status":       "no_data",
+            "lower_is_better": False,
+            "owner":        owners.get("apr_pct_ann", owners.get("apr_pct_min", "Head of Pricing")),
+        })
+    else:
+        apr_warn_band = 2.0
+        if apr_actual < apr_min:
+            apr_var = round(apr_actual - apr_min, 2)
+            apr_var_pct = round(apr_var / apr_min * 100, 1) if apr_min else None
+            apr_stat = "warning" if apr_actual >= (apr_min - apr_warn_band) else "breach"
+        elif apr_actual > apr_max:
+            apr_var = round(apr_actual - apr_max, 2)
+            apr_var_pct = round(apr_var / apr_max * 100, 1) if apr_max else None
+            apr_stat = "warning" if apr_actual <= (apr_max + apr_warn_band) else "breach"
+        else:
+            apr_var = 0.0
+            apr_var_pct = 0.0
+            apr_stat = "ok"
+
+        counts[apr_stat] += 1
+        rows.append({
+            "metric":       "apr_pct_ann",
+            "actual":       apr_actual,
+            "target":       f"{apr_min:.1f}-{apr_max:.1f}",
+            "variance":     apr_var,
+            "variance_pct": apr_var_pct,
+            "status":       apr_stat,
+            "lower_is_better": False,
+            "owner":        owners.get("apr_pct_ann", owners.get("apr_pct_min", "Head of Pricing")),
         })
 
     # ── Variance decomposition (qualitative drivers) ───────────────────
