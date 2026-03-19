@@ -671,14 +671,7 @@ class TransformationPhase:
             if "as_of_date" in df.columns
             else pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
         )
-        fallback_as_of = as_of_candidates.max()
-        if pd.isna(fallback_as_of):
-            fallback_as_of = pd.Timestamp.now(tz="UTC").normalize().tz_localize(None)
-        final_as_of = existing_as_of.where(existing_as_of.notna(), as_of_candidates).fillna(
-            fallback_as_of
-        )
-        df["as_of_date"] = final_as_of
-        track("as_of_date", existing_as_of.isna() & final_as_of.notna())
+        has_any_as_of = bool(existing_as_of.notna().any() or as_of_candidates.notna().any())
 
         dpd_source = self._coalesce_numeric_columns(
             df,
@@ -694,6 +687,17 @@ class TransformationPhase:
                 "dias_mora_m",
             ],
         ).where(lambda s: s >= 0)
+
+        if not has_any_as_of and dpd_source.isna().all():
+            raise ValueError(
+                "CRITICAL: CONTROL DE MORA derivation requires either as_of_date-like columns "
+                "or a non-null DPD source; neither was found."
+            )
+
+        final_as_of = existing_as_of.where(existing_as_of.notna(), as_of_candidates)
+        df["as_of_date"] = final_as_of
+        track("as_of_date", existing_as_of.isna() & final_as_of.notna())
+
         derived_dpd = (final_as_of - final_due).dt.days.astype(float).clip(lower=0)
         dpd_final = dpd_source.where(dpd_source.notna(), derived_dpd).fillna(0.0)
         df["dpd"] = dpd_final

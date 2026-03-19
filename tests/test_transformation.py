@@ -351,6 +351,24 @@ class TestCanonicalRiskState:
         assert "non_negative_balance_enforcement" in metrics["rule_names"]
 
 
+class TestControlMoraDerivations:
+    """Test fail-fast and deterministic behavior in control-mora derivations."""
+
+    def test_derive_control_mora_fields_requires_as_of_or_dpd_signal(self, default_config):
+        transformer = TransformationPhase(default_config)
+        df = pd.DataFrame(
+            {
+                "loan_id": ["L001"],
+                "origination_date": ["2025-01-01"],
+                "due_date": ["2025-02-01"],
+                # Intentionally no as_of/snapshot/reporting date and no dpd source.
+            }
+        )
+
+        with pytest.raises(ValueError, match="requires either as_of_date-like columns"):
+            transformer._derive_control_mora_fields(df)
+
+
 class TestCustomRules:
     """Test custom business rule application."""
 
