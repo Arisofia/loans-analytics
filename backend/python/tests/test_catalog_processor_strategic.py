@@ -99,6 +99,28 @@ class TestKPICatalogProcessorStrategic(unittest.TestCase):
         self.assertGreaterEqual(governance["quality_score"], 0.0)
         self.assertLessEqual(governance["quality_score"], 1.0)
 
+    def test_changelog_compatibility_aliases_exist_and_return_values(self):
+        processor = KPICatalogProcessor(self.loans_df, self.payments_df, self.customers_df)
+
+        monthly_pricing = processor.get_monthly_pricing()
+        self.assertIn("current", monthly_pricing)
+        self.assertIn("monthly", monthly_pricing)
+
+        weighted_apr = processor.get_weighted_apr()
+        weighted_fee_rate = processor.get_weighted_fee_rate()
+        self.assertIsInstance(weighted_apr, float)
+        self.assertIsInstance(weighted_fee_rate, float)
+        self.assertGreaterEqual(weighted_apr, 0.0)
+
+        concentration = processor.get_concentration()
+        self.assertIn("top_1_pct", concentration)
+        self.assertIn("top_10_pct", concentration)
+        self.assertIn("hhi", concentration)
+
+        dpd_buckets = processor.get_dpd_buckets()
+        self.assertIn("dpd_0_7", dpd_buckets)
+        self.assertIn("dpd_90_plus", dpd_buckets)
+
 
 if __name__ == "__main__":
     unittest.main()

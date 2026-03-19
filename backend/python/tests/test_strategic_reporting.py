@@ -7,6 +7,7 @@ from pathlib import Path
 
 from backend.python.kpis.strategic_reporting import (
     build_strategic_summary,
+    generate_strategic_report,
     load_dashboard_metrics,
     write_strategic_report,
 )
@@ -77,6 +78,46 @@ class TestStrategicReporting(unittest.TestCase):
 
             loaded = load_dashboard_metrics(root)
             self.assertEqual(loaded, payload)
+
+    def test_generate_strategic_report_builds_dashboard_and_reports(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            data_dir = root / "data" / "raw"
+            exports_dir = root / "exports"
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+            (data_dir / "loan_data.csv").write_text(
+                "loan_id,customer_id,origination_date,outstanding_loan_value,principal_amount,interest_rate_apr,days_past_due\n"
+                "L1,C1,2025-01-15,1000,1200,0.2,5\n"
+                "L2,C2,2025-02-10,2000,2200,0.25,35\n",
+                encoding="utf-8",
+            )
+            (data_dir / "real_payment.csv").write_text(
+                "payment_date,customer_id,payment_amount,true_interest_payment,true_fee_payment\n"
+                "2025-01-31,C1,120,80,40\n"
+                "2025-02-28,C2,150,100,50\n",
+                encoding="utf-8",
+            )
+            (data_dir / "customer_data.csv").write_text(
+                "customer_id,created_at,marketing_spend\n"
+                "C1,2025-01-01,200\n"
+                "C2,2025-02-01,300\n",
+                encoding="utf-8",
+            )
+
+            outputs = generate_strategic_report(data_dir, exports_dir)
+
+            dashboard_json = Path(outputs["dashboard_json"])
+            report_json = Path(outputs["strategic_report_json"])
+            report_md = Path(outputs["strategic_report_md"])
+
+            self.assertTrue(dashboard_json.exists())
+            self.assertTrue(report_json.exists())
+            self.assertTrue(report_md.exists())
+
+            payload = json.loads(dashboard_json.read_text(encoding="utf-8"))
+            self.assertIn("extended_kpis", payload)
+            self.assertIn("executive_strip", payload["extended_kpis"])
 
 
 if __name__ == "__main__":

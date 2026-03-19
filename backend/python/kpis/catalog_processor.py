@@ -665,6 +665,85 @@ class KPICatalogProcessor:
             "monthly": monthly_rows,
         }
 
+    # ------------------------------------------------------------------
+    # Backward-compatible aliases expected by changelog consumers
+    # ------------------------------------------------------------------
+
+    def get_monthly_pricing(self) -> dict[str, Any]:
+        """Alias for pricing analytics expected by older integrations."""
+        return self.get_pricing_analytics()
+
+    def get_weighted_apr(self) -> float:
+        """Return current portfolio weighted APR."""
+        pricing = self.get_pricing_analytics()
+        return float(pricing.get("current", {}).get("weighted_apr", 0.0))
+
+    def get_weighted_fee_rate(self) -> float:
+        """Return current portfolio weighted fee rate."""
+        pricing = self.get_pricing_analytics()
+        return float(pricing.get("current", {}).get("weighted_fee_rate", 0.0))
+
+    def get_concentration(self) -> dict[str, float]:
+        """Return concentration KPIs (Top-1, Top-10, HHI) by borrower exposure share."""
+        loan_cols = self._loan_columns()
+        customer_col = loan_cols["customer_id"]
+        balance_col = loan_cols["outstanding"] or loan_cols["principal"]
+
+        if self.loans_df.empty or customer_col is None or balance_col is None:
+            return {"top_1_pct": 0.0, "top_10_pct": 0.0, "hhi": 0.0}
+
+        base = self.loans_df[[customer_col, balance_col]].copy()
+        base[balance_col] = pd.to_numeric(base[balance_col], errors="coerce").fillna(0.0)
+        grouped = base.groupby(customer_col, dropna=False)[balance_col].sum()
+        total = float(grouped.sum())
+        if total <= 0:
+            return {"top_1_pct": 0.0, "top_10_pct": 0.0, "hhi": 0.0}
+
+        shares = grouped / total
+        top_1_pct = float(shares.nlargest(1).sum() * 100)
+        top_10_pct = float(shares.nlargest(10).sum() * 100)
+        hhi = float((shares.pow(2).sum()) * 10000)
+        return {
+            "top_1_pct": top_1_pct,
+            "top_10_pct": top_10_pct,
+            "hhi": hhi,
+        }
+
+    def get_dpd_buckets(self) -> dict[str, float]:
+        """Return DPD exposure shares by bucket (percentage of total exposure)."""
+        loan_cols = self._loan_columns()
+        dpd_col = loan_cols["dpd"]
+        balance_col = loan_cols["outstanding"] or loan_cols["principal"]
+
+        empty = {
+            "dpd_0_7": 0.0,
+            "dpd_8_15": 0.0,
+            "dpd_16_30": 0.0,
+            "dpd_31_60": 0.0,
+            "dpd_61_90": 0.0,
+            "dpd_90_plus": 0.0,
+        }
+        if self.loans_df.empty or dpd_col is None or balance_col is None:
+            return empty
+
+        dpd = pd.to_numeric(self.loans_df[dpd_col], errors="coerce").fillna(0.0)
+        exposure = pd.to_numeric(self.loans_df[balance_col], errors="coerce").fillna(0.0)
+        total = float(exposure.sum())
+        if total <= 0:
+            return empty
+
+        def _bucket_pct(mask: pd.Series) -> float:
+            return float(exposure[mask].sum() / total * 100)
+
+        return {
+            "dpd_0_7": _bucket_pct((dpd >= 0) & (dpd <= 7)),
+            "dpd_8_15": _bucket_pct((dpd >= 8) & (dpd <= 15)),
+            "dpd_16_30": _bucket_pct((dpd >= 16) & (dpd <= 30)),
+            "dpd_31_60": _bucket_pct((dpd >= 31) & (dpd <= 60)),
+            "dpd_61_90": _bucket_pct((dpd >= 61) & (dpd <= 90)),
+            "dpd_90_plus": _bucket_pct(dpd > 90),
+        }
+
     def get_revenue_forecast(
         self,
         revenue_df: Optional[pd.DataFrame] = None,

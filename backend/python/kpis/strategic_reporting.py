@@ -7,6 +7,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
+from backend.python.kpis.catalog_processor import KPICatalogProcessor
+
 
 def resolve_exports_dir(root_dir: Path) -> Path:
     """Resolve the preferred exports directory."""
@@ -169,12 +173,106 @@ def write_strategic_report(
     }
 
     with json_path.open("w", encoding="utf-8") as json_file:
-        json.dump(payload, json_file, indent=2)
+        json.dump(payload, json_file, indent=2, default=str)
     with latest_json_path.open("w", encoding="utf-8") as latest_json_file:
-        json.dump(payload, latest_json_file, indent=2)
+        json.dump(payload, latest_json_file, indent=2, default=str)
 
     markdown = render_strategic_markdown(summary, links)
     md_path.write_text(markdown, encoding="utf-8")
     latest_md_path.write_text(markdown, encoding="utf-8")
 
     return latest_json_path, latest_md_path
+
+
+def _read_optional_table(file_path: Path) -> pd.DataFrame:
+    """Read CSV/Parquet table when present; return empty frame when missing."""
+    if not file_path.exists():
+        return pd.DataFrame()
+    if file_path.suffix.lower() == ".parquet":
+        return pd.read_parquet(file_path)
+    return pd.read_csv(file_path)
+
+
+def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize raw dataset column names to snake_case aliases used by KPI processors."""
+    if df.empty:
+        return df
+
+    normalized = df.copy()
+    normalized.columns = (
+        normalized.columns.astype(str)
+        .str.normalize("NFKD")
+        .str.encode("ascii", "ignore")
+        .str.decode("ascii")
+        .str.strip()
+        .str.lower()
+        .str.replace(" ", "_")
+        .str.replace(r"[^a-z0-9_]", "", regex=True)
+    )
+
+    alias_map = {
+        "true_payment_date": "payment_date",
+        "true_total_payment": "total_payment",
+        "true_rabates": "true_rebates",
+        "date_of_application": "created_at",
+    }
+    for source_col, target_col in alias_map.items():
+        if source_col in normalized.columns and target_col not in normalized.columns:
+            normalized = normalized.rename(columns={source_col: target_col})
+
+    return normalized
+
+
+def generate_strategic_report(data_dir: str | Path, exports_dir: str | Path) -> dict[str, str]:
+    """Generate complete KPI dashboard JSON and strategic report artifacts.
+
+    Input files are resolved under ``data_dir`` using canonical names:
+    ``loan_data.csv``, ``real_payment.csv``, ``customer_data.csv``,
+    and optional ``payment_schedule.csv``.
+    """
+    data_root = Path(data_dir)
+    exports_root = Path(exports_dir)
+    exports_root.mkdir(parents=True, exist_ok=True)
+
+    loans_df = _normalize_columns(_read_optional_table(data_root / "loan_data.csv"))
+    payments_df = _normalize_columns(_read_optional_table(data_root / "real_payment.csv"))
+    customers_df = _normalize_columns(_read_optional_table(data_root / "customer_data.csv"))
+    schedule_df = _normalize_columns(_read_optional_table(data_root / "payment_schedule.csv"))
+
+    if loans_df.empty and payments_df.empty and customers_df.empty:
+        raise ValueError(
+            "CRITICAL: No input datasets found in data_dir. "
+            "Expected at least one of loan_data.csv, real_payment.csv, customer_data.csv"
+        )
+
+    processor = KPICatalogProcessor(
+        loans_df=loans_df,
+        payments_df=payments_df,
+        customers_df=customers_df,
+        schedule_df=schedule_df,
+    )
+    extended_kpis = processor.get_all_kpis()
+
+    dashboard_payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source_data_dir": str(data_root),
+        "extended_kpis": extended_kpis,
+    }
+    dashboard_path = exports_root / "complete_kpi_dashboard.json"
+    with dashboard_path.open("w", encoding="utf-8") as dashboard_file:
+        json.dump(dashboard_payload, dashboard_file, indent=2, default=str)
+
+    summary = build_strategic_summary(dashboard_payload)
+    links = {
+        "streamlit_local": "http://localhost:8501",
+        "grafana_local": "http://localhost:3001/dashboards",
+        "streamlit_prod": "https://abaco-analytics-dashboard.azurewebsites.net",
+        "dashboard_docs": "docs/analytics/dashboards.md",
+    }
+    latest_json_path, latest_md_path = write_strategic_report(summary, links, exports_root)
+
+    return {
+        "dashboard_json": str(dashboard_path),
+        "strategic_report_json": str(latest_json_path),
+        "strategic_report_md": str(latest_md_path),
+    }
