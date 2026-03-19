@@ -73,6 +73,15 @@ __azurite_db_*.json
 *.log
 nohup.out
 logs/
+*.out
+mypy_check.log
+ruff_check.log
+pytest_full.log
+pytest_results.log
+pytest_check.log
+full_test_run.log
+target_test.log
+.mypy_full.out
 
 # Generated data and local app state
 data/metrics/
