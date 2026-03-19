@@ -1142,10 +1142,10 @@ class KPICatalogProcessor:
     def get_graph_analytics(self) -> dict[str, Any]:
         """Compute graph-based analytics and advanced fintech KPIs."""
         if self.intermedia_df.empty:
-            # Fallback to a minimal intermedia if not provided, 
+            # Fallback to a minimal intermedia if not provided,
             # or return empty if essential columns are missing
             return {"status": "unavailable", "reason": "intermedia_df is empty"}
-            
+
         return build_graph_kpi_report(
             intermedia_df=self.intermedia_df,
             loans_df=self.loans_df,

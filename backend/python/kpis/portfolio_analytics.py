@@ -730,7 +730,7 @@ def credit_line_category_kpis(
             tgt_rot = targets.get("target_rotation", 0.0)
             max_def = targets.get("max_default", 99.0)
             act_rot = row.get("rotation_x")
-            
+
             row["target_rotation"] = tgt_rot
             row["rotation_status"] = (
                 "ok" if act_rot is not None and float(cast(float, act_rot)) >= tgt_rot
