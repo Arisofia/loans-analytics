@@ -453,8 +453,8 @@ class UnifiedPipeline:
             from backend.src.pipeline import __version__
 
             return __version__
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Falling back to pyproject.toml for code version", exc_info=exc)
 
         try:
             import tomllib
@@ -466,8 +466,8 @@ class UnifiedPipeline:
             version = pyproject.get("project", {}).get("version")
             if isinstance(version, str) and version.strip():
                 return version.strip()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Unable to resolve code version from pyproject.toml", exc_info=exc)
 
         raise RuntimeError(
             "Unable to resolve pipeline code version from backend.src.pipeline.__version__ "

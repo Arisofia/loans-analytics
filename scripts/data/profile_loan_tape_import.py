@@ -53,7 +53,7 @@ def _write_mapping_section(lines: list[str], title: str, mappings: list[tuple[st
 
 
 def main() -> None:
-    data_dir = Path("data/abaco")
+    data_dir = Path("data/raw")
     out_path = Path("docs/analytics/loan_tape_import_report_2026-03-19.md")
 
     raw_files = {

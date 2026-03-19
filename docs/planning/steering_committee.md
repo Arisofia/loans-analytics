@@ -600,7 +600,7 @@ _Note: Only 2 test files have been identified vs 58 Python files (~3.4% file cov
 
 #### Testing Tools Configured
 
-- **Python:** pytest (configured in `pytest.ini`)
+- **Python:** pytest (configured in `pyproject.toml`)
 - **Coverage:** coverage.py (configured in `.coveragerc`)
 - **JavaScript/TypeScript:** Jest (configured in `apps/web/jest.config.js`)
 - **E2E:** Playwright (workflow: `.github/workflows/playwright.yml`)

@@ -141,7 +141,7 @@ class ServiceStatusChecker:
         tests_dir = self.repo_root / "tests"
         status["details"]["tests_directory_exists"] = tests_dir.exists()
 
-        # Always attempt to run pytest so that pytest.ini testpaths are respected,
+        # Always attempt to run pytest so that pyproject testpaths are respected,
         # even if the legacy tests/ directory does not exist.
 
         # Try to run pytest using repository configuration

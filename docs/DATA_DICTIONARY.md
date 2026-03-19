@@ -1,6 +1,6 @@
 # Abaco Analytics - Data Dictionary
 
-## data/abaco/loan_data.csv
+## data/raw/loan_data.csv
 
 - loan_id: Unique loan identifier
 - customer_id: Foreign key to customer_data
@@ -14,7 +14,7 @@
 - days_in_default: Days in default, if applicable
 - ...
 
-## data/abaco/customer_data.csv
+## data/raw/customer_data.csv
 
 - customer_id: Unique customer identifier
 - segment: Customer segment (Nimal/Gob/OC/Top)
@@ -25,7 +25,7 @@
 - industry_code: Industry classification code (CIIU/NAICS/etc.)
 - ...
 
-## data/abaco/real_payment.csv
+## data/raw/real_payment.csv
 
 - loan_id: Foreign key to loan_data
 - true_payment_date: Actual payment date
@@ -38,7 +38,7 @@
 - true_rabates: Rebates or refunds
 - ...
 
-## data/abaco/payment_schedule.csv
+## data/raw/payment_schedule.csv
 
 - loan_id: Foreign key to loan_data
 - payment_date: Scheduled payment date
@@ -47,7 +47,7 @@
 - scheduled_interest: Interest scheduled
 - ...
 
-## data/abaco/collateral.csv
+## data/raw/collateral.csv
 
 - loan_id: Foreign key to loan_data
 - collateral_type: Type of collateral

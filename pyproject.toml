@@ -93,6 +93,38 @@ extend-exclude = [".coveragerc", "*.ini", "*.cfg"]
 line-length = 100
 target-version = "py310"
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+  "stats: advanced statistical tests (optional)",
+  "integration_supabase: Supabase-backed historical KPI integration tests",
+  "integration: integration tests requiring external services (opt-in)",
+  "e2e: end-to-end tests requiring live backend/frontend services (opt-in)",
+  "asyncio: marks tests as async (used with pytest-asyncio)",
+  "timeout: tests with timeout constraints",
+]
+filterwarnings = [
+  "ignore:KPIEngine \\(v1\\) is deprecated.*:DeprecationWarning",
+  "ignore:pkg_resources is deprecated.*:DeprecationWarning",
+]
+testpaths = [
+  "backend/python/multi_agent",
+  "backend/python/tests",
+  "tests",
+]
+norecursedirs = [
+  ".git",
+  ".venv",
+  "__pycache__",
+  ".pytest_cache",
+  ".hypothesis",
+]
+pythonpath = ["backend", "frontend"]
+addopts = "--import-mode=importlib --cov-report=term --cov-report=html --cov=backend/python --cov=backend/src --cov=frontend/streamlit_app"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
 [tool.ruff.lint.per-file-ignores]
 # Ignore E402 (module level import not at top of file) for Streamlit apps
 # These require sys.path modifications before imports

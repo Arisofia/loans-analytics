@@ -518,7 +518,7 @@ class TestDPDCalculator:
         return dim_loan, fact_schedule, fact_real_payment
 
     def test_build_snapshots_returns_dataframe(self):
-        from backend.src.zero_cost.dpd_calculator import DPDCalculator
+        from backend.python.kpis.dpd_calculator import DPDCalculator
 
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
@@ -528,7 +528,7 @@ class TestDPDCalculator:
 
     def test_current_loan_has_zero_dpd(self):
         """L-002 paid its Jan installment — DPD at Jan 31 should be 0."""
-        from backend.src.zero_cost.dpd_calculator import DPDCalculator
+        from backend.python.kpis.dpd_calculator import DPDCalculator
 
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
@@ -538,7 +538,7 @@ class TestDPDCalculator:
 
     def test_overdue_loan_has_positive_dpd(self):
         """L-001 missed its Feb installment — DPD at Mar 15 should be > 0."""
-        from backend.src.zero_cost.dpd_calculator import DPDCalculator
+        from backend.python.kpis.dpd_calculator import DPDCalculator
 
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
@@ -548,7 +548,7 @@ class TestDPDCalculator:
         assert l1_row["dpd"] > 0
 
     def test_par_flags_set_correctly(self):
-        from backend.src.zero_cost.dpd_calculator import DPDCalculator
+        from backend.python.kpis.dpd_calculator import DPDCalculator
 
         calc = DPDCalculator(par_thresholds=[1, 30])
         dim_loan, sched, pays = self._make_inputs()
@@ -561,7 +561,7 @@ class TestDPDCalculator:
         assert not l2_row["par_1"]  # L-002 is current
 
     def test_mora_bucket_is_populated(self):
-        from backend.src.zero_cost.dpd_calculator import DPDCalculator
+        from backend.python.kpis.dpd_calculator import DPDCalculator
 
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
