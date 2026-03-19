@@ -303,6 +303,27 @@ class TestStrategicModules(unittest.TestCase):
         self.assertIn("DSCR data unavailable", dscr_actions[0]["action"])
         self.assertIn("DSCR inputs unavailable", dscr_actions[0]["action"])
 
+    def test_next_steps_plan_consolidates_duplicate_metric_actions(self):
+        compliance = {
+            "metrics": [
+                {"metric": "apr_pct_ann", "status": "breach", "variance": 5.4},
+                {"metric": "apr_pct_ann", "status": "breach", "variance": 2.1},
+            ],
+            "variance_decomposition": {
+                "apr_pct_ann": {
+                    "driver": "Pricing above target ceiling",
+                    "explanation": "Weighted APR exceeds pricing corridor",
+                }
+            },
+        }
+
+        plan = build_next_steps_plan(forecast={}, compliance=compliance)
+        apr_actions = [a for a in plan["actions"] if a["metric"] == "apr_pct_ann"]
+
+        self.assertEqual(len(apr_actions), 1)
+        self.assertEqual(apr_actions[0]["variance"], 5.4)
+        self.assertIn("Pricing above target ceiling", apr_actions[0]["action"])
+
 
 if __name__ == "__main__":
     unittest.main()

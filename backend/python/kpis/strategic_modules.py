@@ -857,6 +857,21 @@ def build_next_steps_plan(
     actions: list[dict] = []
     variance_decomp = compliance.get("variance_decomposition", {})
 
+    def _impact_rank(impact: str) -> int:
+        return {"high": 0, "medium": 1, "low": 2}.get(str(impact).lower(), 3)
+
+    def _is_stronger(candidate: dict[str, Any], current: dict[str, Any]) -> bool:
+        cand_rank = _impact_rank(candidate.get("impact", "low"))
+        curr_rank = _impact_rank(current.get("impact", "low"))
+        if cand_rank != curr_rank:
+            return cand_rank < curr_rank
+
+        cand_var = candidate.get("variance")
+        curr_var = current.get("variance")
+        cand_mag = abs(float(cand_var)) if isinstance(cand_var, (int, float)) else 0.0
+        curr_mag = abs(float(curr_var)) if isinstance(curr_var, (int, float)) else 0.0
+        return cand_mag > curr_mag
+
     # ── Source 1: Compliance breaches ──────────────────────────────────
     for row in compliance.get("metrics", []):
         metric_name = row.get("metric")
@@ -978,6 +993,41 @@ def build_next_steps_plan(
                 "variance": None,
                 "_sort_key": (0, -len(top_pd)),
             })
+
+    # ── Consolidate duplicate actions by area+metric ─────────────────
+    consolidated: dict[tuple[str, str], dict[str, Any]] = {}
+    passthrough: list[dict[str, Any]] = []
+
+    for action in actions:
+        metric = action.get("metric")
+        area = action.get("area")
+        if metric is None or area is None:
+            passthrough.append(action)
+            continue
+
+        key = (str(area), str(metric))
+        current = consolidated.get(key)
+        if current is None:
+            consolidated[key] = action
+            continue
+
+        primary = action if _is_stronger(action, current) else current
+        secondary = current if primary is action else action
+
+        if secondary.get("action") and secondary["action"] not in primary.get("action", ""):
+            primary["action"] = f"{primary['action']} Additional context: {secondary['action']}"
+
+        primary_sources = {s.strip() for s in str(primary.get("source", "")).split("+") if s.strip()}
+        secondary_sources = {s.strip() for s in str(secondary.get("source", "")).split("+") if s.strip()}
+        all_sources = sorted(primary_sources | secondary_sources)
+        primary["source"] = "+".join(all_sources) if all_sources else "compliance"
+
+        if primary.get("variance") is None and secondary.get("variance") is not None:
+            primary["variance"] = secondary.get("variance")
+
+        consolidated[key] = primary
+
+    actions = passthrough + list(consolidated.values())
 
     # ── Sort: impact first, then magnitude of variance ─────────────────
     actions.sort(key=lambda x: x.pop("_sort_key", (9, 0)))
