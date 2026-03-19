@@ -211,6 +211,8 @@ class TestStrategicModules(unittest.TestCase):
         self.assertIn("actuals", report)
         self.assertIn("data_sources", report)
         self.assertIn("variance_decomposition", report)
+        self.assertIn("apr_pct_ann", report["variance_decomposition"])
+        self.assertIn("dscr", report["variance_decomposition"])
 
         self.assertTrue(isinstance(report["metrics"], list))
         self.assertTrue(isinstance(report["actuals"], dict))
@@ -228,6 +230,29 @@ class TestStrategicModules(unittest.TestCase):
         }
         for row in report["metrics"]:
             self.assertTrue(required_metric_keys.issubset(set(row.keys())))
+
+    def test_variance_decomposition_for_apr_and_dscr_when_missing(self):
+        loans = self._sample_loans()
+        payments = self._sample_payments()
+
+        report = build_compliance_dashboard(loans, payments)
+        decomp = report["variance_decomposition"]
+
+        self.assertEqual(decomp["apr_pct_ann"]["driver"], "APR within policy corridor")
+        self.assertEqual(decomp["dscr"]["driver"], "DSCR inputs unavailable")
+        self.assertIsNone(decomp["dscr"]["magnitude"])
+
+    def test_variance_decomposition_for_dscr_when_available(self):
+        loans = self._sample_loans().copy()
+        payments = self._sample_payments()
+        loans["net_operating_income"] = [300, 450, 360, 240, 210, 270]
+        loans["debt_service"] = [200, 300, 240, 160, 140, 180]
+
+        report = build_compliance_dashboard(loans, payments, guardrails={"dscr": 1.4})
+        decomp = report["variance_decomposition"]
+
+        self.assertEqual(decomp["dscr"]["driver"], "Income coverage vs debt service")
+        self.assertAlmostEqual(decomp["dscr"]["magnitude"], 0.1, places=2)
 
 
 if __name__ == "__main__":

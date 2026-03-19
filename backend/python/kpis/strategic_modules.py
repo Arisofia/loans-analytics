@@ -744,6 +744,58 @@ def build_compliance_dashboard(
         },
     }
 
+    # APR and DSCR decomposition to explain range/rule outcomes and missing data.
+    if apr_actual is None:
+        variance_decomp["apr_pct_ann"] = {
+            "driver": "APR source unavailable",
+            "magnitude": None,
+            "explanation": "APR cannot be computed because no APR column was found in the loan tape.",
+        }
+    elif apr_actual < apr_min:
+        variance_decomp["apr_pct_ann"] = {
+            "driver": "Pricing below target floor",
+            "magnitude": round(apr_actual - apr_min, 1),
+            "explanation": (
+                f"Weighted APR {apr_actual:.1f}% is below minimum {apr_min:.1f}%. "
+                "Review pricing floors and discount approvals by segment."
+            ),
+        }
+    elif apr_actual > apr_max:
+        variance_decomp["apr_pct_ann"] = {
+            "driver": "Pricing above target ceiling",
+            "magnitude": round(apr_actual - apr_max, 1),
+            "explanation": (
+                f"Weighted APR {apr_actual:.1f}% exceeds maximum {apr_max:.1f}%. "
+                "Review competitiveness and channel mix impacts."
+            ),
+        }
+    else:
+        variance_decomp["apr_pct_ann"] = {
+            "driver": "APR within policy corridor",
+            "magnitude": 0.0,
+            "explanation": (
+                f"Weighted APR {apr_actual:.1f}% is inside the configured range "
+                f"{apr_min:.1f}% to {apr_max:.1f}%."
+            ),
+        }
+
+    dscr_target = float(guardrails.get("dscr", 1.2)) if guardrails else 1.2
+    if dscr_actual is None:
+        variance_decomp["dscr"] = {
+            "driver": "DSCR inputs unavailable",
+            "magnitude": None,
+            "explanation": "DSCR cannot be computed because NOI and debt service fields are not present.",
+        }
+    else:
+        variance_decomp["dscr"] = {
+            "driver": "Income coverage vs debt service",
+            "magnitude": round(dscr_actual - dscr_target, 2),
+            "explanation": (
+                f"DSCR {dscr_actual:.2f}x vs target {dscr_target:.2f}x. "
+                "Improve cash generation or reduce scheduled debt service to lift coverage."
+            ),
+        }
+
     return {
         "generated_at":         datetime.now(timezone.utc).isoformat(),
         "metrics":              rows,
