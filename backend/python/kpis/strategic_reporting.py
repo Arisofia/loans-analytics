@@ -336,6 +336,7 @@ def _build_dashboard_payload(data_root: Path, extended_kpis: dict[str, Any]) -> 
             "real_payment.csv",
             "customer_data.csv",
             "payment_schedule.csv",
+            "collateral.csv",
         ],
         "kpi_groups_count": len([key for key in extended_kpis if not key.startswith("_")]),
         "extended_kpis": extended_kpis,
@@ -379,6 +380,7 @@ def generate_strategic_report(data_dir: str | Path, exports_dir: str | Path) -> 
 
     customers_df = _normalize_columns(_read_optional_table(customer_source))
     schedule_df = _normalize_columns(_read_optional_table(data_root / "payment_schedule.csv"))
+    collateral_df = _normalize_columns(_read_optional_table(data_root / "collateral.csv"))
 
     if loans_df.empty and payments_df.empty and customers_df.empty:
         raise ValueError(
@@ -391,6 +393,7 @@ def generate_strategic_report(data_dir: str | Path, exports_dir: str | Path) -> 
         payments_df=payments_df,
         customers_df=customers_df,
         schedule_df=schedule_df,
+        collateral_df=collateral_df,
     )
     extended_kpis = processor.get_all_kpis()
 

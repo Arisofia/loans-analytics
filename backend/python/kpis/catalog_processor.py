@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
+
+from backend.python.kpis.graph_analytics import build_graph_kpi_report
+from backend.python.kpis.portfolio_analytics import build_portfolio_analytics_report
 
 
 @dataclass
@@ -16,12 +19,16 @@ class KPICatalogProcessor:
     loans_df: pd.DataFrame
     payments_df: pd.DataFrame
     customers_df: pd.DataFrame
+    collateral_df: pd.DataFrame = field(default_factory=pd.DataFrame)
+    intermedia_df: pd.DataFrame = field(default_factory=pd.DataFrame)
     schedule_df: Optional[pd.DataFrame] = None
 
     def __post_init__(self) -> None:
         self.loans_df = self.loans_df if self.loans_df is not None else pd.DataFrame()
         self.payments_df = self.payments_df if self.payments_df is not None else pd.DataFrame()
         self.customers_df = self.customers_df if self.customers_df is not None else pd.DataFrame()
+        self.collateral_df = self.collateral_df if self.collateral_df is not None else pd.DataFrame()
+        self.intermedia_df = self.intermedia_df if self.intermedia_df is not None else pd.DataFrame()
         self.schedule_df = self.schedule_df if self.schedule_df is not None else pd.DataFrame()
 
     @staticmethod
@@ -231,6 +238,8 @@ class KPICatalogProcessor:
         rotation           = self.get_portfolio_rotation()
         weighted_apr       = self.get_weighted_apr()
         weighted_fee_rate  = self.get_weighted_fee_rate()
+        graph_analytics    = self.get_graph_analytics()
+        portfolio_analytics = self.get_portfolio_analytics()
 
         return {
             # Legacy groups (unchanged)
@@ -252,6 +261,9 @@ class KPICatalogProcessor:
             "weighted_fee_rate": weighted_fee_rate,
             # Monthly pricing (alias to pricing_analytics for dual-engine parity)
             "monthly_pricing": pricing_analytics,
+            # Graph Analytics & Fintech Thesis (2026)
+            "graph_analytics": graph_analytics,
+            "portfolio_analytics": portfolio_analytics,
         }
 
     def get_monthly_revenue_df(self) -> pd.DataFrame:
@@ -1126,6 +1138,29 @@ class KPICatalogProcessor:
                 "green" if quality_score >= 0.8 else "amber" if quality_score >= 0.6 else "red"
             ),
         }
+
+    def get_graph_analytics(self) -> dict[str, Any]:
+        """Compute graph-based analytics and advanced fintech KPIs."""
+        if self.intermedia_df.empty:
+            # Fallback to a minimal intermedia if not provided, 
+            # or return empty if essential columns are missing
+            return {"status": "unavailable", "reason": "intermedia_df is empty"}
+            
+        return build_graph_kpi_report(
+            intermedia_df=self.intermedia_df,
+            loans_df=self.loans_df,
+            payments_df=self.payments_df
+        )
+
+    def get_portfolio_analytics(self) -> dict[str, Any]:
+        """Run all 6 portfolio analytics modules (cohort, behavior, CE, etc.)"""
+        return build_portfolio_analytics_report(
+            loans_df=self.loans_df,
+            payments_df=self.payments_df,
+            schedule_df=self.schedule_df,
+            customer_df=self.customers_df,
+            collateral_df=self.collateral_df,
+        )
 
     def get_quarterly_scorecard(self) -> pd.DataFrame:
         """Create a quarterly scorecard from available payment data."""
