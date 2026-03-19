@@ -83,7 +83,7 @@ def detect_exposure_weighted_outliers(
     loan_id_col = _col(loans_df, ["loan_id", "Loan ID", "id"])
     bal_col     = _col(loans_df, ["outstanding_loan_value", "outstanding_balance", "TotalSaldoVigente"])
     apr_col     = _col(loans_df, ["interest_rate_apr", "interest_rate", "TasaInteres"])
-    dpd_col     = _col(loans_df, ["days_past_due", "dpd", "DPD"])
+    dpd_col     = _col(loans_df, ["days_past_due", "dpd", "DPD", "days_in_default"])
     term_col    = _col(loans_df, ["term", "Term", "term_days"])
     util_col    = _col(loans_df, ["porcentaje_utilizado", "line_utilization", "Porcentaje_Utilizado"])
 
@@ -218,15 +218,16 @@ def build_pd_model(
             "message":         "Dataset does not meet minimum class size for stable PD model.",
         }
 
-    # Build features
+    # Build features.
+    # DPD/days_in_default is intentionally excluded to avoid target leakage:
+    # it directly encodes loan_status==Default in this tape.
     feature_cols = {}
     for fname, aliases in [
         ("apr",          ["interest_rate_apr", "interest_rate", "TasaInteres"]),
         ("term",         ["term", "Term", "term_days"]),
         ("disb_amount",  ["disbursement_amount", "MontoDesembolsado"]),
         ("outstanding",  ["outstanding_loan_value", "TotalSaldoVigente"]),
-        ("line_util",    ["porcentaje_utilizado", "line_utilization"]),
-        ("dpd",          ["days_past_due", "dpd"]),
+        ("tpv",          ["tpv", "TPV", "total_portfolio_value"]),
     ]:
         c = _col(loans_df, aliases)
         if c:
@@ -361,11 +362,12 @@ def predict_kpis(
     # ── AUM monthly series ─────────────────────────────────────────────
     disb_col = _col(loans_df, ["disbursement_date", "FechaDesembolso"])
     bal_col  = _col(loans_df, ["outstanding_loan_value", "outstanding_balance"])
+    disb_amt_col = _col(loans_df, ["disbursement_amount", "MontoDesembolsado"])
     aum_series: pd.Series = pd.Series(dtype=float)
-    if disb_col and bal_col:
+    if disb_col and disb_amt_col:
         loans_df["_month"] = pd.to_datetime(loans_df[disb_col], errors="coerce").dt.to_period("M")
         aum_series = (
-            loans_df.groupby("_month")[bal_col]
+            loans_df.groupby("_month")[disb_amt_col]
             .apply(lambda s: pd.to_numeric(s, errors="coerce").fillna(0).sum())
             .tail(12)
         )
@@ -385,8 +387,8 @@ def predict_kpis(
         )
 
     # ── PAR series (requires DPD column) ──────────────────────────────
-    # Approximation: snapshot from current data (single-point series)
-    dpd_col = _col(loans_df, ["days_past_due", "dpd"])
+    # Approximation from current snapshot by origination cohort.
+    dpd_col = _col(loans_df, ["days_past_due", "dpd", "days_in_default"])
     par30_series: pd.Series = pd.Series(dtype=float)
     par90_series: pd.Series = pd.Series(dtype=float)
     if dpd_col and disb_col and bal_col:
@@ -412,6 +414,11 @@ def predict_kpis(
         "par30_forecast":  _linear_forecast(par30_series, horizon_months),
         "par90_forecast":  _linear_forecast(par90_series, horizon_months),
         "methodology":     "linear_trend_1.5sigma_bands",
+        "data_notes": {
+            "aum":     "monthly disbursement_amount by origination month (bullet-loan proxy)",
+            "par":     "vintage approximation from single DPD snapshot — no historical PAR archives",
+            "revenue": "true_total_payment per payment month from real_payment.csv",
+        },
         "training_months": {
             "aum":     int(len(aum_series)),
             "revenue": int(len(rev_series)),
@@ -491,8 +498,8 @@ def build_compliance_dashboard(
     bal_col  = _col(loans_df, ["outstanding_loan_value", "outstanding_balance", "TotalSaldoVigente"])
     disb_col = _col(loans_df, ["disbursement_date", "FechaDesembolso"])
     apr_col  = _col(loans_df, ["interest_rate_apr", "interest_rate", "TasaInteres"])
-    dpd_col  = _col(loans_df, ["days_past_due", "dpd"])
-    deb_col  = _col(loans_df, ["emisor", "Emisor", "debtor_id", "payer_id"])
+    dpd_col  = _col(loans_df, ["days_past_due", "dpd", "DPD", "days_in_default"])
+    deb_col  = _col(loans_df, ["pagador", "cliente", "emisor", "Emisor", "debtor_id", "payer_id"])
     util_col = _col(loans_df, ["porcentaje_utilizado", "Porcentaje_Utilizado", "line_utilization"])
     line_col = _col(loans_df, ["lineacredito", "LineaCredito", "credit_line"])
 
@@ -525,29 +532,38 @@ def build_compliance_dashboard(
     par90 = float(bal[dpd >= 90].sum() / total_bal * 100) if total_bal > 0 else 0.0
     npl180= float(bal[dpd >= 180].sum() / total_bal * 100) if total_bal > 0 else 0.0
 
-    # APR (monthly → annualized ×12)
-    apr_ann = float((apr * bal).sum() / total_bal * 12 * 100) if total_bal > 0 else 0.0
+    # APR is stored as annual decimal in loan_data (e.g., 0.53 => 53%).
+    apr_ann = float((apr * bal).sum() / total_bal * 100) if total_bal > 0 else 0.0
 
     # Utilization
-    util_actual = 0.0
+    util_actual: float | None = None
     if util_col:
         util_actual = float(_num(loans_df, util_col).replace(0, np.nan).mean())
     elif line_col and bal_col:
         lc = _num(loans_df, line_col)
         mask = lc > 0
-        util_actual = float((bal[mask] / lc[mask]).clip(0, 1).mean() * 100) if mask.any() else 0.0
+        util_actual = float((bal[mask] / lc[mask]).clip(0, 1).mean() * 100) if mask.any() else None
 
     # CE 6M (collection efficiency: actual collected / scheduled)
-    ce_actual = 0.0
+    # If scheduled amount is missing, use disbursement_amount in trailing 6m as proxy.
+    ce_actual: float | None = None
     pay_amt = _col(payments_df, ["true_total_payment", "payment_amount"])
-    sched   = _col(loans_df, ["total_scheduled", "ValorAprobado"])
+    sched   = _col(loans_df, ["total_scheduled", "scheduled_payment", "ValorAprobado"])
+    disb_amt = _col(loans_df, ["disbursement_amount", "MontoDesembolsado"])
     if pay_amt:
         pay_date = _col(payments_df, ["true_payment_date", "payment_date"])
-        if pay_date:
+        if pay_date and disb_col:
             recent = pd.to_datetime(payments_df[pay_date], errors="coerce")
             mask6m = recent >= recent.max() - pd.DateOffset(months=6)
             collected6 = _num(payments_df[mask6m], pay_amt).sum() if mask6m.any() else 0.0
-            sched_total = _num(loans_df, sched).sum() if sched else 0.0
+            disb_dates = pd.to_datetime(loans_df[disb_col], errors="coerce")
+            loan_6m = disb_dates >= disb_dates.max() - pd.DateOffset(months=6)
+            if sched:
+                sched_total = _num(loans_df[loan_6m], sched).sum() if loan_6m.any() else 0.0
+            elif disb_amt:
+                sched_total = _num(loans_df[loan_6m], disb_amt).sum() if loan_6m.any() else 0.0
+            else:
+                sched_total = 0.0
             if sched_total > 0:
                 ce_actual = float(collected6 / sched_total * 100)
 
@@ -558,9 +574,16 @@ def build_compliance_dashboard(
         "par30_pct":               round(par30, 1),
         "par90_pct":               round(par90, 1),
         "npl_180_pct":             round(npl180, 1),
-        "utilization_pct":         round(util_actual, 1),
+        "utilization_pct":         round(util_actual, 1) if util_actual is not None else None,
         "apr_pct_ann":             round(apr_ann, 1),
-        "ce_6m_pct":               round(ce_actual, 1),
+        "ce_6m_pct":               round(ce_actual, 1) if ce_actual is not None else None,
+    }
+    data_sources = {
+        "par":           f"loan.{dpd_col}" if dpd_col else "NO_DATA",
+        "concentration": f"loan.{deb_col}" if deb_col else "NO_DATA",
+        "ce_6m":         "payments.true_total_payment / loan.disbursement_amount (6m proxy)" if not sched else f"payments.true_total_payment / loan.{sched}",
+        "utilization":   f"loan.{util_col}" if util_col else (f"loan.{line_col}" if line_col else "NO_DATA"),
+        "apr":           f"loan.{apr_col} (annual decimal ×100)" if apr_col else "NO_DATA",
     }
 
     # ── Build compliance rows ──────────────────────────────────────────
@@ -576,10 +599,23 @@ def build_compliance_dashboard(
     }
 
     rows = []
-    counts = {"ok": 0, "warning": 0, "breach": 0}
+    counts = {"ok": 0, "warning": 0, "breach": 0, "no_data": 0}
 
     for metric, (act_key, target, lower_is_better, warn_band) in metric_defs.items():
-        actual = actuals.get(act_key, 0.0)
+        actual = actuals.get(act_key)
+        if actual is None:
+            counts["no_data"] += 1
+            rows.append({
+                "metric":       metric,
+                "actual":       "NO_DATA",
+                "target":       target,
+                "variance":     None,
+                "variance_pct": None,
+                "status":       "no_data",
+                "lower_is_better": lower_is_better,
+                "owner":        owners.get(metric, "—"),
+            })
+            continue
         var    = actual - target
         var_pct= round(var / target * 100, 1) if target else 0.0
 
@@ -645,6 +681,7 @@ def build_compliance_dashboard(
         "metrics":              rows,
         "summary":              counts,
         "actuals":              actuals,
+        "data_sources":         data_sources,
         "variance_decomposition": variance_decomp,
     }
 
