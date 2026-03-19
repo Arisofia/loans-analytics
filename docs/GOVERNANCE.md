@@ -46,6 +46,70 @@ The following workflows are the source of truth for repository governance:
 - Avoid PII in logs and shared artifacts.
 - Use parameterized database access and validated inputs.
 
+## Secret Scanning Governance
+
+**CRITICAL**: Repository history and incoming pull requests must be scanned for secrets before merge.
+
+**Enforcement configuration**: [`SECURITY.md`](../SECURITY.md) and [`.gitleaks.toml`](../.gitleaks.toml)
+
+**Key Requirements** (summary):
+1. **CI/CD enforcement**: `.github/workflows/security-scan.yml` must run Gitleaks on push and pull request events.
+2. **History scanning**: Secret scanning must use full git history for authoritative detection.
+3. **No exceptions by default**: False positives may be allowlisted only after manual review and documented rationale.
+4. **Incident response**: Any committed secret must be revoked, removed from history, and logged as a security incident.
+5. **Artifact retention**: Secret scan reports must be retained for audit review.
+
+**Code Review Requirement**: Every PR touching credentials, deployment, config, or CI files must verify:
+- [ ] No hardcoded secrets introduced
+- [ ] `.gitleaks.toml` allowlist changes are justified and minimal
+- [ ] Security scan workflow remains active and failing on real detections
+- [ ] Any example credentials are clearly placeholders only
+
+**Violation Response**: Merges are blocked when Gitleaks detects unapproved secrets or when scan enforcement is weakened.
+
+## Migration Governance
+
+**CRITICAL**: Database migrations must execute deterministically and use one canonical naming convention.
+
+**Implementation plan**: [`docs/MIGRATION_STANDARDIZATION_PLAN.md`](MIGRATION_STANDARDIZATION_PLAN.md)
+
+**Key Requirements** (summary):
+1. **Naming standard**: All migrations must use `YYYYMMDDHHMMSS_description.sql`.
+2. **Deterministic order**: Alphabetic sort must equal execution order.
+3. **No duplicate intent**: Superseded migrations must be removed or explicitly deprecated, not left active in parallel.
+4. **Change safety**: Migration renames/deletions require backup, dependency review, and dev-environment validation.
+5. **Operational traceability**: Any migration policy change must update setup and operations documentation in the same change.
+
+**Code Review Requirement**: Every PR touching `db/migrations/` must verify:
+- [ ] Migration filename follows ISO 8601 timestamp format
+- [ ] Execution order remains deterministic after sort
+- [ ] No duplicate or conflicting schema intent remains active
+- [ ] Downstream references and setup docs are updated if needed
+- [ ] Development validation evidence exists before merge
+
+**Violation Response**: Non-deterministic or duplicate migrations are blocked from merge until resolved.
+
+## Manual Overrides Governance
+
+**CRITICAL**: Manual overrides are controlled exceptions and must never bypass approval, audit, or expiry review.
+
+**Detailed framework**: [`docs/MANUAL_OVERRIDES_GOVERNANCE.md`](MANUAL_OVERRIDES_GOVERNANCE.md)
+
+**Key Requirements** (summary):
+1. **Approval tiers**: Overrides must follow Operational, Material, or Strategic approval thresholds based on impact.
+2. **Documented rationale**: Every override must include business justification, approver, effective date, and review/expiry date.
+3. **Immutable traceability**: Override changes must be reflected in version control and linked to approval evidence.
+4. **Review cadence**: Active overrides require periodic review and removal or renewal at expiry.
+5. **No silent overrides**: Direct edits without documented approval are treated as data integrity incidents.
+
+**Code Review Requirement**: Every PR introducing or modifying override behavior must verify:
+- [ ] Override reason and approval authority are documented
+- [ ] Expiry/review date is defined unless explicitly permanent and approved
+- [ ] Affected config/data files remain auditable in git history
+- [ ] Monitoring or reconciliation steps are defined when material impact exists
+
+**Violation Response**: Unauthorized or undocumented overrides must be reverted and escalated for incident review.
+
 ## Financial Precision & Monetary Calculations
 
 **CRITICAL**: All monetary calculations must guarantee zero floating-point drift. This is non-negotiable for fintech operations.
@@ -101,6 +165,8 @@ The following workflows are the source of truth for repository governance:
 
 - `docs/FINANCIAL_PRECISION_GOVERNANCE.md` (Enforcement policy for monetary calculations)
 - `docs/FINANCIAL_PRECISION_IMPLEMENTATION_GUIDE.md` (Developer quick-reference with code patterns)
+- `docs/MIGRATION_STANDARDIZATION_PLAN.md` (Migration naming standardization and execution plan)
+- `docs/MANUAL_OVERRIDES_GOVERNANCE.md` (Approval, audit, and review framework for manual overrides)
 - `docs/operations/SCRIPT_CANONICAL_MAP.md`
 - `docs/KPI_SSOT_REGISTRY.md` (KPI consolidation framework and architecture)
 - `docs/KPI_IMPLEMENTATION_INVENTORY.md` (Current fragmentation audit and consolidation roadmap)
