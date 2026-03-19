@@ -397,14 +397,12 @@ def predict_kpis(
         df_par["_bal"] = pd.to_numeric(df_par[bal_col], errors="coerce").fillna(0)
         df_par["_month"] = pd.to_datetime(df_par[disb_col], errors="coerce").dt.to_period("M")
 
-        def _par(grp: pd.DataFrame, threshold: int) -> float:
-            total = grp["_bal"].sum()
-            if total == 0:
-                return 0.0
-            return grp.loc[grp["_dpd"] >= threshold, "_bal"].sum() / total * 100
+        monthly_total = df_par.groupby("_month")["_bal"].sum().replace(0, np.nan)
+        par30_bal = df_par.assign(_v=np.where(df_par["_dpd"] >= 30, df_par["_bal"], 0.0)).groupby("_month")["_v"].sum()
+        par90_bal = df_par.assign(_v=np.where(df_par["_dpd"] >= 90, df_par["_bal"], 0.0)).groupby("_month")["_v"].sum()
 
-        par30_series = df_par.groupby("_month").apply(_par, threshold=30).tail(12)
-        par90_series = df_par.groupby("_month").apply(_par, threshold=90).tail(12)
+        par30_series = (par30_bal / monthly_total * 100).fillna(0).tail(12)
+        par90_series = (par90_bal / monthly_total * 100).fillna(0).tail(12)
 
     return {
         "horizon_months":  horizon_months,
