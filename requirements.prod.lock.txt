@@ -823,7 +823,7 @@ websockets==15.0.1
     #   google-genai
     #   prefect
     #   realtime
-wrapt==1.17.3
+wrapt==2.1.2
     # via
     #   -r requirements.txt
     #   opentelemetry-instrumentation

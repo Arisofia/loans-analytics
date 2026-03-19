@@ -55,7 +55,7 @@ opentelemetry-instrumentation-requests==0.60b0
 opentelemetry-instrumentation-urllib3==0.60b0
 opentelemetry-instrumentation-sqlite3==0.60b0
 opentelemetry-instrumentation-psycopg==0.60b0
-# Required by opentelemetry-instrumentation 0.60b0 (wrapt<2.0.0)
+# Required by opentelemetry-instrumentation 0.60b0 (wrapt<3.0.0)
 wrapt<2.0.0
 prometheus-fastapi-instrumentator>=7.0.0
 
