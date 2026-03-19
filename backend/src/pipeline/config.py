@@ -117,15 +117,10 @@ def load_business_rules(rules_path: Optional[Path] = None) -> Dict[str, Any]:
         rules_path = Path(__file__).parent.parent.parent.parent / "config" / "business_rules.yaml"
 
     if not rules_path.exists():
-        # Fallback to local config if exists (legacy/special environments)
-        local_rules = Path(__file__).parent.parent.parent / "config" / "business_rules.yaml"
-        if local_rules.exists():
-            rules_path = local_rules
-        else:
-            raise FileNotFoundError(
-                f"Business rules file not found at {rules_path}. "
-                "Critical business logic depends on this configuration."
-            )
+        raise FileNotFoundError(
+            f"Business rules file not found at {rules_path}. "
+            "Critical business logic depends on this configuration."
+        )
 
     return _load_required_yaml_dict(rules_path, "Business rules")
 
@@ -147,14 +142,9 @@ def load_kpi_definitions(kpi_path: Optional[Path] = None) -> Dict[str, Any]:
         )
 
     if not kpi_path.exists():
-        # Fallback to local config if exists
-        local_kpi = Path(__file__).parent.parent.parent / "config" / "kpis" / "kpi_definitions.yaml"
-        if local_kpi.exists():
-            kpi_path = local_kpi
-        else:
-            raise FileNotFoundError(
-                f"KPI definitions file not found at {kpi_path}. "
-                "Pipeline cannot calculate metrics without valid definitions."
-            )
+        raise FileNotFoundError(
+            f"KPI definitions file not found at {kpi_path}. "
+            "Pipeline cannot calculate metrics without valid definitions."
+        )
 
     return _load_required_yaml_dict(kpi_path, "KPI definitions")
