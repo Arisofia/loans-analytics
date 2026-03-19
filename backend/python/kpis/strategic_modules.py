@@ -492,6 +492,7 @@ def build_compliance_dashboard(
             "npl_180_pct":             "Head of Risk",
             "utilization_pct":         "CFO",
             "apr_pct_ann":             "Head of Pricing",
+            "dscr":                    "Finance",
             "utilization_pct_min":     "CFO",
             "apr_pct_min":             "Head of Pricing",
             "ce_6m_pct":               "Head of Collections",
@@ -505,6 +506,8 @@ def build_compliance_dashboard(
     deb_col  = _col(loans_df, ["pagador", "cliente", "emisor", "Emisor", "debtor_id", "payer_id"])
     util_col = _col(loans_df, ["porcentaje_utilizado", "Porcentaje_Utilizado", "line_utilization"])
     line_col = _col(loans_df, ["lineacredito", "LineaCredito", "credit_line"])
+    noi_col = _col(loans_df, ["net_operating_income", "net_income", "ebitda", "noi"])
+    debt_service_col = _col(loans_df, ["debt_service", "total_debt_service", "debt_service_amount", "monthly_debt_service"])
 
     loans_df = loans_df.reset_index(drop=True)
     bal  = _num(loans_df, bal_col)  if bal_col  else pd.Series([0.0] * len(loans_df))
@@ -570,6 +573,14 @@ def build_compliance_dashboard(
             if sched_total > 0:
                 ce_actual = float(collected6 / sched_total * 100)
 
+    # DSCR (Debt Service Coverage Ratio)
+    dscr_actual: float | None = None
+    if noi_col and debt_service_col:
+        noi_sum = float(_num(loans_df, noi_col).sum())
+        debt_service_sum = float(_num(loans_df, debt_service_col).sum())
+        if debt_service_sum > 0:
+            dscr_actual = noi_sum / debt_service_sum
+
     actuals = {
         "rotation_x":              round(rotation_actual, 2),
         "top1_concentration_pct":  round(top1_pct, 1),
@@ -580,6 +591,7 @@ def build_compliance_dashboard(
         "utilization_pct":         round(util_actual, 1) if util_actual is not None else None,
         "apr_pct_ann":             round(apr_ann, 1) if apr_ann is not None else None,
         "ce_6m_pct":               round(ce_actual, 1) if ce_actual is not None else None,
+        "dscr":                    round(dscr_actual, 2) if dscr_actual is not None else None,
     }
     data_sources = {
         "par":           f"loan.{dpd_col}" if dpd_col else "NO_DATA",
@@ -587,6 +599,7 @@ def build_compliance_dashboard(
         "ce_6m":         "payments.true_total_payment / loan.disbursement_amount (6m proxy)" if not sched else f"payments.true_total_payment / loan.{sched}",
         "utilization":   f"loan.{util_col}" if util_col else (f"loan.{line_col}" if line_col else "NO_DATA"),
         "apr":           f"loan.{apr_col} (annual decimal ×100)" if apr_col else "NO_DATA",
+        "dscr":          (f"loan.{noi_col} / loan.{debt_service_col}" if (noi_col and debt_service_col) else "NO_DATA"),
     }
 
     # ── Build compliance rows ──────────────────────────────────────────
@@ -599,6 +612,7 @@ def build_compliance_dashboard(
         "par90_pct":              ("par90_pct",               2.0,  True,  0.5),
         "npl_180_pct":            ("npl_180_pct",             4.0,  True,  0.5),
         "utilization_pct":        ("utilization_pct",         75.0, False, 5.0),
+        "dscr":                   ("dscr",                    float(guardrails.get("dscr", 1.2)) if guardrails else 1.2, False, 0.1),
         "ce_6m_pct":              ("ce_6m_pct",               96.0, False, 2.0),
     }
 
@@ -627,13 +641,19 @@ def build_compliance_dashboard(
         var_pct= round(var / target * 100, 1) if target else 0.0
 
         if lower_is_better:
-            if actual <= target:              stat = "ok"
-            elif actual <= target + warn_band: stat = "warning"
-            else:                              stat = "breach"
+            if actual <= target:
+                stat = "ok"
+            elif actual <= target + warn_band:
+                stat = "warning"
+            else:
+                stat = "breach"
         else:
-            if actual >= target:              stat = "ok"
-            elif actual >= target - warn_band: stat = "warning"
-            else:                              stat = "breach"
+            if actual >= target:
+                stat = "ok"
+            elif actual >= target - warn_band:
+                stat = "warning"
+            else:
+                stat = "breach"
 
         counts[stat] += 1
         rows.append({

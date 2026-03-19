@@ -86,6 +86,17 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(util_row["status"], "no_data")
         self.assertEqual(util_row["actual"], "NO_DATA")
 
+    def test_compliance_marks_dscr_as_no_data_when_inputs_missing(self):
+        loans = self._sample_loans()
+        payments = self._sample_payments()
+
+        report = build_compliance_dashboard(loans, payments)
+
+        dscr_row = next(row for row in report["metrics"] if row["metric"] == "dscr")
+        self.assertEqual(dscr_row["status"], "no_data")
+        self.assertEqual(dscr_row["actual"], "NO_DATA")
+        self.assertEqual(report["data_sources"].get("dscr"), "NO_DATA")
+
     def test_compliance_apr_range_metric_ok_with_custom_guardrails(self):
         loans = self._sample_loans()
         payments = self._sample_payments()
@@ -114,6 +125,23 @@ class TestStrategicModules(unittest.TestCase):
         apr_row = next(row for row in report["metrics"] if row["metric"] == "apr_pct_ann")
         self.assertEqual(apr_row["status"], "breach")
         self.assertLess(apr_row["variance"], 0)
+
+    def test_compliance_dscr_metric_ok_when_inputs_present(self):
+        loans = self._sample_loans().copy()
+        payments = self._sample_payments()
+        loans["net_operating_income"] = [300, 450, 360, 240, 210, 270]
+        loans["debt_service"] = [200, 300, 240, 160, 140, 180]
+
+        report = build_compliance_dashboard(
+            loans,
+            payments,
+            guardrails={"dscr": 1.4, "apr_pct_min": 30.0, "apr_pct_max": 40.0},
+        )
+
+        dscr_row = next(row for row in report["metrics"] if row["metric"] == "dscr")
+        self.assertEqual(dscr_row["status"], "ok")
+        self.assertEqual(dscr_row["actual"], 1.5)
+        self.assertEqual(dscr_row["target"], 1.4)
 
     def test_pd_model_excludes_dpd_like_leakage_features(self):
         # Build enough rows for guarded CV thresholds.
