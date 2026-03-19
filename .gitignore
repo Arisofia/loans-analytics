@@ -56,9 +56,13 @@ out/
 .env.local
 .env.*.local
 *.env.local
+.envrc
 .env.monitoring
 n8n/.env
 grafana/.env
+credentials/
+*service-account*.json
+*google-credentials*.json
 local.settings.json
 .azure
 .azure-credentials

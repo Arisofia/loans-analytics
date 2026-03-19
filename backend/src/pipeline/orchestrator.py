@@ -47,6 +47,8 @@ class UnifiedPipeline:
     Input → Ingestion → Transformation → Calculation → Output → Dashboard
     """
 
+    _GSHEETS_URI_PREFIX = "gsheets://"
+
     def __init__(self, config_path: Optional[Path] = None, base_log_dir: Optional[Path] = None):
         """
         Initialize the unified pipeline.
@@ -138,9 +140,12 @@ class UnifiedPipeline:
         # so that any change in data, config, code version, or mode produces a new run.
         mode_token = mode.replace("-", "_")
         if input_path is not None:
-            if not input_path.exists():
-                raise FileNotFoundError(f"Input file not found: {input_path}")
-            data_hash = self._calculate_input_hash(input_path)
+            if self._is_google_sheets_uri(input_path):
+                data_hash = self._calculate_ingestion_source_hash(str(input_path))
+            else:
+                if not input_path.exists():
+                    raise FileNotFoundError(f"Input file not found: {input_path}")
+                data_hash = self._calculate_input_hash(input_path)
         else:
             data_hash = self._calculate_ingestion_source_hash()
 
@@ -419,7 +424,13 @@ class UnifiedPipeline:
             logger.error("Failed to hash pipeline config", exc_info=True)
             raise RuntimeError("Unable to hash pipeline configuration deterministically") from e
 
-    def _calculate_ingestion_source_hash(self) -> str:
+    @staticmethod
+    def _is_google_sheets_uri(path: Path) -> bool:
+        """Return True when the provided input path encodes a gsheets URI."""
+        normalized = str(path).replace("\\", "/")
+        return normalized.startswith("gsheets://") or normalized.startswith("gsheets:/")
+
+    def _calculate_ingestion_source_hash(self, source_hint: Optional[str] = None) -> str:
         """Calculate deterministic hash for non-file ingestion sources.
 
         When no explicit input file is provided, idempotency remains deterministic by
@@ -428,7 +439,9 @@ class UnifiedPipeline:
         try:
             ingestion_config = self.config.ingestion if isinstance(self.config.ingestion, dict) else {}
             canonical_ingestion = json.dumps(ingestion_config, sort_keys=True, default=str)
-            return hashlib.sha256(f"ingestion_config|{canonical_ingestion}".encode()).hexdigest()[:16]
+            source_component = str(source_hint or "default")
+            payload = f"ingestion_source|{source_component}|{canonical_ingestion}"
+            return hashlib.sha256(payload.encode()).hexdigest()[:16]
         except Exception as e:
             logger.error("Failed to hash ingestion source configuration", exc_info=True)
             raise RuntimeError("Unable to hash ingestion source deterministically") from e

@@ -31,6 +31,14 @@ class ControlMoraSheetsAdapter:
 
     def fetch_desembolsos_raw(self) -> List[Dict[str, Any]]:
         """Fetch all rows from the DESEMBOLSOS tab with strict validation."""
+        return self.fetch_sheet_raw(self.DESEMBOLSOS_TAB, required_columns=_REQUIRED_COLUMNS)
+
+    def fetch_sheet_raw(
+        self,
+        tab_name: str,
+        required_columns: set[str] | None = None,
+    ) -> List[Dict[str, Any]]:
+        """Fetch all rows from an arbitrary sheet tab with optional column validation."""
         self._ensure_dependencies()
         client = self._authenticate()
 
@@ -41,24 +49,29 @@ class ControlMoraSheetsAdapter:
                 f"CRITICAL: Could not open spreadsheet '{self._spreadsheet_id}': {exc}"
             ) from exc
 
+        normalized_tab = str(tab_name).strip()
+        if not normalized_tab:
+            raise ValueError("CRITICAL: Google Sheets tab name is empty")
+
         try:
-            worksheet = spreadsheet.worksheet(self.DESEMBOLSOS_TAB)
+            worksheet = spreadsheet.worksheet(normalized_tab)
         except Exception as exc:  # pragma: no cover
             raise ValueError(
-                f"CRITICAL: Tab '{self.DESEMBOLSOS_TAB}' not found in spreadsheet '{self._spreadsheet_id}': {exc}"
+                f"CRITICAL: Tab '{normalized_tab}' not found in spreadsheet '{self._spreadsheet_id}': {exc}"
             ) from exc
 
         records = worksheet.get_all_records()
         if not records:
-            raise ValueError("CRITICAL: DESEMBOLSOS tab returned 0 rows")
+            raise ValueError(f"CRITICAL: Tab '{normalized_tab}' returned 0 rows")
 
-        present = set(records[0].keys())
-        missing = sorted(_REQUIRED_COLUMNS - present)
-        if missing:
-            raise ValueError(
-                "CRITICAL: DESEMBOLSOS missing required columns "
-                f"{missing}; present={sorted(present)}"
-            )
+        if required_columns:
+            present = set(records[0].keys())
+            missing = sorted(required_columns - present)
+            if missing:
+                raise ValueError(
+                    f"CRITICAL: Tab '{normalized_tab}' missing required columns "
+                    f"{missing}; present={sorted(present)}"
+                )
 
         return records
 

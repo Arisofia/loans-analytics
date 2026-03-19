@@ -52,7 +52,16 @@ class KPIFormulaEngine:
         for variable, value in context.items():
             expression = re.sub(rf"\b{re.escape(variable)}\b", str(value), expression)
 
-        return self._safe_eval_numeric_expression(expression)
+        try:
+            return self._safe_eval_numeric_expression(expression)
+        except ZeroDivisionError:
+            logger.warning(
+                "Comparison KPI formula hit division by zero; returning 0.0. "
+                "formula=%s, context=%s",
+                formula,
+                context,
+            )
+            return Decimal("0.0")
 
     def _safe_eval_numeric_expression(self, expression: str) -> Decimal:
         """

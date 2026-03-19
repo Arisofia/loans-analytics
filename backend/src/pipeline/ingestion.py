@@ -29,6 +29,8 @@ logger = get_logger(__name__)
 class IngestionPhase:
     """Phase 1: Data Ingestion"""
 
+    _GSHEETS_URI_PREFIX = "gsheets://"
+
     def __init__(self, config: Dict[str, Any]):
         """
         Initialize ingestion phase.
@@ -57,7 +59,7 @@ class IngestionPhase:
 
         # Load data
         if self._should_use_google_sheets(input_path):
-            df = self._load_from_google_sheets()
+            df = self._load_from_google_sheets(input_path)
         elif input_path and input_path.exists():
             df = self._load_from_file(input_path)
         elif input_path and not input_path.exists():
@@ -161,12 +163,21 @@ class IngestionPhase:
 
     def _should_use_google_sheets(self, input_path: Optional[Path]) -> bool:
         """Return True when ingestion should pull from Google Sheets."""
-        if input_path is not None and str(input_path).startswith("gsheets://"):
+        if input_path is not None and self._extract_google_sheet_tab(input_path):
             return True
         sheets_cfg = self.config.get("google_sheets", {})
         return bool(sheets_cfg.get("enabled", False) and input_path is None)
 
-    def _load_from_google_sheets(self) -> pd.DataFrame:
+    def _extract_google_sheet_tab(self, input_path: Path) -> Optional[str]:
+        """Extract worksheet tab from a gsheets URI regardless of OS path normalization."""
+        normalized = str(input_path).replace("\\", "/")
+        if normalized.startswith(self._GSHEETS_URI_PREFIX):
+            return normalized[len(self._GSHEETS_URI_PREFIX) :].strip("/") or None
+        if normalized.startswith("gsheets:/"):
+            return normalized[len("gsheets:/") :].strip("/") or None
+        return None
+
+    def _load_from_google_sheets(self, input_path: Optional[Path] = None) -> pd.DataFrame:
         """Load Control de Mora rows from Google Sheets through the institutional adapter."""
         sheets_cfg = self.config.get("google_sheets", {})
         credentials_path = sheets_cfg.get("credentials_path") or os.getenv(
@@ -186,12 +197,67 @@ class IngestionPhase:
             credentials_path=str(credentials_path),
             spreadsheet_id=str(spreadsheet_id),
         )
-        records = adapter.fetch_desembolsos_raw()
+        requested_tab = self._extract_google_sheet_tab(input_path) if input_path else None
+        target_tab = requested_tab or str(sheets_cfg.get("worksheet", "")).strip() or "DESEMBOLSOS"
+
+        if target_tab.upper() == "DESEMBOLSOS":
+            records = adapter.fetch_desembolsos_raw()
+        else:
+            records = adapter.fetch_sheet_raw(target_tab)
+
         if not records:
-            raise ValueError("CRITICAL: Google Sheets adapter returned zero records")
+            raise ValueError(f"CRITICAL: Google Sheets tab '{target_tab}' returned zero records")
 
         df = pd.DataFrame(records)
-        logger.info("Loaded %d rows from Google Sheets adapter", len(df))
+        df = self._coerce_google_sheets_schema(df)
+        logger.info("Loaded %d rows from Google Sheets adapter tab '%s'", len(df), target_tab)
+        return df
+
+    def _coerce_google_sheets_schema(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Coerce common Google Sheets source columns into canonical ingestion fields."""
+
+        def first_existing(columns: list[str]) -> Optional[str]:
+            return next((col for col in columns if col in df.columns), None)
+
+        loan_id_col = first_existing(["loan_id", "NumeroInterno", "NumeroQuedan", "numerointerno"])
+        amount_col = first_existing(
+            ["amount", "ValorAprobado", "MontoDesembolsado", "valoraprobado", "montodesembolsado"]
+        )
+        borrower_id_col = first_existing(["borrower_id", "CodCliente", "codcliente"])
+        status_col = first_existing(["status", "mdscPosteado", "mdscposteado", "infoclientefinal"])
+
+        if loan_id_col and "loan_id" not in df.columns:
+            df["loan_id"] = df[loan_id_col]
+        if amount_col and "amount" not in df.columns:
+            df["amount"] = pd.to_numeric(df[amount_col], errors="coerce")
+        if borrower_id_col and "borrower_id" not in df.columns:
+            df["borrower_id"] = df[borrower_id_col]
+
+        if "status" not in df.columns:
+            if status_col:
+                normalized = df[status_col].astype(str).str.strip().str.lower()
+                df["status"] = normalized.replace(
+                    {
+                        "vigente": "active",
+                        "al_dia": "active",
+                        "posted": "active",
+                        "mora": "delinquent",
+                        "vencido": "delinquent",
+                        "castigado": "defaulted",
+                        "default": "defaulted",
+                    }
+                )
+            else:
+                # Conservative default keeps records in-scope while preserving fail-fast checks downstream.
+                df["status"] = "active"
+
+        missing = [col for col in ("loan_id", "amount", "status", "borrower_id") if col not in df.columns]
+        if missing:
+            raise ValueError(
+                "CRITICAL: Google Sheets data cannot be normalized to canonical schema; "
+                f"missing columns after mapping: {missing}. Available columns: {sorted(df.columns)}"
+            )
+
         return df
 
     def _validate_schema(self, df: pd.DataFrame) -> Dict[str, Any]:
