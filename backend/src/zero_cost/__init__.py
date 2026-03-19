@@ -48,3 +48,4 @@ __all__ = [
     "loan_xirr",
     "portfolio_xirr",
 ]
+
