@@ -44,10 +44,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from backend.python.financial_engine.ltv import calculate_ltv_sintetico
+from backend.python.kpis.ltv import calculate_ltv_sintetico
 from backend.python.kpis.collection_rate import calculate_collection_rate
 from backend.python.kpis.formula_engine import KPIFormulaEngine
-from backend.python.kpis.par_30 import calculate_par_30
 from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -134,15 +133,45 @@ class KPIEngineV2:
             for name, value in dynamic_kpis.items()
         }
 
-    def calculate_par_30(self) -> Tuple[float, Dict[str, Any]]:
+    def calculate_par_30(self) -> Tuple[Decimal, Dict[str, Any]]:
         """Calculate Portfolio at Risk (30+ days)."""
         kpi_name = "PAR30"
         try:
-            value = calculate_par_30(self.df)
+            # Prefer dpd column if available for unified logic
+            if "dpd" in self.df.columns and "outstanding_balance" in self.df.columns:
+                active_mask = self.df["status"].isin(["active", "delinquent", "defaulted"]) if "status" in self.df.columns else pd.Series(True, index=self.df.index)
+                subset = self.df[active_mask]
+                total_out = float(subset["outstanding_balance"].sum())
+                if total_out > 0:
+                    par30_mask = (subset["dpd"] >= 30) | (subset["status"].isin(_NPL_BROAD_STATUSES) if "status" in subset.columns else False)
+                    par30_out = float(subset.loc[par30_mask, "outstanding_balance"].sum())
+                    value = Decimal(str(round((par30_out / total_out) * 100, 2))).quantize(Decimal("0.01"))
+                    method = "v2_engine_native"
+                else:
+                    value = Decimal("0.00")
+                    method = "v2_engine_native_zero_bal"
+            else:
+                # Fallback to legacy bucket columns without external module dependency.
+                required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
+                missing = [col for col in required if col not in self.df.columns]
+                if missing:
+                    raise ValueError(f"Missing required columns for PAR30: {', '.join(missing)}")
+
+                d30_60 = pd.to_numeric(self.df["dpd_30_60_usd"], errors="coerce").fillna(0.0).sum()
+                d60_90 = pd.to_numeric(self.df["dpd_60_90_usd"], errors="coerce").fillna(0.0).sum()
+                d90p = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
+                total = pd.to_numeric(self.df["total_receivable_usd"], errors="coerce").fillna(0.0).sum()
+
+                if total <= 0:
+                    value = Decimal("0.00")
+                else:
+                    value = Decimal(str(round(((d30_60 + d60_90 + d90p) / total) * 100, 2))).quantize(Decimal("0.01"))
+                method = "v1_legacy_buckets"
+
             context = {
-                "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
+                "formula": "SUM(balance WHERE DPD >= 30) / SUM(total_balance) * 100",
                 "rows_processed": len(self.df),
-                "calculation_method": "v1_legacy",
+                "calculation_method": method,
             }
             self._record_calculation(kpi_name, value, context)
             logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
@@ -150,7 +179,49 @@ class KPIEngineV2:
         except Exception as e:
             error_msg = str(e)
             logger.error("Failed to calculate %s: %s", kpi_name, error_msg)
-            # Fail-fast mandate: do not return partial/silent failures
+            raise ValueError(f"CRITICAL: {kpi_name} calculation failed: {e}") from e
+
+    def calculate_par_90(self) -> Tuple[Decimal, Dict[str, Any]]:
+        """Calculate Portfolio at Risk (90+ days)."""
+        kpi_name = "PAR90"
+        try:
+            if "dpd" in self.df.columns and "outstanding_balance" in self.df.columns:
+                active_mask = self.df["status"].isin(["active", "delinquent", "defaulted"]) if "status" in self.df.columns else pd.Series(True, index=self.df.index)
+                subset = self.df[active_mask]
+                total_out = float(subset["outstanding_balance"].sum())
+                if total_out > 0:
+                    par90_mask = (subset["dpd"] >= 90) | (subset["status"].isin(_NPL_STRICT_STATUSES) if "status" in subset.columns else False)
+                    par90_out = float(subset.loc[par90_mask, "outstanding_balance"].sum())
+                    value = Decimal(str(round((par90_out / total_out) * 100, 2))).quantize(Decimal("0.01"))
+                    method = "v2_engine_native"
+                else:
+                    value = Decimal("0.00")
+                    method = "v2_engine_native_zero_bal"
+            else:
+                required = ["dpd_90_plus_usd", "total_receivable_usd"]
+                missing = [col for col in required if col not in self.df.columns]
+                if missing:
+                    raise ValueError(f"Missing required columns for PAR90: {', '.join(missing)}")
+
+                d90p = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
+                total = pd.to_numeric(self.df["total_receivable_usd"], errors="coerce").fillna(0.0).sum()
+                if total <= 0:
+                    value = Decimal("0.00")
+                else:
+                    value = Decimal(str(round((d90p / total) * 100, 2))).quantize(Decimal("0.01"))
+                method = "v1_legacy_buckets"
+
+            context = {
+                "formula": "SUM(balance WHERE DPD >= 90) / SUM(total_balance) * 100",
+                "rows_processed": len(self.df),
+                "calculation_method": method,
+            }
+            self._record_calculation(kpi_name, value, context)
+            logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
+            return value, context
+        except Exception as e:
+            error_msg = str(e)
+            logger.error("Failed to calculate %s: %s", kpi_name, error_msg)
             raise ValueError(f"CRITICAL: {kpi_name} calculation failed: {e}") from e
 
     def calculate_collection_rate(self) -> Tuple[float, Dict[str, Any]]:
@@ -228,6 +299,13 @@ class KPIEngineV2:
         except Exception as e:
             logger.warning("Standard KPI PAR30 failed: %s", e)
             failures.append(f"PAR30={e}")
+
+        try:
+            par90_val, par90_ctx = self.calculate_par_90()
+            results["PAR90"] = {"value": par90_val, "context": par90_ctx}
+        except Exception as e:
+            logger.warning("Standard KPI PAR90 failed: %s", e)
+            failures.append(f"PAR90={e}")
 
         try:
             coll_rate_val, coll_rate_ctx = self.calculate_collection_rate()

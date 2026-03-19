@@ -25,7 +25,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .dpd_calculator import DPDCalculator
+from backend.python.kpis.dpd_calculator import DPDCalculator
 from .loan_tape_loader import LoanTapeLoader
 from .xirr import contractual_apr, portfolio_xirr
 

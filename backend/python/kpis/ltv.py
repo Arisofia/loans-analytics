@@ -1,4 +1,7 @@
-"""Shared synthetic LTV helpers (single source of truth)."""
+"""Invoice LTV (Loan-to-Value) calculation module.
+
+Invoice LTV = capital_desembolsado / (valor_nominal_factura * (1 - tasa_dilucion))
+"""
 
 from __future__ import annotations
 

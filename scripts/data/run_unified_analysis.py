@@ -67,16 +67,17 @@ def monthly_from_loan_tape(raw_loan_data: pd.DataFrame, cutoff: pd.Timestamp) ->
 
 
 def monthly_from_control_mora(dim_loan: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataFrame:
-    if dim_loan.empty:
+    required_cols = {"snapshot_month", "loan_id", "principal_outstanding", "dpd"}
+    if dim_loan.empty or not required_cols.issubset(set(dim_loan.columns)):
         return pd.DataFrame(columns=["month", "source", "loans", "disbursed_amount", "outstanding_amount", "avg_dpd"])
 
     df = dim_loan.copy()
-    df["month"] = pd.to_datetime(df.get("snapshot_month"), errors="coerce").dt.to_period("M").dt.to_timestamp("M")
+    df["month"] = pd.to_datetime(df["snapshot_month"], errors="coerce").dt.to_period("M").dt.to_timestamp("M")
     df = df[df["month"].notna()]
     df = df[df["month"] > cutoff]
 
-    df["principal_outstanding"] = pd.to_numeric(df.get("principal_outstanding"), errors="coerce").fillna(0.0)
-    df["dpd"] = pd.to_numeric(df.get("dpd"), errors="coerce").fillna(0)
+    df["principal_outstanding"] = pd.to_numeric(df["principal_outstanding"], errors="coerce").fillna(0.0)
+    df["dpd"] = pd.to_numeric(df["dpd"], errors="coerce").fillna(0)
 
     out = (
         df.groupby("month", as_index=False)

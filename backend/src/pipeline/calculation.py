@@ -10,7 +10,7 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
 
-from backend.python.financial_engine.ltv import calculate_ltv_sintetico
+from backend.python.kpis.ltv import calculate_ltv_sintetico
 from backend.python.kpis.engine import KPIEngineV2
 from backend.python.kpis.formula_engine import KPIFormulaEngine  # re-exported as SSOT
 

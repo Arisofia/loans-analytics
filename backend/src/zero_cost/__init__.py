@@ -12,7 +12,7 @@ Replaces Azure services with free-tier alternatives:
 
 from .control_mora_adapter import ControlMoraAdapter
 from .crosswalk import Crosswalk
-from .dpd_calculator import DPDCalculator
+from backend.python.kpis.dpd_calculator import DPDCalculator
 from .exporter import Exporter
 from .fuzzy_matcher import FuzzyIncomeMatcher
 from .lend_id_mapper import LendIdMapper
@@ -30,12 +30,12 @@ from .xirr import contractual_apr, loan_xirr, portfolio_xirr, xirr
 
 __all__ = [
     "ZeroCostStorage",
-    "LendIdMapper",
+  "LendIdMapper",
     "ControlMoraAdapter",
     "MonthlySnapshotBuilder",
-    "FuzzyIncomeMatcher",
+  "FuzzyIncomeMatcher",
     "LoanTapeLoader",
-    "Crosswalk",
+  "Crosswalk",
     "DPDCalculator",
     "PipelineRouter",
     "Exporter",
