@@ -1,0 +1,246 @@
+# Prometheus Alert Rules for KPI Threshold Status
+# File: config/rules/kpi_threshold_alerts.yml
+# Monitors: KPI threshold status states and breach notifications
+# Triggers alerts when KPIs breach warning or critical thresholds
+
+groups:
+  # ============================================
+  # KPI THRESHOLD STATUS ALERTS
+  # ============================================
+  - name: kpi-thresholds
+    interval: 60s
+    rules:
+      # Critical threshold breaches
+      - alert: KPICriticalThresholdBreached
+        expr: |
+          kpi_threshold_status{status="critical"} == 1
+        for: 5m
+        labels:
+          severity: critical
+          team: finance
+          component: kpi-monitoring
+        annotations:
+          summary: "KPI {{ $labels.kpi_name }} at CRITICAL threshold"
+          description: |
+            KPI {{ $labels.kpi_name }} has breached its critical threshold.
+            Current value: {{ $value }}
+            Threshold: {{ $labels.critical_threshold }}
+            Status: CRITICAL
+          dashboard: "https://grafana.abaco.internal/d/kpi-dashboard?var-kpi={{ $labels.kpi_name }}"
+          action: |
+            1. Check dashboard: https://abaco-dashboard.internal
+            2. Review KPI definition: config/kpis/kpi_definitions.yaml#{{ $labels.kpi_name }}
+            3. Open incident if required
+            4. Contact {{ $labels.owner_email }}
+
+      # Warning threshold breaches
+      - alert: KPIWarningThresholdBreached
+        expr: |
+          kpi_threshold_status{status="warning"} == 1
+        for: 10m
+        labels:
+          severity: warning
+          team: finance
+          component: kpi-monitoring
+        annotations:
+          summary: "KPI {{ $labels.kpi_name }} at WARNING threshold"
+          description: |
+            KPI {{ $labels.kpi_name }} has breached its warning threshold.
+            Current value: {{ $value }}
+            Threshold: {{ $labels.warning_threshold }}
+            Status: WARNING (monitor closely)
+          dashboard: "https://grafana.abaco.internal/d/kpi-dashboard?var-kpi={{ $labels.kpi_name }}"
+          action: |
+            1. Monitor KPI trend: check if continuing to worsen
+            2. Review recent operational changes
+            3. Prepare mitigation plan
+            4. Escalate to critical if it hits critical threshold
+
+      # Multiple KPIs in warning state
+      - alert: MultipleKPIsInWarningState
+        expr: |
+          count(kpi_threshold_status{status="warning"}) > 3
+        for: 15m
+        labels:
+          severity: warning
+          team: finance
+          component: kpi-monitoring
+        annotations:
+          summary: "{{ $value }} KPIs currently in WARNING state"
+          description: |
+            Multiple KPIs ({{ $value }}) are in warning state simultaneously.
+            This may indicate systematic operational issues.
+            Review all warned KPIs in the dashboard.
+          dashboard: "https://grafana.abaco.internal/d/kpi-dashboard?var-status=warning"
+
+      # Portfolio coverage alert (multiple critical breaches)
+      - alert: CriticalPortfolioMetricsBreached
+        expr: |
+          count(kpi_threshold_status{status="critical", category="portfolio"}) > 1
+        for: 5m
+        labels:
+          severity: critical
+          team: finance
+          component: kpi-monitoring
+        annotations:
+          summary: "{{ $value }} critical portfolio metrics breached"
+          description: |
+            Multiple critical portfolio metrics are breached.
+            This indicates significant portfolio health issues requiring immediate attention.
+          action: |
+            1. ESCALATE TO MANAGEMENT IMMEDIATELY
+            2. Review portfolio composition: assets, concentrations, defaults
+            3. Initiate emergency risk review meeting
+            4. Prepare investor communication
+          runbook: "https://github.com/Arisofia/abaco-loans-analytics/wiki/Critical-Portfolio-Breach"
+
+      # Asset quality deterioration
+      - alert: AssetQualityDeteriorated
+        expr: |
+          kpi_threshold_status{status="critical", category="asset_quality"} == 1
+        for: 10m
+        labels:
+          severity: critical
+          team: risk
+          component: kpi-monitoring
+        annotations:
+          summary: "Asset quality metrics in CRITICAL state"
+          description: |
+            Asset quality KPIs (PAR, Default Rate, etc.) have hit critical levels.
+            Portfolio credit risk is elevated.
+          action: |
+            1. Review 30/60/90 DPD bucket distributions
+            2. Assess default trajectory and recovery prospects
+            3. Evaluate collection strategy effectiveness
+            4. Consider proactive strategy adjustments
+          dashboard: "https://grafana.abaco.internal/d/asset-quality"
+
+      # Collections performance alert
+      - alert: CollectionsPerformanceBelowTarget
+        expr: |
+          kpi_threshold_status{status="critical", kpi_name=~"collection.*|cash_on_hand"} == 1
+        for: 5m
+        labels:
+          severity: critical
+          team: operations
+          component: kpi-monitoring
+        annotations:
+          summary: "Collections performance in CRITICAL state"
+          description: |
+            Collections-related KPIs are below critical thresholds.
+            Cash position and collection rates indicate liquidity/operational stress.
+          action: |
+            1. Review collection pipeline status
+            2. Check for payment posting delays
+            3. Assess liquidity runway at current collection rate
+            4. Escalate to CFO if liquidity < 30 days
+
+      # Profitability alarm
+      - alert: ProfitabilityMetricsCompromised
+        expr: |
+          kpi_threshold_status{status="critical", category="profitability"} == 1
+        for: 10m
+        labels:
+          severity: warning
+          team: finance
+          component: kpi-monitoring
+        annotations:
+          summary: "Profitability metrics (NPM, margins) in warning/critical state"
+          description: |
+            Net profit margin or gross margin KPIs have breached thresholds.
+            Business unit economics may be deteriorating.
+          action: |
+            1. Review P&L by segment and product
+            2. Identify cost drivers and margin impacts
+            3. Assess pricing adequacy
+            4. Evaluate cost reduction opportunities
+
+  # ============================================
+  # KPI DATA QUALITY ALERTS
+  # ============================================
+  - name: kpi-data-quality
+    interval: 60s
+    rules:
+      # Stale KPI data
+      - alert: KPIDataStale
+        expr: |
+          (time() - kpi_last_update_timestamp) > 86400  # 24 hours
+        for: 5m
+        labels:
+          severity: warning
+          team: engineering
+          component: kpi-pipeline
+        annotations:
+          summary: "KPI {{ $labels.kpi_name }} data is stale (> 24h)"
+          description: |
+            KPI {{ $labels.kpi_name }} was last updated {{ $value | humanize }} seconds ago.
+            Pipeline may be failing or delayed.
+          action: |
+            1. Check pipeline execution logs
+            2. Verify data source connectivity
+            3. Monitor pipeline job queue
+            4. Restart pipeline if stuck
+
+      # Threshold configuration missing
+      - alert: KPIThresholdNotConfigured
+        expr: |
+          kpi_threshold_status{status="not_configured"} == 1 and kpi_importance{level="high"} == 1
+        for: 1h
+        labels:
+          severity: info
+          team: finance
+          component: kpi-governance
+        annotations:
+          summary: "High-importance KPI {{ $labels.kpi_name }} has no threshold configured"
+          description: |
+            KPI {{ $labels.kpi_name }} is missing threshold configuration.
+            Its monitoring status cannot be evaluated.
+          action: |
+            1. Review KPI definition in config/kpis/kpi_definitions.yaml
+            2. Add appropriate thresholds (critical, warning)
+            3. Update governance documentation
+            4. Redeploy configuration to Prometheus
+
+  # ============================================
+  # SLA & COMPLIANCE ALERTS
+  # ============================================
+  - name: kpi-sla-compliance
+    interval: 60s
+    rules:
+      # Monthly SLA breach
+      - alert: MonthlySLABreach
+        expr: |
+          count(kpi_threshold_status{status="critical", kpi_importance="sla_critical"}) > 0
+        for: 1h
+        labels:
+          severity: critical
+          team: operations
+          component: kpi-monitoring
+        annotations:
+          summary: "Monthly SLA target {{ $labels.sla_metric }} breached"
+          description: |
+            Critical SLA metric is in breach. Client agreements may be at risk.
+          action: |
+            1. Review current month performance vs target
+            2. Assess likelihood of month-end recovery
+            3. Identify remediation actions
+            4. Prepare client communication if necessary
+
+      # Not meeting target (yellow flag)
+      - alert: KPIOffTargetInMonth
+        expr: |
+          kpi_threshold_status{status="warning"} == 1 and on(kpi_name) kpi_target_ytd_pct < 0.85
+        for: 2h
+        labels:
+          severity: warning
+          team: finance
+          component: kpi-governance
+        annotations:
+          summary: "KPI {{ $labels.kpi_name }} off target for month ({{ $value | humanizePercentage }} vs target)"
+          description: |
+            KPI {{ $labels.kpi_name }} is not on track to meet monthly target.
+          action: |
+            1. Review performance trajectory
+            2. Assess if catch-up is feasible
+            3. Identify operational drivers to adjust
+            4. Report to business unit leadership
