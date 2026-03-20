@@ -529,7 +529,7 @@ class TestOutlierDetection:
             }
         )
         transformer = TransformationPhase(default_config)
-        result_df, _ = transformer._detect_outliers(df)
+        _, metrics = transformer._detect_outliers(df)
 
         assert metrics["enabled"] is True
         assert metrics["method"] == "iqr"
@@ -545,7 +545,7 @@ class TestOutlierDetection:
         )
         config = {"outlier_detection": {"enabled": True, "method": "zscore", "threshold": 2.0}}
         transformer = TransformationPhase(config)
-        result_df, _ = transformer._detect_outliers(df)
+        _, metrics = transformer._detect_outliers(df)
 
         assert metrics["method"] == "zscore"
 
@@ -566,7 +566,7 @@ class TestOutlierDetection:
             }
         )
         transformer = TransformationPhase(default_config)
-        result_df, _ = transformer._detect_outliers(df)
+        result_df, metrics = transformer._detect_outliers(df)
 
         # Should not fail with NaN values
         assert metrics["enabled"] is True
@@ -585,7 +585,7 @@ class TestOutlierDetection:
             }
         )
         transformer = TransformationPhase(default_config)
-        result_df, _ = transformer._detect_outliers(df)
+        _, metrics = transformer._detect_outliers(df)
 
         # When IQR = 0, no values should be flagged as outliers
         assert metrics["enabled"] is True
