@@ -180,7 +180,7 @@ class TestNullHandling:
         out, metrics = transformer._handle_nulls(df)
 
         # Null must be filled with 0, not the median
-        assert out["amount"].iloc[-1] == 0.0, "Expected structural zero, not median imputation"
+        assert out["amount"].iloc[-1] == pytest.approx(0.0), "Expected structural zero, not median imputation"
         # An opacity flag column must be created
         assert "amount_is_missing" in out.columns
         assert bool(out["amount_is_missing"].iloc[-1]) is True
@@ -198,9 +198,9 @@ class TestNullHandling:
 
         out, _ = transformer._handle_nulls(df)
 
-        assert out["dpd"].iloc[0] == 100.0
-        assert out["dpd"].iloc[2] == 200.0
-        assert out["dpd"].iloc[3] == 300.0
+        assert out["dpd"].iloc[0] == pytest.approx(100.0)
+        assert out["dpd"].iloc[2] == pytest.approx(200.0)
+        assert out["dpd"].iloc[3] == pytest.approx(300.0)
 
 
 class TestTypeNormalization:
@@ -209,7 +209,7 @@ class TestTypeNormalization:
     def test_status_normalization(self, default_config, sample_loan_data):
         """Test status column normalization."""
         transformer = TransformationPhase(default_config)
-        df, metrics = transformer._normalize_types(sample_loan_data)
+        df, _ = transformer._normalize_types(sample_loan_data)
 
         # All status values should be lowercase
         assert all(s.islower() for s in df["status"].dropna())
@@ -226,7 +226,7 @@ class TestTypeNormalization:
             }
         )
         transformer = TransformationPhase(default_config)
-        result_df, metrics = transformer._normalize_types(df)
+        result_df, _ = transformer._normalize_types(df)
 
         assert pd.api.types.is_datetime64_any_dtype(result_df["origination_date"])
 
@@ -529,7 +529,7 @@ class TestOutlierDetection:
             }
         )
         transformer = TransformationPhase(default_config)
-        result_df, metrics = transformer._detect_outliers(df)
+        result_df, _ = transformer._detect_outliers(df)
 
         assert metrics["enabled"] is True
         assert metrics["method"] == "iqr"
@@ -545,7 +545,7 @@ class TestOutlierDetection:
         )
         config = {"outlier_detection": {"enabled": True, "method": "zscore", "threshold": 2.0}}
         transformer = TransformationPhase(config)
-        result_df, metrics = transformer._detect_outliers(df)
+        result_df, _ = transformer._detect_outliers(df)
 
         assert metrics["method"] == "zscore"
 
@@ -553,7 +553,7 @@ class TestOutlierDetection:
         """Test that outlier detection can be disabled."""
         config = {"outlier_detection": {"enabled": False}}
         transformer = TransformationPhase(config)
-        df, metrics = transformer._detect_outliers(sample_loan_data)
+        _, _ = transformer._detect_outliers(sample_loan_data)
 
         assert metrics["enabled"] is False
 
@@ -566,7 +566,7 @@ class TestOutlierDetection:
             }
         )
         transformer = TransformationPhase(default_config)
-        result_df, metrics = transformer._detect_outliers(df)
+        result_df, _ = transformer._detect_outliers(df)
 
         # Should not fail with NaN values
         assert metrics["enabled"] is True
@@ -585,7 +585,7 @@ class TestOutlierDetection:
             }
         )
         transformer = TransformationPhase(default_config)
-        result_df, metrics = transformer._detect_outliers(df)
+        result_df, _ = transformer._detect_outliers(df)
 
         # When IQR = 0, no values should be flagged as outliers
         assert metrics["enabled"] is True

@@ -35,7 +35,7 @@ def find_markdown_files() -> List[Path]:
     return sorted(set(files))
 
 
-def extract_markdown_links(content: str, file_path: Path) -> List[Tuple[str, int]]:
+def extract_markdown_links(content: str) -> List[Tuple[str, int]]:
     """
     Extract markdown links from content.
     Returns list of (link, line_number) tuples.
