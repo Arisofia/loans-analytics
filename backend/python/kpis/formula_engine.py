@@ -64,6 +64,9 @@ class KPIFormulaEngine:
 
         value = self.calculate(formula, strict_comparison_errors=strict_comparison_errors)
         self._validate_kpi_value(kpi_name, value)
+        thresholds = self._normalize_thresholds(kpi_definition.get("thresholds"))
+        threshold_status = self._evaluate_threshold_status(value, thresholds)
+        columns_used = self._extract_columns_used(formula)
 
         end = datetime.now(timezone.utc)
         execution_time_ms = max(int((end - start).total_seconds() * 1000), 0)
@@ -77,6 +80,10 @@ class KPIFormulaEngine:
             "timestamp": end.isoformat(),
             "kpi_name": kpi_name,
             "run_id": self.run_id,
+            "thresholds": thresholds,
+            "threshold_status": threshold_status,
+            "status": "success",
+            "columns_used": columns_used,
         }
         self._record_audit(kpi_name=kpi_name, formula=formula, result=result)
         return result
@@ -144,8 +151,111 @@ class KPIFormulaEngine:
                 "execution_time_ms": result["execution_time_ms"],
                 "result": str(result["value"]),
                 "unit": result["unit"],
+                "threshold_status": result.get("threshold_status", "not_configured"),
+                "status": result.get("status", "success"),
+                "columns_used": result.get("columns_used", []),
             }
         )
+
+    def _normalize_thresholds(self, raw_thresholds: object) -> dict:
+        """Normalize registry threshold values to Decimal-compatible numeric fields."""
+        if not isinstance(raw_thresholds, dict):
+            return {}
+
+        normalized: dict = {}
+        for key in ("target", "warning", "critical"):
+            if key not in raw_thresholds:
+                continue
+            try:
+                normalized[key] = Decimal(str(raw_thresholds[key]))
+            except Exception:
+                logger.debug("Invalid threshold '%s' for KPI definition: %s", key, raw_thresholds[key])
+        return normalized
+
+    @staticmethod
+    def _evaluate_threshold_status(value: Decimal, thresholds: dict) -> str:
+        """Return threshold status using warning/critical semantics when configured."""
+        if not thresholds:
+            return "not_configured"
+
+        warning = thresholds.get("warning")
+        critical = thresholds.get("critical")
+        target = thresholds.get("target")
+
+        two_level = KPIFormulaEngine._evaluate_two_level_thresholds(value, warning, critical)
+        if two_level is not None:
+            return two_level
+
+        critical_only = KPIFormulaEngine._evaluate_single_threshold(
+            value=value,
+            level_name="critical",
+            level_value=critical,
+            reference=target,
+        )
+        if critical_only is not None:
+            return critical_only
+
+        warning_only = KPIFormulaEngine._evaluate_single_threshold(
+            value=value,
+            level_name="warning",
+            level_value=warning,
+            reference=target,
+        )
+        if warning_only is not None:
+            return warning_only
+
+        return "not_configured"
+
+    @staticmethod
+    def _evaluate_two_level_thresholds(
+        value: Decimal,
+        warning: Optional[Decimal],
+        critical: Optional[Decimal],
+    ) -> Optional[str]:
+        if warning is None or critical is None:
+            return None
+        if critical == warning:
+            return "critical" if value == critical else "normal"
+
+        direction = KPIFormulaEngine._threshold_direction(critical, warning)
+        if direction == "higher":
+            if value >= critical:
+                return "critical"
+            if value >= warning:
+                return "warning"
+            return "normal"
+
+        if value <= critical:
+            return "critical"
+        if value <= warning:
+            return "warning"
+        return "normal"
+
+    @staticmethod
+    def _evaluate_single_threshold(
+        *,
+        value: Decimal,
+        level_name: str,
+        level_value: Optional[Decimal],
+        reference: Optional[Decimal],
+    ) -> Optional[str]:
+        if level_value is None or reference is None or level_value == reference:
+            return None
+
+        direction = KPIFormulaEngine._threshold_direction(level_value, reference)
+        if direction == "higher":
+            return level_name if value >= level_value else "normal"
+        return level_name if value <= level_value else "normal"
+
+    @staticmethod
+    def _threshold_direction(level: Decimal, reference: Decimal) -> str:
+        """Return whether a threshold is triggered by higher or lower values."""
+        return "higher" if level > reference else "lower"
+
+    def _extract_columns_used(self, formula: str) -> List[str]:
+        """Best-effort extraction of DataFrame columns referenced by formula."""
+        tokens = set(re.findall(r"\b[a-zA-Z_]\w*\b", formula))
+        return sorted(token for token in tokens if token in self.df.columns)
 
     def calculate(self, formula: str, *, strict_comparison_errors: bool = False) -> Decimal:
         """Parse and execute a KPI formula.

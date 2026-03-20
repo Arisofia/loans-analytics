@@ -31,6 +31,7 @@ def _registry_data() -> dict:
             "par_30": {
                 "formula": "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100",
                 "unit": "percentage",
+                "thresholds": {"warning": 3, "critical": 5},
             },
             "zero_division_kpi": {
                 "formula": "SUM(outstanding_balance WHERE dpd >= 200) / SUM(outstanding_balance WHERE dpd >= 200) * 100",
@@ -53,6 +54,12 @@ def test_calculate_kpi_returns_ssot_metadata() -> None:
     assert result["data_rows"] == 3
     assert isinstance(result["value"], Decimal)
     assert result["value"] == Decimal("66.66666700")
+    assert result["status"] == "success"
+    assert result["threshold_status"] == "critical"
+    assert result["thresholds"]["warning"] == Decimal("3")
+    assert result["thresholds"]["critical"] == Decimal("5")
+    assert "dpd" in result["columns_used"]
+    assert "outstanding_balance" in result["columns_used"]
 
 
 def test_calculate_kpi_records_audit_entry() -> None:
@@ -66,6 +73,25 @@ def test_calculate_kpi_records_audit_entry() -> None:
     assert records[0]["formula_version"] == "3.1.0"
     assert records[0]["actor"] == "qa"
     assert records[0]["run_id"] == "audit-1"
+    assert records[0]["status"] == "success"
+    assert records[0]["threshold_status"] in {"normal", "warning", "critical", "not_configured"}
+
+
+def test_threshold_status_critical_when_value_exceeds_critical() -> None:
+    df = pd.DataFrame(
+        {
+            "loan_id": ["L1", "L2"],
+            "outstanding_balance": [1000, 1000],
+            "dpd": [95, 95],
+            "status": ["defaulted", "defaulted"],
+        }
+    )
+    engine = KPIFormulaEngine(df, registry_data=_registry_data())
+
+    result = engine.calculate_kpi("par_30")
+
+    assert result["value"] == Decimal("100")
+    assert result["threshold_status"] == "critical"
 
 
 def test_calculate_kpi_missing_definition_raises() -> None:
