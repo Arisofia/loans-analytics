@@ -100,3 +100,34 @@ def test_load_kpi_snapshot_from_api_fallback_on_error(monkeypatch):
     assert snapshot == {}
     assert snapshot_month is None
     assert is_api_source is False
+
+
+def test_load_kpi_snapshot_from_api_prefers_websocket_when_enabled(monkeypatch):
+    monkeypatch.setenv("KPI_USE_API", "1")
+    monkeypatch.setenv("KPI_USE_WEBSOCKET", "1")
+
+    ws_payload = {
+        "event": "kpi_snapshot",
+        "timestamp": "2026-03-20T10:00:00Z",
+        "kpis": [
+            {
+                "id": "avg_apr",
+                "name": "Average APR",
+                "value": 11.2,
+                "unit": "%",
+                "threshold_status": "normal",
+                "thresholds": {"warning": 14.0, "critical": 16.0},
+            }
+        ],
+    }
+
+    with patch(
+        "frontend.streamlit_app.kpi_snapshot_loader.get_snapshot_once",
+        return_value=ws_payload,
+    ) as ws_mock:
+        snapshot, snapshot_month, is_api_source = load_kpi_snapshot_from_api()
+
+    ws_mock.assert_called_once()
+    assert is_api_source is True
+    assert snapshot["avg_apr"]["value"] == pytest.approx(11.2)
+    assert isinstance(snapshot_month, pd.Timestamp)

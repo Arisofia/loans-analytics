@@ -4,6 +4,8 @@ import os
 import re
 import sys
 import uuid
+import asyncio
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -21,7 +23,8 @@ if TYPE_CHECKING:
 # fastapi installed. Use a lazy import and a lightweight HTTPException
 # fallback for environments without FastAPI.
 try:
-    from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
+    from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request, WebSocket
+    from starlette.websockets import WebSocketDisconnect
     from fastapi.responses import JSONResponse
 
     from backend.python.apps.analytics.api.models import (
@@ -779,6 +782,47 @@ if app is not None:
         except Exception as e:
             logger.error("Error in get_single_kpi: %s", e)
             raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
+
+    @app.websocket("/analytics/kpis/stream")
+    async def stream_latest_kpis(
+        websocket: WebSocket,
+        interval_seconds: float = 5.0,
+        once: bool = False,
+        kpi_keys: str | None = None,
+        service: KPIService = Depends(get_kpi_service),
+    ):
+        """Stream latest KPI snapshots via WebSocket."""
+        await websocket.accept()
+        safe_interval = max(interval_seconds, 1.0)
+        requested_keys = [key.strip() for key in (kpi_keys or "").split(",") if key.strip()]
+
+        try:
+            while True:
+                try:
+                    kpis = await service.get_latest_kpis(kpi_keys=requested_keys or None)
+                except Exception as fetch_exc:
+                    logger.warning("KPI stream fallback to empty payload: %s", fetch_exc)
+                    kpis = []
+                payload = {
+                    "event": "kpi_snapshot",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "kpis": [kpi.model_dump(mode="json") for kpi in kpis],
+                    "source": "realtime-stream",
+                }
+                await websocket.send_json(payload)
+
+                if once:
+                    break
+
+                await asyncio.sleep(safe_interval)
+        except WebSocketDisconnect:
+            logger.info("KPI stream client disconnected")
+        except Exception as e:
+            logger.error("Error in KPI stream endpoint: %s", e)
+            try:
+                await websocket.send_json({"event": "error", "detail": INTERNAL_SERVER_ERROR})
+            except Exception:
+                pass
 
     @app.post("/analytics/risk-alerts", response_model=RiskAlertsResponse)
     async def get_risk_alerts(
