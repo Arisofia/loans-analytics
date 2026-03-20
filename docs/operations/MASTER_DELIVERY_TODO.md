@@ -148,6 +148,10 @@ This checklist ensures all production deployments are safe, auditable, and compl
 - [ ] **Lessons Learned**: If incidents occurred, update runbooks (docs/runbook.md)
 - [ ] **Team Debrief**: 15-min sync with deployment team recording what went well/poorly
 
+### Deprecation Governance (Q2 2026)
+- [ ] **P6 Checkpoint (2026-04-15)**: Confirm `backend/src/agents/multi_agent/__init__.py` has no active imports/usages
+- [ ] **Removal Deadline (2026-06-30)**: Remove deprecated `backend/src/agents/multi_agent/__init__.py` and update references/docs
+
 ---
 
 ## Approval Sign-Off

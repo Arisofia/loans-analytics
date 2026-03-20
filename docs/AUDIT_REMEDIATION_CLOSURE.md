@@ -152,7 +152,7 @@ The Abaco Loans Analytics repository has successfully completed a comprehensive 
 - ✅ METRICSAPI_ANALYSIS_ES.md (missing, now created)
 
 **Pre-Existing Issues (Out of P8 Scope)**:
-- 14 broken references remain in GOVERNANCE.md, SECURITY_DEPLOYMENT_CHECKLIST.md, SETUP_GUIDE_CONSOLIDATED.md (may be addressed in future governance updates)
+- Resolved on 2026-03-20. Documentation link validation now returns zero broken internal links.
 
 **Authority Files**:
 - `REPO_MAP.md` — Repository index
@@ -202,7 +202,7 @@ Date: 2026-03-20
     - Fixed KPI_SSOT_REGISTRY.md relative path references
     
     All 5 P8 audit findings resolved. Link validation automated.
-    14 pre-existing broken links remain (outside P8 scope).
+    Follow-up documentation cleanup completed on 2026-03-20 (0 broken links).
 
 commit 04836f63f
 Author: Ivón Yamileth Rivera Deras <ivon.rivera@oxonepi.com>
@@ -252,7 +252,7 @@ Date: 2026-03-20
 | Documentation | @Arisofia | CODEOWNERS (P8 section) |
 
 ### **Change Control Workflow**
-Per [docs/KPI-Operating-Model.md](docs/KPI-Operating-Model.md), all changes to:
+Per [KPI-Operating-Model.md](KPI-Operating-Model.md), all changes to:
 - KPI definitions
 - Formula calculations
 - Configuration authority files
@@ -277,7 +277,7 @@ $ python tools/validate_doc_links.py
 ✓ 39 documentation files scanned
 ✓ 45 internal references validated
 ✓ 5 P8 findings fixed (all links now resolve)
-⚠ 14 pre-existing broken links (GOVERNANCE.md, setup guides)
+✓ Follow-up governance links remediated (0 broken links)
 ```
 
 **Running in CI/CD**:
@@ -292,7 +292,7 @@ $ python tools/validate_doc_links.py
 - ✅ KPI documentation complete (Operating Model + lineage)
 - ✅ Deployment procedures documented (5-phase checklist)
 - ✅ Architecture and SSoT locations mapped (REPO_MAP.md)
-- ⚠️ 14 pre-existing broken links (future cleanup opportunity)
+- ✅ Documentation cross-references validated end-to-end (0 broken links)
 
 ---
 
@@ -324,16 +324,14 @@ $ python tools/validate_doc_links.py
 4. **Comprehensive Documentation**: REPO_MAP, lineage, and deployment procedures cover common scenarios
 
 ### **Improvement Opportunities**
-1. **Pre-existing Doc Links**: Fix 14 broken references in GOVERNANCE.md and setup guides (low priority)
-2. **CI/CD Enforcement**: Add automated link validation to PR validation workflow
-3. **Audit Cadence**: Establish quarterly audit cycles to prevent drift
-4. **Deprecation Timeline**: Enforce Q2 2026 removal of `backend/src/agents/multi_agent/__init__.py`
+1. **CI/CD Enforcement**: Add automated link validation to PR validation workflow
+2. **Audit Cadence**: Establish quarterly audit cycles to prevent drift
+3. **Deprecation Timeline**: Enforce Q2 2026 removal of `backend/src/agents/multi_agent/__init__.py`
 
 ### **Next Steps**
-1. Monitor deprecation timeline for P6 stale wrapper removal (Q2 2026)
+1. Track P6 deprecation checkpoint by 2026-04-15 and remove `backend/src/agents/multi_agent/__init__.py` by 2026-06-30
 2. Run quarterly audits against this closure report
-3. Consider adding pre-existing doc link fixes to backlog
-4. Integrate documentation link validation into CI/CD pipeline
+3. Integrate documentation link validation into CI/CD pipeline
 
 ---
 
@@ -351,16 +349,16 @@ $ python tools/validate_doc_links.py
 
 ## 10. References & Authority Documents
 
-- **Architecture**: [REPO_MAP.md](REPO_MAP.md)
-- **KPI Governance**: [docs/KPI-Operating-Model.md](docs/KPI-Operating-Model.md)
-- **KPI Lineage**: [docs/kpi_lineage.md](docs/kpi_lineage.md)
-- **KPI Registry**: [docs/KPI_SSOT_REGISTRY.md](docs/KPI_SSOT_REGISTRY.md)
-- **Deployment**: [docs/operations/MASTER_DELIVERY_TODO.md](docs/operations/MASTER_DELIVERY_TODO.md)
-- **Financial Precision**: [docs/FINANCIAL_PRECISION_GOVERNANCE.md](docs/FINANCIAL_PRECISION_GOVERNANCE.md)
-- **Observability**: [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)
-- **Configuration**: [config/README.md](config/README.md)
-- **Ownership**: [docs/OWNER_MAP.md](docs/OWNER_MAP.md)
-- **Governance**: [docs/GOVERNANCE.md](docs/GOVERNANCE.md)
+- **Architecture**: [REPO_MAP.md](../REPO_MAP.md)
+- **KPI Governance**: [KPI-Operating-Model.md](KPI-Operating-Model.md)
+- **KPI Lineage**: [kpi_lineage.md](kpi_lineage.md)
+- **KPI Registry**: [KPI_SSOT_REGISTRY.md](KPI_SSOT_REGISTRY.md)
+- **Deployment**: [MASTER_DELIVERY_TODO.md](operations/MASTER_DELIVERY_TODO.md)
+- **Financial Precision**: [FINANCIAL_PRECISION_GOVERNANCE.md](FINANCIAL_PRECISION_GOVERNANCE.md)
+- **Observability**: [OBSERVABILITY.md](OBSERVABILITY.md)
+- **Configuration**: [config/README.md](../config/README.md)
+- **Ownership**: [OWNER_MAP.md](OWNER_MAP.md)
+- **Governance**: [GOVERNANCE.md](GOVERNANCE.md)
 
 ---
 

@@ -240,7 +240,7 @@ make monitoring-stop
      }]'
    ```
 
-**See**: [ALERTMANAGER_NOTIFICATIONS_SETUP.md](ALERTMANAGER_NOTIFICATIONS_SETUP.md) for details
+**See**: [MONITORING_QUICK_START.md](MONITORING_QUICK_START.md) for details
 
 ---
 
@@ -279,7 +279,7 @@ Required GitHub Secrets:
 
 **Add via**: Repository Settings → Secrets → Actions
 
-**See**: [GITHUB_SECRETS_SETUP.md](GITHUB_SECRETS_SETUP.md), [PRODUCTION_SECRETS_SETUP.md](PRODUCTION_SECRETS_SETUP.md)
+**See**: [SECURITY.md](SECURITY.md), [API_SECURITY_GUIDE.md](API_SECURITY_GUIDE.md)
 
 ---
 
@@ -317,7 +317,7 @@ az deployment group create \
 func azure functionapp publish your-function-app
 ```
 
-**See**: [AZURE_SETUP.md](AZURE_SETUP.md) for detailed steps
+**See**: [PRODUCTION_DEPLOYMENT_GUIDE.md](PRODUCTION_DEPLOYMENT_GUIDE.md) for detailed steps
 
 ---
 
@@ -352,7 +352,7 @@ supabase db push
 python scripts/data/load_sample_kpis_supabase.py
 ```
 
-**See**: [supabase-setup.md](supabase-setup.md) for detailed steps
+**See**: [SUPABASE_METRICS_INTEGRATION.md](SUPABASE_METRICS_INTEGRATION.md) for detailed steps
 
 ---
 
@@ -382,7 +382,7 @@ python scripts/data/load_sample_kpis_supabase.py
 }
 ```
 
-**See**: [workspace-setup.md](workspace-setup.md) for complete configuration
+**See**: [README.md](README.md) for complete configuration
 
 ---
 
@@ -439,7 +439,7 @@ After setup:
 2. **Start monitoring**: `make monitoring-start`
 3. **Explore dashboards**: <http://localhost:3001> (Grafana)
 4. **Run multi-agent**: See `python/multi_agent/README.md`
-5. **Read architecture**: [architecture/CLAUDE.md](architecture/CLAUDE.md)
+5. **Read architecture**: [REPO_MAP.md](../REPO_MAP.md)
 
 ---
 

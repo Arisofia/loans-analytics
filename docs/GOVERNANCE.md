@@ -71,7 +71,7 @@ The following workflows are the source of truth for repository governance:
 
 **CRITICAL**: Database migrations must execute deterministically and use one canonical naming convention.
 
-**Implementation plan**: [`docs/MIGRATION_STANDARDIZATION_PLAN.md`](MIGRATION_STANDARDIZATION_PLAN.md)
+**Implementation plan**: [`docs/OPERATIONS.md`](OPERATIONS.md)
 
 **Key Requirements** (summary):
 1. **Naming standard**: All migrations must use `YYYYMMDDHHMMSS_description.sql`.
@@ -93,7 +93,7 @@ The following workflows are the source of truth for repository governance:
 
 **CRITICAL**: Manual overrides are controlled exceptions and must never bypass approval, audit, or expiry review.
 
-**Detailed framework**: [`docs/MANUAL_OVERRIDES_GOVERNANCE.md`](MANUAL_OVERRIDES_GOVERNANCE.md)
+**Detailed framework**: [`docs/GOVERNANCE.md#manual-overrides-governance`](#manual-overrides-governance)
 
 **Key Requirements** (summary):
 1. **Approval tiers**: Overrides must follow Operational, Material, or Strategic approval thresholds based on impact.
@@ -140,9 +140,9 @@ The following workflows are the source of truth for repository governance:
 
 **Complete governance framework**: [`docs/KPI_SSOT_REGISTRY.md`](KPI_SSOT_REGISTRY.md)
 
-**Inventory of fragmentation**: [`docs/KPI_IMPLEMENTATION_INVENTORY.md`](KPI_IMPLEMENTATION_INVENTORY.md)
+**Inventory of fragmentation**: [`docs/KPI_SSOT_REGISTRY.md`](KPI_SSOT_REGISTRY.md)
 
-**Change control procedures**: [`docs/KPI_CHANGE_CONTROL_CHECKLIST.md`](KPI_CHANGE_CONTROL_CHECKLIST.md)
+**Change control procedures**: [`docs/KPI-Operating-Model.md`](KPI-Operating-Model.md)
 
 **Key Requirements** (summary):
 1. **Registry**: All KPIs defined in `config/kpis/kpi_definitions.yaml` with versioning and audit trail

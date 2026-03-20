@@ -37,7 +37,7 @@ az provider show \
 
 **Expected Output**: `Registered`
 
-**Documentation**: [docs/azure/ALERTS_PROVIDER_SETUP.md](azure/ALERTS_PROVIDER_SETUP.md)
+**Documentation**: [docs/OBSERVABILITY.md](../OBSERVABILITY.md)
 
 ---
 
@@ -353,8 +353,8 @@ ORDER BY schemaname, tablename;
 ### If Deployment Issues Occur
 
 1. **Check Documentation**:
-   - [SUPABASE_RLS_HARDENING.md](security/SUPABASE_RLS_HARDENING.md) - Troubleshooting section
-   - [ALERTS_PROVIDER_SETUP.md](azure/ALERTS_PROVIDER_SETUP.md) - Azure issues
+  - [SUPABASE_RLS_HARDENING.md](../security/SUPABASE_RLS_HARDENING.md) - Troubleshooting section
+  - [OBSERVABILITY.md](../OBSERVABILITY.md) - Azure/alerts setup references
 
 2. **Email Channels**:
    - `infra-alerts@abaco.co` - Infrastructure issues
