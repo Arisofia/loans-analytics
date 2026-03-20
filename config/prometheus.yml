@@ -19,6 +19,7 @@ alerting:
 rule_files:
   - "/etc/prometheus/rules/supabase_alerts.yml"
   - "/etc/prometheus/rules/pipeline_alerts.yml"
+  - "/etc/prometheus/rules/kpi_threshold_alerts.yml"
 
 # Scrape configurations
 scrape_configs:
@@ -70,6 +71,21 @@ scrape_configs:
     # - connection_pool_size{state="active|idle|total"}
     # - idempotency_cache_hits_total
     # - idempotency_cache_misses_total
+
+  # ============================================
+  # KPI THRESHOLD METRICS
+  # ============================================
+  - job_name: "abaco-kpi-thresholds"
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    metrics_path: /metrics/kpis
+    static_configs:
+      - targets:
+          - "host.docker.internal:8000"
+        labels:
+          app: "analytics-api"
+          env: "production"
+          metrics_group: "kpi-thresholds"
 
   # ============================================
   # MULTI-AGENT METRICS (FUTURE)

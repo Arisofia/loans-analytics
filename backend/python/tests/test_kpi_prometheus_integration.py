@@ -66,3 +66,23 @@ def test_single_kpi_publishes_metric_labels():
 
     assert 'kpi_name="COLLECTION_RATE"' in body
     assert "kpi_last_update_timestamp" in body
+
+
+def test_metrics_kpis_smoke_contains_emitted_kpi_names():
+    """Smoke e2e: emit KPIs via API call, then assert names appear in Prometheus text."""
+    client = TestClient(app)
+
+    calc_response = client.post("/analytics/kpis", json=_sample_realtime_payload())
+    assert calc_response.status_code == 200
+
+    metrics_response = client.get("/metrics/kpis")
+    assert metrics_response.status_code == 200
+    body = metrics_response.text
+
+    expected_kpi_names = [
+        "COLLECTION_RATE",
+        "DEFAULT_RATE",
+        "TOTAL_LOANS_COUNT",
+    ]
+    for kpi_name in expected_kpi_names:
+        assert f'kpi_name="{kpi_name}"' in body
