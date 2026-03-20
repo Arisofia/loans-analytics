@@ -98,7 +98,7 @@ class TestKPIEngineV2(unittest.TestCase):
         )
 
         engine = KPIEngineV2(df_with_ltv, actor="test_user")
-        value, context = engine.calculate_ltv()
+        value, _ = engine.calculate_ltv()
 
         # Check calculation
         self.assertIsInstance(value, Decimal)

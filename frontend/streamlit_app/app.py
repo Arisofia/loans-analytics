@@ -130,16 +130,22 @@ def get_normalized_table_type(filename: str) -> Optional[str]:
     return None
 
 
+def _map_dict_sheets(
+    sheets: dict[str, pd.DataFrame], mapped_core_tables_dict: dict[str, pd.DataFrame]
+) -> None:
+    for core_sheet_map_name, core_sheet_map_df in sheets.items():
+        core_table_map_key = get_normalized_table_type(core_sheet_map_name)
+        if core_table_map_key and core_table_map_key not in mapped_core_tables_dict:
+            mapped_core_tables_dict[core_table_map_key] = core_sheet_map_df
+
+
 def fuzzy_map_core_tables(
     input_dfs: dict[str, pd.DataFrame | dict[str, pd.DataFrame]],
 ) -> dict[str, pd.DataFrame]:
     mapped_core_tables_dict: dict[str, pd.DataFrame] = {}
     for core_table_map_name, core_table_map_val in input_dfs.items():
         if isinstance(core_table_map_val, dict):
-            for core_sheet_map_name, core_sheet_map_df in core_table_map_val.items():
-                core_table_map_key = get_normalized_table_type(core_sheet_map_name)
-                if core_table_map_key and core_table_map_key not in mapped_core_tables_dict:
-                    mapped_core_tables_dict[core_table_map_key] = core_sheet_map_df
+            _map_dict_sheets(core_table_map_val, mapped_core_tables_dict)
         else:
             core_name_map_lower = core_table_map_name.lower()
             core_table_map_key = get_normalized_table_type(core_name_map_lower)
@@ -180,6 +186,17 @@ def load_analytics_facts() -> pd.DataFrame:
     return pd.DataFrame()
 
 
+def _resolve_kpi_snapshot_month(input_analytics_facts: pd.DataFrame) -> Optional[pd.Timestamp]:
+    if input_analytics_facts.empty:
+        return None
+    for kpi_col_name in ("month", "month_end", "date"):
+        if kpi_col_name in input_analytics_facts.columns:
+            kpi_parsed = pd.to_datetime(input_analytics_facts[kpi_col_name], errors="coerce").dropna()
+            if not kpi_parsed.empty:
+                return kpi_parsed.max()
+    return None
+
+
 def build_kpi_snapshot(
     input_dashboard_metrics: dict, input_analytics_facts: pd.DataFrame
 ) -> tuple[dict[str, dict], Optional[pd.Timestamp]]:
@@ -191,16 +208,7 @@ def build_kpi_snapshot(
         a dict mapping kpi_name -> {value: ..., threshold_status: ..., ...}
     """
     kpi_snapshot: dict[str, float] = {}
-    kpi_snapshot_month: Optional[pd.Timestamp] = None
-    if not input_analytics_facts.empty:
-        for kpi_col_name in ("month", "month_end", "date"):
-            if kpi_col_name in input_analytics_facts.columns:
-                kpi_parsed = pd.to_datetime(
-                    input_analytics_facts[kpi_col_name], errors="coerce"
-                ).dropna()
-                if not kpi_parsed.empty:
-                    kpi_snapshot_month = kpi_parsed.max()
-                    break
+    kpi_snapshot_month = _resolve_kpi_snapshot_month(input_analytics_facts)
     kpi_extended_kpis = input_dashboard_metrics.get("extended_kpis", {})
     kpi_executive_strip = kpi_extended_kpis.get("executive_strip", {})
     for unique_key_var, kpi_exec_value_item in kpi_executive_strip.items():
@@ -238,6 +246,37 @@ def load_agent_headcount() -> pd.DataFrame:
     return pd.DataFrame()
 
 
+def _normalize_single_export_table(
+    table: pd.DataFrame | None,
+    *,
+    normalize_inputs: bool,
+) -> pd.DataFrame:
+    if not isinstance(table, pd.DataFrame) or table.empty:
+        return pd.DataFrame()
+    return normalize_dataframe_complete(table) if normalize_inputs else table
+
+
+def _normalize_export_tables(
+    loans_df: pd.DataFrame,
+    customers_df: pd.DataFrame,
+    payments_df: pd.DataFrame,
+    schedule_df: pd.DataFrame | None,
+    *,
+    normalize_inputs: bool,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    normalized_loans = _normalize_single_export_table(loans_df, normalize_inputs=normalize_inputs)
+    normalized_customers = _normalize_single_export_table(
+        customers_df, normalize_inputs=normalize_inputs
+    )
+    normalized_payments = _normalize_single_export_table(
+        payments_df, normalize_inputs=normalize_inputs
+    )
+    normalized_schedule = _normalize_single_export_table(
+        schedule_df, normalize_inputs=normalize_inputs
+    )
+    return normalized_loans, normalized_customers, normalized_payments, normalized_schedule
+
+
 def generate_kpi_exports(
     data: dict[str, pd.DataFrame],
     *,
@@ -252,30 +291,15 @@ def generate_kpi_exports(
         data.get("historic_payment_data", pd.DataFrame()),
     )
     schedule_df = mapped_tables.get("schedule_data", data.get("schedule_data"))
-    if normalize_inputs:
-        normalized_loans = (
-            normalize_dataframe_complete(loans_df) if not loans_df.empty else pd.DataFrame()
+    normalized_loans, normalized_customers, normalized_payments, normalized_schedule = (
+        _normalize_export_tables(
+            loans_df,
+            customers_df,
+            payments_df,
+            schedule_df,
+            normalize_inputs=normalize_inputs,
         )
-        normalized_customers = (
-            normalize_dataframe_complete(customers_df) if not customers_df.empty else pd.DataFrame()
-        )
-        normalized_payments = (
-            normalize_dataframe_complete(payments_df) if not payments_df.empty else pd.DataFrame()
-        )
-        normalized_schedule = (
-            normalize_dataframe_complete(schedule_df)
-            if isinstance(schedule_df, pd.DataFrame) and not schedule_df.empty
-            else pd.DataFrame()
-        )
-    else:
-        normalized_loans = loans_df if not loans_df.empty else pd.DataFrame()
-        normalized_customers = customers_df if not customers_df.empty else pd.DataFrame()
-        normalized_payments = payments_df if not payments_df.empty else pd.DataFrame()
-        normalized_schedule = (
-            schedule_df
-            if isinstance(schedule_df, pd.DataFrame) and not schedule_df.empty
-            else pd.DataFrame()
-        )
+    )
     processor = KPICatalogProcessor(
         normalized_loans,
         normalized_payments,

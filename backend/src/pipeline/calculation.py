@@ -12,6 +12,7 @@ from sklearn.preprocessing import RobustScaler
 
 from backend.python.kpis.ltv import calculate_ltv_sintetico
 from backend.python.kpis.engine import KPIEngineV2
+from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 
 # Optional heavy ML dependencies — degrade gracefully when absent
 try:
@@ -601,7 +602,13 @@ class CalculationPhase:
         }
         if dpd_col:
             seg_kpis.update(
-                self._calculate_segment_par_metrics(grp, balance_col, dpd_col, float(total_bal))
+                self._calculate_segment_par_metrics(
+                    grp,
+                    balance_col,
+                    dpd_col,
+                    float(total_bal),
+                    status_col,
+                )
             )
         if status_col:
             seg_kpis["default_rate"] = self._calculate_segment_default_rate(grp, status_col)
@@ -609,9 +616,13 @@ class CalculationPhase:
 
     @staticmethod
     def _calculate_segment_par_metrics(
-        grp: pd.DataFrame, balance_col: str, dpd_col: str, total_bal: float
+        grp: pd.DataFrame,
+        balance_col: str,
+        dpd_col: str,
+        total_bal: float,
+        status_col: Optional[str] = None,
     ) -> Dict[str, float]:
-        """Compute PAR30/60/90 for a segment group using canonical upstream DPD state."""
+        """Compute PAR30/60/90 for a segment group via shared SSOT asset-quality formulas."""
         raw_dpd = pd.to_numeric(grp[dpd_col], errors="coerce").fillna(0.0)
         if "dpd_adjusted" in grp.columns:
             adjusted_dpd = pd.to_numeric(grp["dpd_adjusted"], errors="coerce").fillna(raw_dpd)
@@ -619,17 +630,18 @@ class CalculationPhase:
             adjusted_dpd = raw_dpd
         if total_bal == 0:
             return {"par_30": 0.0, "par_60": 0.0, "par_90": 0.0}
-
+        status_series = grp[status_col] if status_col else None
+        ssot_metrics = calculate_asset_quality_metrics(
+            balance=grp[balance_col],
+            dpd=adjusted_dpd,
+            status=status_series,
+            actor="pipeline.segment_analytics",
+            metric_aliases=["par30", "par60", "par90"],
+        )
         return {
-            "par_30": round(
-                float(grp.loc[adjusted_dpd >= 30, balance_col].sum()) / total_bal * 100, 4
-            ),
-            "par_60": round(
-                float(grp.loc[adjusted_dpd >= 60, balance_col].sum()) / total_bal * 100, 4
-            ),
-            "par_90": round(
-                float(grp.loc[adjusted_dpd >= 90, balance_col].sum()) / total_bal * 100, 4
-            ),
+            "par_30": round(float(ssot_metrics.get("par30", 0.0)), 4),
+            "par_60": round(float(ssot_metrics.get("par60", 0.0)), 4),
+            "par_90": round(float(ssot_metrics.get("par90", 0.0)), 4),
         }
 
     @staticmethod

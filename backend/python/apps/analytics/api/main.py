@@ -139,56 +139,51 @@ def _build_kpi_response(
 ) -> "KpiResponse":
     """Map flat KPI list to strongly-typed KpiResponse payload."""
     kpi_map = {k.id: k for k in kpis} if kpis else {}
+
+    def _get(*keys: str) -> Any:
+        return next((kpi_map[k] for k in keys if k in kpi_map), None)
+
     return KpiResponse(
-        PAR30=kpi_map.get("PAR30") or kpi_map.get("par_30"),
-        PAR90=kpi_map.get("PAR90") or kpi_map.get("par_90"),
-        PAR60=kpi_map.get("PAR60") or kpi_map.get("par_60"),
-        DPD1_30=kpi_map.get("DPD_1_30")
-        or kpi_map.get("dpd_1_30")
-        or kpi_map.get("delinq_1_30_rate"),
-        DPD31_60=kpi_map.get("DPD_31_60")
-        or kpi_map.get("dpd_31_60")
-        or kpi_map.get("delinq_31_60_rate"),
-        DPD61_90=kpi_map.get("DPD_61_90") or kpi_map.get("dpd_61_90"),
-        DPD90Plus=kpi_map.get("DPD_90_PLUS") or kpi_map.get("dpd_90_plus"),
-        CollectionRate=kpi_map.get("COLLECTION_RATE") or kpi_map.get("collections_rate"),
-        DefaultRate=kpi_map.get("DEFAULT_RATE") or kpi_map.get("default_rate"),
-        TotalLoansCount=kpi_map.get("TOTAL_LOANS_COUNT") or kpi_map.get("total_loans_count"),
-        LossRate=kpi_map.get("LOSS_RATE") or kpi_map.get("loss_rate"),
-        RecoveryRate=kpi_map.get("RECOVERY_RATE") or kpi_map.get("recovery_rate"),
-        CashOnHand=kpi_map.get("CASH_ON_HAND") or kpi_map.get("cash_on_hand"),
-        CAC=kpi_map.get("CAC") or kpi_map.get("cac"),
-        GrossMarginPct=kpi_map.get("GROSS_MARGIN_PCT") or kpi_map.get("gross_margin_pct"),
-        RevenueForecast6M=kpi_map.get("REVENUE_FORECAST_6M") or kpi_map.get("revenue_forecast_6m"),
-        Churn90D=kpi_map.get("CHURN_90D") or kpi_map.get("churn_90d"),
-        PortfolioHealth=kpi_map.get("AUM") or kpi_map.get("portfolio_growth_rate"),
-        CustomerLifetimeValue=kpi_map.get("CUSTOMER_LIFETIME_VALUE")
-        or kpi_map.get("customer_lifetime_value"),
-        ActiveBorrowers=kpi_map.get("ACTIVE_BORROWERS") or kpi_map.get("active_borrowers"),
-        RepeatBorrowerRate=kpi_map.get("REPEAT_BORROWER_RATE")
-        or kpi_map.get("repeat_borrower_rate"),
-        AutomationRate=kpi_map.get("AUTOMATION_RATE") or kpi_map.get("automation_rate"),
-        AverageLoanSize=kpi_map.get("AVERAGE_LOAN_SIZE") or kpi_map.get("average_loan_size"),
-        ProcessingTimeAvg=kpi_map.get("PROCESSING_TIME_AVG") or kpi_map.get("processing_time_avg"),
-        DisbursementVolumeMTD=kpi_map.get("DISBURSEMENT_VOLUME_MTD")
-        or kpi_map.get("disbursement_volume_mtd"),
-        NewLoansCountMTD=kpi_map.get("NEW_LOANS_COUNT_MTD") or kpi_map.get("new_loans_count_mtd"),
-        LTV=kpi_map.get("AVG_LTV") or kpi_map.get("avg_ltv"),
-        DTI=kpi_map.get("AVG_DTI") or kpi_map.get("avg_dti"),
-        PortfolioYield=kpi_map.get("PORTFOLIO_YIELD") or kpi_map.get("portfolio_yield"),
-        NPL=kpi_map.get("NPL") or kpi_map.get("npl_ratio"),
-        LGD=kpi_map.get("LGD") or kpi_map.get("lgd_pct") or kpi_map.get("lgd"),
-        CoR=kpi_map.get("COR") or kpi_map.get("cost_of_risk_pct") or kpi_map.get("cost_of_risk"),
-        NIM=kpi_map.get("NIM") or kpi_map.get("nim_pct") or kpi_map.get("net_interest_margin"),
-        CureRate=kpi_map.get("CURERATE")
-        or kpi_map.get("cure_rate_pct")
-        or kpi_map.get("cure_rate"),
+        PAR30=_get("PAR30", "par_30"),
+        PAR90=_get("PAR90", "par_90"),
+        PAR60=_get("PAR60", "par_60"),
+        DPD1_30=_get("DPD_1_30", "dpd_1_30", "delinq_1_30_rate"),
+        DPD31_60=_get("DPD_31_60", "dpd_31_60", "delinq_31_60_rate"),
+        DPD61_90=_get("DPD_61_90", "dpd_61_90"),
+        DPD90Plus=_get("DPD_90_PLUS", "dpd_90_plus"),
+        CollectionRate=_get("COLLECTION_RATE", "collections_rate"),
+        DefaultRate=_get("DEFAULT_RATE", "default_rate"),
+        TotalLoansCount=_get("TOTAL_LOANS_COUNT", "total_loans_count"),
+        LossRate=_get("LOSS_RATE", "loss_rate"),
+        RecoveryRate=_get("RECOVERY_RATE", "recovery_rate"),
+        CashOnHand=_get("CASH_ON_HAND", "cash_on_hand"),
+        CAC=_get("CAC", "cac"),
+        GrossMarginPct=_get("GROSS_MARGIN_PCT", "gross_margin_pct"),
+        RevenueForecast6M=_get("REVENUE_FORECAST_6M", "revenue_forecast_6m"),
+        Churn90D=_get("CHURN_90D", "churn_90d"),
+        PortfolioHealth=_get("AUM", "portfolio_growth_rate"),
+        CustomerLifetimeValue=_get("CUSTOMER_LIFETIME_VALUE", "customer_lifetime_value"),
+        ActiveBorrowers=_get("ACTIVE_BORROWERS", "active_borrowers"),
+        RepeatBorrowerRate=_get("REPEAT_BORROWER_RATE", "repeat_borrower_rate"),
+        AutomationRate=_get("AUTOMATION_RATE", "automation_rate"),
+        AverageLoanSize=_get("AVERAGE_LOAN_SIZE", "average_loan_size"),
+        ProcessingTimeAvg=_get("PROCESSING_TIME_AVG", "processing_time_avg"),
+        DisbursementVolumeMTD=_get("DISBURSEMENT_VOLUME_MTD", "disbursement_volume_mtd"),
+        NewLoansCountMTD=_get("NEW_LOANS_COUNT_MTD", "new_loans_count_mtd"),
+        LTV=_get("AVG_LTV", "avg_ltv"),
+        DTI=_get("AVG_DTI", "avg_dti"),
+        PortfolioYield=_get("PORTFOLIO_YIELD", "portfolio_yield"),
+        NPL=_get("NPL", "npl_ratio"),
+        LGD=_get("LGD", "lgd_pct", "lgd"),
+        CoR=_get("COR", "cost_of_risk_pct", "cost_of_risk"),
+        NIM=_get("NIM", "nim_pct", "net_interest_margin"),
+        CureRate=_get("CURERATE", "cure_rate_pct", "cure_rate"),
         # Enriched KPIs from CONTROL DE MORA format
-        CollectionsEligibleRate=kpi_map.get("collections_eligible_rate"),
-        GovernmentSectorExposureRate=kpi_map.get("government_sector_exposure_rate"),
-        AvgCreditLineUtilization=kpi_map.get("avg_credit_line_utilization"),
-        CapitalCollectionRate=kpi_map.get("capital_collection_rate"),
-        MdscPostedRate=kpi_map.get("mdsc_posted_rate"),
+        CollectionsEligibleRate=_get("collections_eligible_rate"),
+        GovernmentSectorExposureRate=_get("government_sector_exposure_rate"),
+        AvgCreditLineUtilization=_get("avg_credit_line_utilization"),
+        CapitalCollectionRate=_get("capital_collection_rate"),
+        MdscPostedRate=_get("mdsc_posted_rate"),
         audit_trail=[{"kpi_count": len(kpis or []), "source": source}],
     )
 
@@ -440,7 +435,7 @@ if app is not None:
 
     # --- Prometheus metrics (exposes GET /metrics) ---
     try:
-        from prometheus_fastapi_instrumentator import Instrumentator
+        from prometheus_fastapi_instrumentator import Instrumentator  # type: ignore[import-untyped]
 
         Instrumentator().instrument(app).expose(app, endpoint="/metrics")
     except ImportError:
@@ -1394,7 +1389,7 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
 
 
 if __name__ == "__main__":
-    import uvicorn
+    import uvicorn  # type: ignore[import-untyped]
 
     host = os.getenv("API_HOST", "127.0.0.1")
     port = int(os.getenv("API_PORT", "8000"))

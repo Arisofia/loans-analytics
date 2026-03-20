@@ -700,26 +700,17 @@ class OutputPhase:
         """
         Map pipeline KPI names to monitoring.kpi_definitions names.
 
-        Allows pipeline formula names and dashboard names to diverge
-        while still writing to a stable monitoring schema.
+        Only applies explicitly-configured aliases. Default pipeline keys are
+        written unchanged to monitoring, allowing the schema to distinguish
+        distinct computation semantics (e.g., disbursement_volume_mtd vs
+        disbursement_volume, processing_time_avg vs processing_time).
         """
         configured_aliases = (
             self.config.get("database", {}).get("kpi_name_aliases", {})
             if isinstance(self.config.get("database", {}), dict)
             else {}
         )
-        default_aliases = {
-            "default_rate": "npl_rate",
-            "collections_rate": "collection_rate_6m",
-            "disbursement_volume_mtd": "disbursement_volume",
-            "new_loans_count_mtd": "new_loans",
-            "total_outstanding_balance": "total_aum",
-            "total_loans_count": "loan_count",
-            "processing_time_avg": "processing_time",
-            "portfolio_growth_rate": "portfolio_rotation",
-        }
-        aliases = {**default_aliases, **configured_aliases}
-        return aliases.get(kpi_name, kpi_name)
+        return configured_aliases.get(kpi_name, kpi_name)
 
     def _insert_batch_rows(self, supabase: Any, table_name: str, rows: list) -> int:
         """Insert rows in batches to Supabase."""

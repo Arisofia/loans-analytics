@@ -139,7 +139,7 @@ class TestKPIAPIClient:
         # Verify
         assert len(result["kpis"]) == 3
         assert result["kpis"][0].name == "Average APR"
-        assert result["kpis"][0].value == 12.5
+        assert result["kpis"][0].value == pytest.approx(12.5)
         assert result["kpis"][0].threshold_status == "normal"
         assert result["metrics_published"] is True
     
@@ -157,7 +157,7 @@ class TestKPIAPIClient:
         api_client._httpx_client = mock_client
         
         # Fetch with filter
-        result = api_client.get_latest_kpis(
+        api_client.get_latest_kpis(
             kpi_keys=["avg_apr", "par_30"],
             portfolio_id="test-portfolio"
         )

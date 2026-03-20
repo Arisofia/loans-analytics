@@ -2,6 +2,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
+import pytest
 
 from backend.src.pipeline.output import OutputPhase
 
@@ -26,14 +27,14 @@ def test_prepare_kpi_rows_uses_monitoring_shape_for_public_view_name():
     rows, _, _ = output._prepare_kpi_rows({"par_30": 6.1})
     assert len(rows) == 1
     assert rows[0]["kpi_name"] == "par_30"
-    assert rows[0]["value"] == 6.1
+    assert rows[0]["value"] == pytest.approx(6.1)
     assert "kpi_value" not in rows[0]
 
 
 def test_map_monitoring_kpi_name_default_aliases():
     output = _output()
-    assert output._map_monitoring_kpi_name("default_rate") == "npl_rate"
-    assert output._map_monitoring_kpi_name("disbursement_volume_mtd") == "disbursement_volume"
+    assert output._map_monitoring_kpi_name("default_rate") == "default_rate"
+    assert output._map_monitoring_kpi_name("disbursement_volume_mtd") == "disbursement_volume_mtd"
 
 
 def test_map_monitoring_kpi_name_custom_alias_overrides_defaults():
@@ -60,7 +61,7 @@ def test_insert_batch_rows_monitoring_uses_upsert_and_conflict_keys():
     with patch.object(
         output,
         "_get_kpi_definitions_map",
-        return_value=({"npl_rate": "npl_rate"}, {"npl_rate": 3}),
+        return_value=({"default_rate": "default_rate"}, {"default_rate": 3}),
     ):
         inserted = output._insert_batch_rows(supabase, "kpi_values", rows)
 
@@ -68,7 +69,7 @@ def test_insert_batch_rows_monitoring_uses_upsert_and_conflict_keys():
     query.upsert.assert_called_once()
     upsert_rows = query.upsert.call_args.args[0]
     assert len(upsert_rows) == 1
-    assert upsert_rows[0]["kpi_key"] == "npl_rate"
+    assert upsert_rows[0]["kpi_key"] == "default_rate"
     assert upsert_rows[0]["kpi_id"] == 3
     assert query.upsert.call_args.kwargs["on_conflict"] == "as_of_date,kpi_key,snapshot_id"
 
@@ -206,7 +207,7 @@ def test_quality_score_is_fail_closed_without_kpi_engine():
 
     score = output._calculate_quality_score({"par_30": 4.2}, kpi_engine=None)
 
-    assert score == 0.0
+    assert score == pytest.approx(0.0)
 
 
 def test_check_sla_is_fail_closed_without_kpi_engine():
@@ -222,7 +223,7 @@ def test_quality_score_is_fail_closed_for_malformed_audit_trail():
 
     score = output._calculate_quality_score({"par_30": 4.2}, kpi_engine=kpi_engine)
 
-    assert score == 0.0
+    assert score == pytest.approx(0.0)
 
 
 def test_check_sla_is_fail_closed_for_malformed_audit_trail():

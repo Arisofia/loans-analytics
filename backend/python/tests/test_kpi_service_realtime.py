@@ -38,13 +38,13 @@ def test_calculate_kpis_for_portfolio_includes_collection_rate():
     kpi_map = {k.id: k for k in response}
 
     assert "COLLECTION_RATE" in kpi_map
-    assert kpi_map["COLLECTION_RATE"].value == 62.0
+    assert kpi_map["COLLECTION_RATE"].value == pytest.approx(62.0)
     assert kpi_map["COLLECTION_RATE"].formula
     assert kpi_map["COLLECTION_RATE"].status == "critical"
     assert kpi_map["COLLECTION_RATE"].threshold_status == "critical"
-    assert kpi_map["COLLECTION_RATE"].benchmark == 95.0
+    assert kpi_map["COLLECTION_RATE"].benchmark == pytest.approx(95.0)
     assert kpi_map["COLLECTION_RATE"].thresholds is not None
-    assert kpi_map["COLLECTION_RATE"].thresholds.get("warning") == 85.0
+    assert kpi_map["COLLECTION_RATE"].thresholds.get("warning") == pytest.approx(85.0)
 
 
 def test_calculate_kpis_for_portfolio_collection_rate_defaults_to_zero():
@@ -70,7 +70,7 @@ def test_calculate_kpis_for_portfolio_collection_rate_defaults_to_zero():
     kpi_map = {k.id: k for k in response}
 
     assert "COLLECTION_RATE" in kpi_map
-    assert kpi_map["COLLECTION_RATE"].value == 0.0
+    assert kpi_map["COLLECTION_RATE"].value == pytest.approx(0.0)
 
 
 def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
@@ -114,34 +114,34 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
     response = asyncio.run(service.calculate_kpis_for_portfolio(loans))
     kpi_map = {k.id: k for k in response}
 
-    assert kpi_map["LOSS_RATE"].value == 20.0
+    assert kpi_map["LOSS_RATE"].value == pytest.approx(20.0)
     # Recovery follows KPI catalog semantics:
     # SUM(last_payment_amount WHERE status=defaulted) / SUM(defaulted principal)
     # = 50 / 500 = 10%
-    assert kpi_map["RECOVERY_RATE"].value == 10.0
-    assert kpi_map["CASH_ON_HAND"].value == 500.0
+    assert kpi_map["RECOVERY_RATE"].value == pytest.approx(10.0)
+    assert kpi_map["CASH_ON_HAND"].value == pytest.approx(500.0)
     assert kpi_map["CASH_ON_HAND"].threshold_status == "not_configured"
-    assert kpi_map["AVERAGE_LOAN_SIZE"].value == 1250.0
-    assert kpi_map["DISBURSEMENT_VOLUME_MTD"].value == 2500.0
-    assert kpi_map["NEW_LOANS_COUNT_MTD"].value == 2.0
-    assert kpi_map["CUSTOMER_LIFETIME_VALUE"].value == 1500.0
+    assert kpi_map["AVERAGE_LOAN_SIZE"].value == pytest.approx(1250.0)
+    assert kpi_map["DISBURSEMENT_VOLUME_MTD"].value == pytest.approx(2500.0)
+    assert kpi_map["NEW_LOANS_COUNT_MTD"].value == pytest.approx(2.0)
+    assert kpi_map["CUSTOMER_LIFETIME_VALUE"].value == pytest.approx(1500.0)
     assert kpi_map["CAC"].value > 0.0
     assert 0.0 <= kpi_map["GROSS_MARGIN_PCT"].value <= 100.0
     assert kpi_map["REVENUE_FORECAST_6M"].value > 0.0
-    assert kpi_map["CHURN_90D"].value == 0.0
-    assert kpi_map["DEFAULT_RATE"].value == 50.0
-    assert kpi_map["TOTAL_LOANS_COUNT"].value == 2.0
-    assert kpi_map["ACTIVE_BORROWERS"].value == 1.0
-    assert kpi_map["REPEAT_BORROWER_RATE"].value == 100.0
-    assert kpi_map["AUTOMATION_RATE"].value == 50.0
-    assert kpi_map["PROCESSING_TIME_AVG"].value == 9.0
-    assert kpi_map["PAR60"].value == 33.33
+    assert kpi_map["CHURN_90D"].value == pytest.approx(0.0)
+    assert kpi_map["DEFAULT_RATE"].value == pytest.approx(50.0)
+    assert kpi_map["TOTAL_LOANS_COUNT"].value == pytest.approx(2.0)
+    assert kpi_map["ACTIVE_BORROWERS"].value == pytest.approx(1.0)
+    assert kpi_map["REPEAT_BORROWER_RATE"].value == pytest.approx(100.0)
+    assert kpi_map["AUTOMATION_RATE"].value == pytest.approx(50.0)
+    assert kpi_map["PROCESSING_TIME_AVG"].value == pytest.approx(9.0)
+    assert kpi_map["PAR60"].value == pytest.approx(33.33)
     assert kpi_map["PAR60"].status == "critical"
     assert kpi_map["PAR60"].threshold_status == "critical"
-    assert kpi_map["DPD_1_30"].value == 0.0
-    assert kpi_map["DPD_31_60"].value == 0.0
-    assert kpi_map["DPD_61_90"].value == 0.0
-    assert kpi_map["DPD_90_PLUS"].value == 33.33
+    assert kpi_map["DPD_1_30"].value == pytest.approx(0.0)
+    assert kpi_map["DPD_31_60"].value == pytest.approx(0.0)
+    assert kpi_map["DPD_61_90"].value == pytest.approx(0.0)
+    assert kpi_map["DPD_90_PLUS"].value == pytest.approx(33.33)
 
 
 def test_supported_catalog_kpis_include_remaining_catalog_ids():

@@ -90,11 +90,11 @@ class TestKPIMetricsExporter:
         # Check threshold metrics
         warning_thresh = [v for k, v in exporter.metrics.items() if 'kpi_warning_threshold' in k]
         assert len(warning_thresh) > 0
-        assert warning_thresh[0] == 70.0
+        assert warning_thresh[0] == pytest.approx(70.0)
         
         critical_thresh = [v for k, v in exporter.metrics.items() if 'kpi_critical_threshold' in k]
         assert len(critical_thresh) > 0
-        assert critical_thresh[0] == 85.0
+        assert critical_thresh[0] == pytest.approx(85.0)
 
     def test_prometheus_metrics_text_format(self):
         """Test generating Prometheus text exposition format."""
@@ -227,7 +227,7 @@ class TestKPIMetricsExporter:
         assert "collection_rate" in exporter.metric_metadata
         metadata = exporter.metric_metadata["collection_rate"]
         assert metadata["threshold_status"] == "normal"
-        assert metadata["value"] == 88.5
+        assert metadata["value"] == pytest.approx(88.5)
         assert metadata["category"] == "collections"
         assert metadata["owner_email"] == "ops@abaco.local"
 

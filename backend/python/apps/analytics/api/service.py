@@ -68,6 +68,10 @@ logger = get_logger(__name__)
 # Module-level constants for common response messages
 DATA_MISSING_SCORE = 0.0
 DATA_MISSING_INTERPRETATION = "No loan data available. Score cannot be computed. Investigate data pipeline."
+_PORTFOLIO_HEALTH_FORMULA = (
+    "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
+    "CostOfRisk(15pts) + DefaultRate(15pts)"
+)
 
 try:
     import yaml as _yaml
@@ -487,6 +491,36 @@ class KPIService:
         }
 
     @staticmethod
+    def _eval_higher_is_riskier(
+        value: float,
+        critical: float,
+        warning: float,
+        target: float | None,
+    ) -> Literal["below_target", "on_target", "warning", "critical"]:
+        if value >= critical:
+            return "critical"
+        if value >= warning:
+            return "warning"
+        if target is None or value <= target:
+            return "on_target"
+        return "below_target"
+
+    @staticmethod
+    def _eval_lower_is_riskier(
+        value: float,
+        critical: float,
+        warning: float,
+        target: float | None,
+    ) -> Literal["below_target", "on_target", "warning", "critical"]:
+        if value <= critical:
+            return "critical"
+        if value <= warning:
+            return "warning"
+        if target is None or value >= target:
+            return "on_target"
+        return "below_target"
+
+    @staticmethod
     def _evaluate_kpi_status(
         value: float,
         thresholds: dict[str, float],
@@ -506,21 +540,9 @@ class KPIService:
 
         if critical is not None and warning is not None:
             if critical > warning:
-                if value >= critical:
-                    return "critical"
-                if value >= warning:
-                    return "warning"
-                if target is None or value <= target:
-                    return "on_target"
-                return "below_target"
+                return KPIService._eval_higher_is_riskier(value, critical, warning, target)
             if critical < warning:
-                if value <= critical:
-                    return "critical"
-                if value <= warning:
-                    return "warning"
-                if target is None or value >= target:
-                    return "on_target"
-                return "below_target"
+                return KPIService._eval_lower_is_riskier(value, critical, warning, target)
 
         # Fallback when only target exists or thresholds are not directional.
         if target is not None:
@@ -700,6 +722,15 @@ class KPIService:
             )
             raise
 
+    @staticmethod
+    def _dpd_from_status(status: str) -> int:
+        """Infer days past due from a loan status string."""
+        if "30-59" in status:
+            return 45
+        if "60-89" in status:
+            return 75
+        return 100 if "90+" in status else 0
+
     def _calculate_loan_risk_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
         """Helper to compute LTV, DTI and DPD for risk analysis."""
         # Calculate LTV and DTI for each loan (optional for invoice factoring)
@@ -717,21 +748,15 @@ class KPIService:
         else:
             df["dti"] = 0.0
 
-        # Assuming 'loan_status' can be mapped to days past due for risk calculation
-        def get_dpd(status: str) -> int:
-            if "30-59" in status:
-                return 45
-            if "60-89" in status:
-                return 75
-            return 100 if "90+" in status else 0
-
         # Only fill missing DPD via status inference — caller-supplied values take precedence
         if "days_past_due" not in df.columns:
-            df["days_past_due"] = df["loan_status"].apply(get_dpd)
+            df["days_past_due"] = df["loan_status"].apply(self._dpd_from_status)
         else:
             null_mask = df["days_past_due"].isna()
             if null_mask.any():
-                df.loc[null_mask, "days_past_due"] = df.loc[null_mask, "loan_status"].apply(get_dpd)
+                df.loc[null_mask, "days_past_due"] = df.loc[null_mask, "loan_status"].apply(
+                    self._dpd_from_status
+                )
         return df
 
     def _build_loan_risk_alert(
@@ -824,10 +849,7 @@ class KPIService:
                 score=DATA_MISSING_SCORE,
                 traffic_light="critical",
                 components=[],
-                formula=(
-                    "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
-                    "CostOfRisk(15pts) + DefaultRate(15pts)"
-                ),
+                formula=_PORTFOLIO_HEALTH_FORMULA,
                 interpretation=DATA_MISSING_INTERPRETATION,
             )
         else:
@@ -927,10 +949,7 @@ class KPIService:
                 score=DATA_MISSING_SCORE,
                 traffic_light="critical",
                 components=[],
-                formula=(
-                    "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
-                    "CostOfRisk(15pts) + DefaultRate(15pts)"
-                ),
+                formula=_PORTFOLIO_HEALTH_FORMULA,
                 interpretation=DATA_MISSING_INTERPRETATION,
             )
 
@@ -940,10 +959,7 @@ class KPIService:
                 score=DATA_MISSING_SCORE,
                 traffic_light="critical",
                 components=[],
-                formula=(
-                    "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
-                    "CostOfRisk(15pts) + DefaultRate(15pts)"
-                ),
+                formula=_PORTFOLIO_HEALTH_FORMULA,
                 interpretation=DATA_MISSING_INTERPRETATION,
             )
         metrics = self._calculate_portfolio_performance_metrics(df)
@@ -1080,13 +1096,19 @@ class KPIService:
                     duplicate_ratio=0.0,
                     average_null_ratio=0.0,
                     invalid_numeric_ratio=0.0,
-                    data_quality_score=100.0,
-                    issues=["No data provided for real-time profiling."],
+                    data_quality_score=0.0,
+                    issues=["No data provided for real-time profiling. Quality score unavailable."],
                 )
             df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
             if df.empty:
-                return DataQualityResponse(data_quality_score=100.0, issues=[])
+                return DataQualityResponse(
+                    duplicate_ratio=0.0,
+                    average_null_ratio=0.0,
+                    invalid_numeric_ratio=0.0,
+                    data_quality_score=0.0,
+                    issues=["Input dataset is empty. Quality score unavailable."],
+                )
 
             metrics = self._calculate_data_quality_metrics(df)
             return DataQualityResponse(**metrics)
@@ -1133,6 +1155,45 @@ class KPIService:
             "issues": issues,
         }
 
+    @staticmethod
+    def _float_field_error(field_name: str, series: pd.Series) -> str | None:
+        return None if pd.api.types.is_numeric_dtype(series) else f"Column '{field_name}' is not numeric."
+
+    @staticmethod
+    def _str_field_error(field_name: str, series: pd.Series) -> str | None:
+        return None if pd.api.types.is_string_dtype(series) else f"Column '{field_name}' is not string type."
+
+    @staticmethod
+    def _datetime_field_error(field_name: str, series: pd.Series) -> str | None:
+        try:
+            pd.to_datetime(series, errors="raise")
+            return None
+        except Exception:
+            return f"Column '{field_name}' contains invalid datetime format."
+
+    @staticmethod
+    def _field_type_error(field_name: str, field_info: Any, series: pd.Series) -> str | None:
+        """Return type-validation error for one field, or None when valid."""
+        validators = {
+            float: KPIService._float_field_error,
+            str: KPIService._str_field_error,
+            datetime: KPIService._datetime_field_error,
+        }
+        validator = validators.get(field_info.annotation)
+        return validator(field_name, series) if validator is not None else None
+
+    @staticmethod
+    def _collect_field_type_errors(df: pd.DataFrame) -> list[str]:
+        """Validate DataFrame column types against LoanRecord annotations."""
+        errors: list[str] = []
+        for field_name, field_info in LoanRecord.model_fields.items():
+            if field_name not in df.columns:
+                continue
+            error = KPIService._field_type_error(field_name, field_info, df[field_name])
+            if error:
+                errors.append(error)
+        return errors
+
     async def validate_loan_portfolio_schema(
         self,
         loans: list[LoanRecord] | None,
@@ -1153,27 +1214,7 @@ class KPIService:
             if missing_cols:
                 errors.append(f"Missing required columns: {', '.join(missing_cols)}")
 
-            # Basic type validation using pandas dtypes and explicit checks
-            # This is a simplified example; full validation would be more extensive
-            for field_name, field_info in LoanRecord.model_fields.items():
-                if field_name not in df.columns:
-                    continue  # Already reported missing
-
-                if field_info.annotation is float:
-                    # Check if column can be coerced to numeric. `validation.safe_numeric`
-                    # could be used here.
-                    if not pd.api.types.is_numeric_dtype(df[field_name]):
-                        errors.append(f"Column '{field_name}' is not numeric.")
-                elif field_info.annotation is str:
-                    if not pd.api.types.is_string_dtype(df[field_name]):
-                        errors.append(f"Column '{field_name}' is not string type.")
-                elif field_info.annotation is datetime:
-                    # Check if column can be parsed to datetime. `validation.validate_iso8601_dates`
-                    # could be used here.
-                    try:
-                        pd.to_datetime(df[field_name], errors="raise")
-                    except Exception:
-                        errors.append(f"Column '{field_name}' contains invalid datetime format.")
+            errors.extend(self._collect_field_type_errors(df))
 
             if errors:
                 return ValidationResponse(valid=False, errors=errors)
@@ -1627,6 +1668,30 @@ class KPIService:
         """Calculate delinquency curves by Months on Book (MoB)."""
         return await run_in_threadpool(self._calculate_vintage_curves_sync, loans)
 
+    @staticmethod
+    def _resolve_vintage_dpd(df: pd.DataFrame) -> "pd.Series[float]":
+        """Derive per-loan DPD series for vintage curve calculation."""
+        if "days_past_due" in df.columns:
+            return pd.to_numeric(df["days_past_due"], errors="coerce").fillna(0.0)
+        status = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
+        dpd = pd.Series([0.0] * len(df), index=df.index)
+        dpd = dpd.mask(status.str.contains(r"90\+|default", na=False), 100.0)
+        dpd = dpd.mask(status.str.contains(r"30-89|30\+", na=False), 45.0)
+        return dpd
+
+    @staticmethod
+    def _build_vintage_curve_point(group: pd.DataFrame, mob_val: int) -> VintageCurvePoint:
+        """Build a single VintageCurvePoint from a cohort group."""
+        loan_count = len(group)
+        npl_ratio = (float(group["is_npl"].sum()) / loan_count * 100) if loan_count > 0 else 0.0
+        cum_default = (float(group["is_default"].sum()) / loan_count * 100) if loan_count > 0 else 0.0
+        return VintageCurvePoint(
+            months_on_book=mob_val,
+            cumulative_default_rate=round(cum_default, 2),
+            npl_ratio=round(npl_ratio, 2),
+            loan_count=loan_count,
+        )
+
     def _calculate_vintage_curves_sync(
         self,
         loans: list[LoanRecord],
@@ -1669,14 +1734,8 @@ class KPIService:
         ).clip(lower=0)
 
         # 2. Resolve Risk Signals
-        if "days_past_due" in df.columns:
-            dpd = pd.to_numeric(df["days_past_due"], errors="coerce").fillna(0.0)
-        else:
-            # Proxy DPD from status if column is missing
-            status = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
-            dpd = pd.Series([0.0] * len(df), index=df.index)
-            dpd = dpd.mask(status.str.contains(r"90\+|default", na=False), 100.0)
-            dpd = dpd.mask(status.str.contains(r"30-89|30\+", na=False), 45.0)
+        # 2. Resolve Risk Signals
+        dpd = self._resolve_vintage_dpd(df)
 
         status_source = (
             df["loan_status"]
@@ -1686,45 +1745,17 @@ class KPIService:
         df["is_npl"] = (dpd > 90) | status_source.str.contains("default", case=False, na=False)
         df["is_default"] = status_source.str.contains("default", case=False, na=False)
 
-        # 3. Build Curves
-        curves: Dict[str, List[VintageCurvePoint]] = {}
+        # 3. Build Curves (one data point per cohort at its current MoB)
+        curves: Dict[str, List[VintageCurvePoint]] = {
+            str(cohort): [self._build_vintage_curve_point(group, self._safe_int(group["mob"].iloc[0]))]
+            for cohort, group in df.groupby("cohort")
+        }
 
-        # For each cohort, we only have ONE data point (their current MoB)
-        # unless the input data contains historical snapshots.
-        # To simulate a 'curve' from a single snapshot, we treat each cohort's
-        # current state as the point at MoB=X.
-
-        for cohort, group in df.groupby("cohort"):
-            # Calculate aggregate for this cohort at its specific current age
-            mob = self._safe_int(group["mob"].iloc[0])
-            loan_count = len(group)
-            npl_ratio = (group["is_npl"].sum() / loan_count * 100) if loan_count > 0 else 0.0
-            cum_default = (group["is_default"].sum() / loan_count * 100) if loan_count > 0 else 0.0
-
-            curves[str(cohort)] = [
-                VintageCurvePoint(
-                    months_on_book=mob,
-                    cumulative_default_rate=round(float(cum_default), 2),
-                    npl_ratio=round(float(npl_ratio), 2),
-                    loan_count=int(loan_count),
-                )
-            ]
-
-        # 4. Build Portfolio Average Curve (Current state vs Age)
-        avg_curve: List[VintageCurvePoint] = []
-        for mob, group in df.groupby("mob"):
-            loan_count = len(group)
-            npl_ratio = (group["is_npl"].sum() / loan_count * 100) if loan_count > 0 else 0.0
-            cum_default = (group["is_default"].sum() / loan_count * 100) if loan_count > 0 else 0.0
-
-            avg_curve.append(
-                VintageCurvePoint(
-                    months_on_book=self._safe_int(mob),
-                    cumulative_default_rate=round(float(cum_default), 2),
-                    npl_ratio=round(float(npl_ratio), 2),
-                    loan_count=int(loan_count),
-                )
-            )
+        # 4. Build Portfolio Average Curve (current state vs Age)
+        avg_curve: List[VintageCurvePoint] = [
+            self._build_vintage_curve_point(group, self._safe_int(mob))
+            for mob, group in df.groupby("mob")
+        ]
 
         avg_curve.sort(key=lambda x: x.months_on_book)
 
@@ -2659,6 +2690,18 @@ class KPIService:
         """Return first candidate column found in dataframe."""
         return next((col for col in candidates if col in df.columns), None)
 
+    @staticmethod
+    def _compute_util_metric(df: pd.DataFrame, util_col: str) -> float:
+        """Compute avg_credit_line_utilization from a utilization column."""
+        raw_util = df[util_col].astype(str).str.replace(r"[$,%\s]", "", regex=True)
+        util_series = pd.to_numeric(raw_util, errors="coerce").dropna()
+        if util_series.empty:
+            return 0.0
+        median_val = float(util_series.median())
+        if median_val < 2.0:
+            util_series = util_series * 100
+        return float(util_series.mean())
+
     def _calculate_realtime_enriched_metrics(
         self, df: pd.DataFrame, total_outstanding: float
     ) -> dict[str, float]:
@@ -2711,13 +2754,7 @@ class KPIService:
 
         util_col = self._first_present_column(df, "utilization_pct", "porcentaje_utilizado")
         if util_col is not None:
-            raw_util = df[util_col].astype(str).str.replace(r"[$,%\s]", "", regex=True)
-            util_series = pd.to_numeric(raw_util, errors="coerce").dropna()
-            if not util_series.empty:
-                median_val = float(util_series.median())
-                if median_val < 2.0:
-                    util_series = util_series * 100
-                metrics["avg_credit_line_utilization"] = float(util_series.mean())
+            metrics["avg_credit_line_utilization"] = self._compute_util_metric(df, util_col)
 
         cap_col = self._first_present_column(df, "capital_collected", "capitalcobrado")
         if cap_col is not None:
@@ -2904,6 +2941,18 @@ class KPIService:
         )
         return (float(automated_mask.sum()) / float(len(df)) * 100) if len(df) > 0 else 0.0
 
+    @staticmethod
+    def _last_realtime_metric(rows: list[dict], key: str) -> float | None:
+        """Return the last non-null value for *key* from a list of metric dicts."""
+        for row in reversed(rows):
+            value = row.get(key)
+            if value is None:
+                continue
+            if pd.isna(value):
+                continue
+            return float(value)
+        return None
+
     def _calculate_realtime_executive_metrics(self, df: pd.DataFrame) -> dict[str, float]:
         """
         Derive executive metrics (CAC, margin, forecast, churn) from the existing
@@ -2937,25 +2986,15 @@ class KPIService:
         churn_rows = extended.get("churn_90d_metrics", []) or []
         forecast_rows = extended.get("revenue_forecast_6m", []) or []
 
-        def last_metric(rows: list[dict], key: str) -> float | None:
-            for row in reversed(rows):
-                value = row.get(key)
-                if value is None:
-                    continue
-                if pd.isna(value):
-                    continue
-                return float(value)
-            return None
-
         cac_value = self._safe_float(
             executive_strip.get("cac_usd"),
-            default=last_metric(unit_economics, "cac_usd"),
+            default=self._last_realtime_metric(unit_economics, "cac_usd"),
         )
         margin_ratio = self._safe_float(
             executive_strip.get("gross_margin_pct"),
-            default=last_metric(unit_economics, "gross_margin_pct"),
+            default=self._last_realtime_metric(unit_economics, "gross_margin_pct"),
         )
-        churn_ratio = self._safe_float(last_metric(churn_rows, "churn90d_pct"))
+        churn_ratio = self._safe_float(self._last_realtime_metric(churn_rows, "churn90d_pct"))
         forecast_sum = float(
             sum(
                 self._safe_float(row.get("forecast_revenue_usd"))
@@ -3180,15 +3219,8 @@ class KPIService:
             "90_plus": 4,
         }
 
-    async def get_nsm_recurrent_tpv(self) -> NSMRecurrentTPVResponse:
-        """Return the North Star Metric (Recurrent TPV) from the latest pipeline run.
-
-        Loads the NSM artifact from the most-recently-modified pipeline run
-        directory under ``logs/runs/``. Supports both the legacy filename
-        ``nsm_recurrent_tpv.json`` and the current pipeline export filename
-        ``nsm_recurrent_tpv_output.json``. Returns an empty response when no
-        supported artifact exists.
-        """
+    def _load_nsm_recurrent_tpv_sync(self) -> NSMRecurrentTPVResponse:
+        """Synchronous helper: load NSM Recurrent TPV artifact from latest pipeline run."""
         runs_dir = Path("logs/runs")
         if not runs_dir.is_dir():
             return NSMRecurrentTPVResponse()
@@ -3223,3 +3255,14 @@ class KPIService:
             latest=latest,
             by_period=by_period,
         )
+
+    async def get_nsm_recurrent_tpv(self) -> NSMRecurrentTPVResponse:
+        """Return the North Star Metric (Recurrent TPV) from the latest pipeline run.
+
+        Loads the NSM artifact from the most-recently-modified pipeline run
+        directory under ``logs/runs/``. Supports both the legacy filename
+        ``nsm_recurrent_tpv.json`` and the current pipeline export filename
+        ``nsm_recurrent_tpv_output.json``. Returns an empty response when no
+        supported artifact exists.
+        """
+        return await run_in_threadpool(self._load_nsm_recurrent_tpv_sync)

@@ -29,6 +29,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+_KPI_NAME_LABEL = 'kpi_name="'
+
 
 @dataclass
 class ThresholdMetricLabels:
@@ -177,9 +179,9 @@ class KPIMetricsExporter:
         for metric_key in self.metrics:
             if status_key in metric_key and self.metrics[metric_key] == 1:
                 # Extract KPI name from metric key
-                start = metric_key.find('kpi_name="') + len('kpi_name="')
+                start = metric_key.find(_KPI_NAME_LABEL) + len(_KPI_NAME_LABEL)
                 end = metric_key.find('"', start)
-                if start > len('kpi_name="') - 1 and end > start:
+                if start > len(_KPI_NAME_LABEL) - 1 and end > start:
                     kpi_name = metric_key[start:end]
                     kpis.append(kpi_name)
         return kpis

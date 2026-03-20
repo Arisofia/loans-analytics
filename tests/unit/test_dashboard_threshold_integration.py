@@ -128,7 +128,7 @@ class TestThresholdEnrichmentIntegration:
         assert "thresholds" in kpi_data
         
         # Value should be unchanged
-        assert kpi_data["value"] == 88.5
+        assert kpi_data["value"] == pytest.approx(88.5)
         
         # Status should be one of the valid values
         assert kpi_data["threshold_status"] in {"normal", "warning", "critical", "not_configured"}
