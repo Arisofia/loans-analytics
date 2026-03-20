@@ -5,20 +5,12 @@ from typing import Any
 
 import pandas as pd
 
+from backend.python.kpis._column_utils import (
+    first_matching_column as _first_existing_column,
+    resolve_dpd_heuristic,
+    to_numeric_safe as _to_numeric,
+)
 from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
-
-
-def _first_existing_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
-    for col in candidates:
-        if col in df.columns:
-            return col
-    return None
-
-
-def _to_numeric(series: pd.Series | None) -> pd.Series:
-    if series is None:
-        return pd.Series(dtype=float)
-    return pd.to_numeric(series, errors="coerce").fillna(0.0)
 
 
 def _safe_pct(numerator: float | Decimal, denominator: float | Decimal) -> Decimal:
@@ -42,20 +34,7 @@ def _normalize_interest_rate(series: pd.Series) -> pd.Series:
 
 
 def _extract_dpd(df: pd.DataFrame) -> pd.Series:
-    dpd_col = _first_existing_column(df, ["days_past_due", "dpd", "dpd_days"])
-    if dpd_col:
-        return _to_numeric(df[dpd_col]).clip(lower=0)
-
-    status_col = _first_existing_column(df, ["loan_status", "status", "current_status"])
-    if not status_col:
-        return pd.Series([0.0] * len(df), index=df.index, dtype=float)
-
-    status = df[status_col].astype(str).str.lower()
-    dpd = pd.Series([0.0] * len(df), index=df.index, dtype=float)
-    dpd = dpd.mask(status.str.contains(r"90\+|default|charged", regex=True, na=False), 100.0)
-    dpd = dpd.mask(status.str.contains(r"60-89|60\+", regex=True, na=False), 75.0)
-    dpd = dpd.mask(status.str.contains(r"30-59|30\+", regex=True, na=False), 45.0)
-    return dpd
+    return resolve_dpd_heuristic(df)
 
 
 def _build_dpd_bucket(

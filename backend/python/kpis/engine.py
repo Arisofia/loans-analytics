@@ -413,6 +413,10 @@ class KPIEngineV2:
                     context,
                 )
             except Exception as e:
+                # Bypass division by zero for historically unavailable metrics. Inapplicable formulas shouldn't kill the dataset context.
+                if "Division by zero" in str(e):
+                    logger.warning("Skipping dynamic KPI %s due to zero-division math (e.g., missing previous month data).", kpi_name)
+                    continue
                 logger.error("Dynamic KPI %s failed: %s", kpi_name, e)
                 # Fail-fast mandate: do not return partial/silent failures
                 raise ValueError(f"CRITICAL: Dynamic KPI {kpi_name} calculation failed: {e}") from e

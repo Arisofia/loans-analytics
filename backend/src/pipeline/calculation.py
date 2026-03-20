@@ -16,18 +16,31 @@ from backend.python.kpis.formula_engine import KPIFormulaEngine  # re-exported a
 
 # Optional heavy ML dependencies — degrade gracefully when absent
 try:
-    import umap  # umap-learn
+    import umap  # type: ignore[import-untyped]  # umap-learn
 
     _UMAP_AVAILABLE = True
 except ImportError:  # pragma: no cover
     _UMAP_AVAILABLE = False
 
 try:
-    import hdbscan as hdbscan_module
+    import hdbscan as hdbscan_module  # type: ignore[import-untyped]
 
     _HDBSCAN_AVAILABLE = True
 except ImportError:  # pragma: no cover
     _HDBSCAN_AVAILABLE = False
+
+
+def _quartile_fallback_labels(x_fallback: np.ndarray, metrics: Dict[str, Any]) -> np.ndarray:
+    """Assign cluster labels via PC1 quartile split when HDBSCAN is unavailable."""
+    logger.info("HDBSCAN not available — using quartile-based fallback labels.")
+    n = x_fallback.shape[0]
+    labels = np.zeros(n, dtype=int)
+    quartiles = np.percentile(x_fallback[:, 0], [25, 50, 75])
+    for i, q in enumerate(quartiles, start=1):
+        labels[x_fallback[:, 0] > q] = i
+    metrics["hdbscan_fallback"] = "pc1_quartile_split"
+    return labels
+
 
 __all__ = ["CalculationPhase", "KPIFormulaEngine"]
 
@@ -71,7 +84,6 @@ class CalculationPhase:
         self,
         clean_data_path: Optional[Path] = None,
         df: Optional[pd.DataFrame] = None,
-        run_dir: Optional[Path] = None,
     ) -> Dict[str, Any]:
         """Execute the calculation phase.
 
@@ -81,7 +93,6 @@ class CalculationPhase:
         Args:
             clean_data_path: Path to clean_data.parquet from Phase 2
             df: DataFrame (if already loaded; takes precedence over clean_data_path)
-            run_dir: Directory for this pipeline run (unused currently, kept for API symmetry)
 
         Returns:
             Results dict with keys: status, kpis, kpi_engine, segment_kpis,
@@ -650,7 +661,7 @@ class CalculationPhase:
         nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce").fillna(0.0)
         dilution = pd.to_numeric(df["tasa_dilucion"], errors="coerce").fillna(0.0)
         adjusted = nominal * (1.0 - dilution)
-        return adjusted == 0.0
+        return adjusted.abs() < 1e-9
 
     @staticmethod
     def _calculate_velocity_of_default(
@@ -748,14 +759,14 @@ class CalculationPhase:
                 return metrics
 
             # 1. Robust scaling and PCA dimensionality reduction
-            X_scaled, pca_explained = self._scale_and_reduce_pca(X)
+            x_scaled, pca_explained = self._scale_and_reduce_pca(X)
             metrics["pca_explained_variance"] = pca_explained
 
             # 2. UMAP dimensionality reduction (optional)
-            X_embed = self._apply_umap(X_scaled, metrics)
+            x_embed = self._apply_umap(x_scaled, metrics)
 
             # 3. HDBSCAN clustering (optional)
-            labels = self._apply_hdbscan(X_embed, X_scaled, metrics)
+            labels = self._apply_hdbscan(x_embed, x_scaled, metrics)
 
             # 4. Map HDBSCAN cluster ids → institutional cohort labels
             cohort_series, centroids = self._map_cohorts(df, labels, opaque_mask, feature_cols)
@@ -820,7 +831,7 @@ class CalculationPhase:
         return X, feature_cols, opaque_mask
 
     @staticmethod
-    def _scale_and_reduce_pca(X: np.ndarray) -> tuple[np.ndarray, List[float]]:
+    def _scale_and_reduce_pca(x_input: np.ndarray) -> tuple[np.ndarray, List[float]]:
         """Apply RobustScaler then PCA retaining up to 95% cumulative variance.
 
         Uses ``n_components=0.95`` so sklearn chooses the minimum number of
@@ -832,74 +843,67 @@ class CalculationPhase:
         Using 'auto' or 'arpack' would raise a ValueError at fit time.
         """
         scaler = RobustScaler()
-        X_scaled = scaler.fit_transform(X)
+        x_scaled = scaler.fit_transform(x_input)
 
-        max_components = min(X_scaled.shape[1], X_scaled.shape[0] - 1, 10)
+        max_components = min(x_scaled.shape[1], x_scaled.shape[0] - 1, 10)
         if max_components >= 2:
             # svd_solver='full' is mandatory for fractional n_components.
             pca = PCA(n_components=0.95, svd_solver="full", random_state=42)
-            X_pca = pca.fit_transform(X_scaled)
+            x_pca = pca.fit_transform(x_scaled)
             explained = [round(float(v), 4) for v in pca.explained_variance_ratio_]
             # Cap to max_components by slicing — avoids a second expensive fit.
             # PCA output columns are already ordered by explained variance (descending).
-            if X_pca.shape[1] > max_components:
-                X_pca = X_pca[:, :max_components]
+            if x_pca.shape[1] > max_components:
+                x_pca = x_pca[:, :max_components]
                 explained = explained[:max_components]
         else:
             pca = PCA(n_components=max_components, random_state=42)
-            X_pca = pca.fit_transform(X_scaled)
+            x_pca = pca.fit_transform(x_scaled)
             explained = [round(float(v), 4) for v in pca.explained_variance_ratio_]
 
-        return X_pca, explained
+        return x_pca, explained
 
     @staticmethod
-    def _apply_umap(X_pca: np.ndarray, metrics: Dict[str, Any]) -> np.ndarray:
+    def _apply_umap(x_pca: np.ndarray, metrics: Dict[str, Any]) -> np.ndarray:
         """Apply UMAP if available; fall back to PCA output."""
         if not _UMAP_AVAILABLE:
             logger.info("UMAP not available — using PCA output for clustering.")
-            return X_pca
+            return x_pca
         try:
             reducer = umap.UMAP(
                 n_components=2,
-                n_neighbors=min(15, max(2, X_pca.shape[0] // 5)),
+                n_neighbors=min(15, max(2, x_pca.shape[0] // 5)),
                 min_dist=0.1,
                 random_state=42,
             )
-            X_embed = reducer.fit_transform(X_pca)
+            x_embed = reducer.fit_transform(x_pca)
             metrics["umap_n_components"] = 2
-            return X_embed
+            return x_embed
         except Exception as exc:
             raise ValueError(f"CRITICAL: UMAP dimensionality reduction failed: {exc}") from exc
 
     @staticmethod
     def _apply_hdbscan(
-        X_embed: np.ndarray, X_fallback: np.ndarray, metrics: Dict[str, Any]
+        x_embed: np.ndarray, x_fallback: np.ndarray, metrics: Dict[str, Any]
     ) -> np.ndarray:
         """Apply HDBSCAN if available; fall back to a simple PC1-quartile split.
 
         Notes
         -----
         When HDBSCAN is unavailable, we assign fallback cluster labels by
-        splitting on quartiles of the first column of ``X_fallback``. In the
+        splitting on quartiles of the first column of ``x_fallback``. In the
         current pipeline this column corresponds to the first principal
         component (PC1) of the scaled feature space, not a raw DPD feature.
         """
         if not _HDBSCAN_AVAILABLE:
-            logger.info("HDBSCAN not available — using quartile-based fallback labels.")
-            n = X_fallback.shape[0]
-            labels = np.zeros(n, dtype=int)
-            quartiles = np.percentile(X_fallback[:, 0], [25, 50, 75])
-            for i, q in enumerate(quartiles, start=1):
-                labels[X_fallback[:, 0] > q] = i
-            metrics["hdbscan_fallback"] = "pc1_quartile_split"
-            return labels
+            return _quartile_fallback_labels(x_fallback, metrics)
         try:
             clusterer = hdbscan_module.HDBSCAN(
-                min_cluster_size=max(5, X_embed.shape[0] // 20),
+                min_cluster_size=max(5, x_embed.shape[0] // 20),
                 min_samples=2,
                 cluster_selection_method="eom",
             )
-            labels = clusterer.fit_predict(X_embed)
+            labels = clusterer.fit_predict(x_embed)
             metrics["n_clusters"] = int(len(set(labels)) - (1 if -1 in labels else 0))
             metrics["n_noise"] = int((labels == -1).sum())
             return labels
@@ -911,7 +915,7 @@ class CalculationPhase:
         df: pd.DataFrame,
         labels: np.ndarray,
         opaque_mask: pd.Series,
-        feature_cols: List[str],
+        feature_cols: List[str],  # noqa: ARG002  — kept for API symmetry / future use
     ) -> tuple[Optional[pd.Series], Dict[int, Dict[str, Any]]]:
         """Assign institutional cohort labels (Alfa/Beta/Gamma/Delta) to each cluster.
 

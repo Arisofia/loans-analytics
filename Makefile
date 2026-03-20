@@ -21,7 +21,7 @@ help:
 	@echo "make kpis           - Run unified KPI pipeline (real data)"
 	@echo "make test           - Run default unit/integration-safe test suite"
 	@echo "make e2e            - Run opt-in E2E suite (RUN_E2E=1)"
-	@echo "make clean          - Run canonical repository maintenance cleanup"
+	@echo "make clean          - Remove caches and build artifacts"
 	@echo ""
 	@echo "make setup          - Create virtual env and install dependencies"
 	@echo "make format         - Format code with black and isort"
@@ -29,10 +29,8 @@ help:
 	@echo "make type-check     - Run mypy static type checking"
 	@echo "make security-check - Run bandit and safety checks"
 	@echo "make dev            - Alias of make api"
-	@echo "make repo-map       - Open architecture map (REPO_MAP.md)"
+	@echo "make repo-map       - Open architecture map (docs/README.md)"
 	@echo "make owner-map      - Open ownership map (docs/OWNER_MAP.md)"
-	@echo "make service-status - Generate comprehensive service status report"
-	@echo "make report-strategic - Generate strategic executive report artifacts"
 	@echo ""
 	@echo "Monitoring Stack:"
 	@echo "make monitoring-start    - Auto-start Prometheus + Grafana + Alertmanager"
@@ -83,15 +81,9 @@ security-check:
 	$(BIN)/bandit -r backend/src backend/python --quiet -x "**/test_*.py,**/tests.py"
 	@if $(BIN)/pip list | grep -q safety; then $(BIN)/safety check --continue-on-error; else echo "safety not installed, skipping"; fi
 clean:
-	@bash scripts/maintenance/repo_maintenance.sh --mode=standard
-
-# Service Status Report
-service-status:
-	@if [ -x "$(BIN)/python" ]; then \
-		"$(BIN)/python" scripts/maintenance/generate_service_status_report.py; \
-	else \
-		"$(PYTHON)" scripts/maintenance/generate_service_status_report.py; \
-	fi
+	@find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	@find . -name "*.pyc" -delete 2>/dev/null || true
+	@rm -rf .mypy_cache .pytest_cache .ruff_cache htmlcov .coverage
 
 # Monitoring Stack Automation
 monitoring-start:
@@ -128,8 +120,8 @@ train-risk-model:
 	"$(PYTHON)" scripts/ml/train_default_risk_model.py
 
 repo-map:
-	@echo "Open REPO_MAP.md"
-	@sed -n '1,200p' REPO_MAP.md
+	@echo "Open docs/README.md"
+	@sed -n '1,200p' docs/README.md
 
 owner-map:
 	@echo "Open docs/OWNER_MAP.md"

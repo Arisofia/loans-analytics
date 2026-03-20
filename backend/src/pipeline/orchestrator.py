@@ -276,7 +276,7 @@ class UnifiedPipeline:
                     phase_name="calculation",
                     run_id=run_id,
                     executor=self.calculation.execute,
-                    kwargs={"clean_data_path": clean_data_path, "run_dir": run_dir},
+                    kwargs={"clean_data_path": clean_data_path},
                 )
                 results["phases"]["calculation"] = phase3_results
                 results["phase_metrics"]["calculation"] = {

@@ -112,7 +112,7 @@ def main():
         print("\nPhase Results:")
 
         for phase_name, phase_results in results.get("phases", {}).items():
-            status_symbol = "✅" if phase_results.get("status") == "success" else "❌"
+            status_symbol = "[SUCCESS]" if phase_results.get("status") == "success" else "[FAILED]"
             print(
                 f"  {status_symbol} {phase_name.title()}: {phase_results.get('status', 'unknown')}"
             )
@@ -121,22 +121,22 @@ def main():
 
         # Exit with appropriate code
         if results["status"] == "success":
-            print("\n✅ Pipeline execution completed successfully!")
+            print("\n[SUCCESS] Pipeline execution completed successfully!")
             sys.exit(0)
         else:
-            print(f"\n❌ Pipeline execution failed: {results.get('error', 'Unknown error')}")
+            print(f"\n[FAILED] Pipeline execution failed: {results.get('error', 'Unknown error')}")
             sys.exit(1)
 
     except FileNotFoundError as e:
         logger.error("Configuration file not found: %s", e)
-        print("\n❌ Error: Configuration file not found")
+        print("\n[FAILED] Error: Configuration file not found")
         print(f"Please create {args.config} with pipeline settings")
         print("\nSee UNIFIED_WORKFLOW.md for configuration details")
         sys.exit(1)
 
     except Exception as e:
         logger.error("Pipeline execution failed: %s", e, exc_info=True)
-        print(f"\n❌ Pipeline execution failed: {e}")
+        print(f"\n[FAILED] Pipeline execution failed: {e}")
         sys.exit(1)
 
 

@@ -1170,7 +1170,8 @@ class TransformationPhase:
 
         df[col] = df[col].fillna(0)
         if col in self.HIGH_NULL_WARNING_NUMERIC_COLUMNS:
-            logger.warning("Column '%s' has %.1f%% nulls", col, null_pct)
+            logger.error("Column '%s' exceeds missing threshold (%.1f%% nulls). Fail-fast requires structural integrity for critical KPIs.", col, null_pct)
+            raise ValueError(f"Critical column {col} exceeds missing threshold ({null_pct:.1f}%)")
         return f"filled_zero (high_null: {null_pct:.1f}%)"
 
     def _handle_categorical_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:

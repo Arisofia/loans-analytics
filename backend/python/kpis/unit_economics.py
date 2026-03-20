@@ -18,20 +18,14 @@ from typing import Any
 
 import pandas as pd
 
+from backend.python.kpis._column_utils import (
+    first_matching_column as _first_col,
+    resolve_dpd_heuristic,
+    to_numeric_safe as _to_num,
+)
 from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
-
-
-def _first_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
-    for col in candidates:
-        if col in df.columns:
-            return col
-    return None
-
-
-def _to_num(series: pd.Series) -> pd.Series:
-    return pd.to_numeric(series, errors="coerce").fillna(0.0)
 
 
 def _safe_pct(numerator: float, denominator: float) -> float:
@@ -58,18 +52,7 @@ def _resolve_balance(df: pd.DataFrame) -> pd.Series:
 
 
 def _resolve_dpd(df: pd.DataFrame) -> pd.Series:
-    dpd_col = _first_col(df, ["days_past_due", "dpd", "dpd_days"])
-    if dpd_col:
-        return _to_num(df[dpd_col]).clip(lower=0)
-    status_col = _first_col(df, ["loan_status", "status", "current_status"])
-    if not status_col:
-        return pd.Series([0.0] * len(df), index=df.index, dtype=float)
-    status = df[status_col].astype(str).str.lower()
-    dpd = pd.Series([0.0] * len(df), index=df.index, dtype=float)
-    dpd = dpd.mask(status.str.contains(r"90\+|default|charged", regex=True, na=False), 100.0)
-    dpd = dpd.mask(status.str.contains(r"60-89|60\+", regex=True, na=False), 75.0)
-    dpd = dpd.mask(status.str.contains(r"30-59|30\+", regex=True, na=False), 45.0)
-    return dpd
+    return resolve_dpd_heuristic(df)
 
 
 def _resolve_default_mask(df: pd.DataFrame, dpd: pd.Series) -> pd.Series:

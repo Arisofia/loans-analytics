@@ -275,8 +275,8 @@ class OutputPhase:
         try:
             df = pd.read_parquet(data_path)
         except Exception as exc:
-            logger.warning("Segment snapshot skipped: could not read %s (%s)", data_path, exc)
-            return None
+            logger.error("Failed reading segment snapshot source file: %s. Fail-fast triggered.", exc)
+            raise RuntimeError(f"Cannot read segment data from {data_path}: {exc}") from exc
 
         if df.empty:
             logger.debug("Segment snapshot skipped: source dataframe is empty")

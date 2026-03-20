@@ -1,22 +1,4 @@
 services:
-  frontend:
-    profiles: [ "web" ]
-    build:
-      context: ./apps/web
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      # Next.js reads these at runtime/server and also may expose NEXT_PUBLIC_* to the client
-      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-    healthcheck:
-      test: [ "CMD", "node", "-e", "fetch('http://localhost:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    depends_on:
-      - api
   api:
     profiles: [ "web", "dashboard" ]
     build:
@@ -76,21 +58,6 @@ services:
     depends_on:
       - dashboard
 
-  n8n:
-    profiles: [ "web" ]
-    image: n8nio/n8n:latest
-    ports:
-      - "5678:5678"
-    environment:
-      N8N_BASIC_AUTH_ACTIVE: "true"
-      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-n8n}
-      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:?N8N_BASIC_AUTH_PASSWORD is required}
-      N8N_HOST: ${N8N_HOST:-localhost}
-      N8N_PORT: 5678
-      N8N_PROTOCOL: http
-      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678}
-    volumes:
-      - n8n-data:/home/node/.n8n
   db:
     profiles: [ "db" ]
     image: postgres:15
@@ -175,7 +142,6 @@ services:
 
 volumes:
   db-data:
-  n8n-data:
   prometheus-data:
     driver: local
   grafana-data:

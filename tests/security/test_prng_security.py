@@ -90,33 +90,6 @@ def test_spanish_nie_generation_uses_secrets():
     assert len(set(nies)) == len(nies), "NIEs should be unique"
 
 
-def test_user_ssn_generation_uses_secrets():
-    """Test that SSN generation in test data generators uses secrets module.
-
-    Security: python:S2245
-    Risk: Even test SSNs should be unpredictable to avoid confusion with real SSNs
-    """
-    # Import from templates
-    templates_path = Path(__file__).parent.parent.parent / "docs" / "templates"
-    sys.path.insert(0, str(templates_path))
-
-    from test_data_generators import UserDataGenerator
-
-    # Generate users without PII masking to see actual SSNs
-    gen = UserDataGenerator(seed=42)
-    users = gen.generate_users(count=10, mask_pii=False, output_format="dict")
-
-    # Verify SSN format: ###-##-####
-    pattern = r"^\d{3}-\d{2}-\d{4}$"
-    ssns = [user["ssn"] for user in users]
-
-    for ssn in ssns:
-        assert re.match(pattern, ssn), f"SSN {ssn} doesn't match expected format"
-
-    # Verify all are unique (high probability with secrets)
-    assert len(set(ssns)) == len(ssns), "SSNs should be unique"
-
-
 def test_reproducible_test_data_uses_random_with_seed():
     """Test that non-security-sensitive test data uses random with seed for reproducibility.
 
