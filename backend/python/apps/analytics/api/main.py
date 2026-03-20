@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 try:
     from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request, WebSocket
     from starlette.websockets import WebSocketDisconnect
-    from fastapi.responses import JSONResponse
+    from fastapi.responses import JSONResponse, Response
 
     from backend.python.apps.analytics.api.models import (
         AdvancedRiskResponse,
@@ -70,6 +70,7 @@ try:
     )
     from backend.python.apps.analytics.api.monitoring_service import MonitoringService
     from backend.python.apps.analytics.api.service import KPIService
+    from backend.python.monitoring.kpi_metrics import get_kpi_metrics_exporter
     from backend.python.logging_config import init_sentry, set_sentry_correlation
     from backend.python.multi_agent.orchestrator import MultiAgentOrchestrator
     from backend.python.middleware.rate_limiter import api_limiter, auth_limiter
@@ -269,6 +270,25 @@ def _build_kpi_summary_text(kpis: list[Any]) -> str:
     return "\n".join(lines)
 
 
+def _publish_kpi_metrics(kpis: list[Any], category: str = "portfolio") -> None:
+    """Publish KPI threshold metrics to the in-memory Prometheus exporter."""
+    try:
+        exporter = get_kpi_metrics_exporter()
+        for kpi in kpis:
+            exporter.publish_kpi_result(
+                kpi_name=str(kpi.id),
+                kpi_result={
+                    "value": float(kpi.value),
+                    "threshold_status": str(getattr(kpi, "threshold_status", "not_configured")),
+                    "thresholds": getattr(kpi, "thresholds", None) or {},
+                    "unit": str(getattr(kpi, "unit", "unknown")),
+                },
+                category=category,
+            )
+    except Exception as exc:
+        logger.warning("KPI metrics publishing skipped: %s", exc)
+
+
 def _format_transition_block(roll_rates: "RollRateAnalyticsResponse") -> str:
     if roll_rates.summary.historical_coverage_pct <= 0:
         return ""
@@ -427,7 +447,7 @@ if app is not None:
         logger.warning("prometheus-fastapi-instrumentator not installed; /metrics disabled")
 
     # --- Rate limiting middleware ---
-    _RATE_LIMIT_EXEMPT = {"/health", "/metrics", DOCS_PATH, "/openapi.json", REDOC_PATH}
+    _RATE_LIMIT_EXEMPT = {"/health", "/metrics", "/metrics/kpis", DOCS_PATH, "/openapi.json", REDOC_PATH}
     _AUTH_PATHS = {"/auth/token", "/auth/login", "/auth/refresh"}
 
     @app.middleware("http")
@@ -454,7 +474,7 @@ if app is not None:
         item.strip()
         for item in os.getenv(
             "API_JWT_EXEMPT_PATHS",
-            f"/health,/metrics,{DOCS_PATH},/openapi.json,{REDOC_PATH}",
+            f"/health,/metrics,/metrics/kpis,{DOCS_PATH},/openapi.json,{REDOC_PATH}",
         ).split(",")
         if item.strip()
     }
@@ -661,6 +681,12 @@ if app is not None:
     async def health_check():
         return {"status": "ok"}
 
+    @app.get("/metrics/kpis")
+    async def kpi_metrics():
+        """Expose KPI threshold metrics in Prometheus text format."""
+        metrics_text = get_kpi_metrics_exporter().generate_metrics_text()
+        return Response(content=metrics_text, media_type="text/plain; version=0.0.4")
+
     @app.post("/analytics/kpis", response_model=KpiResponse)
     async def calculate_all_kpis(
         request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
@@ -674,6 +700,7 @@ if app is not None:
                 kpis = await service.calculate_kpis_for_portfolio(request.loans)
             else:
                 kpis = await service.get_latest_kpis()
+            _publish_kpi_metrics(kpis, category="portfolio")
             source = "realtime-request" if request.loans else "production-snapshot"
             return _build_kpi_response(kpis, source=source)
         except Exception as e:
@@ -776,6 +803,7 @@ if app is not None:
 
             if not kpi:
                 raise HTTPException(status_code=404, detail=f"KPI {kpi_id} not found")
+            _publish_kpi_metrics([kpi], category="portfolio")
             return kpi
         except HTTPException:
             raise
@@ -803,6 +831,8 @@ if app is not None:
                 except Exception as fetch_exc:
                     logger.warning("KPI stream fallback to empty payload: %s", fetch_exc)
                     kpis = []
+                if kpis:
+                    _publish_kpi_metrics(kpis, category="portfolio")
                 payload = {
                     "event": "kpi_snapshot",
                     "timestamp": datetime.now(timezone.utc).isoformat(),
