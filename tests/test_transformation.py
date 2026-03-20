@@ -234,7 +234,7 @@ class TestTypeNormalization:
         """Test that normalization can be disabled."""
         config = {"type_normalization": {"enabled": False}}
         transformer = TransformationPhase(config)
-        df, metrics = transformer._normalize_types(sample_loan_data)
+        _, metrics = transformer._normalize_types(sample_loan_data)
 
         assert metrics["enabled"] is False
 
@@ -605,7 +605,7 @@ class TestReferentialIntegrity:
             }
         )
         transformer = TransformationPhase(default_config)
-        result_df, metrics = transformer._check_referential_integrity(df)
+        _, metrics = transformer._check_referential_integrity(df)
 
         assert metrics["issues_found"] > 0
         assert any(i["type"] == "duplicate_primary_key" for i in metrics["issues"])
@@ -619,7 +619,7 @@ class TestReferentialIntegrity:
             }
         )
         transformer = TransformationPhase(default_config)
-        result_df, metrics = transformer._check_referential_integrity(df)
+        _, metrics = transformer._check_referential_integrity(df)
 
         assert any(i["type"] == "null_foreign_key" for i in metrics["issues"])
 
@@ -632,14 +632,14 @@ class TestReferentialIntegrity:
             }
         )
         transformer = TransformationPhase(default_config)
-        result_df, metrics = transformer._check_referential_integrity(df)
+        _, metrics = transformer._check_referential_integrity(df)
 
         assert any(i["type"] == "negative_value" for i in metrics["issues"])
 
     def test_clean_data_passes_integrity(self, default_config, sample_loan_data):
         """Test that clean data passes all integrity checks."""
         transformer = TransformationPhase(default_config)
-        result_df, metrics = transformer._check_referential_integrity(sample_loan_data)
+        _, metrics = transformer._check_referential_integrity(sample_loan_data)
 
         assert metrics["integrity_status"] == "pass"
         assert metrics["issues_found"] == 0

@@ -98,7 +98,7 @@ def validate_links() -> Tuple[int, List[str]]:
             errors.append(f"{md_file}: Failed to read — {e}")
             continue
         
-        links = extract_markdown_links(content, md_file)
+        links = extract_markdown_links(content)
         
         for link, line_num in links:
             resolved = resolve_link(link, md_file)

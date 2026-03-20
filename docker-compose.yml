@@ -22,7 +22,7 @@ x-common-env: &common-env
   SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
   SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
   # Local PostgreSQL (backing store for analytics; uses the `db` service)
-  DATABASE_URL: ${DATABASE_URL:-postgresql://abaco:${DB_PASSWORD:-localdev}@db:5432/abaco_analytics}
+  DATABASE_URL: ${DATABASE_URL:-postgresql://abaco:${DB_PASSWORD}@db:5432/abaco_analytics}
   # DuckDB / Parquet storage paths
   DUCKDB_PATH: /app/data/duckdb/analytics.duckdb
   PARQUET_BASE_DIR: /app/data/duckdb
