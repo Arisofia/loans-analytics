@@ -553,7 +553,7 @@ class TestOutlierDetection:
         """Test that outlier detection can be disabled."""
         config = {"outlier_detection": {"enabled": False}}
         transformer = TransformationPhase(config)
-        _, _ = transformer._detect_outliers(sample_loan_data)
+        _, metrics = transformer._detect_outliers(sample_loan_data)
 
         assert metrics["enabled"] is False
 
