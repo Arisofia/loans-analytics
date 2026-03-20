@@ -95,11 +95,8 @@ def test_load_kpi_snapshot_from_api_fallback_on_error(monkeypatch):
         "frontend.streamlit_app.kpi_snapshot_loader.get_client",
         side_effect=ConnectionError("API down"),
     ):
-        snapshot, snapshot_month, is_api_source = load_kpi_snapshot_from_api()
-
-    assert snapshot == {}
-    assert snapshot_month is None
-    assert is_api_source is False
+        with pytest.raises(RuntimeError, match="KPI API snapshot unavailable"):
+            load_kpi_snapshot_from_api()
 
 
 def test_load_kpi_snapshot_from_api_prefers_websocket_when_enabled(monkeypatch):

@@ -829,8 +829,9 @@ if app is not None:
                 try:
                     kpis = await service.get_latest_kpis(kpi_keys=requested_keys or None)
                 except Exception as fetch_exc:
-                    logger.warning("KPI stream fallback to empty payload: %s", fetch_exc)
-                    kpis = []
+                    logger.error("KPI stream fetch failed: %s", fetch_exc)
+                    await websocket.send_json({"event": "error", "detail": "KPI fetch failed — stream terminated"})
+                    break
                 if kpis:
                     _publish_kpi_metrics(kpis, category="portfolio")
                 payload = {

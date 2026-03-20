@@ -4,17 +4,17 @@
 
 Production-focused lending analytics repository with:
 
-- Unified data pipeline in `src/pipeline/` and `scripts/data/run_data_pipeline.py`
-- Multi-agent analytics system in `python/multi_agent/`
+- Unified data pipeline in `backend/src/pipeline/` and `scripts/data/run_data_pipeline.py`
+- Multi-agent analytics system in `backend/python/multi_agent/`
 - Operations and observability automation under `scripts/monitoring/` and `docs/OBSERVABILITY.md`
 
 ## Canonical Project Paths
 
-- Pipeline orchestration: `src/pipeline/orchestrator.py`
-- Pipeline phases: `src/pipeline/ingestion.py`, `src/pipeline/transformation.py`, `src/pipeline/calculation.py`, `src/pipeline/output.py`
-- Multi-agent orchestrator: `python/multi_agent/orchestrator.py`
-- Multi-agent protocol: `python/multi_agent/protocol.py`
-- Guardrails/PII redaction: `python/multi_agent/guardrails.py`
+- Pipeline orchestration: `backend/src/pipeline/orchestrator.py`
+- Pipeline phases: `backend/src/pipeline/ingestion.py`, `backend/src/pipeline/transformation.py`, `backend/src/pipeline/calculation.py`, `backend/src/pipeline/output.py`
+- Multi-agent orchestrator: `backend/python/multi_agent/orchestrator.py`
+- Multi-agent protocol: `backend/python/multi_agent/protocol.py`
+- Guardrails/PII redaction: `backend/python/multi_agent/guardrails.py`
 - Pipeline entrypoint: `scripts/data/run_data_pipeline.py`
 - Supabase setup helper: `scripts/data/setup_supabase_tables.py`
 

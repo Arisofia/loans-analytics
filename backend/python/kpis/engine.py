@@ -262,18 +262,9 @@ class KPIEngineV2:
         missing_columns = [col for col in required_columns if col not in self.df.columns]
 
         if missing_columns:
-            value = Decimal("0.00")
-            context = {
-                "formula": "total_loan_amount / total_collateral_value * 100",
-                "rows_processed": len(self.df),
-                "calculation_method": "v2_engine",
-                "missing_columns": missing_columns,
-                "calculation_status": "missing_required_columns",
-            }
-            error_msg = f"Missing required columns for {kpi_name}: {', '.join(missing_columns)}"
-            logger.warning(error_msg)
-            self._record_calculation(kpi_name, value, context, error_msg)
-            return value, context
+            raise ValueError(
+                f"CRITICAL: {kpi_name} missing required columns: {', '.join(missing_columns)}"
+            )
 
         total_loans = self.df["loan_amount"].sum()
         total_collateral = self.df["collateral_value"].sum()

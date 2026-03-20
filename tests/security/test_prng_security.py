@@ -15,10 +15,9 @@ from pathlib import Path
 
 import pytest
 
-# Add canonical script paths for testing
-scripts_root = Path(__file__).parent.parent.parent / "scripts"
-sys.path.insert(0, str(scripts_root / "data"))
-sys.path.insert(0, str(scripts_root))
+# Add canonical fixture paths for testing
+fixtures_root = Path(__file__).parent.parent / "fixtures"
+sys.path.insert(0, str(fixtures_root))
 
 
 def test_mexican_rfc_generation_uses_secrets():

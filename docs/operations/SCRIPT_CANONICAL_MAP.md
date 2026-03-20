@@ -22,11 +22,13 @@ Single source of truth for script execution paths. Use only these commands.
 - Local stack (API + dashboard via Docker): `make zero-cost-up`
 - Stop local stack: `make zero-cost-down`
 
-## Synthetic Data
+## Synthetic Data (Test Fixtures)
 
-- Generate synthetic loan dataset: `python3 scripts/data/generate_sample_data.py`
-- Generate synthetic KPI series: `python3 scripts/data/load_sample_kpis_supabase.py`
-- Generate Spanish IDs for tests: `python3 scripts/data/seed_spanish_loans.py`
+> These generators live in `tests/fixtures/` — they are for testing/development only and must not be run in production.
+
+- Generate synthetic loan dataset: `python3 tests/fixtures/generate_sample_data.py`
+- Generate synthetic KPI series: `python3 tests/fixtures/load_sample_kpis_supabase.py`
+- Generate Spanish IDs for tests: `python3 tests/fixtures/seed_spanish_loans.py`
 
 ## Maintenance
 

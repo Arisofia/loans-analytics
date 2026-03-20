@@ -12,7 +12,6 @@ from sklearn.preprocessing import RobustScaler
 
 from backend.python.kpis.ltv import calculate_ltv_sintetico
 from backend.python.kpis.engine import KPIEngineV2
-from backend.python.kpis.formula_engine import KPIFormulaEngine  # re-exported as SSOT
 
 # Optional heavy ML dependencies — degrade gracefully when absent
 try:
@@ -76,7 +75,7 @@ def _assign_cluster_cohorts(
     return cohort_map
 
 
-__all__ = ["CalculationPhase", "KPIFormulaEngine"]
+__all__ = ["CalculationPhase"]
 
 logger = logging.getLogger(__name__)
 

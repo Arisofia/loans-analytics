@@ -94,5 +94,5 @@ def load_kpi_snapshot_from_api(
 
         return snapshot, snapshot_month, True
     except Exception as exc:
-        logger.warning("Falling back to export-based KPI snapshot: %s", exc)
-        return {}, None, False
+        logger.error("KPI API unreachable — cannot load snapshot: %s", exc)
+        raise RuntimeError(f"KPI API snapshot unavailable: {exc}") from exc

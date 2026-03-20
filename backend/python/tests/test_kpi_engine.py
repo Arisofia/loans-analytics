@@ -21,6 +21,8 @@ class TestKPIEngineV2(unittest.TestCase):
                 "dpd_60_90_usd": [50.0, 75.0, 100.0],
                 "dpd_90_plus_usd": [25.0, 50.0, 75.0],
                 "total_receivable_usd": [5000.0, 6000.0, 7000.0],
+                "loan_amount": [4000.0, 5000.0, 6000.0],
+                "collateral_value": [5000.0, 6500.0, 7500.0],
             }
         )
 
@@ -273,6 +275,8 @@ class TestDerivedRiskKPIAudit(unittest.TestCase):
                 "borrower_id": ["A", "B", "C", "D", "A"],
                 "loan_id": ["L1", "L2", "L3", "L4", "L5"],
                 "as_of_date": ["2026-01-31"] * 5,
+                "loan_amount": [10_000.0, 8_000.0, 6_000.0, 4_000.0, 12_000.0],
+                "collateral_value": [12_000.0, 10_000.0, 8_000.0, 5_000.0, 15_000.0],
             }
         )
 
@@ -288,6 +292,8 @@ class TestDerivedRiskKPIAudit(unittest.TestCase):
                 "status": ["delinquent"],
                 "outstanding_balance": [5_000.0],
                 "as_of_date": pd.to_datetime(["2026-01-31"]),
+                "loan_amount": [5_000.0],
+                "collateral_value": [6_000.0],
             }
         )
         engine = KPIEngineV2(df, actor="audit_test")
@@ -309,6 +315,8 @@ class TestDerivedRiskKPIAudit(unittest.TestCase):
                 "dpd_60_90_usd": [0.0, 0.0, 0.0],
                 "dpd_90_plus_usd": [0.0, 0.0, 0.0],
                 "total_receivable_usd": [5_000.0, 6_000.0, 7_000.0],
+                "loan_amount": [4_000.0, 5_000.0, 6_000.0],
+                "collateral_value": [5_000.0, 6_500.0, 7_500.0],
             }
         )
         engine = KPIEngineV2(df, actor="audit_test")
@@ -365,6 +373,8 @@ class TestDerivedRiskKPIAudit(unittest.TestCase):
                 "capital_desembolsado": [8_000.0],
                 "valor_nominal_factura": [10_000.0],
                 "tasa_dilucion": [0.10],
+                "loan_amount": [8_000.0],
+                "collateral_value": [10_000.0],
             }
         )
         engine = KPIEngineV2(df, actor="audit_test")

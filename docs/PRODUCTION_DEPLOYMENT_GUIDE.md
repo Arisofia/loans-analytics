@@ -82,26 +82,7 @@ az functionapp config appsettings set \
     JWT_SECRET_KEY=$JWT_SECRET_KEY
 ```
 
-**host.json Configuration** (already in repo):
-
-```json
-{
-  "version": "2.0",
-  "logging": {
-    "applicationInsights": {
-      "samplingSettings": {
-        "isEnabled": true,
-        "maxTelemetryItemsPerSecond": 20
-      }
-    }
-  },
-  "extensions": {
-    "http": {
-      "routePrefix": "api"
-    }
-  }
-}
-```
+> **Note:** Azure Functions deployment is not in active use. The canonical deployment path is Docker-based (see Option 2 below). The `host.json` configuration file is not present in this repository.
 
 ### Option 2: Docker Deployment
 
