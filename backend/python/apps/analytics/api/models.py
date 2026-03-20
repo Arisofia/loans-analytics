@@ -160,6 +160,10 @@ class KpiSingleResponse(BaseModel):
         "unknown",
         description="Threshold evaluation status for this KPI",
     )
+    threshold_status: Literal["normal", "warning", "critical", "not_configured"] = Field(
+        "not_configured",
+        description="Normalized threshold state for alerting pipelines",
+    )
     benchmark: Optional[float] = Field(
         None,
         description="Benchmark/target value used for KPI interpretation when available",

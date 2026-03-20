@@ -546,13 +546,15 @@ class KPIService:
         benchmark = metadata.get("benchmark")
         benchmark_value = float(benchmark) if isinstance(benchmark, (int, float)) else None
         rounded_value = round(float(value), 2)
+        status = self._evaluate_kpi_status(rounded_value, thresholds)
 
         return KpiSingleResponse(
             id=kpi_id,
             name=name,
             value=rounded_value,
             unit=unit,
-            status=self._evaluate_kpi_status(rounded_value, thresholds),
+            status=status,
+            threshold_status=self._to_threshold_status(status),
             benchmark=benchmark_value,
             thresholds=thresholds or None,
             formula=formula,
@@ -568,6 +570,18 @@ class KPIService:
                 filters=filters,
             ),
         )
+
+    @staticmethod
+    def _to_threshold_status(
+        status: Literal["below_target", "on_target", "warning", "critical", "unknown"],
+    ) -> Literal["normal", "warning", "critical", "not_configured"]:
+        if status == "critical":
+            return "critical"
+        if status == "warning":
+            return "warning"
+        if status in {"on_target", "below_target"}:
+            return "normal"
+        return "not_configured"
 
     async def get_latest_kpis(self, kpi_keys: list[str] | None = None) -> list[KpiSingleResponse]:
         """

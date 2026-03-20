@@ -41,6 +41,7 @@ def test_calculate_kpis_for_portfolio_includes_collection_rate():
     assert kpi_map["COLLECTION_RATE"].value == 62.0
     assert kpi_map["COLLECTION_RATE"].formula
     assert kpi_map["COLLECTION_RATE"].status == "critical"
+    assert kpi_map["COLLECTION_RATE"].threshold_status == "critical"
     assert kpi_map["COLLECTION_RATE"].benchmark == 95.0
     assert kpi_map["COLLECTION_RATE"].thresholds is not None
     assert kpi_map["COLLECTION_RATE"].thresholds.get("warning") == 85.0
@@ -119,6 +120,7 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
     # = 50 / 500 = 10%
     assert kpi_map["RECOVERY_RATE"].value == 10.0
     assert kpi_map["CASH_ON_HAND"].value == 500.0
+    assert kpi_map["CASH_ON_HAND"].threshold_status == "not_configured"
     assert kpi_map["AVERAGE_LOAN_SIZE"].value == 1250.0
     assert kpi_map["DISBURSEMENT_VOLUME_MTD"].value == 2500.0
     assert kpi_map["NEW_LOANS_COUNT_MTD"].value == 2.0
@@ -135,6 +137,7 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
     assert kpi_map["PROCESSING_TIME_AVG"].value == 9.0
     assert kpi_map["PAR60"].value == 33.33
     assert kpi_map["PAR60"].status == "critical"
+    assert kpi_map["PAR60"].threshold_status == "critical"
     assert kpi_map["DPD_1_30"].value == 0.0
     assert kpi_map["DPD_31_60"].value == 0.0
     assert kpi_map["DPD_61_90"].value == 0.0
