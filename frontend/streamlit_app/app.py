@@ -17,6 +17,7 @@ from backend.python.kpis.strategic_reporting import (
     build_strategic_summary,
     write_strategic_report,
 )
+from backend.python.kpis.threshold_enrichment import enrich_kpis_with_thresholds
 from backend.python.utils.dashboard import format_kpi_value, kpi_label
 from backend.python.utils.normalization import normalize_dataframe_complete
 from backend.python.utils.usage_tracker import UsageTracker
@@ -180,7 +181,14 @@ def load_analytics_facts() -> pd.DataFrame:
 
 def build_kpi_snapshot(
     input_dashboard_metrics: dict, input_analytics_facts: pd.DataFrame
-) -> tuple[dict[str, float], Optional[pd.Timestamp]]:
+) -> tuple[dict[str, dict], Optional[pd.Timestamp]]:
+    """
+    Build KPI snapshot with threshold metadata.
+    
+    Returns:
+        Tuple of (enriched_kpi_snapshot, month) where enriched_kpi_snapshot is
+        a dict mapping kpi_name -> {value: ..., threshold_status: ..., ...}
+    """
     kpi_snapshot: dict[str, float] = {}
     kpi_snapshot_month: Optional[pd.Timestamp] = None
     if not input_analytics_facts.empty:
@@ -211,7 +219,11 @@ def build_kpi_snapshot(
         kpi_root_value_item = input_dashboard_metrics.get(unique_root_key_var)
         if isinstance(kpi_root_value_item, (int, float)):
             kpi_snapshot.setdefault(unique_root_key_var, float(kpi_root_value_item))
-    return kpi_snapshot, kpi_snapshot_month
+    
+    # Enrich with threshold metadata
+    enriched_snapshot = enrich_kpis_with_thresholds(kpi_snapshot)
+    
+    return enriched_snapshot, kpi_snapshot_month
 
 
 def load_agent_headcount() -> pd.DataFrame:

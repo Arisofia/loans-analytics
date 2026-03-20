@@ -3,17 +3,53 @@ import streamlit as st
 from backend.python.utils.dashboard import format_kpi_value, kpi_label
 
 
+def get_threshold_badge_html(threshold_status: str) -> str:
+    """Generate HTML badge for threshold status with appropriate styling."""
+    status_config = {
+        "normal": ("✅ Normal", "#10B981"),  # Green
+        "warning": ("⚠️ Warning", "#FB923C"),  # Orange
+        "critical": ("🔴 Critical", "#DC2626"),  # Red
+        "not_configured": ("⊙ Not Set", "#6B7280"),  # Gray
+    }
+    
+    label, color = status_config.get(threshold_status, ("Unknown", "#6B7280"))
+    return f'<span style="color: {color}; font-weight: bold; font-size: 0.8em;">{label}</span>'
+
+
 def render_kpi_snapshot(kpi_snapshot, snapshot_month=None):
-    """Render the top KPI snapshot tiles."""
+    """Render the top KPI snapshot tiles with threshold status badges."""
     if kpi_snapshot:
         st.header("📌 KPI Snapshot")
         if snapshot_month is not None and not pd.isna(snapshot_month):
             st.caption(f"Snapshot month: {snapshot_month.strftime('%Y-%m')}")
         st.caption(f"KPI count: {len(kpi_snapshot)}")
+        
+        # Sort by KPI name
         kpi_items = sorted(kpi_snapshot.items(), key=lambda item: item[0])
         kpi_cols = st.columns(4)
-        for idx, (name, value) in enumerate(kpi_items):
-            kpi_cols[idx % 4].metric(kpi_label(name), format_kpi_value(name, value))
+        
+        for idx, (name, kpi_data) in enumerate(kpi_items):
+            col = kpi_cols[idx % 4]
+            
+            # Handle both old format (flat value) and new format (enriched dict)
+            if isinstance(kpi_data, dict):
+                value = kpi_data.get("value")
+                threshold_status = kpi_data.get("threshold_status", "not_configured")
+            else:
+                # Backward compatibility with old flat format
+                value = kpi_data
+                threshold_status = "not_configured"
+            
+            # Display metric with threshold badge
+            formatted_value = format_kpi_value(name, value)
+            badge_html = get_threshold_badge_html(threshold_status)
+            
+            col.metric(
+                label=kpi_label(name),
+                value=formatted_value,
+                delta=badge_html,
+                delta_color="off",
+            )
     else:
         st.info("KPI snapshot not available. Export analytics to populate KPI tiles.")
 
