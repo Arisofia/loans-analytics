@@ -479,11 +479,11 @@ Every KPI calculation must be logged:
 
 ## 9. References
 
-- **Registry**: [config/kpis/kpi_definitions.yaml](../../config/kpis/kpi_definitions.yaml)
-- **Engine**: [backend/python/kpis/formula_engine.py](../../backend/python/kpis/formula_engine.py)
-- **KPI Catalog**: [docs/KPI_CATALOG.md](../KPI_CATALOG.md)
-- **KPI Operating Model**: [docs/KPI-Operating-Model.md](../KPI-Operating-Model.md)
-- **Lineage**: [docs/kpi_lineage.md](../kpi_lineage.md)
+- **Registry**: [config/kpis/kpi_definitions.yaml](../config/kpis/kpi_definitions.yaml)
+- **Engine**: [backend/python/kpis/formula_engine.py](../backend/python/kpis/formula_engine.py)
+- **KPI Catalog**: [KPI_CATALOG.md](KPI_CATALOG.md)
+- **KPI Operating Model**: [KPI-Operating-Model.md](KPI-Operating-Model.md)
+- **Lineage**: [kpi_lineage.md](kpi_lineage.md)
 
 ---
 
