@@ -15,6 +15,56 @@ from pathlib import Path
 from typing import Any
 
 
+REPORT_MD_NAME = "service_status_report.md"
+REPORT_JSON_NAME = "service_status_report.json"
+
+
+def _summary_status_line(passed_checks: int, total_checks: int) -> str:
+    if passed_checks == total_checks:
+        return "✅ **All systems operational** - All health checks passed successfully."
+    if passed_checks >= total_checks * 0.7:
+        return f"⚠️ **Degraded** - {total_checks - passed_checks} component(s) need attention."
+    return "❌ **Critical** - Multiple systems require immediate attention."
+
+
+def _append_result_details(lines: list[str], details: dict[str, Any]) -> None:
+    """Append formatted detail rows for one component result."""
+    if not details:
+        return
+
+    lines.append("**Details:**")
+    lines.append("")
+    for detail_key, detail_value in details.items():
+        formatted_key = detail_key.replace("_", " ").title()
+        if isinstance(detail_value, dict):
+            lines.append(f"- **{formatted_key}:**")
+            for sub_key, sub_value in detail_value.items():
+                lines.append(f"  - {sub_key}: {sub_value}")
+        elif isinstance(detail_value, bool):
+            lines.append(f"- **{formatted_key}:** {'Yes' if detail_value else 'No'}")
+        else:
+            lines.append(f"- **{formatted_key}:** {detail_value}")
+    lines.append("")
+
+
+def _append_required_actions(lines: list[str], results: dict[str, dict[str, Any]]) -> None:
+    """Append the final actions-required section."""
+    failed_checks = [
+        result.get("name", key.title())
+        for key, result in results.items()
+        if not result.get("success", False)
+    ]
+    if failed_checks:
+        lines.append("The following components require attention:")
+        lines.append("")
+        for check in failed_checks:
+            lines.append(f"- {check}")
+        lines.append("")
+        return
+    lines.append("✅ No actions required - all systems operational")
+    lines.append("")
+
+
 class ServiceStatusChecker:
     """Check status of all system components."""
 
@@ -84,7 +134,7 @@ class ServiceStatusChecker:
                 if line
                 and not any(
                     exclude in line
-                    for exclude in ["service_status_report.md", "service_status_report.json"]
+                    for exclude in [REPORT_MD_NAME, REPORT_JSON_NAME]
                 )
             ]
             has_changes = bool(filtered_lines)
@@ -411,15 +461,7 @@ def generate_markdown_report(results: dict[str, dict[str, Any]]) -> str:
         "",
     ]
 
-    # Overall status
-    if passed_checks == total_checks:
-        lines.append("✅ **All systems operational** - All health checks passed successfully.")
-    elif passed_checks >= total_checks * 0.7:
-        lines.append(
-            f"⚠️ **Degraded** - {total_checks - passed_checks} component(s) need attention."
-        )
-    else:
-        lines.append("❌ **Critical** - Multiple systems require immediate attention.")
+    lines.append(_summary_status_line(passed_checks, total_checks))
 
     lines.extend(["", "---", "", "## Component Status", ""])
 
@@ -439,25 +481,7 @@ def generate_markdown_report(results: dict[str, dict[str, Any]]) -> str:
         lines.append(f"**Status:** {status_text}")
         lines.append("")
 
-        # Details
-        if details:
-            lines.append("**Details:**")
-            lines.append("")
-            for detail_key, detail_value in details.items():
-                # Format key nicely
-                formatted_key = detail_key.replace("_", " ").title()
-
-                # Handle different value types
-                if isinstance(detail_value, dict):
-                    lines.append(f"- **{formatted_key}:**")
-                    for sub_key, sub_value in detail_value.items():
-                        lines.append(f"  - {sub_key}: {sub_value}")
-                elif isinstance(detail_value, bool):
-                    bool_text = "Yes" if detail_value else "No"
-                    lines.append(f"- **{formatted_key}:** {bool_text}")
-                else:
-                    lines.append(f"- **{formatted_key}:** {detail_value}")
-            lines.append("")
+        _append_result_details(lines, details)
 
         lines.append("---")
         lines.append("")
@@ -470,19 +494,7 @@ def generate_markdown_report(results: dict[str, dict[str, Any]]) -> str:
         ]
     )
 
-    # List failed checks
-    failed_checks = [
-        r.get("name", key.title()) for key, r in results.items() if not r.get("success", False)
-    ]
-    if failed_checks:
-        lines.append("The following components require attention:")
-        lines.append("")
-        for check in failed_checks:
-            lines.append(f"- {check}")
-        lines.append("")
-    else:
-        lines.append("✅ No actions required - all systems operational")
-        lines.append("")
+    _append_required_actions(lines, results)
 
     lines.extend(
         [
@@ -524,14 +536,14 @@ def main() -> None:
         report = generate_markdown_report(results)
 
         # Write to file
-        output_file = checker.repo_root / "service_status_report.md"
+        output_file = checker.repo_root / REPORT_MD_NAME
         output_file.write_text(report, encoding="utf-8")
 
         print(f"✅ Report written to: {output_file}")
         print()
 
         # Also output JSON for programmatic use
-        json_file = checker.repo_root / "service_status_report.json"
+        json_file = checker.repo_root / REPORT_JSON_NAME
         with open(json_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
@@ -557,7 +569,7 @@ def main() -> None:
         print(error_message, file=sys.stderr)
         # Attempt to write a minimal JSON error artifact; ignore failures
         try:
-            json_file = checker.repo_root / "service_status_report.json"
+            json_file = checker.repo_root / REPORT_JSON_NAME
             with open(json_file, "w", encoding="utf-8") as f:
                 json.dump(
                     {

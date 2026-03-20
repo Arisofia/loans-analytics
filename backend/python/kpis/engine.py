@@ -134,41 +134,78 @@ class KPIEngineV2:
             for name, value in dynamic_kpis.items()
         }
 
+    # ── PAR private helpers ───────────────────────────────────────────────────
+
+    def _calc_par30_v2(self) -> tuple[Decimal, str]:
+        active_mask = (
+            self.df["status"].isin(["active", "delinquent", "defaulted"])
+            if "status" in self.df.columns
+            else pd.Series(True, index=self.df.index)
+        )
+        subset = self.df[active_mask]
+        total_out = float(subset["outstanding_balance"].sum())
+        if total_out > 0:
+            par_mask = (subset["dpd"] >= 30) | (
+                subset["status"].isin(_NPL_BROAD_STATUSES)
+                if "status" in subset.columns
+                else False
+            )
+            par_out = float(subset.loc[par_mask, "outstanding_balance"].sum())
+            return Decimal(str(round((par_out / total_out) * 100, 2))).quantize(Decimal("0.01")), "v2_engine_native"
+        return Decimal("0.00"), "v2_engine_native_zero_bal"
+
+    def _calc_par30_legacy(self) -> tuple[Decimal, str]:
+        required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
+        missing = [col for col in required if col not in self.df.columns]
+        if missing:
+            raise ValueError(f"Missing required columns for PAR30: {', '.join(missing)}")
+        d30_60 = pd.to_numeric(self.df["dpd_30_60_usd"], errors="coerce").fillna(0.0).sum()
+        d60_90 = pd.to_numeric(self.df["dpd_60_90_usd"], errors="coerce").fillna(0.0).sum()
+        d90p   = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
+        total  = pd.to_numeric(self.df["total_receivable_usd"], errors="coerce").fillna(0.0).sum()
+        if total <= 0:
+            return Decimal("0.00"), "v1_legacy_buckets"
+        return Decimal(str(round(((d30_60 + d60_90 + d90p) / total) * 100, 2))).quantize(Decimal("0.01")), "v1_legacy_buckets"
+
+    def _calc_par90_v2(self) -> tuple[Decimal, str]:
+        active_mask = (
+            self.df["status"].isin(["active", "delinquent", "defaulted"])
+            if "status" in self.df.columns
+            else pd.Series(True, index=self.df.index)
+        )
+        subset = self.df[active_mask]
+        total_out = float(subset["outstanding_balance"].sum())
+        if total_out > 0:
+            par_mask = (subset["dpd"] >= 90) | (
+                subset["status"].isin(_NPL_STRICT_STATUSES)
+                if "status" in subset.columns
+                else False
+            )
+            par_out = float(subset.loc[par_mask, "outstanding_balance"].sum())
+            return Decimal(str(round((par_out / total_out) * 100, 2))).quantize(Decimal("0.01")), "v2_engine_native"
+        return Decimal("0.00"), "v2_engine_native_zero_bal"
+
+    def _calc_par90_legacy(self) -> tuple[Decimal, str]:
+        required = ["dpd_90_plus_usd", "total_receivable_usd"]
+        missing = [col for col in required if col not in self.df.columns]
+        if missing:
+            raise ValueError(f"Missing required columns for PAR90: {', '.join(missing)}")
+        d90p  = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
+        total = pd.to_numeric(self.df["total_receivable_usd"], errors="coerce").fillna(0.0).sum()
+        if total <= 0:
+            return Decimal("0.00"), "v1_legacy_buckets"
+        return Decimal(str(round((d90p / total) * 100, 2))).quantize(Decimal("0.01")), "v1_legacy_buckets"
+
+    # ─────────────────────────────────────────────────────────────────────────
+
     def calculate_par_30(self) -> Tuple[Decimal, Dict[str, Any]]:
         """Calculate Portfolio at Risk (30+ days)."""
         kpi_name = "PAR30"
         try:
-            # Prefer dpd column if available for unified logic
             if "dpd" in self.df.columns and "outstanding_balance" in self.df.columns:
-                active_mask = self.df["status"].isin(["active", "delinquent", "defaulted"]) if "status" in self.df.columns else pd.Series(True, index=self.df.index)
-                subset = self.df[active_mask]
-                total_out = float(subset["outstanding_balance"].sum())
-                if total_out > 0:
-                    par30_mask = (subset["dpd"] >= 30) | (subset["status"].isin(_NPL_BROAD_STATUSES) if "status" in subset.columns else False)
-                    par30_out = float(subset.loc[par30_mask, "outstanding_balance"].sum())
-                    value = Decimal(str(round((par30_out / total_out) * 100, 2))).quantize(Decimal("0.01"))
-                    method = "v2_engine_native"
-                else:
-                    value = Decimal("0.00")
-                    method = "v2_engine_native_zero_bal"
+                value, method = self._calc_par30_v2()
             else:
-                # Fallback to legacy bucket columns without external module dependency.
-                required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
-                missing = [col for col in required if col not in self.df.columns]
-                if missing:
-                    raise ValueError(f"Missing required columns for PAR30: {', '.join(missing)}")
-
-                d30_60 = pd.to_numeric(self.df["dpd_30_60_usd"], errors="coerce").fillna(0.0).sum()
-                d60_90 = pd.to_numeric(self.df["dpd_60_90_usd"], errors="coerce").fillna(0.0).sum()
-                d90p = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
-                total = pd.to_numeric(self.df["total_receivable_usd"], errors="coerce").fillna(0.0).sum()
-
-                if total <= 0:
-                    value = Decimal("0.00")
-                else:
-                    value = Decimal(str(round(((d30_60 + d60_90 + d90p) / total) * 100, 2))).quantize(Decimal("0.01"))
-                method = "v1_legacy_buckets"
-
+                value, method = self._calc_par30_legacy()
             context = {
                 "formula": "SUM(balance WHERE DPD >= 30) / SUM(total_balance) * 100",
                 "rows_processed": len(self.df),
@@ -187,31 +224,9 @@ class KPIEngineV2:
         kpi_name = "PAR90"
         try:
             if "dpd" in self.df.columns and "outstanding_balance" in self.df.columns:
-                active_mask = self.df["status"].isin(["active", "delinquent", "defaulted"]) if "status" in self.df.columns else pd.Series(True, index=self.df.index)
-                subset = self.df[active_mask]
-                total_out = float(subset["outstanding_balance"].sum())
-                if total_out > 0:
-                    par90_mask = (subset["dpd"] >= 90) | (subset["status"].isin(_NPL_STRICT_STATUSES) if "status" in subset.columns else False)
-                    par90_out = float(subset.loc[par90_mask, "outstanding_balance"].sum())
-                    value = Decimal(str(round((par90_out / total_out) * 100, 2))).quantize(Decimal("0.01"))
-                    method = "v2_engine_native"
-                else:
-                    value = Decimal("0.00")
-                    method = "v2_engine_native_zero_bal"
+                value, method = self._calc_par90_v2()
             else:
-                required = ["dpd_90_plus_usd", "total_receivable_usd"]
-                missing = [col for col in required if col not in self.df.columns]
-                if missing:
-                    raise ValueError(f"Missing required columns for PAR90: {', '.join(missing)}")
-
-                d90p = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
-                total = pd.to_numeric(self.df["total_receivable_usd"], errors="coerce").fillna(0.0).sum()
-                if total <= 0:
-                    value = Decimal("0.00")
-                else:
-                    value = Decimal(str(round((d90p / total) * 100, 2))).quantize(Decimal("0.01"))
-                method = "v1_legacy_buckets"
-
+                value, method = self._calc_par90_legacy()
             context = {
                 "formula": "SUM(balance WHERE DPD >= 90) / SUM(total_balance) * 100",
                 "rows_processed": len(self.df),
@@ -277,6 +292,87 @@ class KPIEngineV2:
         logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
         return value, context
 
+    def _collect_standard_kpis(
+        self,
+        results: Dict[str, Dict[str, Any]],
+        failures: list[str],
+    ) -> None:
+        """Populate results with PAR30, PAR90, COLLECTION_RATE, and LTV."""
+        try:
+            val, ctx = self.calculate_par_30()
+            results["PAR30"] = {"value": val, "context": ctx}
+        except Exception as e:
+            logger.warning("Standard KPI PAR30 failed: %s", e)
+            failures.append(f"PAR30={e}")
+
+        try:
+            val, ctx = self.calculate_par_90()
+            results["PAR90"] = {"value": val, "context": ctx}
+        except Exception as e:
+            logger.warning("Standard KPI PAR90 failed: %s", e)
+            failures.append(f"PAR90={e}")
+
+        try:
+            val, ctx = self.calculate_collection_rate()
+            results["COLLECTION_RATE"] = {"value": val, "context": ctx}
+        except Exception as e:
+            logger.warning("Standard KPI COLLECTION_RATE failed: %s", e)
+            failures.append(f"COLLECTION_RATE={e}")
+
+        try:
+            val, ctx = self.calculate_ltv()
+            results["LTV"] = {"value": val, "context": ctx}
+        except Exception as e:
+            logger.warning("Standard KPI LTV failed: %s", e)
+            failures.append(f"LTV={e}")
+
+    def _collect_derived_kpis(
+        self,
+        results: Dict[str, Dict[str, Any]],
+        failures: list[str],
+    ) -> None:
+        """Populate results with dynamic, derived-risk, velocity, and enriched KPIs."""
+        try:
+            dynamic_kpis = self._calculate_dynamic_kpis()
+            for name, value in dynamic_kpis.items():
+                results[name] = {
+                    "value": float(value) if value is not None else None,
+                    "context": {"type": "dynamic_formula"},
+                }
+        except Exception as e:
+            logger.warning("Dynamic KPIs calculation failed: %s", e)
+            failures.append(f"DYNAMIC={e}")
+
+        try:
+            derived_risk = self._calculate_derived_risk_kpis(self.df)
+            for name, value in derived_risk.items():
+                results[name] = {"value": float(value), "context": {"type": "derived_risk"}}
+        except Exception as e:
+            logger.warning("Derived risk KPIs failed: %s", e)
+            failures.append(f"DERIVED_RISK={e}")
+
+        try:
+            vd_val = self._compute_portfolio_velocity_of_default(self.df)
+            if vd_val is not None:
+                results["velocity_of_default"] = {
+                    "value": float(vd_val),
+                    "context": {"type": "risk_velocity"},
+                }
+        except Exception as e:
+            logger.warning("Velocity of default calculation failed: %s", e)
+            failures.append(f"VELOCITY_OF_DEFAULT={e}")
+
+        try:
+            enriched_kpis = self._calculate_enriched_kpis(self.df)
+            for name, value in enriched_kpis.items():
+                results[name] = {
+                    "value": float(value) if value is not None else None,
+                    "context": {"type": "enriched"},
+                }
+        except Exception as e:
+            logger.warning("Enriched KPIs calculation failed: %s", e)
+            failures.append(f"ENRICHED={e}")
+
     def calculate_all(
         self, kpi_definitions: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Dict[str, Any]]:
@@ -290,83 +386,11 @@ class KPIEngineV2:
         if kpi_definitions:
             self.kpi_definitions = kpi_definitions
 
-        results = {}
+        results: Dict[str, Dict[str, Any]] = {}
         failures: list[str] = []
 
-        # 1. Standard Legacy KPIs
-        try:
-            par30_val, par30_ctx = self.calculate_par_30()
-            results["PAR30"] = {"value": par30_val, "context": par30_ctx}
-        except Exception as e:
-            logger.warning("Standard KPI PAR30 failed: %s", e)
-            failures.append(f"PAR30={e}")
-
-        try:
-            par90_val, par90_ctx = self.calculate_par_90()
-            results["PAR90"] = {"value": par90_val, "context": par90_ctx}
-        except Exception as e:
-            logger.warning("Standard KPI PAR90 failed: %s", e)
-            failures.append(f"PAR90={e}")
-
-        try:
-            coll_rate_val, coll_rate_ctx = self.calculate_collection_rate()
-            results["COLLECTION_RATE"] = {"value": coll_rate_val, "context": coll_rate_ctx}
-        except Exception as e:
-            logger.warning("Standard KPI COLLECTION_RATE failed: %s", e)
-            failures.append(f"COLLECTION_RATE={e}")
-
-        # 2. V2 Standard KPIs
-        try:
-            ltv_val, ltv_ctx = self.calculate_ltv()
-            results["LTV"] = {"value": ltv_val, "context": ltv_ctx}
-        except Exception as e:
-            logger.warning("Standard KPI LTV failed: %s", e)
-            failures.append(f"LTV={e}")
-
-        # 3. Dynamic Formula KPIs
-        try:
-            dynamic_kpis = self._calculate_dynamic_kpis()
-            for name, value in dynamic_kpis.items():
-                results[name] = {
-                    "value": float(value) if value is not None else None,
-                    "context": {"type": "dynamic_formula"},
-                }
-        except Exception as e:
-            logger.warning("Dynamic KPIs calculation failed: %s", e)
-            failures.append(f"DYNAMIC={e}")
-
-        # 4. Derived Risk KPIs
-        try:
-            derived_risk = self._calculate_derived_risk_kpis(self.df)
-            for name, value in derived_risk.items():
-                results[name] = {"value": float(value), "context": {"type": "derived_risk"}}
-        except Exception as e:
-            logger.warning("Derived risk KPIs failed: %s", e)
-            failures.append(f"DERIVED_RISK={e}")
-
-        # 5. Velocity of Default
-        try:
-            vd_val = self._compute_portfolio_velocity_of_default(self.df)
-            if vd_val is not None:
-                results["velocity_of_default"] = {
-                    "value": float(vd_val),
-                    "context": {"type": "risk_velocity"},
-                }
-        except Exception as e:
-            logger.warning("Velocity of default calculation failed: %s", e)
-            failures.append(f"VELOCITY_OF_DEFAULT={e}")
-
-        # 6. Enriched KPIs (from CONTROL DE MORA)
-        try:
-            enriched_kpis = self._calculate_enriched_kpis(self.df)
-            for name, value in enriched_kpis.items():
-                results[name] = {
-                    "value": float(value) if value is not None else None,
-                    "context": {"type": "enriched"},
-                }
-        except Exception as e:
-            logger.warning("Enriched KPIs calculation failed: %s", e)
-            failures.append(f"ENRICHED={e}")
+        self._collect_standard_kpis(results, failures)
+        self._collect_derived_kpis(results, failures)
 
         if failures:
             raise ValueError(

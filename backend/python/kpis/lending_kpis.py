@@ -31,6 +31,138 @@ def _num(df: pd.DataFrame, col: str) -> pd.Series:
     return pd.to_numeric(df[col], errors="coerce").fillna(0.0)
 
 
+def _resolve_lgd_config() -> float:
+    """Load LGD default from config, falling back to a conservative baseline."""
+    try:
+        from backend.python.config import settings
+
+        return settings.risk.loss_given_default
+    except Exception:
+        return 0.10
+
+
+def _merge_customer_segments(
+    loans_df: pd.DataFrame,
+    customer_df: pd.DataFrame | None,
+    loan_id: str | None,
+) -> pd.DataFrame:
+    """Best-effort enrichment of the loan tape with customer segmentation fields."""
+    df = loans_df.copy()
+    if customer_df is None or loan_id is None or loan_id not in customer_df.columns:
+        return df
+
+    cat_col = _col(customer_df, ["categorialineacredito"])
+    clt_col = _col(customer_df, ["client_type"])
+    if cat_col:
+        df = df.merge(customer_df[[loan_id, cat_col]].drop_duplicates(loan_id), on=loan_id, how="left")
+    if clt_col and clt_col not in df.columns:
+        df = df.merge(customer_df[[loan_id, clt_col]].drop_duplicates(loan_id), on=loan_id, how="left")
+    return df
+
+
+def _segment_summary(df: pd.DataFrame, group_col: str | None, lgd: float) -> list[dict[str, Any]]:
+    """Aggregate ECL metrics by a segment column."""
+    if not group_col or group_col not in df.columns:
+        return []
+
+    rows = []
+    for seg, grp in df.groupby(group_col, dropna=False):
+        balance = float(grp["_bal"].sum())
+        ecl = float(grp["_ecl"].sum())
+        rows.append(
+            {
+                "segment": str(seg),
+                "outstanding_usd": round(balance, 2),
+                "ecl_usd": round(ecl, 2),
+                "ecl_coverage_pct": round(ecl / max(balance, 1) * 100, 2),
+                "default_count": int(grp["_default"].sum()),
+                "pd_avg": round(float(grp["_pd"].mean()), 4),
+                "lgd": lgd,
+            }
+        )
+    return sorted(rows, key=lambda row: row["ecl_usd"], reverse=True)
+
+
+def _build_mype_agg_dict(
+    cust_col: str,
+    bal_col: str | None,
+    dpd_col: str | None,
+    disb_col: str | None,
+    tpv_col: str | None,
+) -> dict[str, Any]:
+    """Build named aggregations for the MYPE decision batch."""
+    agg_dict: dict[str, Any] = {
+        "n_default": ("_default", "sum"),
+        "n_loans": (cust_col, "count"),
+    }
+    if bal_col:
+        agg_dict["outstanding"] = (bal_col, "sum")
+    if dpd_col:
+        agg_dict["max_dpd"] = (dpd_col, "max")
+    if disb_col:
+        agg_dict["total_disb"] = (disb_col, "sum")
+    if tpv_col:
+        agg_dict["total_tpv"] = (tpv_col, "sum")
+    return agg_dict
+
+
+def _build_collection_map(payments_df: pd.DataFrame | None) -> dict[str, float]:
+    """Build total received by customer from the payments dataset."""
+    if payments_df is None:
+        return {}
+    pay_cust = _col(payments_df, ["customer_id"])
+    pay_amt = _col(payments_df, ["true_total_payment"])
+    if not (pay_cust and pay_amt):
+        return {}
+    return (
+        payments_df.groupby(pay_cust)[pay_amt]
+        .apply(lambda s: pd.to_numeric(s, errors="coerce").sum())
+        .to_dict()
+    )
+
+
+def _classify_mype_decision(pod: float, max_dpd: float, npl_ratio: float) -> tuple[str, str]:
+    """Return risk level and credit decision for one customer."""
+    if pod >= 0.75 or max_dpd >= 90:
+        return "CRITICAL", "DECLINE"
+    if pod >= 0.50 or npl_ratio >= 0.05:
+        return "HIGH", "REVIEW"
+    if pod >= 0.25 or npl_ratio >= 0.03:
+        return "MEDIUM", "REVIEW"
+    return "LOW", "APPROVE"
+
+
+def _build_mype_decision_row(
+    row: pd.Series,
+    cust_col: str,
+    ce_map: dict[str, float],
+) -> dict[str, float | str]:
+    """Compute one MYPE underwriting decision row."""
+    cid = str(row[cust_col])
+    outstanding = float(row.get("outstanding", 0))
+    max_dpd = float(row.get("max_dpd", 0))
+    n_loans = int(row.get("n_loans", 1))
+    n_default = int(row.get("n_default", 0))
+    total_disb = float(row.get("total_disb", 0))
+    total_recv = float(ce_map.get(cid, 0))
+
+    npl_ratio = n_default / max(n_loans, 1)
+    collection_rate = total_recv / max(total_disb, 1) if total_disb > 0 else 1.0
+    pod = min(1.0, (max_dpd / 90) * 0.8 + npl_ratio * 0.2)
+    risk, decision = _classify_mype_decision(pod, max_dpd, npl_ratio)
+
+    return {
+        "customer_id": cid,
+        "decision": decision,
+        "risk_level": risk,
+        "pod": round(pod, 4),
+        "max_dpd": round(max_dpd, 0),
+        "npl_ratio": round(npl_ratio, 3),
+        "collection_rate": round(min(collection_rate, 1.0), 3),
+        "outstanding_usd": round(outstanding, 2),
+    }
+
+
 # ---------------------------------------------------------------------------
 # CDR by cohort
 # ---------------------------------------------------------------------------
@@ -136,6 +268,12 @@ def liquidation_rate(loans_df: pd.DataFrame, payments_df: pd.DataFrame | None = 
 
     liquidation_pct = float(recovery_val / max(default_bal, 1) * 100)
     lgd_pct = 100.0 - liquidation_pct
+    if rec_col and _num(df, rec_col).sum() > 0:
+        data_quality = "direct"
+    elif recovery_val > 0:
+        data_quality = "proxy_from_payments"
+    else:
+        data_quality = "no_recovery_data"
 
     return {
         "status": "ok",
@@ -143,13 +281,7 @@ def liquidation_rate(loans_df: pd.DataFrame, payments_df: pd.DataFrame | None = 
         "recovery_usd": round(recovery_val, 2),
         "liquidation_rate_pct": round(liquidation_pct, 2),
         "lgd_pct": round(lgd_pct, 2),
-        "data_quality": (
-            "direct"
-            if (rec_col and _num(df, rec_col).sum() > 0)
-            else "proxy_from_payments"
-            if recovery_val > 0
-            else "no_recovery_data"
-        ),
+        "data_quality": data_quality,
         "note": (
             "recovery_value column is all zeros - enter actual recovery amounts in loan tape to get real liquidation rate."
             if recovery_val == 0
@@ -167,14 +299,7 @@ def lgd_ecl_by_segment(
     customer_df: pd.DataFrame | None = None,
     lgd_override: float | None = None,
 ) -> dict[str, Any]:
-    try:
-        from backend.python.config import settings
-
-        lgd_from_config = settings.risk.loss_given_default
-    except Exception:
-        lgd_from_config = 0.10
-
-    lgd = lgd_override if lgd_override is not None else lgd_from_config
+    lgd = lgd_override if lgd_override is not None else _resolve_lgd_config()
 
     loan_id = _col(loans_df, ["loan_id"])
     bal_col = _col(loans_df, ["outstanding_loan_value"])
@@ -182,14 +307,7 @@ def lgd_ecl_by_segment(
     disb_col = _col(loans_df, ["disbursement_amount"])
     stat_col = _col(loans_df, ["loan_status"])
 
-    df = loans_df.copy()
-    if customer_df is not None and loan_id and loan_id in customer_df.columns:
-        cat_col = _col(customer_df, ["categorialineacredito"])
-        clt_col = _col(customer_df, ["client_type"])
-        if cat_col:
-            df = df.merge(customer_df[[loan_id, cat_col]].drop_duplicates(loan_id), on=loan_id, how="left")
-        if clt_col and clt_col not in df.columns:
-            df = df.merge(customer_df[[loan_id, clt_col]].drop_duplicates(loan_id), on=loan_id, how="left")
+    df = _merge_customer_segments(loans_df, customer_df, loan_id)
 
     df["_bal"] = _num(df, bal_col) if bal_col else pd.Series(1.0, index=df.index)
     df["_dpd"] = _num(df, dpd_col) if dpd_col else pd.Series(0.0, index=df.index)
@@ -207,26 +325,6 @@ def lgd_ecl_by_segment(
     total_bal = float(df["_bal"].sum())
     ecl_coverage_pct = portfolio_ecl / max(total_bal, 1) * 100
 
-    def _segment_summary(group_col: str) -> list[dict[str, Any]]:
-        if group_col not in df.columns:
-            return []
-        rows = []
-        for seg, grp in df.groupby(group_col, dropna=False):
-            b = float(grp["_bal"].sum())
-            e = float(grp["_ecl"].sum())
-            rows.append(
-                {
-                    "segment": str(seg),
-                    "outstanding_usd": round(b, 2),
-                    "ecl_usd": round(e, 2),
-                    "ecl_coverage_pct": round(e / max(b, 1) * 100, 2),
-                    "default_count": int(grp["_default"].sum()),
-                    "pd_avg": round(float(grp["_pd"].mean()), 4),
-                    "lgd": lgd,
-                }
-            )
-        return sorted(rows, key=lambda x: x["ecl_usd"], reverse=True)
-
     cat_col = _col(df, ["categorialineacredito"])
     clt_col = _col(df, ["client_type"])
 
@@ -237,8 +335,8 @@ def lgd_ecl_by_segment(
         "ecl_coverage_pct": round(ecl_coverage_pct, 2),
         "lgd_used": lgd,
         "pd_method": "dpd/180 proxy (replace with model scores for precision)",
-        "by_credit_line_cat": _segment_summary(cat_col) if cat_col else [],
-        "by_client_type": _segment_summary(clt_col) if clt_col else [],
+        "by_credit_line_cat": _segment_summary(df, cat_col, lgd),
+        "by_client_type": _segment_summary(df, clt_col, lgd),
     }
 
 
@@ -312,7 +410,7 @@ def balance_sheet_proxy(
 # Approval metrics
 # ---------------------------------------------------------------------------
 
-def approval_metrics(customer_df: pd.DataFrame, loans_df: pd.DataFrame | None = None) -> dict[str, Any]:
+def approval_metrics(customer_df: pd.DataFrame) -> dict[str, Any]:
     app_status_col = _col(customer_df, ["application_status"])
     chan_col = _col(customer_df, ["sales_channel"])
 
@@ -499,75 +597,17 @@ def mype_approval_batch(
         else False
     )
 
-    agg_dict: dict[str, Any] = {}
-    if bal_col:
-        agg_dict["outstanding"] = (bal_col, "sum")
-    if dpd_col:
-        agg_dict["max_dpd"] = (dpd_col, "max")
-    if disb_col:
-        agg_dict["total_disb"] = (disb_col, "sum")
-    if tpv_col:
-        agg_dict["total_tpv"] = (tpv_col, "sum")
-    agg_dict["n_default"] = ("_default", "sum")
-    agg_dict["n_loans"] = (cust_col, "count")
-
-    clients = df.groupby(cust_col).agg(**agg_dict).reset_index()
-
-    ce_map: dict[str, float] = {}
-    if payments_df is not None:
-        pay_cust = _col(payments_df, ["customer_id"])
-        pay_amt = _col(payments_df, ["true_total_payment"])
-        if pay_cust and pay_amt:
-            ce_map = (
-                payments_df.groupby(pay_cust)[pay_amt]
-                .apply(lambda s: pd.to_numeric(s, errors="coerce").sum())
-                .to_dict()
-            )
+    clients = df.groupby(cust_col).agg(**_build_mype_agg_dict(cust_col, bal_col, dpd_col, disb_col, tpv_col)).reset_index()
+    ce_map = _build_collection_map(payments_df)
 
     decisions: list[dict[str, float | str]] = []
     counts = {"APPROVE": 0, "REVIEW": 0, "DECLINE": 0}
 
     for _, row in clients.iterrows():
-        cid = str(row[cust_col])
-        outstanding = float(row.get("outstanding", 0))
-        max_dpd = float(row.get("max_dpd", 0))
-        n_loans = int(row.get("n_loans", 1))
-        n_default = int(row.get("n_default", 0))
-        total_disb = float(row.get("total_disb", 0))
-        total_recv = float(ce_map.get(cid, 0))
-        total_sched = total_disb
-
-        npl_ratio = n_default / max(n_loans, 1)
-        collection_rate = total_recv / max(total_sched, 1) if total_sched > 0 else 1.0
-
-        pod = min(1.0, (max_dpd / 90) * 0.8 + npl_ratio * 0.2)
-
-        if pod >= 0.75 or max_dpd >= 90:
-            risk = "CRITICAL"
-            decision = "DECLINE"
-        elif pod >= 0.50 or npl_ratio >= 0.05:
-            risk = "HIGH"
-            decision = "REVIEW"
-        elif pod >= 0.25 or npl_ratio >= 0.03:
-            risk = "MEDIUM"
-            decision = "REVIEW"
-        else:
-            risk = "LOW"
-            decision = "APPROVE"
-
+        decision_row = _build_mype_decision_row(row, cust_col, ce_map)
+        decision = str(decision_row["decision"])
         counts[decision] += 1
-        decisions.append(
-            {
-                "customer_id": cid,
-                "decision": decision,
-                "risk_level": risk,
-                "pod": round(pod, 4),
-                "max_dpd": round(max_dpd, 0),
-                "npl_ratio": round(npl_ratio, 3),
-                "collection_rate": round(min(collection_rate, 1.0), 3),
-                "outstanding_usd": round(outstanding, 2),
-            }
-        )
+        decisions.append(decision_row)
 
     decisions.sort(key=lambda x: float(cast(float, x["pod"])), reverse=True)
 
@@ -600,7 +640,6 @@ def build_lending_kpi_report(
     loans_df: pd.DataFrame,
     payments_df: pd.DataFrame,
     customer_df: pd.DataFrame | None = None,
-    schedule_df: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     cdr = cdr_by_cohort(loans_df)
     liq = liquidation_rate(loans_df, payments_df)

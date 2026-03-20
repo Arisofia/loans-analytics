@@ -39,6 +39,8 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+KPI_DEFINITIONS_TABLE = "monitoring.kpi_definitions"
+
 
 class OutputPhase:
     """Phase 4: Output & Distribution"""
@@ -89,71 +91,17 @@ class OutputPhase:
         logger.info("Starting Phase 4: Output")
 
         try:
-            exports = {}
-
-            # Export to multiple formats
-            if run_dir:
-                # Parquet export (machine-readable bulk KPI data)
-                parquet_path = self._export_parquet(kpi_results, run_dir)
-                exports["parquet"] = str(parquet_path)
-
-                # CSV export (human-readable KPI data with Decimal precision)
-                csv_path = self._export_csv(kpi_results, run_dir)
-                exports["csv"] = str(csv_path)
-
-                # --- Structured JSON Schema (canonical output contract) ---
-
-                # kpis.json — flat KPI dictionary for dashboards and monitoring
-                kpis_path = self._export_payload_json(kpi_results, run_dir, "kpis.json")
-                exports["kpis"] = str(kpis_path)
-
-                # segment_kpis.json — per-dimension segment rollups
-                if segment_kpis is not None:
-                    seg_kpi_path = self._export_payload_json(
-                        segment_kpis, run_dir, "segment_kpis.json"
-                    )
-                    exports["segment_kpis"] = str(seg_kpi_path)
-
-                # time_series.json — daily/weekly/monthly rollups
-                if time_series is not None:
-                    ts_path = self._export_payload_json(time_series, run_dir, "time_series.json")
-                    exports["time_series"] = str(ts_path)
-
-                # anomalies.json — threshold-breach anomaly records
-                if anomalies is not None:
-                    anomalies_path = self._export_payload_json(anomalies, run_dir, "anomalies.json")
-                    exports["anomalies"] = str(anomalies_path)
-
-                # clustering_metrics.json — advanced ML clustering (PCA→UMAP→HDBSCAN)
-                clustering_payload = clustering_metrics if clustering_metrics is not None else {}
-                clustering_path = self._export_payload_json(
-                    clustering_payload, run_dir, "clustering_metrics.json"
-                )
-                exports["clustering_metrics"] = str(clustering_path)
-
-                # Segment-level risk snapshot (derived from clean_data.parquet)
-                segment_snapshot_path = self._export_segment_snapshot(run_dir)
-                if segment_snapshot_path is not None:
-                    exports["segment_snapshot"] = str(segment_snapshot_path)
-
-                # NSM recurrent TPV (kept for backward compatibility)
-                if nsm_recurrent_tpv is not None:
-                    nsm_path = self._export_payload_json(
-                        nsm_recurrent_tpv, run_dir, "nsm_recurrent_tpv_output.json"
-                    )
-                    exports["nsm_recurrent_tpv"] = str(nsm_path)
-
-                # audit_metadata.json — run provenance and is_opaque validation counts
-                audit_metadata_payload = self._build_audit_metadata_payload(
-                    kpi_results=kpi_results,
-                    exports=exports,
-                    kpi_engine=kpi_engine,
-                    transformation_metrics=transformation_metrics,
-                )
-                audit_meta_path = self._export_payload_json(
-                    audit_metadata_payload, run_dir, "audit_metadata.json"
-                )
-                exports["audit_metadata"] = str(audit_meta_path)
+            exports = self._export_run_outputs(
+                kpi_results=kpi_results,
+                run_dir=run_dir,
+                kpi_engine=kpi_engine,
+                segment_kpis=segment_kpis,
+                time_series=time_series,
+                anomalies=anomalies,
+                nsm_recurrent_tpv=nsm_recurrent_tpv,
+                clustering_metrics=clustering_metrics,
+                transformation_metrics=transformation_metrics,
+            )
 
             # Export KPI audit trail if engine is provided
             if kpi_engine is not None:
@@ -188,6 +136,74 @@ class OutputPhase:
             logger.error("Output failed: %s", str(e), exc_info=True)
             # Fail-fast mandate: raise instead of returning failure payload dict
             raise RuntimeError(f"CRITICAL: Output phase failed: {e}") from e
+
+    def _export_run_outputs(
+        self,
+        *,
+        kpi_results: Dict[str, Any],
+        run_dir: Optional[Path],
+        kpi_engine: Optional["KPIEngineV2"],
+        segment_kpis: Optional[Dict[str, Any]],
+        time_series: Optional[Dict[str, Any]],
+        anomalies: Optional[list],
+        nsm_recurrent_tpv: Optional[Dict[str, Any]],
+        clustering_metrics: Optional[Dict[str, Any]],
+        transformation_metrics: Optional[Dict[str, Any]],
+    ) -> Dict[str, str]:
+        """Export file-based output artifacts for a run directory."""
+        exports: Dict[str, str] = {}
+        if run_dir is None:
+            return exports
+
+        exports["parquet"] = str(self._export_parquet(kpi_results, run_dir))
+        exports["csv"] = str(self._export_csv(kpi_results, run_dir))
+        exports["kpis"] = str(self._export_payload_json(kpi_results, run_dir, "kpis.json"))
+        self._export_optional_payload(exports, "segment_kpis", segment_kpis, run_dir, "segment_kpis.json")
+        self._export_optional_payload(exports, "time_series", time_series, run_dir, "time_series.json")
+        self._export_optional_payload(exports, "anomalies", anomalies, run_dir, "anomalies.json")
+        self._export_optional_payload(
+            exports,
+            "clustering_metrics",
+            clustering_metrics if clustering_metrics is not None else {},
+            run_dir,
+            "clustering_metrics.json",
+        )
+
+        segment_snapshot_path = self._export_segment_snapshot(run_dir)
+        if segment_snapshot_path is not None:
+            exports["segment_snapshot"] = str(segment_snapshot_path)
+
+        self._export_optional_payload(
+            exports,
+            "nsm_recurrent_tpv",
+            nsm_recurrent_tpv,
+            run_dir,
+            "nsm_recurrent_tpv_output.json",
+        )
+
+        audit_metadata_payload = self._build_audit_metadata_payload(
+            kpi_results=kpi_results,
+            exports=exports,
+            kpi_engine=kpi_engine,
+            transformation_metrics=transformation_metrics,
+        )
+        exports["audit_metadata"] = str(
+            self._export_payload_json(audit_metadata_payload, run_dir, "audit_metadata.json")
+        )
+        return exports
+
+    def _export_optional_payload(
+        self,
+        exports: Dict[str, str],
+        export_key: str,
+        payload: Any,
+        run_dir: Path,
+        filename: str,
+    ) -> None:
+        """Persist an optional JSON payload when present."""
+        if payload is None:
+            return
+        exports[export_key] = str(self._export_payload_json(payload, run_dir, filename))
 
     def _export_parquet(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
         """Export KPI results to Parquet format."""
@@ -261,23 +277,12 @@ class OutputPhase:
         Produces `segment_snapshot.json` with per-dimension rows for:
         company, credit_line, kam_hunter, kam_farmer.
         """
-        data_path: Optional[Path] = None
-        for candidate in ("clean_data.parquet", "transformed.parquet"):
-            candidate_path = run_dir / candidate
-            if candidate_path.exists():
-                data_path = candidate_path
-                break
-
+        data_path = self._resolve_segment_snapshot_source(run_dir)
         if data_path is None:
             logger.debug("Segment snapshot skipped: no clean/transformed parquet in %s", run_dir)
             return None
 
-        try:
-            df = pd.read_parquet(data_path)
-        except Exception as exc:
-            logger.error("Failed reading segment snapshot source file: %s. Fail-fast triggered.", exc)
-            raise RuntimeError(f"Cannot read segment data from {data_path}: {exc}") from exc
-
+        df = self._read_segment_snapshot_frame(data_path)
         if df.empty:
             logger.debug("Segment snapshot skipped: source dataframe is empty")
             return None
@@ -294,91 +299,14 @@ class OutputPhase:
             logger.debug("Segment snapshot skipped: no balance column present")
             return None
 
-        working = df.copy()
-        working["__balance"] = pd.to_numeric(working[balance_col], errors="coerce").fillna(0.0)
-        working["__status"] = (
-            working[status_col].astype(str).str.strip().str.lower()
-            if status_col is not None
-            else pd.Series(["unknown"] * len(working), index=working.index, dtype=object)
+        working = self._prepare_segment_snapshot_frame(
+            df,
+            balance_col=balance_col,
+            status_col=status_col,
+            dpd_col=dpd_col,
+            interest_rate_col=interest_rate_col,
         )
-        working["__dpd"] = (
-            pd.to_numeric(working[dpd_col], errors="coerce").fillna(0.0)
-            if dpd_col is not None
-            else pd.Series([0.0] * len(working), index=working.index, dtype=float)
-        )
-
-        if interest_rate_col is not None:
-            interest_rate = pd.to_numeric(working[interest_rate_col], errors="coerce")
-            # Normalize 0-100 scales to 0-1 if needed.
-            if interest_rate.notna().any() and float(interest_rate.median()) > 1:
-                interest_rate = interest_rate / 100.0
-            working["__interest_rate"] = interest_rate
-        else:
-            working["__interest_rate"] = pd.Series([pd.NA] * len(working), index=working.index)
-
-        missing_markers = {"", "nan", "none", "null", "n/a", "missing", "unknown"}
-        dimensions = [
-            "company",
-            "credit_line",
-            "kam_hunter",
-            "kam_farmer",
-            "gov",
-            "industry",
-            "doc_type",
-        ]
-        dimension_rows: Dict[str, list[Dict[str, Any]]] = {}
-
-        for dimension in dimensions:
-            if dimension not in working.columns:
-                continue
-
-            raw_segment = working[dimension].astype(str).str.strip()
-            normalized_segment = raw_segment.str.lower()
-            valid_mask = ~normalized_segment.isin(missing_markers)
-            if valid_mask.sum() == 0:
-                continue
-
-            segment_df = working.loc[valid_mask].copy()
-            segment_df["__segment"] = raw_segment.loc[valid_mask]
-            grouped = segment_df.groupby("__segment", dropna=False)
-
-            rows: list[Dict[str, Any]] = []
-            for segment_name, group in grouped:
-                balance_sum = Decimal(str(group["__balance"].sum()))
-                if balance_sum <= 0:
-                    continue
-
-                if loan_id_col is not None:
-                    loan_count = int(group[loan_id_col].astype(str).nunique())
-                else:
-                    loan_count = int(len(group))
-
-                par_30 = self._segment_ratio(group, balance_sum, dpd_threshold=30)
-                par_60 = self._segment_ratio(group, balance_sum, dpd_threshold=60)
-                par_90 = self._segment_ratio(group, balance_sum, dpd_threshold=90)
-                default_rate = self._segment_default_rate(group, loan_count)
-                avg_dpd = Decimal(str(group["__dpd"].mean()))
-
-                row: Dict[str, Any] = {
-                    "segment": str(segment_name),
-                    "loan_count": loan_count,
-                    "total_outstanding_balance": float(balance_sum),
-                    "par_30": float(par_30),
-                    "par_60": float(par_60),
-                    "par_90": float(par_90),
-                    "default_rate": float(default_rate),
-                    "avg_dpd": float(avg_dpd),
-                }
-
-                if group["__interest_rate"].notna().any():
-                    portfolio_yield = Decimal(str(group["__interest_rate"].mean())) * Decimal("100")
-                    row["portfolio_yield"] = float(portfolio_yield)
-
-                rows.append(row)
-
-            if rows:
-                rows.sort(key=lambda item: item["total_outstanding_balance"], reverse=True)
-                dimension_rows[dimension] = rows[:25]
+        dimension_rows = self._build_segment_snapshot_dimensions(working, loan_id_col)
 
         if not dimension_rows:
             logger.debug("Segment snapshot skipped: no segment rows generated")
@@ -407,6 +335,125 @@ class OutputPhase:
 
         logger.info("Exported segment snapshot: %s", output_path)
         return output_path
+
+    @staticmethod
+    def _resolve_segment_snapshot_source(run_dir: Path) -> Optional[Path]:
+        """Return the first available parquet source for the segment snapshot."""
+        for candidate in ("clean_data.parquet", "transformed.parquet"):
+            candidate_path = run_dir / candidate
+            if candidate_path.exists():
+                return candidate_path
+        return None
+
+    @staticmethod
+    def _read_segment_snapshot_frame(data_path: Path) -> pd.DataFrame:
+        """Read the source dataframe for segment snapshot generation."""
+        try:
+            return pd.read_parquet(data_path)
+        except Exception as exc:
+            logger.error("Failed reading segment snapshot source file: %s. Fail-fast triggered.", exc)
+            raise RuntimeError(f"Cannot read segment data from {data_path}: {exc}") from exc
+
+    def _prepare_segment_snapshot_frame(
+        self,
+        df: pd.DataFrame,
+        *,
+        balance_col: str,
+        status_col: Optional[str],
+        dpd_col: Optional[str],
+        interest_rate_col: Optional[str],
+    ) -> pd.DataFrame:
+        """Normalize source columns used by the segment snapshot export."""
+        working = df.copy()
+        working["__balance"] = pd.to_numeric(working[balance_col], errors="coerce").fillna(0.0)
+        working["__status"] = (
+            working[status_col].astype(str).str.strip().str.lower()
+            if status_col is not None
+            else pd.Series(["unknown"] * len(working), index=working.index, dtype=object)
+        )
+        working["__dpd"] = (
+            pd.to_numeric(working[dpd_col], errors="coerce").fillna(0.0)
+            if dpd_col is not None
+            else pd.Series([0.0] * len(working), index=working.index, dtype=float)
+        )
+        working["__interest_rate"] = self._normalize_segment_interest_rate(working, interest_rate_col)
+        return working
+
+    @staticmethod
+    def _normalize_segment_interest_rate(
+        working: pd.DataFrame, interest_rate_col: Optional[str]
+    ) -> pd.Series:
+        """Normalize interest rates to 0-1 scale when the source uses percentages."""
+        if interest_rate_col is None:
+            return pd.Series([pd.NA] * len(working), index=working.index)
+        interest_rate = pd.to_numeric(working[interest_rate_col], errors="coerce")
+        if interest_rate.notna().any() and float(interest_rate.median()) > 1:
+            interest_rate = interest_rate / 100.0
+        return interest_rate
+
+    def _build_segment_snapshot_dimensions(
+        self, working: pd.DataFrame, loan_id_col: Optional[str]
+    ) -> Dict[str, list[Dict[str, Any]]]:
+        """Build top segment rows for each configured segment dimension."""
+        dimension_rows: Dict[str, list[Dict[str, Any]]] = {}
+        dimensions = ["company", "credit_line", "kam_hunter", "kam_farmer", "gov", "industry", "doc_type"]
+        missing_markers = {"", "nan", "none", "null", "n/a", "missing", "unknown"}
+
+        for dimension in dimensions:
+            rows = self._build_segment_dimension_rows(working, dimension, loan_id_col, missing_markers)
+            if rows:
+                dimension_rows[dimension] = rows
+        return dimension_rows
+
+    def _build_segment_dimension_rows(
+        self,
+        working: pd.DataFrame,
+        dimension: str,
+        loan_id_col: Optional[str],
+        missing_markers: Set[str],
+    ) -> list[Dict[str, Any]]:
+        """Aggregate segment metrics for one dimension."""
+        if dimension not in working.columns:
+            return []
+
+        raw_segment = working[dimension].astype(str).str.strip()
+        valid_mask = ~raw_segment.str.lower().isin(missing_markers)
+        if valid_mask.sum() == 0:
+            return []
+
+        segment_df = working.loc[valid_mask].copy()
+        segment_df["__segment"] = raw_segment.loc[valid_mask]
+        rows = [
+            self._build_segment_snapshot_row(segment_name, group, loan_id_col)
+            for segment_name, group in segment_df.groupby("__segment", dropna=False)
+        ]
+        filtered_rows = [row for row in rows if row is not None]
+        filtered_rows.sort(key=lambda item: item["total_outstanding_balance"], reverse=True)
+        return filtered_rows[:25]
+
+    def _build_segment_snapshot_row(
+        self, segment_name: Any, group: pd.DataFrame, loan_id_col: Optional[str]
+    ) -> Optional[Dict[str, Any]]:
+        """Build one segment snapshot aggregate row."""
+        balance_sum = Decimal(str(group["__balance"].sum()))
+        if balance_sum <= 0:
+            return None
+
+        loan_count = int(group[loan_id_col].astype(str).nunique()) if loan_id_col is not None else int(len(group))
+        row: Dict[str, Any] = {
+            "segment": str(segment_name),
+            "loan_count": loan_count,
+            "total_outstanding_balance": float(balance_sum),
+            "par_30": float(self._segment_ratio(group, balance_sum, dpd_threshold=30)),
+            "par_60": float(self._segment_ratio(group, balance_sum, dpd_threshold=60)),
+            "par_90": float(self._segment_ratio(group, balance_sum, dpd_threshold=90)),
+            "default_rate": float(self._segment_default_rate(group, loan_count)),
+            "avg_dpd": float(Decimal(str(group["__dpd"].mean()))),
+        }
+        if group["__interest_rate"].notna().any():
+            portfolio_yield = Decimal(str(group["__interest_rate"].mean())) * Decimal("100")
+            row["portfolio_yield"] = float(portfolio_yield)
+        return row
 
     @staticmethod
     def _resolve_first_column(df: pd.DataFrame, candidates: list[str]) -> Optional[str]:
@@ -597,12 +644,12 @@ class OutputPhase:
         return None
 
     def _get_kpi_definitions_map(
-        self, supabase: Client
+        self, supabase: Any
     ) -> Optional[tuple[Dict[str, str], Dict[str, int]]]:
         """Get mapping of KPI names to KPI keys (and IDs when available)."""
         try:
             definitions_table = self.config.get("database", {}).get(
-                "definitions_table", "monitoring.kpi_definitions"
+                "definitions_table", KPI_DEFINITIONS_TABLE
             )
             query = self._table_query(supabase, definitions_table)
 
@@ -637,7 +684,7 @@ class OutputPhase:
             return schema_name, bare_table
         return "public", table_name
 
-    def _table_query(self, supabase: Client, table_name: str):
+    def _table_query(self, supabase: Any, table_name: str):
         """
         Build a Supabase table query with schema support.
 
@@ -674,81 +721,105 @@ class OutputPhase:
         aliases = {**default_aliases, **configured_aliases}
         return aliases.get(kpi_name, kpi_name)
 
-    def _insert_batch_rows(self, supabase: Client, table_name: str, rows: list) -> int:
+    def _insert_batch_rows(self, supabase: Any, table_name: str, rows: list) -> int:
         """Insert rows in batches to Supabase."""
         batch_size = 100
-        total_inserted = 0
-
-        # If using monitoring tables, convert format
         is_monitoring_table = self._is_monitoring_kpi_values_table(table_name)
         if is_monitoring_table:
-            kpi_maps = self._get_kpi_definitions_map(supabase)
-            if not kpi_maps:
-                logger.error("Cannot write to monitoring.kpi_values without KPI definitions")
+            rows = self._build_monitoring_rows(supabase, rows)
+            if not rows:
                 return 0
-            name_to_key, name_to_id = kpi_maps
-            mapped_names: Set[str] = {
-                self._map_monitoring_kpi_name(str(row.get("kpi_name", "")))
-                for row in rows
-                if row.get("kpi_name")
-            }
-            self._ensure_missing_kpi_definitions(supabase, mapped_names, set(name_to_key.keys()))
-            if not mapped_names.issubset(set(name_to_key.keys())):
-                kpi_maps = self._get_kpi_definitions_map(supabase)
-                if kpi_maps:
-                    name_to_key, name_to_id = kpi_maps
 
-            snapshot_id = (
-                self.config.get("database", {}).get("snapshot_id")
-                or os.getenv("PIPELINE_MONITORING_SNAPSHOT_ID")
-                or "pipeline_daily"
-            )
-            run_id = (
-                self.config.get("database", {}).get("run_id")
-                or f"pipeline_v2_{date.today().isoformat()}"
-            )
-            inputs_hash = self.config.get("database", {}).get("inputs_hash") or "pipeline_v2"
+        return self._write_row_batches(
+            supabase=supabase,
+            table_name=table_name,
+            rows=rows,
+            batch_size=batch_size,
+            is_monitoring_table=is_monitoring_table,
+        )
 
-            # Convert rows to monitoring format with kpi_id + upsert keys
-            monitoring_rows = []
-            for row in rows:
-                original_name = str(row.get("kpi_name", ""))
-                mapped_name = self._map_monitoring_kpi_name(original_name)
-                if mapped_name in name_to_key:
-                    row_timestamp = row.get("timestamp")
-                    as_of_date = (
-                        str(row_timestamp).split("T")[0]
-                        if row_timestamp
-                        else date.today().isoformat()
-                    )
-                    value = row.get("value")
-                    mapped_kpi_key = name_to_key[mapped_name]
-                    monitoring_row: Dict[str, Any] = {
-                        "kpi_key": mapped_kpi_key,
-                        "value": row.get("value"),
-                        "value_num": value,
-                        "timestamp": row.get("timestamp"),
-                        "computed_at": row.get("timestamp"),
-                        "as_of_date": as_of_date,
-                        "status": row.get("status", "green"),
-                        "snapshot_id": snapshot_id,
-                        "run_id": run_id,
-                        "inputs_hash": inputs_hash,
-                    }
-                    if mapped_name in name_to_id:
-                        monitoring_row["kpi_id"] = name_to_id[mapped_name]
-                    monitoring_rows.append(monitoring_row)
-                else:
-                    logger.warning(
-                        "KPI not found in definitions: %s (mapped: %s)",
-                        original_name,
-                        mapped_name,
-                    )
+    def _build_monitoring_rows(self, supabase: Any, rows: list) -> list[Dict[str, Any]]:
+        """Convert generic KPI rows to monitoring.kpi_values-compatible rows."""
+        kpi_maps = self._get_kpi_definitions_map(supabase)
+        if not kpi_maps:
+            logger.error("Cannot write to monitoring.kpi_values without KPI definitions")
+            return []
 
-            rows = monitoring_rows
+        name_to_key, name_to_id = kpi_maps
+        mapped_names = {
+            self._map_monitoring_kpi_name(str(row.get("kpi_name", "")))
+            for row in rows
+            if row.get("kpi_name")
+        }
+        self._ensure_missing_kpi_definitions(supabase, mapped_names, set(name_to_key.keys()))
+        if not mapped_names.issubset(set(name_to_key.keys())):
+            refreshed_maps = self._get_kpi_definitions_map(supabase)
+            if refreshed_maps:
+                name_to_key, name_to_id = refreshed_maps
 
-        for i in range(0, len(rows), batch_size):
-            batch = rows[i : i + batch_size]
+        metadata = self._get_monitoring_write_metadata()
+        monitoring_rows: list[Dict[str, Any]] = []
+        for row in rows:
+            monitoring_row = self._build_monitoring_row(row, name_to_key, name_to_id, metadata)
+            if monitoring_row is not None:
+                monitoring_rows.append(monitoring_row)
+        return monitoring_rows
+
+    def _get_monitoring_write_metadata(self) -> Dict[str, str]:
+        """Return common monitoring write metadata from config and environment."""
+        return {
+            "snapshot_id": self.config.get("database", {}).get("snapshot_id")
+            or os.getenv("PIPELINE_MONITORING_SNAPSHOT_ID")
+            or "pipeline_daily",
+            "run_id": self.config.get("database", {}).get("run_id")
+            or f"pipeline_v2_{date.today().isoformat()}",
+            "inputs_hash": self.config.get("database", {}).get("inputs_hash") or "pipeline_v2",
+        }
+
+    def _build_monitoring_row(
+        self,
+        row: Dict[str, Any],
+        name_to_key: Dict[str, str],
+        name_to_id: Dict[str, int],
+        metadata: Dict[str, str],
+    ) -> Optional[Dict[str, Any]]:
+        """Build one monitoring.kpi_values row from a generic KPI row."""
+        original_name = str(row.get("kpi_name", ""))
+        mapped_name = self._map_monitoring_kpi_name(original_name)
+        if mapped_name not in name_to_key:
+            logger.warning("KPI not found in definitions: %s (mapped: %s)", original_name, mapped_name)
+            return None
+
+        row_timestamp = row.get("timestamp")
+        as_of_date = str(row_timestamp).split("T")[0] if row_timestamp else date.today().isoformat()
+        value = row.get("value")
+        monitoring_row: Dict[str, Any] = {
+            "kpi_key": name_to_key[mapped_name],
+            "value": value,
+            "value_num": value,
+            "timestamp": row_timestamp,
+            "computed_at": row_timestamp,
+            "as_of_date": as_of_date,
+            "status": row.get("status", "green"),
+            **metadata,
+        }
+        if mapped_name in name_to_id:
+            monitoring_row["kpi_id"] = name_to_id[mapped_name]
+        return monitoring_row
+
+    def _write_row_batches(
+        self,
+        *,
+        supabase: Any,
+        table_name: str,
+        rows: list,
+        batch_size: int,
+        is_monitoring_table: bool,
+    ) -> int:
+        """Write rows to Supabase in bounded batches."""
+        total_inserted = 0
+        for index in range(0, len(rows), batch_size):
+            batch = rows[index : index + batch_size]
             query = self._table_query(supabase, table_name)
             if is_monitoring_table:
                 query.upsert(batch, on_conflict="as_of_date,kpi_key,snapshot_id").execute()
@@ -757,13 +828,16 @@ class OutputPhase:
             total_inserted += len(batch)
             logger.info(
                 "Inserted batch",
-                extra={"batch_start": i, "batch_end": i + len(batch), "batch_size": len(batch)},
+                extra={
+                    "batch_start": index,
+                    "batch_end": index + len(batch),
+                    "batch_size": len(batch),
+                },
             )
-
         return total_inserted
 
     def _ensure_missing_kpi_definitions(
-        self, supabase: Client, mapped_names: Set[str], existing_names: Set[str]
+        self, supabase: Any, mapped_names: Set[str], existing_names: Set[str]
     ) -> None:
         """
         Best-effort creation of missing KPI definitions.
@@ -776,12 +850,10 @@ class OutputPhase:
             return
 
         configured_table = self.config.get("database", {}).get(
-            "definitions_table", "monitoring.kpi_definitions"
+            "definitions_table", KPI_DEFINITIONS_TABLE
         )
         # Write into base table (not public view) when table is unqualified.
-        definitions_table = (
-            configured_table if "." in configured_table else "monitoring.kpi_definitions"
-        )
+        definitions_table = configured_table if "." in configured_table else KPI_DEFINITIONS_TABLE
         query = self._table_query(supabase, definitions_table)
 
         for kpi_name in missing:
@@ -871,7 +943,7 @@ class OutputPhase:
             supabase_url, supabase_key, key_source = self._resolve_supabase_credentials()
             if supabase_url is None or supabase_key is None:
                 raise RuntimeError("Supabase credentials missing during Phase 4 persistence")
-            supabase: Client = create_client(supabase_url, supabase_key)
+            supabase: Any = create_client(supabase_url, supabase_key)
             logger.info("Using Supabase credentials source: %s", key_source)
 
             # Prepare rows for insert
@@ -1012,45 +1084,54 @@ class OutputPhase:
             "sla_met": self._check_sla(kpi_results, kpi_engine),
         }
 
-        # Count is_opaque / is_missing flags from transformation phase.
-        # We read from the structured ``opacity_counts`` dict that TransformationPhase
-        # emits inside ``null_handling`` — never from the human-readable ``smart_actions``
-        # strings (parsing those is brittle and breaks on any message-format change).
-        opaque_counts: Dict[str, int] = {}
-        if transformation_metrics:
-            null_handling = transformation_metrics.get("null_handling", {})
-            structured_opacity = null_handling.get("opacity_counts")
-            if isinstance(structured_opacity, dict):
-                for key, value in structured_opacity.items():
-                    try:
-                        opaque_counts[str(key)] = int(value)
-                    except (TypeError, ValueError):
-                        # Skip values that cannot be coerced to int
-                        continue
-            canonical_risk = transformation_metrics.get("canonical_risk_state", {})
-            if canonical_risk.get("opaque_ratio_rows", 0):
-                opaque_counts["ratio_pago_real_opaque"] = int(
-                    canonical_risk.get("opaque_ratio_rows", 0)
-                )
-
+        opaque_counts = self._collect_opaque_counts(transformation_metrics)
         payload["is_opaque_validation_counts"] = opaque_counts
         payload["total_opaque_observations"] = sum(v for v in opaque_counts.values() if v > 0)
 
-        # Attach KPI engine audit summary if available
-        if kpi_engine is not None:
-            try:
-                audit_df = kpi_engine.get_audit_trail()
-                if not audit_df.empty:
-                    failed_kpis = self._get_failed_kpis_from_audit(audit_df)
-                    payload["kpi_engine_used"] = True
-                    payload["total_calculations"] = len(audit_df)
-                    payload["failed_calculations"] = len(failed_kpis)
-                    if failed_kpis:
-                        payload["failed_kpis"] = failed_kpis
-            except Exception as e:
-                logger.warning("Could not add KPI engine audit info: %s", e)
+        self._attach_kpi_engine_audit_summary(payload, kpi_engine)
 
         return payload
+
+    def _collect_opaque_counts(
+        self, transformation_metrics: Optional[Dict[str, Any]]
+    ) -> Dict[str, int]:
+        """Extract structured opacity validation counts from transformation metrics."""
+        opaque_counts: Dict[str, int] = {}
+        if not transformation_metrics:
+            return opaque_counts
+
+        null_handling = transformation_metrics.get("null_handling", {})
+        structured_opacity = null_handling.get("opacity_counts")
+        if isinstance(structured_opacity, dict):
+            for key, value in structured_opacity.items():
+                try:
+                    opaque_counts[str(key)] = int(value)
+                except (TypeError, ValueError):
+                    continue
+
+        canonical_risk = transformation_metrics.get("canonical_risk_state", {})
+        if canonical_risk.get("opaque_ratio_rows", 0):
+            opaque_counts["ratio_pago_real_opaque"] = int(canonical_risk.get("opaque_ratio_rows", 0))
+        return opaque_counts
+
+    def _attach_kpi_engine_audit_summary(
+        self, payload: Dict[str, Any], kpi_engine: Optional["KPIEngineV2"]
+    ) -> None:
+        """Attach KPI engine audit statistics when audit trail data is available."""
+        if kpi_engine is None:
+            return
+        try:
+            audit_df = kpi_engine.get_audit_trail()
+            if audit_df.empty:
+                return
+            failed_kpis = self._get_failed_kpis_from_audit(audit_df)
+            payload["kpi_engine_used"] = True
+            payload["total_calculations"] = len(audit_df)
+            payload["failed_calculations"] = len(failed_kpis)
+            if failed_kpis:
+                payload["failed_kpis"] = failed_kpis
+        except Exception as e:
+            logger.warning("Could not add KPI engine audit info: %s", e)
 
     def _generate_audit_metadata(
         self,

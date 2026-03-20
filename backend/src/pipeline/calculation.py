@@ -42,6 +42,40 @@ def _quartile_fallback_labels(x_fallback: np.ndarray, metrics: Dict[str, Any]) -
     return labels
 
 
+def _compute_cluster_profile(cluster_rows: pd.DataFrame) -> tuple[Dict[str, Any], float]:
+    """Return centroid details and a composite risk score for one cohort cluster."""
+    centroid: Dict[str, Any] = {}
+    risk_dims: List[float] = []
+    for feat in _COHORT_FEATURE_COLS:
+        if feat not in cluster_rows.columns:
+            continue
+        vals = pd.to_numeric(cluster_rows[feat], errors="coerce").dropna()
+        if vals.empty:
+            continue
+        mean_val = float(vals.mean())
+        centroid[feat] = round(mean_val, 6)
+        risk_dims.append(-mean_val if feat == "ratio_pago_real" else mean_val)
+    risk_score = float(np.mean(risk_dims)) if risk_dims else 0.0
+    return centroid, risk_score
+
+
+def _assign_cluster_cohorts(
+    risk_scores: Dict[int, float],
+    centroids: Dict[int, Dict[str, Any]],
+) -> Dict[int, str]:
+    """Assign ordered Alfa/Beta/Gamma/Delta cohort labels from cluster risk scores."""
+    sorted_clusters = sorted(risk_scores.keys(), key=lambda cluster_id: risk_scores[cluster_id])
+    cohort_map: Dict[int, str] = {}
+    n_labels = len(_COHORT_LABELS)
+    for rank, cluster_id in enumerate(sorted_clusters):
+        label_idx = min(rank * n_labels // max(len(sorted_clusters), 1), n_labels - 1)
+        cohort_name = _COHORT_LABELS[label_idx]
+        cohort_map[cluster_id] = cohort_name
+        centroids[cluster_id]["cohort"] = cohort_name
+        centroids[cluster_id]["composite_risk_score"] = round(risk_scores[cluster_id], 6)
+    return cohort_map
+
+
 __all__ = ["CalculationPhase", "KPIFormulaEngine"]
 
 logger = logging.getLogger(__name__)
@@ -769,7 +803,7 @@ class CalculationPhase:
             labels = self._apply_hdbscan(x_embed, x_scaled, metrics)
 
             # 4. Map HDBSCAN cluster ids → institutional cohort labels
-            cohort_series, centroids = self._map_cohorts(df, labels, opaque_mask, feature_cols)
+            cohort_series, centroids = self._map_cohorts(df, labels, opaque_mask)
             metrics["cohort_distribution"] = (
                 cohort_series.value_counts().to_dict() if cohort_series is not None else {}
             )
@@ -915,7 +949,6 @@ class CalculationPhase:
         df: pd.DataFrame,
         labels: np.ndarray,
         opaque_mask: pd.Series,
-        feature_cols: List[str],  # noqa: ARG002  — kept for API symmetry / future use
     ) -> tuple[Optional[pd.Series], Dict[int, Dict[str, Any]]]:
         """Assign institutional cohort labels (Alfa/Beta/Gamma/Delta) to each cluster.
 
@@ -950,30 +983,12 @@ class CalculationPhase:
                 continue
             cluster_mask = label_series == cluster_id
             cluster_rows = df.loc[non_opaque_idx[cluster_mask.values]]
-            centroid: Dict[str, Any] = {}
-            risk_dims: List[float] = []
-
-            for feat in _COHORT_FEATURE_COLS:
-                if feat in cluster_rows.columns:
-                    vals = pd.to_numeric(cluster_rows[feat], errors="coerce").dropna()
-                    if not vals.empty:
-                        mean_val = float(vals.mean())
-                        centroid[feat] = round(mean_val, 6)
-                        # Invert ratio_pago_real so that lower payment ratio = higher risk
-                        risk_dims.append(-mean_val if feat == "ratio_pago_real" else mean_val)
-
+            centroid, risk_score = _compute_cluster_profile(cluster_rows)
             centroids[cluster_id] = centroid
-            risk_scores[cluster_id] = float(np.mean(risk_dims)) if risk_dims else 0.0
+            risk_scores[cluster_id] = risk_score
 
         # Rank clusters by composite risk score and assign labels
-        sorted_clusters = sorted(risk_scores.keys(), key=lambda c: risk_scores[c])
-        cohort_map: Dict[int, str] = {}
-        n_labels = len(_COHORT_LABELS)
-        for rank, cluster_id in enumerate(sorted_clusters):
-            label_idx = min(rank * n_labels // max(len(sorted_clusters), 1), n_labels - 1)
-            cohort_map[cluster_id] = _COHORT_LABELS[label_idx]
-            centroids[cluster_id]["cohort"] = _COHORT_LABELS[label_idx]
-            centroids[cluster_id]["composite_risk_score"] = round(risk_scores[cluster_id], 6)
+        cohort_map = _assign_cluster_cohorts(risk_scores, centroids)
 
         # Build final cohort series over the full dataframe index
         full_cohort = pd.Series("Unknown", index=df.index, name="cohort", dtype=object)

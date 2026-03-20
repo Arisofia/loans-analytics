@@ -27,6 +27,10 @@ from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
 
+_NIM_FORMULA = "(gross_yield_rate - funding_cost_rate) * 100"
+_CURE_RATE_FORMULA = "delinquent_with_recent_payment / total_delinquent * 100"
+_CURE_RATE_NOTE = "Proxy metric: requires T/T-1 snapshots for precise cure rate"
+
 
 def _safe_pct(numerator: float, denominator: float) -> float:
     if denominator <= 0:
@@ -215,7 +219,7 @@ def calculate_nim(df: pd.DataFrame, funding_cost_rate: float = 0.08) -> dict[str
             "funding_cost_pct": funding_cost_pct,
             "interest_income": 0.0,
             "total_balance": 0.0,
-            "formula": "(gross_yield_rate - funding_cost_rate) * 100",
+            "formula": _NIM_FORMULA,
         }
 
     balance = _resolve_balance(df)
@@ -227,7 +231,7 @@ def calculate_nim(df: pd.DataFrame, funding_cost_rate: float = 0.08) -> dict[str
             "funding_cost_pct": funding_cost_pct,
             "interest_income": 0.0,
             "total_balance": 0.0,
-            "formula": "(gross_yield_rate - funding_cost_rate) * 100",
+            "formula": _NIM_FORMULA,
         }
 
     rate_col = _first_col(df, ["interest_rate", "interest_rate_apr"])
@@ -255,7 +259,7 @@ def calculate_nim(df: pd.DataFrame, funding_cost_rate: float = 0.08) -> dict[str
         "funding_cost_pct": funding_cost_pct,
         "interest_income": round(interest_income, 2),
         "total_balance": round(total_balance, 2),
-        "formula": "(gross_yield_rate - funding_cost_rate) * 100",
+        "formula": _NIM_FORMULA,
     }
 
 
@@ -296,8 +300,8 @@ def calculate_cure_rate(df: pd.DataFrame) -> dict[str, Any]:
             "cure_rate_pct": 0.0,
             "delinquent_count": 0,
             "curing_count": 0,
-            "formula": "delinquent_with_recent_payment / total_delinquent * 100",
-            "note": "Proxy metric: requires T/T-1 snapshots for precise cure rate",
+            "formula": _CURE_RATE_FORMULA,
+            "note": _CURE_RATE_NOTE,
         }
 
     dpd = _resolve_dpd(df)
@@ -309,8 +313,8 @@ def calculate_cure_rate(df: pd.DataFrame) -> dict[str, Any]:
             "cure_rate_pct": 0.0,
             "delinquent_count": 0,
             "curing_count": 0,
-            "formula": "delinquent_with_recent_payment / total_delinquent * 100",
-            "note": "Proxy metric: requires T/T-1 snapshots for precise cure rate",
+            "formula": _CURE_RATE_FORMULA,
+            "note": _CURE_RATE_NOTE,
         }
 
     collected_col = _first_col(df, ["last_payment_amount", "payment_amount"])
@@ -333,8 +337,8 @@ def calculate_cure_rate(df: pd.DataFrame) -> dict[str, Any]:
         "cure_rate_pct": round(cure_rate, 4),
         "delinquent_count": delinquent_count,
         "curing_count": curing_count,
-        "formula": "delinquent_with_recent_payment / total_delinquent * 100",
-        "note": "Proxy metric: requires T/T-1 snapshots for precise cure rate",
+        "formula": _CURE_RATE_FORMULA,
+        "note": _CURE_RATE_NOTE,
     }
 
 

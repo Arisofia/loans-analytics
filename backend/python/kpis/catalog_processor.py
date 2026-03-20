@@ -158,9 +158,37 @@ class KPICatalogProcessor:
             ),
         }
 
+    @staticmethod
+    def _latest_non_null_metric(rows: list[dict[str, Any]], metric_key: str) -> float | None:
+        """Return the latest non-null metric value from a list of monthly records."""
+        for row in reversed(rows):
+            metric_value = row.get(metric_key)
+            if metric_value is None:
+                continue
+            if isinstance(metric_value, float) and np.isnan(metric_value):
+                continue
+            return float(metric_value)
+        return None
+
+    def _resolve_total_customers(
+        self,
+        loan_cols: dict[str, Optional[str]],
+        customer_cols: dict[str, Optional[str]],
+    ) -> int:
+        """Resolve total customers preferring customer master data over loan tape fallback."""
+        customer_id_col = customer_cols["customer_id"]
+        if customer_id_col is not None:
+            return int(self.customers_df[customer_id_col].nunique())
+
+        loan_customer_col = loan_cols["customer_id"]
+        if loan_customer_col is not None:
+            return int(self.loans_df[loan_customer_col].nunique())
+        return 0
+
     def get_all_kpis(self) -> dict[str, Any]:
         """Return a dictionary of computed KPIs for dashboard consumption."""
         loan_cols = self._loan_columns()
+        customer_cols = self._customer_columns()
         revenue_df = self.get_monthly_revenue_df()
         segmentation = self.get_segmentation_summary()
         churn_90d = self.get_churn_90d_metrics()
@@ -175,15 +203,7 @@ class KPICatalogProcessor:
             if loan_cols["loan_id"] is not None
             else 0
         )
-        total_customers = (
-            int(self.customers_df[self._customer_columns()["customer_id"]].nunique())
-            if self._customer_columns()["customer_id"] is not None
-            else (
-                int(self.loans_df[loan_cols["customer_id"]].nunique())
-                if loan_cols["customer_id"] is not None
-                else 0
-            )
-        )
+        total_customers = self._resolve_total_customers(loan_cols, customer_cols)
 
         total_outstanding = (
             float(self.loans_df[loan_cols["outstanding"]].fillna(0).sum())
@@ -195,20 +215,9 @@ class KPICatalogProcessor:
 
         latest_forecast = revenue_forecast[0] if revenue_forecast else {}
         unit_economics_rows = unit_economics if unit_economics else []
-
-        def _latest_non_null_metric(metric_key: str) -> float | None:
-            for row in reversed(unit_economics_rows):
-                metric_value = row.get(metric_key)
-                if metric_value is None:
-                    continue
-                if isinstance(metric_value, float) and np.isnan(metric_value):
-                    continue
-                return float(metric_value)
-            return None
-
-        latest_cac = _latest_non_null_metric("cac_usd")
-        latest_ltv = _latest_non_null_metric("ltv_realized_usd")
-        latest_margin = _latest_non_null_metric("gross_margin_pct")
+        latest_cac = self._latest_non_null_metric(unit_economics_rows, "cac_usd")
+        latest_ltv = self._latest_non_null_metric(unit_economics_rows, "ltv_realized_usd")
+        latest_margin = self._latest_non_null_metric(unit_economics_rows, "gross_margin_pct")
 
         strategic_confirmations = {
             "cac_confirmed": latest_cac is not None,
@@ -273,67 +282,13 @@ class KPICatalogProcessor:
         """Build a monthly revenue metrics frame for dashboard charts."""
         payment_cols = self._payment_columns()
 
-        if not self.payments_df.empty and payment_cols["date"] is not None:
-            monthly = self.payments_df.copy()
-            monthly[payment_cols["date"]] = self._coerce_datetime(monthly[payment_cols["date"]])
-            monthly = monthly.dropna(subset=[payment_cols["date"]])
-
-            if monthly.empty:
-                return pd.DataFrame()
-
-            monthly["month"] = monthly[payment_cols["date"]].dt.to_period("M").dt.to_timestamp()
-
-            for source_col, target_col in [
-                ("interest", "recv_interest_for_month"),
-                ("fee", "recv_fee_for_month"),
-                ("other", "recv_other_for_month"),
-                ("rebates", "recv_rebates_for_month"),
-            ]:
-                col_name = payment_cols[source_col]
-                if col_name is not None:
-                    monthly[target_col] = pd.to_numeric(monthly[col_name], errors="coerce").fillna(
-                        0
-                    )
-                else:
-                    monthly[target_col] = 0.0
-
-            if payment_cols["amount"] is not None:
-                monthly["recv_revenue_for_month"] = pd.to_numeric(
-                    monthly[payment_cols["amount"]],
-                    errors="coerce",
-                ).fillna(0)
-            else:
-                monthly["recv_revenue_for_month"] = (
-                    monthly["recv_interest_for_month"]
-                    + monthly["recv_fee_for_month"]
-                    + monthly["recv_other_for_month"]
-                    - monthly["recv_rebates_for_month"]
-                )
-
-            summary = (
-                monthly.groupby("month", as_index=False)[
-                    [
-                        "recv_revenue_for_month",
-                        "recv_interest_for_month",
-                        "recv_fee_for_month",
-                    ]
-                ]
-                .sum()
-                .sort_values("month")
-            )
-        else:
+        if self.payments_df.empty or payment_cols["date"] is None:
             summary = self._fallback_revenue_from_loans()
+        else:
+            summary = self._build_monthly_revenue_from_payments(payment_cols)
 
         if summary.empty:
-            return pd.DataFrame(
-                columns=[
-                    "month",
-                    "recv_revenue_for_month",
-                    "recv_interest_for_month",
-                    "recv_fee_for_month",
-                    "sched_revenue",
-                ]
-            )
+            return self._empty_monthly_revenue_frame()
 
         if "recv_revenue_for_month" not in summary.columns:
             summary["recv_revenue_for_month"] = (
@@ -343,6 +298,78 @@ class KPICatalogProcessor:
 
         summary["sched_revenue"] = summary["recv_revenue_for_month"]
         return summary
+
+    def _build_monthly_revenue_from_payments(
+        self, payment_cols: dict[str, Optional[str]]
+    ) -> pd.DataFrame:
+        """Build monthly revenue rollup using payment-level source data."""
+        date_col = payment_cols["date"]
+        if date_col is None:
+            return pd.DataFrame()
+
+        monthly = self.payments_df.copy()
+        monthly[date_col] = self._coerce_datetime(monthly[date_col])
+        monthly = monthly.dropna(subset=[date_col])
+        if monthly.empty:
+            return pd.DataFrame()
+
+        monthly["month"] = monthly[date_col].dt.to_period("M").dt.to_timestamp()
+        self._populate_payment_component_columns(monthly, payment_cols)
+        monthly["recv_revenue_for_month"] = self._compute_received_revenue(monthly, payment_cols)
+
+        return (
+            monthly.groupby("month", as_index=False)[
+                ["recv_revenue_for_month", "recv_interest_for_month", "recv_fee_for_month"]
+            ]
+            .sum()
+            .sort_values("month")
+        )
+
+    @staticmethod
+    def _empty_monthly_revenue_frame() -> pd.DataFrame:
+        """Return an empty monthly revenue frame with the expected schema."""
+        return pd.DataFrame(
+            columns=[
+                "month",
+                "recv_revenue_for_month",
+                "recv_interest_for_month",
+                "recv_fee_for_month",
+                "sched_revenue",
+            ]
+        )
+
+    def _populate_payment_component_columns(
+        self, monthly: pd.DataFrame, payment_cols: dict[str, Optional[str]]
+    ) -> None:
+        """Populate normalized payment component columns used for revenue rollups."""
+        for source_col, target_col in [
+            ("interest", "recv_interest_for_month"),
+            ("fee", "recv_fee_for_month"),
+            ("other", "recv_other_for_month"),
+            ("rebates", "recv_rebates_for_month"),
+        ]:
+            col_name = payment_cols[source_col]
+            monthly[target_col] = (
+                pd.to_numeric(monthly[col_name], errors="coerce").fillna(0)
+                if col_name is not None
+                else 0.0
+            )
+
+    @staticmethod
+    def _compute_received_revenue(
+        monthly: pd.DataFrame, payment_cols: dict[str, Optional[str]]
+    ) -> pd.Series:
+        """Compute received monthly revenue using amount column when available."""
+        amount_col = payment_cols["amount"]
+        if amount_col is not None:
+            return pd.to_numeric(monthly[amount_col], errors="coerce").fillna(0)
+
+        return (
+            monthly["recv_interest_for_month"]
+            + monthly["recv_fee_for_month"]
+            + monthly["recv_other_for_month"]
+            - monthly["recv_rebates_for_month"]
+        )
 
     def _fallback_revenue_from_loans(self) -> pd.DataFrame:
         """Estimate monthly revenue from loan-level data when payment data is missing."""
@@ -679,32 +706,7 @@ class KPICatalogProcessor:
         weighted_apr = float((pricing["_apr"] * pricing["_weight"]).sum() / total_weight)
         weighted_fee_rate = float((pricing["_fee_rate"] * pricing["_weight"]).sum() / total_weight)
         weighted_effective_rate = float(weighted_apr + weighted_fee_rate)
-
-        monthly_rows: list[dict[str, Any]] = []
-        if loan_cols["date"] is not None:
-            pricing["_date"] = self._coerce_datetime(pricing[loan_cols["date"]])
-            pricing = pricing.dropna(subset=["_date"])
-            if not pricing.empty:
-                pricing["month"] = pricing["_date"].dt.to_period("M").dt.to_timestamp()
-
-                def _weighted(values: pd.Series, weights: pd.Series) -> float:
-                    denom = float(weights.sum())
-                    if denom <= 0:
-                        return 0.0
-                    return float((values * weights).sum() / denom)
-
-                for month, grp in pricing.groupby("month"):
-                    monthly_rows.append(
-                        {
-                            "month": month,
-                            "weighted_apr": _weighted(grp["_apr"], grp["_weight"]),
-                            "weighted_fee_rate": _weighted(grp["_fee_rate"], grp["_weight"]),
-                            "weighted_effective_rate": _weighted(
-                                grp["_apr"] + grp["_fee_rate"],
-                                grp["_weight"],
-                            ),
-                        }
-                    )
+        monthly_rows = self._build_monthly_pricing_rows(pricing, loan_cols["date"])
 
         return {
             "current": {
@@ -714,6 +716,44 @@ class KPICatalogProcessor:
             },
             "monthly": monthly_rows,
         }
+
+    @staticmethod
+    def _weighted_average(values: pd.Series, weights: pd.Series) -> float:
+        """Compute weighted average with safe zero-denominator handling."""
+        denom = float(weights.sum())
+        if denom <= 0:
+            return 0.0
+        return float((values * weights).sum() / denom)
+
+    def _build_monthly_pricing_rows(
+        self, pricing: pd.DataFrame, date_col: Optional[str]
+    ) -> list[dict[str, Any]]:
+        """Build monthly weighted pricing rows from loan-level pricing data."""
+        if date_col is None:
+            return []
+
+        monthly_input = pricing.copy()
+        monthly_input["_date"] = self._coerce_datetime(monthly_input[date_col])
+        monthly_input = monthly_input.dropna(subset=["_date"])
+        if monthly_input.empty:
+            return []
+
+        monthly_input["month"] = monthly_input["_date"].dt.to_period("M").dt.to_timestamp()
+        rows: list[dict[str, Any]] = []
+        for month, group in monthly_input.groupby("month"):
+            rows.append(
+                {
+                    "month": month,
+                    "weighted_apr": self._weighted_average(group["_apr"], group["_weight"]),
+                    "weighted_fee_rate": self._weighted_average(
+                        group["_fee_rate"], group["_weight"]
+                    ),
+                    "weighted_effective_rate": self._weighted_average(
+                        group["_apr"] + group["_fee_rate"], group["_weight"]
+                    ),
+                }
+            )
+        return rows
 
     # ── NSM + GUARDRAIL KPIs ─────────────────────────────────────────────────
     # Added to match kpi_definitions.yaml v3.1 and business_parameters.yml
@@ -1109,41 +1149,13 @@ class KPICatalogProcessor:
         """Compute data quality and governance summary for executive reporting."""
         loan_cols = self._loan_columns()
         payment_cols = self._payment_columns()
-
-        completeness_checks = {}
-        required_fields = {
-            "loan_id": loan_cols["loan_id"],
-            "customer_id": loan_cols["customer_id"],
-            "outstanding": loan_cols["outstanding"],
-            "apr": loan_cols["apr"],
-            "origination_date": loan_cols["date"],
-            "payment_date": payment_cols["date"],
-        }
-        for key, col_name in required_fields.items():
-            if col_name is None:
-                completeness_checks[key] = 0.0
-                continue
-            source_df = self.payments_df if key == "payment_date" else self.loans_df
-            ratio = float(source_df[col_name].notna().mean()) if not source_df.empty else 0.0
-            completeness_checks[key] = ratio
+        completeness_checks = self._build_completeness_checks(loan_cols, payment_cols)
 
         duplicate_rate = 0.0
         if loan_cols["loan_id"] is not None and not self.loans_df.empty:
             duplicate_rate = float(self.loans_df[loan_cols["loan_id"]].duplicated().mean())
 
-        freshness_days = None
-        date_candidates: list[pd.Series] = []
-        if loan_cols["date"] is not None and not self.loans_df.empty:
-            date_candidates.append(self._coerce_datetime(self.loans_df[loan_cols["date"]]))
-        if payment_cols["date"] is not None and not self.payments_df.empty:
-            date_candidates.append(self._coerce_datetime(self.payments_df[payment_cols["date"]]))
-
-        if date_candidates:
-            merged_dates = pd.concat(date_candidates).dropna()
-            if not merged_dates.empty:
-                freshness_days = int(
-                    (pd.Timestamp.utcnow().tz_localize(None) - merged_dates.max()).days
-                )
+        freshness_days = self._compute_freshness_days(loan_cols, payment_cols)
 
         completeness_mean = float(np.mean(list(completeness_checks.values())))
         freshness_penalty = 0.0 if freshness_days is None else min(max(freshness_days, 0) / 180, 1)
@@ -1157,10 +1169,59 @@ class KPICatalogProcessor:
             "completeness": completeness_checks,
             "duplicate_rate": duplicate_rate,
             "freshness_days": freshness_days,
-            "governance_status": (
-                "green" if quality_score >= 0.8 else "amber" if quality_score >= 0.6 else "red"
-            ),
+            "governance_status": self._governance_status(quality_score),
         }
+
+    def _build_completeness_checks(
+        self,
+        loan_cols: dict[str, Optional[str]],
+        payment_cols: dict[str, Optional[str]],
+    ) -> dict[str, float]:
+        """Build field-level completeness checks for governance reporting."""
+        required_fields = {
+            "loan_id": loan_cols["loan_id"],
+            "customer_id": loan_cols["customer_id"],
+            "outstanding": loan_cols["outstanding"],
+            "apr": loan_cols["apr"],
+            "origination_date": loan_cols["date"],
+            "payment_date": payment_cols["date"],
+        }
+        completeness_checks: dict[str, float] = {}
+        for key, col_name in required_fields.items():
+            if col_name is None:
+                completeness_checks[key] = 0.0
+                continue
+            source_df = self.payments_df if key == "payment_date" else self.loans_df
+            completeness_checks[key] = float(source_df[col_name].notna().mean()) if not source_df.empty else 0.0
+        return completeness_checks
+
+    def _compute_freshness_days(
+        self,
+        loan_cols: dict[str, Optional[str]],
+        payment_cols: dict[str, Optional[str]],
+    ) -> Optional[int]:
+        """Compute source freshness in days from latest observed loan/payment date."""
+        date_candidates: list[pd.Series] = []
+        if loan_cols["date"] is not None and not self.loans_df.empty:
+            date_candidates.append(self._coerce_datetime(self.loans_df[loan_cols["date"]]))
+        if payment_cols["date"] is not None and not self.payments_df.empty:
+            date_candidates.append(self._coerce_datetime(self.payments_df[payment_cols["date"]]))
+        if not date_candidates:
+            return None
+
+        merged_dates = pd.concat(date_candidates).dropna()
+        if merged_dates.empty:
+            return None
+        return int((pd.Timestamp.utcnow().tz_localize(None) - merged_dates.max()).days)
+
+    @staticmethod
+    def _governance_status(quality_score: float) -> str:
+        """Classify governance quality score into traffic-light status."""
+        if quality_score >= 0.8:
+            return "green"
+        if quality_score >= 0.6:
+            return "amber"
+        return "red"
 
     def get_graph_analytics(self) -> dict[str, Any]:
         """Compute graph-based analytics and advanced fintech KPIs."""
@@ -1190,7 +1251,6 @@ class KPICatalogProcessor:
         return build_lending_kpi_report(
             loans_df=self.loans_df,
             payments_df=self.payments_df,
-            schedule_df=self.schedule_df,
             customer_df=self.customers_df,
         )
 

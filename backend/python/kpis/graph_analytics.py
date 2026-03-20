@@ -110,6 +110,236 @@ def _calculate_ssot_npl_metrics(balance: pd.Series, dpd: pd.Series) -> tuple[flo
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Module-level helpers (extracted for readability and SonarQube compliance)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _assign_client_tier(score: float, high_thresh: float, low_thresh: float) -> str:
+    """Assign trust tier based on PageRank percentile thresholds."""
+    if score >= high_thresh:
+        return "HIGH_TRUST"
+    if score <= low_thresh:
+        return "LOW_TRUST"
+    return "STANDARD"
+
+
+def _concentration_level(hhi_val: float) -> str:
+    """Classify HHI value per DOJ concentration thresholds."""
+    if hhi_val > 2500:
+        return "highly_concentrated"
+    if hhi_val > 1500:
+        return "moderately_concentrated"
+    return "unconcentrated"
+
+
+def _build_dpd_lookup(
+    intermedia_df: pd.DataFrame,
+) -> tuple[dict[str, float], dict[str, float]]:
+    """Build per-client DPD and balance lookup dicts from an INTERMEDIA snapshot."""
+    cod_col = _col(intermedia_df, ["CodCliente", "customer_id"])
+    bal_col = _col(intermedia_df, ["TotalSaldoVigente"])
+    dpd_col = _col(intermedia_df, ["dpd", "dias_mora", "DPD"])
+
+    if not (cod_col and bal_col):
+        return {}, {}
+
+    df = intermedia_df.copy()
+    df["_bal"] = _num(df, bal_col)
+    df["_cod"] = df[cod_col].astype(str).str.strip()
+
+    if dpd_col:
+        df["_dpd"] = _num(df, dpd_col)
+    else:
+        fpp_col = _col(df, ["FechaPagoProgramado", "payment_due_date"])
+        if fpp_col:
+            df["_due"] = pd.to_datetime(df[fpp_col], errors="coerce")
+            cutoff = pd.Timestamp("2026-03-13")
+            df["_dpd"] = (cutoff - df["_due"]).dt.days.clip(lower=0).fillna(0)
+        else:
+            df["_dpd"] = 0.0
+
+    active = df[df["_bal"] > 0]
+    return (
+        active.groupby("_cod")["_dpd"].mean().to_dict(),
+        active.groupby("_cod")["_bal"].sum().to_dict(),
+    )
+
+
+def _compute_hhi(series: pd.Series, df: pd.DataFrame, total: float) -> dict:
+    """Compute HHI concentration index for a grouping series."""
+    grouped = df.groupby(series)["_bal"].sum()
+    shares  = grouped / total
+    hhi_val = float((shares ** 2).sum() * 10000)
+    top     = grouped.sort_values(ascending=False)
+    return {
+        "hhi":               round(hhi_val, 1),
+        "equivalent_n":      round(1 / (hhi_val / 10000), 1) if hhi_val > 0 else 0,
+        "concentration_level": _concentration_level(hhi_val),
+        "top1_pct":          round(float(top.iloc[0] / total * 100), 1) if len(top) > 0 else 0,
+        "top3_pct":          round(float(top.head(3).sum() / total * 100), 1),
+        "top10_pct":         round(float(top.head(10).sum() / total * 100), 1),
+        "top1_name":         str(top.index[0]) if len(top) > 0 else "",
+        "top1_balance_usd":  round(float(top.iloc[0]), 2) if len(top) > 0 else 0,
+    }
+
+
+def _estimate_ltv(
+    loans_df: pd.DataFrame,
+    payments_df: pd.DataFrame,
+    cust_col: str,
+    disb_col: str,
+    pay_date: str | None,
+    pay_amt: str | None,
+    window_start: Any,
+    trailing_months: int,
+) -> tuple[float, float]:
+    """Estimate LTV and avg lifetime months from payment and loan data."""
+    if not (pay_date and pay_amt):
+        return 0.0, 0.0
+    pay_dates = pd.to_datetime(payments_df[pay_date], errors="coerce")
+    recent = payments_df[pay_dates >= window_start]
+    total_rev = _num(recent, pay_amt).sum()
+    n_clients = int(loans_df[cust_col].nunique())
+    monthly_rev = float(total_rev / max(n_clients, 1) / trailing_months)
+    avg_lifetime_months = 6.0
+    if disb_col and disb_col in loans_df.columns:
+        term_col = _col(loans_df, ["term", "Term"])
+        if term_col:
+            avg_term_days = float(_num(loans_df, term_col).median())
+            avg_lifetime_months = avg_term_days / 30 * 3
+    return monthly_rev * avg_lifetime_months, avg_lifetime_months
+
+
+def _k_factor_from_channel(
+    loans_df: pd.DataFrame,
+    cust_col: str,
+    ch_col: str,
+    conversion_rate: float | None,
+) -> dict:
+    """Estimate viral K-factor from sales_channel referral data."""
+    channels = loans_df.drop_duplicates(cust_col)[ch_col].astype(str).str.lower()
+    organic_keywords = ["referral", "referido", "word", "organic", "viral", "invite"]
+    organic_mask = channels.str.contains("|".join(organic_keywords), na=False)
+    n_organic = int(organic_mask.sum())
+    n_total   = len(channels)
+    referral_rate = n_organic / max(n_total, 1)
+    avg_invitations = 1.0
+    conv = referral_rate if referral_rate > 0 else 0.05
+    if conversion_rate is not None:
+        conv = conversion_rate
+    k = avg_invitations * conv
+    return {
+        "k_factor":          round(k, 3),
+        "avg_invitations":   avg_invitations,
+        "conversion_rate":   round(conv, 3),
+        "organic_clients":   n_organic,
+        "total_clients":     n_total,
+        "organic_rate_pct":  round(referral_rate * 100, 1),
+        "confidence":        "medium",
+        "data_source":       f"sales_channel column ({ch_col})",
+        "growth_status":     "exponential" if k >= 1.0 else "sub-viral",
+        "to_reach_k1": (
+            f"Need conversion rate >= {1/avg_invitations:.1%} OR "
+            f"avg invites >= {1/max(conv, 0.001):.1f} per client"
+        ),
+    }
+
+
+def _score_community(
+    comm: dict,
+    dpd_by_client: dict[str, float],
+    bal_by_client: dict[str, float],
+    dpd_threshold: int,
+    avg_density: float,
+    graph: Any,
+) -> dict | None:
+    """Score one community for fraud ring flags; return ring dict or None if clean."""
+    client_ids = [str(cid) for cid in comm["client_ids"]]
+    flags: list[str] = []
+
+    dpds = [dpd_by_client.get(cid, 0.0) for cid in client_ids]
+    avg_dpd = float(np.mean(dpds)) if dpds else 0.0
+    total_bal = sum(bal_by_client.get(cid, 0.0) for cid in client_ids)
+
+    if avg_dpd > dpd_threshold:
+        flags.append("HIGH_DPD_CLUSTER")
+
+    sub_nodes = (
+        [f"C:{cid}" for cid in client_ids]
+        + [f"D:{did}" for did in comm.get("debtor_ids", [])]
+    )
+    sub = graph.subgraph([n for n in sub_nodes if n in graph])
+    if sub.number_of_nodes() > 1 and nx.density(sub) > 2 * avg_density:
+        flags.append("DENSE_CLUSTER")
+
+    if comm["client_count"] >= 4 and comm["debtor_count"] >= 2:
+        flags.append("SHARED_DEBTOR_RING")
+
+    if not flags:
+        return None
+
+    risk_score = min(100, len(flags) * 30 + int(avg_dpd))
+    return {
+        "community_id":      comm["community_id"],
+        "flag_types":        flags,
+        "size":              comm["size"],
+        "client_count":      comm["client_count"],
+        "client_ids":        client_ids[:15],
+        "avg_dpd":           round(avg_dpd, 1),
+        "total_balance_usd": round(total_bal, 2),
+        "risk_score":        risk_score,
+    }
+
+
+def _compute_loan_tape_hhi(loans_df: pd.DataFrame) -> dict | None:
+    """Compute debtor-level HHI from the loan tape (pagador column)."""
+    pag_col = _col(loans_df, ["pagador", "Pagador", "debtor_id"])
+    tpv_col = _col(loans_df, ["tpv", "TPV", "disbursement_amount"])
+    if not (pag_col and tpv_col):
+        return None
+    lt = loans_df.copy()
+    lt["_bal"] = _num(lt, tpv_col)
+    lt["_pag"] = lt[pag_col].astype(str).str.strip()
+    total_lt = lt["_bal"].sum()
+    if total_lt <= 0:
+        return None
+    grouped = lt.groupby("_pag")["_bal"].sum()
+    top_lt  = grouped.sort_values(ascending=False)
+    hhi_lt  = float(((grouped / total_lt) ** 2).sum() * 10000)
+    return {
+        "hhi":      round(hhi_lt, 1),
+        "top1_name": str(top_lt.index[0]) if len(top_lt) > 0 else "",
+        "top1_pct":  round(float(top_lt.iloc[0] / total_lt * 100), 1),
+        "top10_pct": round(float(top_lt.head(10).sum() / total_lt * 100), 1),
+    }
+
+
+def _k_factor_from_repeat(
+    loans_df: pd.DataFrame,
+    cust_col: str,
+    conversion_rate: float | None,
+) -> dict:
+    """Estimate viral K-factor via repeat-borrower proxy when referral data is absent."""
+    loans_per = loans_df[cust_col].value_counts()
+    repeat    = int((loans_per > 1).sum())
+    total     = int(len(loans_per))
+    proxy_k   = (repeat / max(total, 1)) * 0.3
+    conv      = conversion_rate if conversion_rate is not None else 0.05
+    return {
+        "k_factor":        round(proxy_k, 3),
+        "conversion_rate": conv,
+        "repeat_clients":  repeat,
+        "total_clients":   total,
+        "confidence":      "low",
+        "data_source":     "repeat_borrower_rate proxy (no referral col)",
+        "growth_status":   "exponential" if proxy_k >= 1.0 else "sub-viral",
+        "note": (
+            "Low confidence — add referral/invite tracking to CRM to get accurate K. "
+            "Recommended: tag sales_channel='referral' in HubSpot for organic clients."
+        ),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Build transaction graph (bipartite: clients ↔ emisores/pagadores)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -290,11 +520,7 @@ def pagerank_scores(
         high_thresh = float(np.percentile(scores, 85))
         low_thresh  = float(np.percentile(scores, 20))
         for r in client_rows:
-            r["tier"] = (
-                "HIGH_TRUST"  if r["pagerank"] >= high_thresh else
-                "LOW_TRUST"   if r["pagerank"] <= low_thresh  else
-                "STANDARD"
-            )
+            r["tier"] = _assign_client_tier(r["pagerank"], high_thresh, low_thresh)
     else:
         high_thresh = 0.0
 
@@ -432,30 +658,7 @@ def detect_fraud_rings(
     dpd_by_client: dict[str, float] = {}
     bal_by_client: dict[str, float] = {}
     if intermedia_df is not None:
-        cod_col = _col(intermedia_df, ["CodCliente", "customer_id"])
-        bal_col = _col(intermedia_df, ["TotalSaldoVigente"])
-        dpd_col = _col(intermedia_df, ["dpd", "dias_mora", "DPD"])
-
-        if cod_col and bal_col:
-            df = intermedia_df.copy()
-            df["_bal"] = _num(df, bal_col)
-            df["_cod"] = df[cod_col].astype(str).str.strip()
-
-            if dpd_col:
-                df["_dpd"] = _num(df, dpd_col)
-            else:
-                # Compute DPD from FechaPagoProgramado
-                fpp_col = _col(df, ["FechaPagoProgramado", "payment_due_date"])
-                if fpp_col:
-                    df["_due"] = pd.to_datetime(df[fpp_col], errors="coerce")
-                    cutoff = pd.Timestamp("2026-03-13")
-                    df["_dpd"] = (cutoff - df["_due"]).dt.days.clip(lower=0).fillna(0)
-                else:
-                    df["_dpd"] = 0.0
-
-            active = df[df["_bal"] > 0]
-            dpd_by_client  = active.groupby("_cod")["_dpd"].mean().to_dict()
-            bal_by_client  = active.groupby("_cod")["_bal"].sum().to_dict()
+        dpd_by_client, bal_by_client = _build_dpd_lookup(intermedia_df)
 
     avg_density = nx.density(graph)
     rings: list[dict] = []
@@ -463,45 +666,9 @@ def detect_fraud_rings(
     for comm in comm_result["communities"]:
         if comm["size"] < min_community_size:
             continue
-
-        client_ids = [str(cid) for cid in comm["client_ids"]]
-        flags: list[str] = []
-
-        # Compute community DPD
-        dpds = [dpd_by_client.get(cid, 0.0) for cid in client_ids]
-        avg_dpd = float(np.mean(dpds)) if dpds else 0.0
-        total_bal = sum(bal_by_client.get(cid, 0.0) for cid in client_ids)
-
-        if avg_dpd > dpd_threshold:
-            flags.append("HIGH_DPD_CLUSTER")
-
-        # Community density vs network avg
-        sub_nodes = (
-            [f"C:{cid}" for cid in client_ids] +
-            [f"D:{did}" for did in comm.get("debtor_ids", [])]
-        )
-        sub = graph.subgraph([n for n in sub_nodes if n in graph])
-        if sub.number_of_nodes() > 1:
-            sub_density = nx.density(sub)
-            if sub_density > 2 * avg_density:
-                flags.append("DENSE_CLUSTER")
-
-        # Shared debtor ring
-        if comm["client_count"] >= 4 and comm["debtor_count"] >= 2:
-            flags.append("SHARED_DEBTOR_RING")
-
-        if flags:
-            risk_score = min(100, len(flags) * 30 + int(avg_dpd))
-            rings.append({
-                "community_id":  comm["community_id"],
-                "flag_types":    flags,
-                "size":          comm["size"],
-                "client_count":  comm["client_count"],
-                "client_ids":    client_ids[:15],
-                "avg_dpd":       round(avg_dpd, 1),
-                "total_balance_usd": round(total_bal, 2),
-                "risk_score":    risk_score,
-            })
+        ring = _score_community(comm, dpd_by_client, bal_by_client, dpd_threshold, avg_density, graph)
+        if ring is not None:
+            rings.append(ring)
 
     rings.sort(key=lambda x: x["risk_score"], reverse=True)
     flagged_bal = sum(r["total_balance_usd"] for r in rings)
@@ -550,60 +717,25 @@ def concentration_hhi(
     if total == 0:
         return {"status": "no_data"}
 
-    def _hhi(series: pd.Series) -> dict:
-        grouped = df.groupby(series)["_bal"].sum()
-        shares  = grouped / total
-        hhi_val = float((shares ** 2).sum() * 10000)
-        top     = grouped.sort_values(ascending=False)
-        return {
-            "hhi":               round(hhi_val, 1),
-            "equivalent_n":      round(1 / (hhi_val / 10000), 1) if hhi_val > 0 else 0,
-            "concentration_level": (
-                "highly_concentrated" if hhi_val > 2500 else
-                "moderately_concentrated" if hhi_val > 1500 else
-                "unconcentrated"
-            ),
-            "top1_pct":          round(float(top.iloc[0] / total * 100), 1) if len(top) > 0 else 0,
-            "top3_pct":          round(float(top.head(3).sum() / total * 100), 1),
-            "top10_pct":         round(float(top.head(10).sum() / total * 100), 1),
-            "top1_name":         str(top.index[0]) if len(top) > 0 else "",
-            "top1_balance_usd":  round(float(top.iloc[0]), 2) if len(top) > 0 else 0,
-        }
-
     result: dict[str, Any] = {"status": "ok", "total_aum_usd": round(float(total), 2)}
 
     if emi_col:
         df["_emi"] = df[emi_col].astype(str).str.strip()
-        result["debtor_hhi"] = _hhi(df["_emi"])
+        result["debtor_hhi"] = _compute_hhi(df["_emi"], df, total)
 
     if cod_col:
         df["_cod"] = df[cod_col].astype(str).str.strip()
-        result["client_hhi"] = _hhi(df["_cod"])
+        result["client_hhi"] = _compute_hhi(df["_cod"], df, total)
 
     if ind_col:
         df["_ind"] = df[ind_col].astype(str).str.strip()
-        result["industry_hhi"] = _hhi(df["_ind"])
+        result["industry_hhi"] = _compute_hhi(df["_ind"], df, total)
 
     # Loan tape debtor (pagador)
     if loans_df is not None:
-        pag_col = _col(loans_df, ["pagador", "Pagador", "debtor_id"])
-        tpv_col = _col(loans_df, ["tpv", "TPV", "disbursement_amount"])
-        if pag_col and tpv_col:
-            lt = loans_df.copy()
-            lt["_bal"] = _num(lt, tpv_col)
-            lt["_pag"] = lt[pag_col].astype(str).str.strip()
-            total_lt = lt["_bal"].sum()
-            if total_lt > 0:
-                grouped = lt.groupby("_pag")["_bal"].sum()
-                shares  = grouped / total_lt
-                hhi_lt  = float((shares ** 2).sum() * 10000)
-                top_lt  = grouped.sort_values(ascending=False)
-                result["loan_tape_debtor_hhi"] = {
-                    "hhi": round(hhi_lt, 1),
-                    "top1_name": str(top_lt.index[0]) if len(top_lt) > 0 else "",
-                    "top1_pct":  round(float(top_lt.iloc[0] / total_lt * 100), 1),
-                    "top10_pct": round(float(top_lt.head(10).sum() / total_lt * 100), 1),
-                }
+        lt_hhi = _compute_loan_tape_hhi(loans_df)
+        if lt_hhi is not None:
+            result["loan_tape_debtor_hhi"] = lt_hhi
 
     return result
 
@@ -670,23 +802,10 @@ def calc_unit_economics(
     cac = marketing_val / max(new_clients, 1)
 
     # LTV: total payment revenue / total active clients × avg lifetime months
-    ltv = 0.0
-    avg_lifetime_months = 0.0
-    if pay_date and pay_amt:
-        pay_dates = pd.to_datetime(payments_df[pay_date], errors="coerce")
-        recent = payments_df[pay_dates >= window_start]
-        total_rev = _num(recent, pay_amt).sum()
-        n_clients = int(loans_df[cust_col].nunique())
-        monthly_rev_per_client = float(total_rev / max(n_clients, 1) / trailing_months)
-        # Avg lifetime = total loan months per client
-        if disb_col and disb_col in loans_df.columns:
-            term_col = _col(loans_df, ["term", "Term"])
-            if term_col:
-                avg_term_days = float(_num(loans_df, term_col).median())
-                avg_lifetime_months = avg_term_days / 30 * 3  # assume 3 repeat cycles
-            else:
-                avg_lifetime_months = 6.0
-        ltv = monthly_rev_per_client * avg_lifetime_months
+    ltv, avg_lifetime_months = _estimate_ltv(
+        loans_df, payments_df, cust_col, disb_col,
+        pay_date, pay_amt, window_start, trailing_months,
+    )
 
     ltv_cac = ltv / cac if cac > 0 else 0.0
 
@@ -728,7 +847,6 @@ def calc_unit_economics(
 
 def viral_k_factor(
     loans_df: pd.DataFrame,
-    referral_col: str | None = None,
     conversion_rate: float | None = None,
 ) -> dict[str, Any]:
     """
@@ -744,8 +862,8 @@ def viral_k_factor(
 
     Returns K estimate with confidence level (high/medium/low).
     """
-    cust_col  = _col(loans_df, ["customer_id", "CodCliente"])
-    ch_col    = _col(loans_df, ["sales_channel", "Sales Channel", "canal"])
+    cust_col = _col(loans_df, ["customer_id", "CodCliente"])
+    ch_col   = _col(loans_df, ["sales_channel", "Sales Channel", "canal"])
 
     result: dict[str, Any] = {
         "status": "ok",
@@ -753,60 +871,11 @@ def viral_k_factor(
         "interpretation":  "K > 1 = exponential growth; K < 1 = decays without paid acquisition",
     }
 
-    # ── Estimate from sales_channel ───────────────────────────────────
     if ch_col and cust_col:
-        channels = loans_df.drop_duplicates(cust_col)[ch_col].astype(str).str.lower()
-        organic_keywords = ["referral", "referido", "word", "organic", "viral", "invite"]
-        organic_mask = channels.str.contains("|".join(organic_keywords), na=False)
-        n_organic = int(organic_mask.sum())
-        n_total   = len(channels)
-        referral_rate = n_organic / max(n_total, 1)
-
-        # Each existing client implicitly invited ≈ 1 / referral_rate others
-        avg_invitations = 1.0  # conservative: 1 invite per client per period
-        if conversion_rate is None:
-            conversion_rate = referral_rate if referral_rate > 0 else 0.05
-
-        k = avg_invitations * conversion_rate
-        result.update({
-            "k_factor":          round(k, 3),
-            "avg_invitations":   avg_invitations,
-            "conversion_rate":   round(conversion_rate, 3),
-            "organic_clients":   n_organic,
-            "total_clients":     n_total,
-            "organic_rate_pct":  round(referral_rate * 100, 1),
-            "confidence":        "medium",
-            "data_source":       f"sales_channel column ({ch_col})",
-            "growth_status":     "exponential" if k >= 1.0 else "sub-viral",
-            "to_reach_k1":       (
-                f"Need conversion rate ≥ {1/avg_invitations:.1%} OR "
-                f"avg invites ≥ {1/max(conversion_rate,0.001):.1f} per client"
-            ),
-        })
-
-    # ── Fallback: repeat_borrower_rate as proxy ───────────────────────
+        result.update(_k_factor_from_channel(loans_df, cust_col, ch_col, conversion_rate))
     elif cust_col:
         if cust_col in loans_df.columns:
-            loans_per = loans_df[cust_col].value_counts()
-            repeat    = int((loans_per > 1).sum())
-            total     = int(len(loans_per))
-            # Proxy: repeat clients ≈ self-referred (sticky product)
-            proxy_k = (repeat / max(total, 1)) * 0.3  # 30% of repeat clients referral signal
-            if conversion_rate is None:
-                conversion_rate = 0.05
-            result.update({
-                "k_factor":        round(proxy_k, 3),
-                "conversion_rate": conversion_rate,
-                "repeat_clients":  repeat,
-                "total_clients":   total,
-                "confidence":      "low",
-                "data_source":     "repeat_borrower_rate proxy (no referral col)",
-                "growth_status":   "exponential" if proxy_k >= 1.0 else "sub-viral",
-                "note": (
-                    "Low confidence — add referral/invite tracking to CRM to get accurate K. "
-                    "Recommended: tag sales_channel='referral' in HubSpot for organic clients."
-                ),
-            })
+            result.update(_k_factor_from_repeat(loans_df, cust_col, conversion_rate))
     else:
         result["status"] = "insufficient_data"
         result["message"] = "No customer_id or sales_channel column found"
@@ -820,7 +889,6 @@ def viral_k_factor(
 
 def npl_benchmarks(
     intermedia_df: pd.DataFrame,
-    loans_df: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     """
     NPL ratio vs LatAm/OCDE benchmarks (section 4.2).
@@ -915,7 +983,7 @@ def build_graph_kpi_report(
     hhi      = concentration_hhi(intermedia_df, loans_df)
     ue       = calc_unit_economics(loans_df, payments_df)
     k_factor = viral_k_factor(loans_df)
-    npl      = npl_benchmarks(intermedia_df, loans_df)
+    npl      = npl_benchmarks(intermedia_df)
 
     # Decision logic example from strategy doc
     def graph_adjusted_score(base_score: float, pagerank: float, community_risk: str) -> dict:

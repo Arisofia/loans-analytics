@@ -24,6 +24,8 @@ from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
 
+DATETIME64_NS_DTYPE = "datetime64[ns]"
+
 
 class TransformationPhase:
     """Phase 2: Data Transformation"""
@@ -448,7 +450,7 @@ class TransformationPhase:
         """Return first non-null datetime value across candidate columns."""
         series_list = [self._to_datetime_mixed(df[col]) for col in candidates if col in df.columns]
         if not series_list:
-            return pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
+            return pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
 
         merged = series_list[0]
         for candidate in series_list[1:]:
@@ -485,24 +487,15 @@ class TransformationPhase:
         out.loc[normalized.isin(no_values)] = "N"
         return out
 
-    def _derive_control_mora_fields(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """
-        Derive computed fields from CONTROL DE MORA data so KPI inputs are complete.
+    @staticmethod
+    def _track_derived_field(metrics: Dict[str, Any], field_name: str, mask: pd.Series) -> None:
+        """Record how many rows were populated for one derived field."""
+        metrics["fields_derived"][field_name] = int(mask.fillna(False).sum())
 
-        Key derivations:
-        - due_date from disbursement + term when due date is missing
-        - dpd / days_past_due from as_of_date - due_date
-        - collections_eligible from delinquency + exposure when source flag missing
-        - utilization_pct from exposure / credit_line
-        - government_sector from gov/ministry/issuer inference
-        - last_payment_date / last_payment_amount / total_scheduled fallbacks
-        """
-        metrics: Dict[str, Any] = {"enabled": True, "fields_derived": {}}
-
-        def track(field_name: str, mask: pd.Series) -> None:
-            metrics["fields_derived"][field_name] = int(mask.fillna(False).sum())
-
-        # 1) Origination / base dates
+    def _derive_control_mora_dates_and_terms(
+        self, df: pd.DataFrame, metrics: Dict[str, Any]
+    ) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
+        """Derive origination, term, due date, maturity date, and payment frequency."""
         inferred_origination = self._coalesce_datetime_columns(
             df,
             ["origination_date", "disbursement_date", "fecha_de_desembolso", "fechadesembolso"],
@@ -510,13 +503,15 @@ class TransformationPhase:
         existing_origination = (
             self._to_datetime_mixed(df["origination_date"])
             if "origination_date" in df.columns
-            else pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
+            else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
         )
         final_origination = existing_origination.where(
             existing_origination.notna(), inferred_origination
         )
         df["origination_date"] = final_origination
-        track("origination_date", existing_origination.isna() & final_origination.notna())
+        self._track_derived_field(
+            metrics, "origination_date", existing_origination.isna() & final_origination.notna()
+        )
 
         inferred_due = self._coalesce_datetime_columns(
             df,
@@ -531,11 +526,10 @@ class TransformationPhase:
         existing_due = (
             self._to_datetime_mixed(df["due_date"])
             if "due_date" in df.columns
-            else pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
+            else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
         )
         due_base = existing_due.where(existing_due.notna(), inferred_due)
 
-        # 2) Term derivation from CONTROL DE MORA columns
         term_days = self._coalesce_numeric_columns(
             df,
             [
@@ -548,12 +542,9 @@ class TransformationPhase:
                 "term_ponderado",
                 "apr__term__ponderado",
             ],
-        )
-        term_days = term_days.where((term_days > 0) & (term_days <= 720))
+        ).where(lambda series: (series > 0) & (series <= 720))
 
-        raw_term_months = self._coalesce_numeric_columns(
-            df, ["term_months", "plazo", "plazo_meses"]
-        )
+        raw_term_months = self._coalesce_numeric_columns(df, ["term_months", "plazo", "plazo_meses"])
         raw_term_months = raw_term_months.where((raw_term_months > 0) & (raw_term_months <= 240))
 
         existing_term_months = (
@@ -562,19 +553,14 @@ class TransformationPhase:
             else pd.Series(np.nan, index=df.index, dtype=float)
         )
         term_months_from_days = (term_days / 30.0).round(2)
-        final_term_months = existing_term_months.where(
-            existing_term_months.notna(), raw_term_months
-        )
-        final_term_months = final_term_months.where(
-            (final_term_months > 0) & (final_term_months <= 240)
-        )
-        final_term_months = final_term_months.where(
-            final_term_months.notna(), term_months_from_days
-        )
+        final_term_months = existing_term_months.where(existing_term_months.notna(), raw_term_months)
+        final_term_months = final_term_months.where((final_term_months > 0) & (final_term_months <= 240))
+        final_term_months = final_term_months.where(final_term_months.notna(), term_months_from_days)
         df["term_months"] = final_term_months
-        track("term_months", existing_term_months.isna() & final_term_months.notna())
+        self._track_derived_field(
+            metrics, "term_months", existing_term_months.isna() & final_term_months.notna()
+        )
 
-        # Payment frequency fallback for automation KPI.
         existing_freq_col = next(
             (c for c in ("payment_frequency", "frecuencia_pago", "tipo_pago") if c in df.columns),
             None,
@@ -592,45 +578,32 @@ class TransformationPhase:
 
         derived_payment_frequency = pd.Series("bullet", index=df.index, dtype="object")
         derived_payment_frequency.loc[term_days > 90] = "installment"
-        disbursement_count = self._coalesce_numeric_columns(
-            df, ["disbursement_count", "numerodesembolsos"]
-        )
+        disbursement_count = self._coalesce_numeric_columns(df, ["disbursement_count", "numerodesembolsos"])
         derived_payment_frequency.loc[disbursement_count > 1] = "installment"
-
         payment_frequency_final = existing_payment_frequency.where(
             existing_payment_frequency.notna(), derived_payment_frequency
         )
         df["payment_frequency"] = payment_frequency_final
-        track(
-            "payment_frequency", existing_payment_frequency.isna() & payment_frequency_final.notna()
+        self._track_derived_field(
+            metrics,
+            "payment_frequency",
+            existing_payment_frequency.isna() & payment_frequency_final.notna(),
         )
 
-        due_from_days = final_origination + pd.to_timedelta(
-            term_days.round().astype("Int64"), unit="D"
-        )
-        due_from_months = pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
+        due_from_days = final_origination + pd.to_timedelta(term_days.round().astype("Int64"), unit="D")
+        due_from_months = pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
         month_offsets = raw_term_months.round().astype("Int64")
         valid_month_mask = month_offsets.notna() & final_origination.notna()
         if valid_month_mask.any():
-            # Vectorized calendar-exact month addition (avoids O(N) DateOffset loop).
-            # Uses year/month integer arithmetic so Feb 29, months with 30 days, etc. are
-            # handled correctly: the day is clamped to the last valid day of the target month.
             orig = pd.to_datetime(final_origination[valid_month_mask])
-            m = month_offsets[valid_month_mask].astype(int)
-            new_year = orig.dt.year + (orig.dt.month - 1 + m) // 12
-            new_month = (orig.dt.month - 1 + m) % 12 + 1
-            # Compute days_in_month via numpy leap-year lookup (avoids constructing a
-            # temporary full datetime series just to call .dt.days_in_month).
-            # Arrays are 0-indexed (index 0 = January, index 11 = December).
-            _dim_common = np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
-            _dim_leap = np.array([31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+            months = month_offsets[valid_month_mask].astype(int)
+            new_year = orig.dt.year + (orig.dt.month - 1 + months) // 12
+            new_month = (orig.dt.month - 1 + months) % 12 + 1
+            dim_common = np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+            dim_leap = np.array([31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
             is_leap = (new_year % 4 == 0) & ((new_year % 100 != 0) | (new_year % 400 == 0))
             days_in_new_month = pd.Series(
-                np.where(
-                    is_leap.values,
-                    _dim_leap[new_month.values - 1],
-                    _dim_common[new_month.values - 1],
-                ),
+                np.where(is_leap.values, dim_leap[new_month.values - 1], dim_common[new_month.values - 1]),
                 index=orig.index,
             )
             new_day = orig.dt.day.clip(upper=days_in_new_month)
@@ -641,18 +614,24 @@ class TransformationPhase:
         inferred_due_from_term = due_from_days.where(due_from_days.notna(), due_from_months)
         final_due = due_base.where(due_base.notna(), inferred_due_from_term)
         df["due_date"] = final_due
-        track("due_date", due_base.isna() & final_due.notna())
+        self._track_derived_field(metrics, "due_date", due_base.isna() & final_due.notna())
 
         existing_maturity = (
             self._to_datetime_mixed(df["maturity_date"])
             if "maturity_date" in df.columns
-            else pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
+            else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
         )
         final_maturity = existing_maturity.where(existing_maturity.notna(), final_due)
         df["maturity_date"] = final_maturity
-        track("maturity_date", existing_maturity.isna() & final_maturity.notna())
+        self._track_derived_field(
+            metrics, "maturity_date", existing_maturity.isna() & final_maturity.notna()
+        )
+        return df, final_due, term_days
 
-        # 3) As-of date and DPD
+    def _derive_control_mora_as_of_and_dpd(
+        self, df: pd.DataFrame, final_due: pd.Series, metrics: Dict[str, Any]
+    ) -> tuple[pd.DataFrame, pd.Series]:
+        """Derive as-of date, dpd, and days_past_due fields."""
         as_of_candidates = self._coalesce_datetime_columns(
             df,
             [
@@ -669,7 +648,7 @@ class TransformationPhase:
         existing_as_of = (
             self._to_datetime_mixed(df["as_of_date"])
             if "as_of_date" in df.columns
-            else pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
+            else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
         )
         has_any_as_of = bool(existing_as_of.notna().any() or as_of_candidates.notna().any())
 
@@ -686,7 +665,7 @@ class TransformationPhase:
                 "diias_mora_m",
                 "dias_mora_m",
             ],
-        ).where(lambda s: s >= 0)
+        ).where(lambda series: series >= 0)
 
         if not has_any_as_of and dpd_source.isna().all():
             raise ValueError(
@@ -696,12 +675,12 @@ class TransformationPhase:
 
         final_as_of = existing_as_of.where(existing_as_of.notna(), as_of_candidates)
         df["as_of_date"] = final_as_of
-        track("as_of_date", existing_as_of.isna() & final_as_of.notna())
+        self._track_derived_field(metrics, "as_of_date", existing_as_of.isna() & final_as_of.notna())
 
         derived_dpd = (final_as_of - final_due).dt.days.astype(float).clip(lower=0)
         dpd_final = dpd_source.where(dpd_source.notna(), derived_dpd).fillna(0.0)
         df["dpd"] = dpd_final
-        track("dpd", dpd_source.isna() & dpd_final.notna())
+        self._track_derived_field(metrics, "dpd", dpd_source.isna() & dpd_final.notna())
 
         if "days_past_due" in df.columns:
             existing_days_past_due = self._coerce_numeric_loose(df["days_past_due"])
@@ -710,9 +689,15 @@ class TransformationPhase:
             existing_days_past_due = pd.Series(np.nan, index=df.index, dtype=float)
             days_past_due = dpd_final
         df["days_past_due"] = days_past_due
-        track("days_past_due", existing_days_past_due.isna() & days_past_due.notna())
+        self._track_derived_field(
+            metrics, "days_past_due", existing_days_past_due.isna() & days_past_due.notna()
+        )
+        return df, dpd_final
 
-        # 4) Collections eligibility
+    def _derive_control_mora_collections(
+        self, df: pd.DataFrame, dpd_final: pd.Series, metrics: Dict[str, Any]
+    ) -> tuple[pd.DataFrame, pd.Series]:
+        """Derive collections_eligible and return the exposure base used downstream."""
         raw_collections_col = next(
             (c for c in ("collections_eligible", "procede_a_cobrar") if c in df.columns), None
         )
@@ -738,16 +723,20 @@ class TransformationPhase:
             delinquent_exposed = delinquent_exposed & (status != "closed")
         derived_collections.loc[delinquent_exposed] = "Y"
 
-        collections_final = existing_collections.where(
-            existing_collections.notna(), derived_collections
-        )
+        collections_final = existing_collections.where(existing_collections.notna(), derived_collections)
         df["collections_eligible"] = collections_final
-        track("collections_eligible", existing_collections.isna() & collections_final.notna())
-
-        # 5) Utilization from exposure / credit line
-        existing_util = self._coalesce_numeric_columns(
-            df, ["utilization_pct", "porcentaje_utilizado"]
+        self._track_derived_field(
+            metrics,
+            "collections_eligible",
+            existing_collections.isna() & collections_final.notna(),
         )
+        return df, exposure
+
+    def _derive_control_mora_utilization(
+        self, df: pd.DataFrame, exposure: pd.Series, metrics: Dict[str, Any]
+    ) -> pd.DataFrame:
+        """Derive utilization_pct from exposure over credit line."""
+        existing_util = self._coalesce_numeric_columns(df, ["utilization_pct", "porcentaje_utilizado"])
         valid_existing_util = existing_util.where(existing_util >= 0)
         if valid_existing_util.dropna().median() < 2.0:
             valid_existing_util = valid_existing_util * 100
@@ -761,16 +750,18 @@ class TransformationPhase:
             exposure.loc[valid_limit_mask] / credit_limit.loc[valid_limit_mask] * 100
         )
 
-        util_final = valid_existing_util.where(valid_existing_util.notna(), derived_util).clip(
-            lower=0
-        )
+        util_final = valid_existing_util.where(valid_existing_util.notna(), derived_util).clip(lower=0)
         df["utilization_pct"] = util_final
-        track("utilization_pct", valid_existing_util.isna() & util_final.notna())
-
-        # 6) Government/public classification
-        existing_sector_col = next(
-            (c for c in ("government_sector", "goes") if c in df.columns), None
+        self._track_derived_field(
+            metrics, "utilization_pct", valid_existing_util.isna() & util_final.notna()
         )
+        return df
+
+    def _derive_control_mora_government(
+        self, df: pd.DataFrame, metrics: Dict[str, Any]
+    ) -> pd.DataFrame:
+        """Infer government-sector tagging and populate gov labels where possible."""
+        existing_sector_col = next((c for c in ("government_sector", "goes") if c in df.columns), None)
         if existing_sector_col is not None:
             existing_sector = df[existing_sector_col].astype(str).str.strip().str.upper()
             existing_sector = existing_sector.mask(
@@ -781,11 +772,8 @@ class TransformationPhase:
 
         gov_hint_col = next((c for c in ("gov", "ministry", "ministerio") if c in df.columns), None)
         if gov_hint_col is not None:
-            gov_hint = df[gov_hint_col].astype(str).str.strip()
-            gov_hint_upper = gov_hint.str.upper()
-            hint_is_gov = ~gov_hint_upper.isin(
-                {"", "NO", "NAN", "NONE", "NULL", "MISSING", "PRIVATE"}
-            )
+            gov_hint_upper = df[gov_hint_col].astype(str).str.strip().str.upper()
+            hint_is_gov = ~gov_hint_upper.isin({"", "NO", "NAN", "NONE", "NULL", "MISSING", "PRIVATE"})
         else:
             hint_is_gov = pd.Series(False, index=df.index, dtype=bool)
 
@@ -805,28 +793,31 @@ class TransformationPhase:
         derived_sector.loc[hint_is_gov | issuer_is_gov | sector_is_gov] = "GOES"
         sector_final = existing_sector.where(existing_sector.notna(), derived_sector)
         df["government_sector"] = sector_final
-        track("government_sector", existing_sector.isna() & sector_final.notna())
+        self._track_derived_field(
+            metrics, "government_sector", existing_sector.isna() & sector_final.notna()
+        )
 
-        # Keep gov as institution label where possible.
         if "gov" not in df.columns:
             df["gov"] = pd.NA
         gov_existing = df["gov"].astype(str).str.strip()
         gov_missing = gov_existing.isin({"", "nan", "None", "none", "missing", "NO", "No"})
         if gov_hint_col is not None:
             gov_fill = df[gov_hint_col].astype(str).str.strip()
-            gov_fill_mask = (
-                gov_missing & (gov_fill != "") & (~gov_fill.str.upper().isin({"NAN", "NONE"}))
-            )
+            gov_fill_mask = gov_missing & (gov_fill != "") & (~gov_fill.str.upper().isin({"NAN", "NONE"}))
             df.loc[gov_fill_mask, "gov"] = gov_fill.loc[gov_fill_mask]
-            track("gov", gov_fill_mask)
+            self._track_derived_field(metrics, "gov", gov_fill_mask)
         else:
-            track("gov", pd.Series(False, index=df.index, dtype=bool))
+            self._track_derived_field(metrics, "gov", pd.Series(False, index=df.index, dtype=bool))
+        return df
 
-        # 7) Payment fields
+    def _derive_control_mora_payment_fields(
+        self, df: pd.DataFrame, term_days: pd.Series, metrics: Dict[str, Any]
+    ) -> tuple[pd.DataFrame, pd.Series]:
+        """Derive last payment, scheduled amount, and return the payment amount series."""
         existing_last_payment_date = (
             self._to_datetime_mixed(df["last_payment_date"])
             if "last_payment_date" in df.columns
-            else pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
+            else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
         )
         inferred_last_payment_date = self._coalesce_datetime_columns(
             df, ["payment_date", "fecha_de_pago", "fechacobro", "fecha_pago"]
@@ -835,7 +826,8 @@ class TransformationPhase:
             existing_last_payment_date.notna(), inferred_last_payment_date
         )
         df["last_payment_date"] = final_last_payment_date
-        track(
+        self._track_derived_field(
+            metrics,
             "last_payment_date",
             existing_last_payment_date.isna() & final_last_payment_date.notna(),
         )
@@ -861,7 +853,8 @@ class TransformationPhase:
             existing_last_payment_amount.notna(), inferred_last_payment_amount
         ).fillna(0.0)
         df["last_payment_amount"] = final_last_payment_amount
-        track(
+        self._track_derived_field(
+            metrics,
             "last_payment_amount",
             existing_last_payment_amount.isna() & final_last_payment_amount.notna(),
         )
@@ -892,9 +885,17 @@ class TransformationPhase:
             existing_total_scheduled.notna(), inferred_total_scheduled
         ).fillna(0.0)
         df["total_scheduled"] = final_total_scheduled
-        track("total_scheduled", existing_total_scheduled.isna() & final_total_scheduled.notna())
+        self._track_derived_field(
+            metrics,
+            "total_scheduled",
+            existing_total_scheduled.isna() & final_total_scheduled.notna(),
+        )
+        return df, final_last_payment_amount
 
-        # 8) TPV fallback
+    def _derive_control_mora_tpv(
+        self, df: pd.DataFrame, metrics: Dict[str, Any]
+    ) -> pd.DataFrame:
+        """Derive TPV from payments when the field is missing."""
         existing_tpv = pd.to_numeric(
             (
                 self._coerce_numeric_loose(df["tpv"])
@@ -915,12 +916,34 @@ class TransformationPhase:
             ),
             errors="coerce",
         ).astype(float)
-        fill_tpv_mask = existing_tpv.isna() & inferred_tpv.notna()
         final_tpv = existing_tpv.copy()
+        fill_tpv_mask = existing_tpv.isna() & inferred_tpv.notna()
         final_tpv.loc[fill_tpv_mask] = inferred_tpv.loc[fill_tpv_mask]
-        final_tpv = final_tpv.fillna(0.0)
-        df["tpv"] = final_tpv
-        track("tpv", existing_tpv.isna() & final_tpv.notna())
+        df["tpv"] = final_tpv.fillna(0.0)
+        self._track_derived_field(metrics, "tpv", existing_tpv.isna() & final_tpv.notna())
+        return df
+
+    def _derive_control_mora_fields(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        """
+        Derive computed fields from CONTROL DE MORA data so KPI inputs are complete.
+
+        Key derivations:
+        - due_date from disbursement + term when due date is missing
+        - dpd / days_past_due from as_of_date - due_date
+        - collections_eligible from delinquency + exposure when source flag missing
+        - utilization_pct from exposure / credit_line
+        - government_sector from gov/ministry/issuer inference
+        - last_payment_date / last_payment_amount / total_scheduled fallbacks
+        """
+        metrics: Dict[str, Any] = {"enabled": True, "fields_derived": {}}
+
+        df, final_due, term_days = self._derive_control_mora_dates_and_terms(df, metrics)
+        df, dpd_final = self._derive_control_mora_as_of_and_dpd(df, final_due, metrics)
+        df, exposure = self._derive_control_mora_collections(df, dpd_final, metrics)
+        df = self._derive_control_mora_utilization(df, exposure, metrics)
+        df = self._derive_control_mora_government(df, metrics)
+        df, _ = self._derive_control_mora_payment_fields(df, term_days, metrics)
+        df = self._derive_control_mora_tpv(df, metrics)
 
         return df, metrics
 
@@ -1118,7 +1141,7 @@ class TransformationPhase:
             action = (
                 self._handle_numeric_nulls(df, col, null_pct)
                 if pd.api.types.is_numeric_dtype(df[col])
-                else self._handle_categorical_nulls(df, col, null_pct)
+                else self._handle_categorical_nulls(df, col)
             )
             actions[col] = action
             # Record structured count for every column that received an opacity flag
@@ -1174,7 +1197,7 @@ class TransformationPhase:
             raise ValueError(f"Critical column {col} exceeds missing threshold ({null_pct:.1f}%)")
         return f"filled_zero (high_null: {null_pct:.1f}%)"
 
-    def _handle_categorical_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
+    def _handle_categorical_nulls(self, df: pd.DataFrame, col: str) -> str:
         """Apply categorical null handling strategy for a column.
 
         Strict opacity rule: mode/moda imputation is never used.
@@ -1771,7 +1794,7 @@ class TransformationPhase:
             return df, False
 
         # Block expressions that reference PII columns by name
-        tokens = re.findall(r"[A-Za-z_][A-Za-z0-9_]*", expression)
+        tokens = re.findall(r"[A-Za-z_]\w*", expression)
         pii_cols = [t for t in tokens if t in df.columns and self._PII_COLUMN_RE.search(t)]
         if pii_cols:
             logger.warning(
@@ -2015,8 +2038,8 @@ class TransformationPhase:
         has_both_dates = (
             "origination_date" in date_cols
             and "due_date" in date_cols
-            and df["origination_date"].dtype == "datetime64[ns]"
-            and df["due_date"].dtype == "datetime64[ns]"
+            and df["origination_date"].dtype == DATETIME64_NS_DTYPE
+            and df["due_date"].dtype == DATETIME64_NS_DTYPE
         )
 
         if not has_both_dates:

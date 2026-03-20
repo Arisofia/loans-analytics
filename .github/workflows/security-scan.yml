@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Keep full history so CodeQL can build PR diff range reliably
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: Initialize CodeQL
         if: steps.check_code_scanning_availability.outputs.enabled == 'true'
-        uses: github/codeql-action/init@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
+        uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
 
@@ -61,11 +61,11 @@ jobs:
 
       - name: Autobuild
         if: steps.check_code_scanning_availability.outputs.enabled == 'true'
-        uses: github/codeql-action/autobuild@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
+        uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
         if: steps.check_code_scanning_availability.outputs.enabled == 'true'
-        uses: github/codeql-action/analyze@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
+        uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"
           upload: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
@@ -80,7 +80,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4
 
       - name: Detect Code Scanning availability
         id: check_code_scanning_availability
@@ -104,7 +104,7 @@ jobs:
 
       - name: Run Snyk to check for vulnerabilities
         if: ${{ env.SNYK_TOKEN != '' }}
-        uses: snyk/actions/python@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
+        uses: snyk/actions/python@master
         with:
           args: --file=requirements.txt --package-manager=pip --severity-threshold=high --fail-on=all
 
@@ -118,7 +118,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4
 
       - name: Detect Code Scanning availability
         id: check_code_scanning_availability
@@ -184,7 +184,7 @@ jobs:
 
       - name: Upload Bandit SARIF results
         if: ${{ always() && steps.check_code_scanning_availability.outputs.enabled == 'true' && hashFiles('bandit-results.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-        uses: github/codeql-action/upload-sarif@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: bandit-results.sarif
           category: security-audit
@@ -209,7 +209,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Full history for gitleaks to scan all commits
 

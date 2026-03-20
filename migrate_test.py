@@ -1,4 +1,3 @@
-import re
 import os
 
 content = open('tests/unit/test_kpi_formula_engine_ssot.py', encoding='utf-8').read()

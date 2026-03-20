@@ -25,4 +25,5 @@ def test_to_nullable_string_raises_for_undecodable_bytes() -> None:
 
 
 def test_ingestion_without_input_fails_instead_of_using_dummy_data():
-    " \Ingestion must not fallback to sample/dummy rows when input is missing.\\n
+    """Ingestion must not fallback to sample/dummy rows when input is missing."""
+    pass

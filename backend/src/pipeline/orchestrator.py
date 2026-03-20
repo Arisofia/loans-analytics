@@ -38,6 +38,9 @@ OTEL_AVAILABLE = True
 
 logger = get_logger(__name__)
 
+PIPELINE_STATUS_ATTR = "pipeline.status"
+PIPELINE_DURATION_ATTR = "pipeline.duration_seconds"
+
 
 class UnifiedPipeline:
     """
@@ -124,20 +127,8 @@ class UnifiedPipeline:
 
             return phase_results
 
-    def execute(self, input_path: Optional[Path] = None, mode: str = "full") -> Dict[str, Any]:
-        """
-        Execute the complete pipeline.
-
-        Args:
-            input_path: Path to input CSV file (optional)
-            mode: Execution mode - 'full', 'validate', 'dry-run'
-
-        Returns:
-            Pipeline execution results
-        """
-        # Calculate deterministic run_id for idempotency.
-        # run_signature = hash(data_hash + config_hash + code_version + mode)
-        # so that any change in data, config, code version, or mode produces a new run.
+    def _build_run_id(self, input_path: Optional[Path], mode: str) -> str:
+        """Build a deterministic run id from data, config, code version, and mode."""
         mode_token = mode.replace("-", "_")
         if input_path is not None:
             if self._is_google_sheets_uri(input_path):
@@ -154,10 +145,108 @@ class UnifiedPipeline:
         run_signature = self._calculate_run_signature(
             data_hash, config_hash, code_version, mode_token
         )
-        # Use a deterministic base_run_id derived solely from the run_signature to ensure idempotency.
-        # Use the full 16-character hex signature to minimize collision risk for run directories.
         base_run_id = run_signature[:16]
-        run_id = base_run_id if mode == "full" else f"{base_run_id}_{mode_token}"
+        return base_run_id if mode == "full" else f"{base_run_id}_{mode_token}"
+
+    def _load_existing_run_results(self, run_dir: Path, run_id: str) -> Optional[Dict[str, Any]]:
+        """Load prior manifest when the run already exists for idempotent replay."""
+        if not run_dir.exists():
+            return None
+
+        manifest_path = run_dir / "pipeline_results.json"
+        if not manifest_path.exists():
+            return None
+
+        logger.info("Run %s already exists, loading existing results (idempotent)", run_id)
+        with open(manifest_path, "r") as file_handle:
+            return json.load(file_handle)
+
+    @staticmethod
+    def _record_phase_results(
+        results: Dict[str, Any], phase_name: str, phase_results: Dict[str, Any]
+    ) -> None:
+        """Store phase results and standard timing metadata."""
+        results["phases"][phase_name] = phase_results
+        results["phase_metrics"][phase_name] = {
+            "status": phase_results.get("status"),
+            "duration_seconds": phase_results.get("duration_seconds", 0.0),
+        }
+
+    def _fail_on_phase_error(self, phase_name: str, phase_label: str, phase_results: Dict[str, Any]) -> None:
+        """Raise when a pipeline phase did not complete successfully."""
+        if phase_results.get("status") == "success":
+            return
+        raise RuntimeError(f"{phase_label} ({phase_name.title()}) failed: {phase_results.get('error')}")
+
+    def _complete_early_mode(
+        self,
+        *,
+        message: str,
+        results: Dict[str, Any],
+        run_dir: Path,
+        pipeline_span: Any,
+    ) -> Dict[str, Any]:
+        """Finalize and return early for dry-run and validate modes."""
+        logger.info(message)
+        final_results = self._finalize_results(results, run_dir)
+        self._finalize_pipeline_span(pipeline_span, final_results)
+        return final_results
+
+    @staticmethod
+    def _finalize_pipeline_span(
+        pipeline_span: Any,
+        final_results: Optional[Dict[str, Any]] = None,
+        exc: Optional[Exception] = None,
+    ) -> None:
+        """Attach final status and duration attributes to the pipeline span."""
+        if pipeline_span is None:
+            return
+
+        if final_results is not None:
+            pipeline_span.set_attribute(PIPELINE_STATUS_ATTR, final_results["status"])
+            pipeline_span.set_attribute(PIPELINE_DURATION_ATTR, final_results["duration_seconds"])
+            status = StatusCode.OK if final_results["status"] == "success" else StatusCode.ERROR
+            description = None if status == StatusCode.OK else str(final_results.get("error", "failed"))
+            pipeline_span.set_status(Status(status, description))
+            return
+
+        if exc is not None:
+            pipeline_span.record_exception(exc)
+            pipeline_span.set_attribute(PIPELINE_STATUS_ATTR, "error")
+            pipeline_span.set_status(Status(StatusCode.ERROR, str(exc)))
+
+    @staticmethod
+    def _build_output_phase_kwargs(
+        phase2_results: Dict[str, Any], phase3_results: Dict[str, Any], run_dir: Path
+    ) -> Dict[str, Any]:
+        """Build the output phase payload from upstream phase results."""
+        return {
+            "kpi_results": phase3_results.get("kpis", {}),
+            "run_dir": run_dir,
+            "kpi_engine": phase3_results.get("kpi_engine"),
+            "segment_kpis": phase3_results.get("segment_kpis"),
+            "time_series": phase3_results.get("time_series"),
+            "anomalies": phase3_results.get("anomalies"),
+            "nsm_recurrent_tpv": phase3_results.get("nsm_recurrent_tpv"),
+            "clustering_metrics": phase3_results.get("clustering_metrics"),
+            "transformation_metrics": phase2_results.get("transformation_metrics"),
+        }
+
+    def execute(self, input_path: Optional[Path] = None, mode: str = "full") -> Dict[str, Any]:
+        """
+        Execute the complete pipeline.
+
+        Args:
+            input_path: Path to input CSV file (optional)
+            mode: Execution mode - 'full', 'validate', 'dry-run'
+
+        Returns:
+            Pipeline execution results
+        """
+        # Calculate deterministic run_id for idempotency.
+        # run_signature = hash(data_hash + config_hash + code_version + mode)
+        # so that any change in data, config, code version, or mode produces a new run.
+        run_id = self._build_run_id(input_path, mode)
 
         logger.info("Starting pipeline execution (run_id: %s, mode: %s)", run_id, mode)
 
@@ -165,16 +254,9 @@ class UnifiedPipeline:
         run_dir = self.base_log_dir / run_id
 
         # Check for existing run (idempotency)
-        if run_dir.exists():
-            manifest_path = run_dir / "pipeline_results.json"
-            if manifest_path.exists():
-                logger.info(
-                    "Run %s already exists, loading existing results (idempotent)",
-                    run_id,
-                )
-
-                with open(manifest_path, "r") as f:
-                    return json.load(f)
+        existing_results = self._load_existing_run_results(run_dir, run_id)
+        if existing_results is not None:
+            return existing_results
 
         run_dir.mkdir(parents=True, exist_ok=True)
         logger.info("Run directory: %s", run_dir)
@@ -206,26 +288,16 @@ class UnifiedPipeline:
                     executor=self.ingestion.execute,
                     kwargs={"input_path": input_path, "run_dir": run_dir},
                 )
-                results["phases"]["ingestion"] = phase1_results
-                results["phase_metrics"]["ingestion"] = {
-                    "status": phase1_results.get("status"),
-                    "duration_seconds": phase1_results.get("duration_seconds", 0.0),
-                }
-
-                if phase1_results["status"] != "success":
-                    error_msg = f"Phase 1 (Ingestion) failed: {phase1_results.get('error')}"
-                    raise RuntimeError(error_msg)
+                self._record_phase_results(results, "ingestion", phase1_results)
+                self._fail_on_phase_error("ingestion", "Phase 1", phase1_results)
 
                 if mode == "dry-run":
-                    logger.info("Dry-run mode: stopping after ingestion")
-                    final_results = self._finalize_results(results, run_dir)
-                    if pipeline_span is not None:
-                        pipeline_span.set_attribute("pipeline.status", final_results["status"])
-                        pipeline_span.set_attribute(
-                            "pipeline.duration_seconds", final_results["duration_seconds"]
-                        )
-                        pipeline_span.set_status(Status(StatusCode.OK))
-                    return final_results
+                    return self._complete_early_mode(
+                        message="Dry-run mode: stopping after ingestion",
+                        results=results,
+                        run_dir=run_dir,
+                        pipeline_span=pipeline_span,
+                    )
 
                 # PHASE 2: TRANSFORMATION
                 logger.info("\n%s", separator)
@@ -242,26 +314,16 @@ class UnifiedPipeline:
                     executor=self.transformation.execute,
                     kwargs={"raw_data_path": raw_data_path, "run_dir": run_dir},
                 )
-                results["phases"]["transformation"] = phase2_results
-                results["phase_metrics"]["transformation"] = {
-                    "status": phase2_results.get("status"),
-                    "duration_seconds": phase2_results.get("duration_seconds", 0.0),
-                }
-
-                if phase2_results["status"] != "success":
-                    error_msg = f"Phase 2 (Transformation) failed: {phase2_results.get('error')}"
-                    raise RuntimeError(error_msg)
+                self._record_phase_results(results, "transformation", phase2_results)
+                self._fail_on_phase_error("transformation", "Phase 2", phase2_results)
 
                 if mode == "validate":
-                    logger.info("Validate mode: stopping after transformation")
-                    final_results = self._finalize_results(results, run_dir)
-                    if pipeline_span is not None:
-                        pipeline_span.set_attribute("pipeline.status", final_results["status"])
-                        pipeline_span.set_attribute(
-                            "pipeline.duration_seconds", final_results["duration_seconds"]
-                        )
-                        pipeline_span.set_status(Status(StatusCode.OK))
-                    return final_results
+                    return self._complete_early_mode(
+                        message="Validate mode: stopping after transformation",
+                        results=results,
+                        run_dir=run_dir,
+                        pipeline_span=pipeline_span,
+                    )
 
                 # PHASE 3: CALCULATION
                 logger.info("\n%s", separator)
@@ -278,15 +340,8 @@ class UnifiedPipeline:
                     executor=self.calculation.execute,
                     kwargs={"clean_data_path": clean_data_path},
                 )
-                results["phases"]["calculation"] = phase3_results
-                results["phase_metrics"]["calculation"] = {
-                    "status": phase3_results.get("status"),
-                    "duration_seconds": phase3_results.get("duration_seconds", 0.0),
-                }
-
-                if phase3_results["status"] != "success":
-                    error_msg = f"Phase 3 (Calculation) failed: {phase3_results.get('error')}"
-                    raise RuntimeError(error_msg)
+                self._record_phase_results(results, "calculation", phase3_results)
+                self._fail_on_phase_error("calculation", "Phase 3", phase3_results)
 
                 # PHASE 4: OUTPUT
                 logger.info("\n%s", separator)
@@ -296,35 +351,13 @@ class UnifiedPipeline:
                     phase_name="output",
                     run_id=run_id,
                     executor=self.output.execute,
-                    kwargs={
-                        "kpi_results": phase3_results.get("kpis", {}),
-                        "run_dir": run_dir,
-                        "kpi_engine": phase3_results.get("kpi_engine"),
-                        "segment_kpis": phase3_results.get("segment_kpis"),
-                        "time_series": phase3_results.get("time_series"),
-                        "anomalies": phase3_results.get("anomalies"),
-                        "nsm_recurrent_tpv": phase3_results.get("nsm_recurrent_tpv"),
-                        "clustering_metrics": phase3_results.get("clustering_metrics"),
-                        "transformation_metrics": phase2_results.get("transformation_metrics"),
-                    },
+                    kwargs=self._build_output_phase_kwargs(phase2_results, phase3_results, run_dir),
                 )
-                results["phases"]["output"] = phase4_results
-                results["phase_metrics"]["output"] = {
-                    "status": phase4_results.get("status"),
-                    "duration_seconds": phase4_results.get("duration_seconds", 0.0),
-                }
-
-                if phase4_results["status"] != "success":
-                    error_msg = f"Phase 4 (Output) failed: {phase4_results.get('error')}"
-                    raise RuntimeError(error_msg)
+                self._record_phase_results(results, "output", phase4_results)
+                self._fail_on_phase_error("output", "Phase 4", phase4_results)
 
                 final_results = self._finalize_results(results, run_dir)
-                if pipeline_span is not None:
-                    pipeline_span.set_attribute("pipeline.status", final_results["status"])
-                    pipeline_span.set_attribute(
-                        "pipeline.duration_seconds", final_results["duration_seconds"]
-                    )
-                    pipeline_span.set_status(Status(StatusCode.OK))
+                self._finalize_pipeline_span(pipeline_span, final_results)
                 return final_results
 
             except Exception as e:
@@ -336,13 +369,7 @@ class UnifiedPipeline:
                 results["traceback"] = traceback.format_exc()
 
                 final_results = self._finalize_results(results, run_dir)
-                if pipeline_span is not None:
-                    pipeline_span.record_exception(e)
-                    pipeline_span.set_attribute("pipeline.status", final_results["status"])
-                    pipeline_span.set_attribute(
-                        "pipeline.duration_seconds", final_results["duration_seconds"]
-                    )
-                    pipeline_span.set_status(Status(StatusCode.ERROR, str(e)))
+                self._finalize_pipeline_span(pipeline_span, final_results, e)
                 return final_results
 
     def _finalize_results(self, results: Dict[str, Any], run_dir: Path) -> Dict[str, Any]:
@@ -373,25 +400,18 @@ class UnifiedPipeline:
         logger.info("Status: %s", results["status"].upper())
         logger.info("Duration: %.2f seconds", duration)
         logger.info("Results: %s", manifest_path)
-        logger.info("%s", separator)
-
         return results
 
-    def _calculate_input_hash(self, file_path: Path) -> str:
-        """
-        Calculate deterministic hash of input file for idempotency.
-
-        Args:
-            file_path: Path to input file
-
-        Returns:
-            SHA256 hash (first 16 chars)
-        """
+    @staticmethod
+    def _calculate_input_hash(file_path: Path) -> str:
+        """Calculate a deterministic SHA256 digest for the input file."""
         try:
             hasher = hashlib.sha256()
-            with open(file_path, "rb") as f:
-                # Read in chunks for large files
-                for chunk in iter(lambda: f.read(8192), b""):
+            with open(file_path, "rb") as file_handle:
+                while True:
+                    chunk = file_handle.read(1024 * 1024)
+                    if not chunk:
+                        break
                     hasher.update(chunk)
             return hasher.hexdigest()[:16]
         except Exception as e:
