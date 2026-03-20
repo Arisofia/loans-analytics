@@ -31,6 +31,7 @@ from frontend.streamlit_app.components.kpi_metrics import (
     render_executive_summary,
     render_kpi_snapshot,
 )
+from frontend.streamlit_app.kpi_snapshot_loader import load_kpi_snapshot_from_api
 from frontend.streamlit_app.components.sales_risk import (
     render_risk_analysis,
     render_sales_performance,
@@ -406,6 +407,7 @@ with st.sidebar:
 st.title("💰 ABACO Financial Intelligence")
 global_dashboard_metrics_var = load_kpi_dashboard()
 global_analytics_facts_var = load_analytics_facts()
+global_api_kpi_snapshot, global_api_snapshot_month, global_is_api_source = load_kpi_snapshot_from_api()
 
 with st.expander("🔗 Dashboard Links & Strategic Reporting", expanded=True):
     deployed_dashboard_url = os.getenv(
@@ -438,15 +440,18 @@ with st.expander("🔗 Dashboard Links & Strategic Reporting", expanded=True):
         else:
             st.warning("Generate KPI exports first to create strategic report artifacts.")
 
-if not global_dashboard_metrics_var and global_analytics_facts_var.empty:
+if not global_is_api_source and not global_dashboard_metrics_var and global_analytics_facts_var.empty:
     st.warning(
         "No KPI exports detected. Generate KPI exports from the sidebar or add "
         "complete_kpi_dashboard.json and analytics_facts.csv to the exports "
         "directory."
     )
-global_kpi_snapshot, global_snapshot_month_var = build_kpi_snapshot(
-    global_dashboard_metrics_var, global_analytics_facts_var
-)
+if global_is_api_source:
+    global_kpi_snapshot, global_snapshot_month_var = global_api_kpi_snapshot, global_api_snapshot_month
+else:
+    global_kpi_snapshot, global_snapshot_month_var = build_kpi_snapshot(
+        global_dashboard_metrics_var, global_analytics_facts_var
+    )
 render_kpi_snapshot(global_kpi_snapshot, global_snapshot_month_var)
 render_cashflow_trends(global_analytics_facts_var)
 if not st.session_state["loaded"]:
