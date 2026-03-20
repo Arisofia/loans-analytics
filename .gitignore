@@ -36,6 +36,12 @@ dist/
 build/
 out/
 
+# Local one-off scripts and manifests
+pipeline_output.yaml
+migrate_test.py
+test_dashboard_local.py
+tracked_files_manifest.txt
+
 # Local environment / secrets
 .env
 .env.local

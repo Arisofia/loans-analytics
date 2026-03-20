@@ -103,7 +103,7 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run multi-agent tests
-        run: pytest backend/python/multi_agent/ -v -k "test_" --tb=short
+        run: pytest tests/agents/ -v -k "test_" --tb=short
 
   e2e-tests:
     runs-on: ubuntu-latest
