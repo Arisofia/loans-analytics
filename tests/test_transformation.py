@@ -122,11 +122,24 @@ class TestNullHandling:
         assert df["amount"].isnull().sum() == 0
         assert df["status"].isnull().sum() == 0
 
-    def test_smart_strategy(self, data_with_nulls):
-        """Test smart strategy applies intelligent null handling."""
+    def test_smart_strategy(self):
+        """Test smart strategy applies intelligent null handling.
+
+        Uses a fixture where ``amount`` null rate is ~10% (< HIGH_NULL_THRESHOLD_PCT=30%)
+        so the fail-fast guard is not triggered — that behaviour is covered separately
+        by test_smart_strategy_uses_structural_zero_not_median.
+        """
         config = {"null_handling": {"strategy": "smart"}}
         transformer = TransformationPhase(config)
-        df, metrics = transformer._handle_nulls(data_with_nulls)
+        df = pd.DataFrame(
+            {
+                "loan_id": [f"L{i:03d}" for i in range(1, 11)],
+                "amount": [1000.0, 2000.0, None, 4000.0, 5000.0, 6000.0, 7000.0, 8000.0, 9000.0, 10000.0],
+                "status": ["active"] * 9 + [None],
+                "dpd": [0, 5, 10, 15, 0, 0, 0, 0, 0, 0],
+            }
+        )
+        df, metrics = transformer._handle_nulls(df)
 
         assert metrics["strategy_applied"] == "smart"
         assert "smart_actions" in metrics

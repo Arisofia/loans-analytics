@@ -167,10 +167,15 @@ class KPIEngineV2:
         """Calculate Portfolio at Risk (30+ days)."""
         kpi_name = "PAR30"
         try:
-            balance_col = self._resolve_col(self.df, "outstanding_balance", "current_balance", "amount")
-            dpd_col = "dpd" if "dpd" in self.df.columns else None
+            balance_col = self._resolve_col(self.df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd")
+            dpd_col = self._resolve_col(self.df, "dpd", "days_past_due")
             
-            if balance_col and dpd_col:
+            # Map legacy columns if needed for SSoT
+            if not dpd_col and "dpd_30_60_usd" in self.df.columns:
+                # If we only have legacy buckets, we can't use SSoT easily without reconstruction
+                # But the audit says: route all to ssot_asset_quality.py
+                value, method = self._calc_par30_legacy()
+            elif balance_col and dpd_col:
                 results = calculate_asset_quality_metrics(
                     balance=self.df[balance_col],
                     dpd=self.df[dpd_col],
@@ -200,10 +205,12 @@ class KPIEngineV2:
         """Calculate Portfolio at Risk (90+ days)."""
         kpi_name = "PAR90"
         try:
-            balance_col = self._resolve_col(self.df, "outstanding_balance", "current_balance", "amount")
-            dpd_col = "dpd" if "dpd" in self.df.columns else None
+            balance_col = self._resolve_col(self.df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd")
+            dpd_col = self._resolve_col(self.df, "dpd", "days_past_due")
 
-            if balance_col and dpd_col:
+            if not dpd_col and "dpd_90_plus_usd" in self.df.columns:
+                value, method = self._calc_par90_legacy()
+            elif balance_col and dpd_col:
                 results = calculate_asset_quality_metrics(
                     balance=self.df[balance_col],
                     dpd=self.df[dpd_col],
@@ -538,8 +545,8 @@ class KPIEngineV2:
 
     def _calculate_derived_risk_kpis(self, df: pd.DataFrame) -> Dict[str, Decimal]:
         """Compute derived risk KPIs not covered by the formula catalog."""
-        balance_col = self._resolve_col(df, "outstanding_balance", "current_balance")
-        dpd_col = "dpd" if "dpd" in df.columns else None
+        balance_col = self._resolve_col(df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd")
+        dpd_col = self._resolve_col(df, "dpd", "days_past_due")
         
         if not balance_col or not dpd_col:
             return {}
@@ -548,8 +555,8 @@ class KPIEngineV2:
             balance=df[balance_col],
             dpd=df[dpd_col],
             status=df.get("status"),
-            actor=self.actor,
-            metric_aliases=["par30", "par90"],
+            actor=getattr(self, "actor", "system"),
+            metric_aliases=["par30", "par90", "npl", "npl90"],
         )
         
         active_df = df[df["status"].isin(["active", "delinquent", "defaulted"])] if "status" in df.columns else df
@@ -563,9 +570,10 @@ class KPIEngineV2:
                 "top_10_borrower_concentration": Decimal("0.0"),
             }
 
-        npl_90_ratio = Decimal(str(round(results["par90"], 6)))
-        npl_ratio = Decimal(str(round(results["par30"], 6)))
+        npl_90_ratio = Decimal(str(round(results["npl90"], 6)))
+        npl_ratio = Decimal(str(round(results["npl"], 6)))
 
+        # defaulted_outstanding_ratio is strictly status-based defaults
         defaulted_out = Decimal(
             str(active_df.loc[active_df["status"].isin(_NPL_STRICT_STATUSES), balance_col].sum())
             if "status" in active_df.columns else 0.0

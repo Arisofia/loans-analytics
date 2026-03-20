@@ -10,6 +10,8 @@ _METRIC_ALIAS_TO_ID: dict[str, str] = {
     "par30": "par_30",
     "par60": "par_60",
     "par90": "par_90",
+    # Broad NPL (DPD≥30 + delinquent/defaulted status) — identical mask to PAR30
+    "npl": "par_30",
     "npl90": "npl_90_proxy",
     "npl180": "npl_180_proxy",
 }
@@ -26,7 +28,7 @@ _ASSET_QUALITY_REGISTRY = {
             "unit": "percentage",
         },
         "par_90": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 90 OR status = 'defaulted') / SUM(outstanding_balance) * 100",
+            "formula": "SUM(outstanding_balance WHERE dpd >= 90) / SUM(outstanding_balance) * 100",
             "unit": "percentage",
         },
         "npl_90_proxy": {
