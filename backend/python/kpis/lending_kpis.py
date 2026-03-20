@@ -28,7 +28,15 @@ def _col(df: pd.DataFrame, candidates: list[str]) -> str | None:
 
 
 def _num(df: pd.DataFrame, col: str) -> pd.Series:
-    return pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+    res = pd.to_numeric(df[col], errors="coerce")
+    if res.isna().any():
+        logger.warning(
+            "Column %s has %d missing or invalid numeric values - excluding from KPI calculation",
+            col,
+            res.isna().sum(),
+        )
+        return res.dropna()
+    return res
 
 
 def _resolve_lgd_config() -> float:

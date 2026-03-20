@@ -394,6 +394,21 @@ class DefaultRiskModel:
         return str(model_path)
 
     # ------------------------------------------------------------------
+    # Validation
+    # ------------------------------------------------------------------
+    def validate_features(self, loan_data: Dict[str, Any]) -> None:
+        """Verify all required features are present in the input dictionary.
+
+        Raises
+        ------
+        ValueError
+            If one or more required features are missing.
+        """
+        missing = [f for f in self.feature_names if f not in loan_data]
+        if missing:
+            raise ValueError(f"Missing required features for inference: {', '.join(missing)}")
+
+    # ------------------------------------------------------------------
     # Inference
     # ------------------------------------------------------------------
     def predict_proba(self, loan_data: Dict[str, Any]) -> float:
@@ -403,15 +418,21 @@ class DefaultRiskModel:
         ----------
         loan_data:
             Dictionary whose keys are a superset of ``FEATURE_COLUMNS``.
-            Missing features default to ``0.0``.
 
         Returns
         -------
         float
             Probability in [0, 1].
+
+        Raises
+        ------
+        ValueError
+            If one or more required features are missing.
         """
         if self.model is None:
             raise RuntimeError("Model not trained or loaded")
+
+        self.validate_features(loan_data)
 
         try:
             import pandas as pd  # noqa: F811
@@ -426,7 +447,7 @@ class DefaultRiskModel:
             import xgboost as xgb
 
             features = np.array(
-                [[float(loan_data.get(col, 0.0)) for col in self.feature_names]],
+                [[float(loan_data[col]) for col in self.feature_names]],
                 dtype=np.float32,
             )
             dmatrix = xgb.DMatrix(features, feature_names=self.feature_names)
@@ -444,6 +465,10 @@ class DefaultRiskModel:
         if self.model is None:
             raise RuntimeError("Model not trained or loaded")
 
+        if isinstance(loans, list):
+            for loan in loans:
+                self.validate_features(loan)
+
         try:
             import pandas as pd  # noqa: F811
 
@@ -455,7 +480,7 @@ class DefaultRiskModel:
             # Fallback: list-of-dicts only
             import xgboost as xgb
 
-            rows = [[float(loan.get(col, 0.0)) for col in self.feature_names] for loan in loans]
+            rows = [[float(loan[col]) for col in self.feature_names] for loan in loans]
             features = np.array(rows, dtype=np.float32)
             dmatrix = xgb.DMatrix(features, feature_names=self.feature_names)
             preds = self.model.get_booster().predict(dmatrix)

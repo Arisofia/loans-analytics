@@ -1,8 +1,64 @@
 """Canonical multi-agent namespace under src/agents.
 
-Current implementation re-exports the production modules from
-`python.multi_agent` to maintain backward compatibility while
-standardizing import paths.
+DEPRECATED: This module is a shim for backward compatibility. 
+Please import from `backend.python.multi_agent` directly.
 """
 
-from backend.python.multi_agent import *  # noqa: F401,F403
+import warnings
+from backend.python.multi_agent import (
+    ComplianceAgent,
+    CustomerRetentionAgent,
+    DatabaseDesignerAgent,
+    GrowthStrategistAgent,
+    RiskAnalystAgent,
+    CollectionsAgent,
+    FraudDetectionAgent,
+    PricingAgent,
+    AgentRole,
+    AgentRequest,
+    AgentResponse,
+    AgentError,
+    LLMProvider,
+    Message,
+    MessageRole,
+    Scenario,
+    ScenarioStep,
+    Tool,
+    AgentTracer,
+    Guardrails,
+    BaseAgent,
+    MultiAgentOrchestrator,
+)
+
+# Emit deprecation warning on import
+warnings.warn(
+    "Importing from `backend.src.agents.multi_agent` is deprecated and will be removed in Q2 2026. "
+    "Please import from `backend.python.multi_agent` directly.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+__all__ = [
+    "ComplianceAgent",
+    "CustomerRetentionAgent",
+    "DatabaseDesignerAgent",
+    "GrowthStrategistAgent",
+    "RiskAnalystAgent",
+    "CollectionsAgent",
+    "FraudDetectionAgent",
+    "PricingAgent",
+    "AgentRole",
+    "AgentRequest",
+    "AgentResponse",
+    "AgentError",
+    "LLMProvider",
+    "Message",
+    "MessageRole",
+    "Scenario",
+    "ScenarioStep",
+    "Tool",
+    "AgentTracer",
+    "Guardrails",
+    "BaseAgent",
+    "MultiAgentOrchestrator",
+]

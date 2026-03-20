@@ -20,7 +20,8 @@ import sys
 from pathlib import Path
 from typing import List, Tuple
 
-CANONICAL_PORT = 8000
+CANONICAL_PORT_DASHBOARD = 8501
+CANONICAL_PORT_API = 8000
 DASHBOARD_PORT_VAR = "STREAMLIT_SERVER_PORT"
 API_PORT_VAR = "API_PORT"
 
@@ -29,35 +30,31 @@ VALIDATION_RULES = {
     "startup.sh": {
         "description": "Startup script for Azure Web App",
         "patterns": [
-            (r"CANONICAL_PORT=\$\{STREAMLIT_SERVER_PORT:-8000\}", "Canonical port via env override with 8000 default"),
+            (r"CANONICAL_PORT=\$\{STREAMLIT_SERVER_PORT:-8501\}", "Canonical port via env override with 8501 default"),
             (r"--server\.port=\$\{CANONICAL_PORT\}", "Streamlit invocation with CANONICAL_PORT variable"),
-            (r"Default: 8000 \(Azure Web Apps standard", "Documentation comment referencing 8000 as default"),
+            (r"Default: 8501", "Documentation comment referencing 8501 as default"),
         ],
         "must_not_contain": [
-            (r"--server\.port=8501", "Hardcoded old port 8501"),
+            (r"STREAMLIT_SERVER_PORT:-8000", "Hardcoded old port 8000 in startup.sh"),
         ],
     },
     "Dockerfile.dashboard": {
         "description": "Dashboard Docker image",
         "patterns": [
-            (r'PORT=8000', "Port environment variable set to 8000"),
-            (r'STREAMLIT_SERVER_PORT=8000', "Streamlit server port set to 8000"),
-            (r"EXPOSE 8000", "Docker EXPOSE directive set to 8000"),
-            (r'--server\.port=\$\{PORT:-8000\}', "Port flag uses PORT env var with 8000 default"),
+            (r'PORT=8501', "Port environment variable set to 8501"),
+            (r'STREAMLIT_SERVER_PORT=8501', "Streamlit server port set to 8501"),
+            (r"EXPOSE 8501", "Docker EXPOSE directive set to 8501"),
+            (r'--server\.port=\$\{PORT:-8501\}', "Port flag uses PORT env var with 8501 default"),
         ],
         "must_not_contain": [
-            (r"PORT=8501", "Old hardcoded port 8501"),
-            (r"EXPOSE 8501", "Old exposed port 8501"),
+            (r"PORT=8000", "Old hardcoded port 8000 in Dockerfile.dashboard"),
+            (r"EXPOSE 8000", "Old exposed port 8000 in Dockerfile.dashboard"),
         ],
     },
-    "backend/python/OPERATIONS.md": {
-        "description": "Operations documentation",
+    "docker-compose.yml": {
+        "description": "Primary Docker Compose file",
         "patterns": [
-            (r"localhost:8000", "Local port 8000 documented"),
-            (r"canonical port", "Canonical port policy mentioned (case-insensitive)"),
-        ],
-        "must_not_contain": [
-            (r"localhost:8501", "Old documented port 8501"),
+            (r'STREAMLIT_SERVER_PORT: ["\']8501["\']', "Streamlit server port set to 8501 in dashboard env"),
         ],
     },
 }
@@ -112,17 +109,17 @@ def main():
     all_valid = True
     all_errors = []
     
-    print("🔍 Validating port consistency across Abaco Loans Analytics...\n")
-    print("📋 Canonical Port Policy:")
-    print(f"   - Dashboard: {CANONICAL_PORT} (via {DASHBOARD_PORT_VAR} env var)")
-    print(f"   - API: {CANONICAL_PORT} (via {API_PORT_VAR} env var)")
+    print("[INFO] Validating port consistency across Abaco Loans Analytics...\n")
+    print("[POLICY] Canonical Port Policy:")
+    print(f"   - Dashboard: {CANONICAL_PORT_DASHBOARD} (via {DASHBOARD_PORT_VAR} env var)")
+    print(f"   - API: {CANONICAL_PORT_API} (via {API_PORT_VAR} env var)")
     print()
     
     for file_name, rules in VALIDATION_RULES.items():
         file_path = repo_root / file_name
         is_valid, errors = validate_file(file_path, rules)
         
-        status_icon = "✅" if is_valid else "❌"
+        status_icon = "[PASS]" if is_valid else "[FAIL]"
         print(f"{status_icon} {rules['description']}: {file_name}")
         
         if errors:
@@ -136,14 +133,14 @@ def main():
     # Print summary
     print("=" * 70)
     if all_valid:
-        print("✅ All port consistency validations PASSED!")
+        print("[SUCCESS] All port consistency validations PASSED!")
         print("\nSummary:")
-        print(f"  - Canonical port {CANONICAL_PORT} consistently referenced")
+        print(f"  - Canonical ports {CANONICAL_PORT_DASHBOARD} (Dashboard) and {CANONICAL_PORT_API} (API) consistently referenced")
         print("  - Environment variable overrides properly configured")
         print("  - Documentation reflects updated port policy")
         return 0
     else:
-        print("❌ Port consistency validations FAILED!")
+        print("[FAILURE] Port consistency validations FAILED!")
         print(f"\nFound {len(all_errors)} issue(s) to resolve:")
         for i, error in enumerate(all_errors, 1):
             print(f"\n  {i}. {error}")

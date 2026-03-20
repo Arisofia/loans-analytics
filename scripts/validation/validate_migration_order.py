@@ -30,7 +30,7 @@ INDEX_FILE = MIGRATION_DIR / "migration_index.yml"
 MIGRATION_PATTERN = re.compile(r'^(\d{2,14})_[a-z0-9_]+\.sql$')
 
 # Init migration must come first
-INIT_MIGRATION_PATTERN = re.compile(r'^00_init')
+INIT_MIGRATION_PATTERN = re.compile(r'^000?_init')
 
 
 def extract_sort_key(migration_name: str) -> Tuple[int, str]:
@@ -73,12 +73,12 @@ def validate_monotonic_order(migrations: List[str]) -> Tuple[bool, List[str]]:
         errors.append("  Migration order is not monotonic (not sortable).")
         errors.append("  Expected sorted order:")
         for i, mig in enumerate(sorted_migrations, 1):
-            mark = "✓" if i <= len(migrations) and mig == migrations[i-1] else "✗"
+            mark = "[OK]" if i <= len(migrations) and mig == migrations[i-1] else "[X]"
             errors.append(f"    {i:2d}. {mig} {mark}")
         errors.append("\n  Current order:")
         for i, mig in enumerate(migrations, 1):
             expected = sorted_migrations[i-1] if i <= len(sorted_migrations) else "?"
-            mark = "✓" if mig == expected else "✗"
+            mark = "[OK]" if mig == expected else "[X]"
             errors.append(f"    {i:2d}. {mig} {mark}")
     
     return len(errors) == 0, errors
@@ -153,17 +153,17 @@ def validate_index_file(index_path: Path) -> Tuple[bool, List[str], List[str]]:
 
 def main():
     """Run all migration order validations."""
-    print("🔍 Validating migration order and determinism...\n")
+    print("[INFO] Validating migration order and determinism...\n")
     
     # Load migration index
     is_loaded, load_errors, migrations = validate_index_file(INDEX_FILE)
     if not is_loaded:
-        print("❌ Failed to load migration index")
+        print("[FAIL] Failed to load migration index")
         for error in load_errors:
             print(f"   {error}")
         return 1
     
-    print(f"📋 Found {len(migrations)} migrations in index\n")
+    print(f"[LIST] Found {len(migrations)} migrations in index\n")
     
     all_valid = True
     all_errors = []
@@ -178,7 +178,7 @@ def main():
     
     for validation_name, validation_func in validations:
         is_valid, errors = validation_func(migrations)
-        status_icon = "✅" if is_valid else "❌"
+        status_icon = "[PASS]" if is_valid else "[FAIL]"
         print(f"{status_icon} {validation_name}")
         
         if errors:
@@ -192,7 +192,7 @@ def main():
     # Print summary
     print("=" * 70)
     if all_valid:
-        print("✅ All migration order validations PASSED!")
+        print("[PASS] All migration order validations PASSED!")
         print("\nSummary:")
         print(f"  - All {len(migrations)} migrations follow naming convention")
         print("  - Migrations are in strictly monotonic order")
@@ -200,7 +200,7 @@ def main():
         print("  - Init migration executes first")
         return 0
     else:
-        print("❌ Migration order validations FAILED!")
+        print("[FAIL] Migration order validations FAILED!")
         print(f"\nFound {len(all_errors)} issue(s) to resolve:")
         for i, error in enumerate(all_errors, 1):
             if not error.startswith("  "):

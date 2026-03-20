@@ -94,9 +94,16 @@ class TorchDefaultRiskModel:
         std = np.where(std == 0, 1.0, std)
         return cls(network=model, mean=mean, std=std)
 
+    def validate_features(self, loan_data: dict[str, Any]) -> None:
+        """Verify all required features are present in the input dictionary."""
+        missing = [f for f in FEATURE_ORDER if f not in loan_data]
+        if missing:
+            raise ValueError(f"Missing required features for inference: {', '.join(missing)}")
+
     def predict_proba(self, loan_data: dict[str, Any]) -> float:
         torch = self._require_torch()
-        values = np.array([float(loan_data.get(feature, 0.0)) for feature in FEATURE_ORDER])
+        self.validate_features(loan_data)
+        values = np.array([float(loan_data[feature]) for feature in FEATURE_ORDER])
         normalized = ((values - self.mean) / self.std).astype(np.float32)
         tensor = torch.tensor(normalized).unsqueeze(0)
 

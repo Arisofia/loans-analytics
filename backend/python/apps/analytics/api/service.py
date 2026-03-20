@@ -66,7 +66,8 @@ from backend.python.supabase_pool import get_pool
 logger = get_logger(__name__)
 
 # Module-level constants for common response messages
-NO_LOANS_HEALTH_INTERPRETATION = "No loans provided; score defaults to healthy baseline."  # Default interpretation when portfolio is empty
+DATA_MISSING_SCORE = 0.0
+DATA_MISSING_INTERPRETATION = "No loan data available. Score cannot be computed. Investigate data pipeline."
 
 try:
     import yaml as _yaml
@@ -806,14 +807,14 @@ class KPIService:
         if loans_df.empty:
             risk_kpis: list[KpiSingleResponse] = []
             portfolio_health = PortfolioHealthScore(
-                score=100.0,
-                traffic_light="healthy",
+                score=DATA_MISSING_SCORE,
+                traffic_light="critical",
                 components=[],
                 formula=(
                     "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
                     "CostOfRisk(15pts) + DefaultRate(15pts)"
                 ),
-                interpretation=NO_LOANS_HEALTH_INTERPRETATION,
+                interpretation=DATA_MISSING_INTERPRETATION,
             )
         else:
             metrics = self._calculate_portfolio_performance_metrics(loans_df.copy())
@@ -853,14 +854,14 @@ class KPIService:
     ) -> list[KpiSingleResponse]:
         """Build compact risk KPI snapshot used by executive/decision views."""
         snapshot_defs = [
-            ("PAR30", "Portfolio at Risk (30+ days)", metrics.get("par30", 0.0), "%"),
-            ("PAR60", "Portfolio at Risk (60+ days)", metrics.get("par60", 0.0), "%"),
-            ("PAR90", "Portfolio at Risk (90+ days)", metrics.get("par90", 0.0), "%"),
-            ("DEFAULT_RATE", "Default Rate", metrics.get("default_rate", 0.0), "%"),
-            ("NPL", "Non-Performing Loans", metrics.get("npl", 0.0), "%"),
-            ("LGD", "Loss Given Default", metrics.get("lgd", 0.0), "%"),
-            ("COR", "Cost of Risk", metrics.get("cor", 0.0), "%"),
-            ("COLLECTION_RATE", "Collection Rate", metrics.get("collection_rate", 0.0), "%"),
+            ("PAR30", "Portfolio at Risk (30+ days)", metrics["par30"], "%"),
+            ("PAR60", "Portfolio at Risk (60+ days)", metrics["par60"], "%"),
+            ("PAR90", "Portfolio at Risk (90+ days)", metrics["par90"], "%"),
+            ("DEFAULT_RATE", "Default Rate", metrics["default_rate"], "%"),
+            ("NPL", "Non-Performing Loans", metrics["npl"], "%"),
+            ("LGD", "Loss Given Default", metrics["lgd"], "%"),
+            ("COR", "Cost of Risk", metrics["cor"], "%"),
+            ("COLLECTION_RATE", "Collection Rate", metrics["collection_rate"], "%"),
         ]
         return [
             self._build_kpi_single_response(
@@ -909,27 +910,27 @@ class KPIService:
         """Compute portfolio health score for the provided loan set."""
         if not loans:
             return PortfolioHealthScore(
-                score=100.0,
-                traffic_light="healthy",
+                score=DATA_MISSING_SCORE,
+                traffic_light="critical",
                 components=[],
                 formula=(
                     "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
                     "CostOfRisk(15pts) + DefaultRate(15pts)"
                 ),
-                interpretation=NO_LOANS_HEALTH_INTERPRETATION,
+                interpretation=DATA_MISSING_INTERPRETATION,
             )
 
         df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
         if df.empty:
             return PortfolioHealthScore(
-                score=100.0,
-                traffic_light="healthy",
+                score=DATA_MISSING_SCORE,
+                traffic_light="critical",
                 components=[],
                 formula=(
                     "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
                     "CostOfRisk(15pts) + DefaultRate(15pts)"
                 ),
-                interpretation=NO_LOANS_HEALTH_INTERPRETATION,
+                interpretation=DATA_MISSING_INTERPRETATION,
             )
         metrics = self._calculate_portfolio_performance_metrics(df)
         return self._build_portfolio_health_score_from_metrics(metrics)

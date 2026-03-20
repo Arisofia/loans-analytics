@@ -132,27 +132,32 @@ report-strategic:
 	$(BIN)/python scripts/reporting/generate_strategic_report.py
 
 # =============================================================================
-# Zero-cost architecture targets
+# Docker Stack targets (Unified Compose)
 # =============================================================================
 
-## Start the zero-cost local stack (API + dashboard)
-zero-cost-up:
-	@echo "Starting zero-cost local stack (API + Dashboard)..."
-	docker compose -f docker-compose.zero-cost.yml up --build api dashboard
+## Start the local stack (API + dashboard)
+up:
+	@echo "Starting local stack (API + Dashboard)..."
+	docker compose up --build api dashboard
 
-## Stop the zero-cost local stack
-zero-cost-down:
-	docker compose -f docker-compose.zero-cost.yml down
+## Stop the local stack
+down:
+	docker compose down
 
-## Run ETL pipeline inside the zero-cost stack (one-shot)
-zero-cost-pipeline:
-	@echo "Running ETL pipeline (zero-cost)..."
-	docker compose -f docker-compose.zero-cost.yml \
-		--profile pipeline run --rm pipeline
+## Run ETL pipeline inside the stack (one-shot)
+pipeline-run:
+	@echo "Running ETL pipeline (Docker)..."
+	docker compose --profile pipeline run --rm pipeline
 
 ## Start local PostgreSQL (mirrors Supabase schema)
-zero-cost-db:
-	docker compose -f docker-compose.zero-cost.yml --profile db up -d db
+db-up:
+	docker compose --profile db up -d db
+
+# Alias for backward compatibility (optional, but good for smooth transition)
+zero-cost-up: up
+zero-cost-down: down
+zero-cost-pipeline: pipeline-run
+zero-cost-db: db-up
 
 ## Initialise DuckDB star schema locally
 zero-cost-schema:

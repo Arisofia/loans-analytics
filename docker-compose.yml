@@ -1,154 +1,216 @@
+###############################################################################
+# Abaco Loans Analytics — Unified Deployment Stack
+#
+# Profiles:
+#   default (api + dashboard) : Core application stack
+#   db                      : Local PostgreSQL (mirrors Supabase)
+#   monitoring              : Prometheus + Grafana + Alertmanager + OTEL
+#   pipeline                : One-shot ETL pipeline runner
+#
+# Usage:
+#   docker compose up -d                        # Start API + Dashboard
+#   docker compose --profile db up -d           # Start with local DB
+#   docker compose --profile monitoring up -d   # Start with full observability
+#   docker compose --profile pipeline run pipeline # Run ETL
+###############################################################################
+
+version: "3.9"
+
+x-common-env: &common-env
+  # Supabase project REST endpoint (override with your project credentials)
+  SUPABASE_URL: ${SUPABASE_URL:-}
+  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+  # Local PostgreSQL (backing store for analytics; uses the `db` service)
+  DATABASE_URL: ${DATABASE_URL:-postgresql://abaco:${DB_PASSWORD:-localdev}@db:5432/abaco_analytics}
+  # DuckDB / Parquet storage paths
+  DUCKDB_PATH: /app/data/duckdb/analytics.duckdb
+  PARQUET_BASE_DIR: /app/data/duckdb
+  # Pipeline
+  PIPELINE_INPUT: /app/data/samples/abaco_sample_data_20260202.csv
+  PIPELINE_MODE: full
+  # Observability
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  PROMETHEUS_MULTIPROC_DIR: /tmp/prometheus
+  # Defaults
+  DEFAULT_RISK_MODEL_BACKEND: xgb
+  HISTORICAL_CONTEXT_MODE: REAL
+
 services:
+  # ---------------------------------------------------------------------------
+  # Analytics API (FastAPI)
+  # ---------------------------------------------------------------------------
   api:
-    profiles: [ "web", "dashboard" ]
     build:
       context: .
       dockerfile: Dockerfile
+    image: ghcr.io/arisofia/abaco-loans-analytics-api:local
     ports:
       - "8000:8000"
-    environment:
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS http://localhost:8000/health | grep -q ok" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  dashboard:
-    profiles: [ "web", "dashboard" ]
-    build:
-      context: .
-      dockerfile: Dockerfile.dashboard
-    ports:
-      - "8501:8501"
-    environment:
-      # Streamlit dashboard
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS http://localhost:8501/_stcore/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    depends_on:
-      - api
-
-  agent-scheduler:
-    profiles: [ "dashboard" ]
-    build:
-      context: .
-      dockerfile: Dockerfile.dashboard
-    environment:
-      PYTHONUNBUFFERED: 1
-      DAILY_AGENT_INPUT_PATH: ${DAILY_AGENT_INPUT_PATH:-}
-    entrypoint: [ "/bin/sh", "/app/scripts/monitoring/run_agent_scheduler.sh" ]
-    healthcheck:
-      disable: true
     volumes:
       - ./data:/app/data
-      - ./scripts:/app/scripts
-      - ./backend/python:/app/backend/python
-      - ./backend/src:/app/backend/src
-    restart: unless-stopped
-    depends_on:
-      - dashboard
-
-  db:
-    profiles: [ "db" ]
-    image: postgres:15
+      - ./config:/app/config
+      - ./logs:/app/logs
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      <<: *common-env
+      API_HOST: 0.0.0.0
+      API_PORT: "8000"
+      RELOAD: "true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Streamlit Dashboard
+  # ---------------------------------------------------------------------------
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    image: ghcr.io/arisofia/abaco-loans-analytics-dashboard:local
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      <<: *common-env
+      STREAMLIT_SERVER_PORT: "8501"
+      STREAMLIT_SERVER_ADDRESS: 0.0.0.0
+      ABACO_API_BASE: http://api:8000
+      DASHBOARD_URL: http://localhost:8501
+      GRAFANA_URL: http://localhost:3001/dashboards
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # ETL Pipeline runner (one-shot)
+  # ---------------------------------------------------------------------------
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile.pipeline
+    image: ghcr.io/arisofia/abaco-loans-analytics-pipeline:local
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./logs:/app/logs
+    environment:
+      <<: *common-env
+    command: >
+      python scripts/data/run_data_pipeline.py
+        --input ${PIPELINE_INPUT:-data/samples/abaco_sample_data_20260202.csv}
+        --mode  ${PIPELINE_MODE:-full}
+        --verbose
+    profiles:
+      - pipeline
+
+  # ---------------------------------------------------------------------------
+  # Local PostgreSQL — mirrors Supabase schema for offline dev
+  # Profile: db
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_USER: abaco
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-localdev}
+      POSTGRES_DB: abaco_analytics
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/star_schema/create_star_schema.sql:/docker-entrypoint-initdb.d/01_star_schema.sql:ro
+      - ./db/star_schema/views/kpi_views.sql:/docker-entrypoint-initdb.d/02_kpi_views.sql:ro
+      - ./db/migrations:/docker-entrypoint-initdb.d/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abaco -d abaco_analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - db
 
+  # ---------------------------------------------------------------------------
+  # Prometheus — metrics collection
+  # Profile: monitoring
+  # ---------------------------------------------------------------------------
   prometheus:
-    profiles: [ "monitoring" ]
-    image: prom/prometheus:latest
-    container_name: prometheus
+    image: prom/prometheus:v2.54.0
     ports:
       - "9090:9090"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
-      - ./config/prometheus.generated.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./config/rules:/etc/prometheus/rules:ro
-      - prometheus-data:/prometheus
+      - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=30d"
+      - "--storage.tsdb.retention.time=90d"
       - "--web.enable-lifecycle"
-    restart: unless-stopped
-    networks:
+    profiles:
       - monitoring
 
+  # ---------------------------------------------------------------------------
+  # Grafana — dashboards
+  # Profile: monitoring
+  # ---------------------------------------------------------------------------
   grafana:
-    profiles: [ "monitoring" ]
-    image: grafana/grafana:latest
-    container_name: grafana
+    image: grafana/grafana:11.2.0
     ports:
       - "3001:3000"
     volumes:
-      - grafana-data:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
-      - GF_SERVER_ROOT_URL=http://localhost:3001
-      - GF_AUTH_ANONYMOUS_ENABLED=false
-      - SUPABASE_URL=${SUPABASE_URL:-}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
-      - SUPABASE_DB_HOST=${SUPABASE_DB_HOST:-}
-      - SUPABASE_DB_PORT=${SUPABASE_DB_PORT:-5432}
-      - SUPABASE_DB_NAME=${SUPABASE_DB_NAME:-postgres}
-      - SUPABASE_DB_USER=${SUPABASE_DB_USER:-}
-      - SUPABASE_DB_PASSWORD=${SUPABASE_DB_PASSWORD:-}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
     depends_on:
       - prometheus
-    restart: unless-stopped
-    networks:
+    profiles:
       - monitoring
 
+  # ---------------------------------------------------------------------------
+  # Alertmanager — alert handling
+  # Profile: monitoring
+  # ---------------------------------------------------------------------------
   alertmanager:
-    profiles: [ "monitoring" ]
-    image: prom/alertmanager:latest
-    container_name: alertmanager
+    image: prom/alertmanager:v0.27.0
     ports:
       - "9093:9093"
     volumes:
-      - ./config/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - alertmanager-data:/alertmanager
-    environment:
-      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com:587}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - ALERT_EMAIL_FROM=${ALERT_EMAIL_FROM}
-      - CRITICAL_EMAIL_TO=${CRITICAL_EMAIL_TO}
+      - ./config/alertmanager.yml:/etc/alertmanager/alertmanager.yml
     command:
       - "--config.file=/etc/alertmanager/alertmanager.yml"
       - "--storage.path=/alertmanager"
-    restart: unless-stopped
-    networks:
+    profiles:
+      - monitoring
+
+  # ---------------------------------------------------------------------------
+  # OpenTelemetry Collector
+  # Profile: monitoring
+  # ---------------------------------------------------------------------------
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.108.0
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./config/otel-collector.yml:/etc/otel-collector-config.yaml
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    profiles:
       - monitoring
 
 volumes:
-  db-data:
-  prometheus-data:
-    driver: local
-  grafana-data:
-    driver: local
-  alertmanager-data:
-    driver: local
-
-networks:
-  monitoring:
-    driver: bridge
+  postgres_data:
+  prometheus_data:
+  grafana_data:

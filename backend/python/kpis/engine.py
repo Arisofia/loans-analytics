@@ -47,6 +47,7 @@ import pandas as pd
 from backend.python.kpis.ltv import calculate_ltv_sintetico
 from backend.python.kpis.collection_rate import calculate_collection_rate
 from backend.python.kpis.formula_engine import KPIFormulaEngine
+from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -134,25 +135,7 @@ class KPIEngineV2:
             for name, value in dynamic_kpis.items()
         }
 
-    # ── PAR private helpers ───────────────────────────────────────────────────
-
-    def _calc_par30_v2(self) -> tuple[Decimal, str]:
-        active_mask = (
-            self.df["status"].isin(["active", "delinquent", "defaulted"])
-            if "status" in self.df.columns
-            else pd.Series(True, index=self.df.index)
-        )
-        subset = self.df[active_mask]
-        total_out = float(subset["outstanding_balance"].sum())
-        if total_out > 0:
-            par_mask = (subset["dpd"] >= 30) | (
-                subset["status"].isin(_NPL_BROAD_STATUSES)
-                if "status" in subset.columns
-                else False
-            )
-            par_out = float(subset.loc[par_mask, "outstanding_balance"].sum())
-            return Decimal(str(round((par_out / total_out) * 100, 2))).quantize(Decimal("0.01")), "v2_engine_native"
-        return Decimal("0.00"), "v2_engine_native_zero_bal"
+    # ── PAR legacy fallback ───────────────────────────────────────────────────
 
     def _calc_par30_legacy(self) -> tuple[Decimal, str]:
         required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
@@ -166,24 +149,6 @@ class KPIEngineV2:
         if total <= 0:
             return Decimal("0.00"), "v1_legacy_buckets"
         return Decimal(str(round(((d30_60 + d60_90 + d90p) / total) * 100, 2))).quantize(Decimal("0.01")), "v1_legacy_buckets"
-
-    def _calc_par90_v2(self) -> tuple[Decimal, str]:
-        active_mask = (
-            self.df["status"].isin(["active", "delinquent", "defaulted"])
-            if "status" in self.df.columns
-            else pd.Series(True, index=self.df.index)
-        )
-        subset = self.df[active_mask]
-        total_out = float(subset["outstanding_balance"].sum())
-        if total_out > 0:
-            par_mask = (subset["dpd"] >= 90) | (
-                subset["status"].isin(_NPL_STRICT_STATUSES)
-                if "status" in subset.columns
-                else False
-            )
-            par_out = float(subset.loc[par_mask, "outstanding_balance"].sum())
-            return Decimal(str(round((par_out / total_out) * 100, 2))).quantize(Decimal("0.01")), "v2_engine_native"
-        return Decimal("0.00"), "v2_engine_native_zero_bal"
 
     def _calc_par90_legacy(self) -> tuple[Decimal, str]:
         required = ["dpd_90_plus_usd", "total_receivable_usd"]
@@ -202,10 +167,22 @@ class KPIEngineV2:
         """Calculate Portfolio at Risk (30+ days)."""
         kpi_name = "PAR30"
         try:
-            if "dpd" in self.df.columns and "outstanding_balance" in self.df.columns:
-                value, method = self._calc_par30_v2()
+            balance_col = self._resolve_col(self.df, "outstanding_balance", "current_balance", "amount")
+            dpd_col = "dpd" if "dpd" in self.df.columns else None
+            
+            if balance_col and dpd_col:
+                results = calculate_asset_quality_metrics(
+                    balance=self.df[balance_col],
+                    dpd=self.df[dpd_col],
+                    status=self.df.get("status"),
+                    actor=self.actor,
+                    metric_aliases=["par30"],
+                )
+                value = Decimal(str(round(results["par30"], 2))).quantize(Decimal("0.01"))
+                method = "ssot_asset_quality"
             else:
                 value, method = self._calc_par30_legacy()
+
             context = {
                 "formula": "SUM(balance WHERE DPD >= 30) / SUM(total_balance) * 100",
                 "rows_processed": len(self.df),
@@ -223,10 +200,22 @@ class KPIEngineV2:
         """Calculate Portfolio at Risk (90+ days)."""
         kpi_name = "PAR90"
         try:
-            if "dpd" in self.df.columns and "outstanding_balance" in self.df.columns:
-                value, method = self._calc_par90_v2()
+            balance_col = self._resolve_col(self.df, "outstanding_balance", "current_balance", "amount")
+            dpd_col = "dpd" if "dpd" in self.df.columns else None
+
+            if balance_col and dpd_col:
+                results = calculate_asset_quality_metrics(
+                    balance=self.df[balance_col],
+                    dpd=self.df[dpd_col],
+                    status=self.df.get("status"),
+                    actor=self.actor,
+                    metric_aliases=["par90"],
+                )
+                value = Decimal(str(round(results["par90"], 2))).quantize(Decimal("0.01"))
+                method = "ssot_asset_quality"
             else:
                 value, method = self._calc_par90_legacy()
+
             context = {
                 "formula": "SUM(balance WHERE DPD >= 90) / SUM(total_balance) * 100",
                 "rows_processed": len(self.df),
@@ -259,14 +248,14 @@ class KPIEngineV2:
             # Fail-fast mandate: do not return partial/silent failures
             raise ValueError(f"CRITICAL: {kpi_name} calculation failed: {e}") from e
 
-    def calculate_ltv(self) -> Tuple[float, Dict[str, Any]]:
+    def calculate_ltv(self) -> Tuple[Decimal, Dict[str, Any]]:
         """Calculate Portfolio-level Loan-to-Value ratio."""
         kpi_name = "LTV"
         required_columns = ["loan_amount", "collateral_value"]
         missing_columns = [col for col in required_columns if col not in self.df.columns]
 
         if missing_columns:
-            value = 0.0
+            value = Decimal("0.00")
             context = {
                 "formula": "total_loan_amount / total_collateral_value * 100",
                 "rows_processed": len(self.df),
@@ -281,7 +270,8 @@ class KPIEngineV2:
 
         total_loans = self.df["loan_amount"].sum()
         total_collateral = self.df["collateral_value"].sum()
-        value = (total_loans / total_collateral * 100) if total_collateral > 0 else 0.0
+        raw_val = (total_loans / total_collateral * 100) if total_collateral > 0 else 0.0
+        value = Decimal(str(round(raw_val, 2))).quantize(Decimal("0.01"))
 
         context = {
             "formula": "total_loan_amount / total_collateral_value * 100",
@@ -548,13 +538,21 @@ class KPIEngineV2:
 
     def _calculate_derived_risk_kpis(self, df: pd.DataFrame) -> Dict[str, Decimal]:
         """Compute derived risk KPIs not covered by the formula catalog."""
-        balance_col = next(
-            (c for c in ("outstanding_balance", "current_balance") if c in df.columns), None
-        )
-        if "dpd" not in df.columns or "status" not in df.columns or balance_col is None:
+        balance_col = self._resolve_col(df, "outstanding_balance", "current_balance")
+        dpd_col = "dpd" if "dpd" in df.columns else None
+        
+        if not balance_col or not dpd_col:
             return {}
 
-        active_df = df[df["status"].isin(["active", "delinquent", "defaulted"])]
+        results = calculate_asset_quality_metrics(
+            balance=df[balance_col],
+            dpd=df[dpd_col],
+            status=df.get("status"),
+            actor=self.actor,
+            metric_aliases=["par30", "par90"],
+        )
+        
+        active_df = df[df["status"].isin(["active", "delinquent", "defaulted"])] if "status" in df.columns else df
         total_out = Decimal(str(active_df[balance_col].sum()))
 
         if total_out <= 0:
@@ -565,18 +563,12 @@ class KPIEngineV2:
                 "top_10_borrower_concentration": Decimal("0.0"),
             }
 
-        # npl_90_ratio: strict NPL (DPD >= 90 or defaulted) — standard 90-day threshold
-        npl_mask = (active_df["dpd"] >= 90) | (active_df["status"].isin(_NPL_STRICT_STATUSES))
-        npl_out = Decimal(str(active_df.loc[npl_mask, balance_col].sum()))
-        npl_90_ratio = (npl_out / total_out) * 100
-
-        # npl_ratio: broad NPL (DPD >= 30 or delinquent/defaulted) — early-warning threshold
-        broad_npl_mask = (active_df["dpd"] >= 30) | (active_df["status"].isin(_NPL_BROAD_STATUSES))
-        broad_npl_out = Decimal(str(active_df.loc[broad_npl_mask, balance_col].sum()))
-        npl_ratio = (broad_npl_out / total_out) * 100
+        npl_90_ratio = Decimal(str(round(results["par90"], 6)))
+        npl_ratio = Decimal(str(round(results["par30"], 6)))
 
         defaulted_out = Decimal(
             str(active_df.loc[active_df["status"].isin(_NPL_STRICT_STATUSES), balance_col].sum())
+            if "status" in active_df.columns else 0.0
         )
 
         kpis: Dict[str, Decimal] = {

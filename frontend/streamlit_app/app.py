@@ -400,16 +400,19 @@ with st.expander("🔗 Dashboard Links & Strategic Reporting", expanded=True):
         "DASHBOARD_PUBLIC_URL",
         "https://abaco-dashboard-app.kindocean-8ac70092.spaincentral.azurecontainerapps.io",
     )
-    st.markdown("- **Streamlit (Local):** http://localhost:8501")
-    st.markdown("- **Grafana (Local):** http://localhost:3001/dashboards")
+    dashboard_local_url = os.getenv("DASHBOARD_URL", "http://localhost:8501")
+    grafana_local_url = os.getenv("GRAFANA_URL", "http://localhost:3001/dashboards")
+
+    st.markdown(f"- **Streamlit (Local):** {dashboard_local_url}")
+    st.markdown(f"- **Grafana (Local):** {grafana_local_url}")
     st.markdown(f"- **Streamlit (Deployed):** {deployed_dashboard_url}")
     st.markdown("- **Dashboard docs:** docs/analytics/dashboards.md")
     if st.button("Generate Strategic Report"):
         if global_dashboard_metrics_var:
             strategic_summary = build_strategic_summary(global_dashboard_metrics_var)
             strategic_links = {
-                "streamlit_local": "http://localhost:8501",
-                "grafana_local": "http://localhost:3001/dashboards",
+                "streamlit_local": dashboard_local_url,
+                "grafana_local": grafana_local_url,
                 "streamlit_prod": deployed_dashboard_url,
                 "dashboard_docs": "docs/analytics/dashboards.md",
             }

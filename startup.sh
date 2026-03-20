@@ -2,15 +2,15 @@
 
 # Startup script for Abaco Analytics Dashboard
 # This script runs the Streamlit application on a configurable port
-# Default: 8000 (Azure Web Apps standard, aligns with API service)
+# Default: 8501
 # Override: set STREAMLIT_SERVER_PORT environment variable
 
 set -e
 
 echo "🚀 Starting Abaco Analytics Dashboard..."
 
-# Determine canonical port from environment or use default (8000)
-CANONICAL_PORT=${STREAMLIT_SERVER_PORT:-8000}
+# Determine canonical port from environment or use default (8501)
+CANONICAL_PORT=${STREAMLIT_SERVER_PORT:-8501}
 export STREAMLIT_SERVER_PORT=${CANONICAL_PORT}
 
 # Set environment variables for production

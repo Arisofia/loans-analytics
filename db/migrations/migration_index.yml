@@ -1,37 +1,32 @@
 version: 1
 # Migration Ordering Policy:
-# - Init migration (00_init_*) must execute first
-# - All migrations follow naming convention: NN_name or YYYYMMDDhhmmss_name
+# - Init migration (000_init_*) must execute first
+# - All migrations follow naming convention: NN_name (legacy) or YYYYMMDDhhmmss_name
 # - Execution order is STRICTLY MONOTONIC (lexicographically sortable)
 # - This ensures deterministic replay and prevents filesystem ordering races
 # - All timestamps use 14-digit format: YYYYMMDDHHMMSS
 ordered_migrations:
-  - 00_init_base_tables.sql
+  - 000_init_base_tables.sql
   - 001_create_lineage_schema.sql
   - 002_create_kpi_timeseries_daily.sql
-  - 20251230_create_kpi_tables.sql
-  - 20251231_pipeline_audit_tables.sql
-  - 20260101_analytics_kpi_views.sql
-  - 20260105_security_hardening.sql
-  - 20260128_create_historical_kpis_table.sql
+  - 20251230000000_create_kpi_tables.sql
+  - 20251231000000_pipeline_audit_tables.sql
+  - 20260101000000_analytics_kpi_views.sql
+  - 20260105000000_security_hardening.sql
   - 20260201000000_create_historical_kpis.sql
-  - 20260204000000_enable_rls.sql
-  - 20260204000000_fix_broadcast_trigger.sql
-  - 20260204000000_fix_kpi_values_policy.sql
-  - 20260204000000_rls_policies.sql
   - 20260204035559_remote_schema.sql
+  - 20260204040000_rls_policies.sql
   - 20260204050000_create_monitoring_schema.sql
   - 20260204100000_enable_rls_all_tables.sql
   - 20260204120000_fix_broadcast_trigger.sql
   - 20260204120500_fix_kpi_values_policy.sql
-  - 20260205000000_create_public_kpi_values_view.sql
   - 20260205200000_grant_monitoring_schema_access.sql
   - 20260205201000_create_kpi_public_views.sql
   - 20260206100000_add_rls_status_rpc.sql
   - 20260206220000_enable_rls_missing_tables.sql
   - 20260207100000_create_operational_events_commands.sql
-  - 20260208000000_create_fact_loans.sql
   - 20260208000000_harden_monitoring_rls.sql
+  - 20260208010000_create_fact_loans.sql
   - 20260223160000_add_monitoring_kpi_compatibility.sql
   - 20260223162000_add_daily_kpi_snapshot_job.sql
   - 20260223163000_refresh_public_kpi_views_for_compat.sql

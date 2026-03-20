@@ -16,14 +16,14 @@ from backend.python.kpis.formula_engine import KPIFormulaEngine  # re-exported a
 
 # Optional heavy ML dependencies — degrade gracefully when absent
 try:
-    import umap  # type: ignore[import-untyped]  # umap-learn
+    import umap
 
     _UMAP_AVAILABLE = True
 except ImportError:  # pragma: no cover
     _UMAP_AVAILABLE = False
 
 try:
-    import hdbscan as hdbscan_module  # type: ignore[import-untyped]
+    import hdbscan as hdbscan_module
 
     _HDBSCAN_AVAILABLE = True
 except ImportError:  # pragma: no cover

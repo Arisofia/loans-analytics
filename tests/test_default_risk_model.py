@@ -59,45 +59,57 @@ class TestDefaultRiskModel:
 
     def test_predict_proba_high(self):
         """High probability returned correctly."""
-        from backend.python.models.default_risk_model import DefaultRiskModel
+        from backend.python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
         mock_clf = _make_mock_classifier([0.95])
         model = DefaultRiskModel(model=mock_clf)
+        loan = {col: 1.0 for col in ALL_FEATURES}
 
-        prob = model.predict_proba({"principal_amount": 100})
+        prob = model.predict_proba(loan)
         assert isinstance(prob, float)
         assert prob >= 0.9
 
     def test_predict_proba_low(self):
         """Low probability returned correctly."""
-        from backend.python.models.default_risk_model import DefaultRiskModel
+        from backend.python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
         mock_clf = _make_mock_classifier([0.01])
         model = DefaultRiskModel(model=mock_clf)
+        loan = {col: 1.0 for col in ALL_FEATURES}
 
-        prob = model.predict_proba({"principal_amount": 100})
+        prob = model.predict_proba(loan)
         assert isinstance(prob, float)
         assert prob <= 0.05
 
     def test_predict_proba_not_loaded_raises(self):
         """predict_proba raises RuntimeError when model is None."""
-        from backend.python.models.default_risk_model import DefaultRiskModel
+        from backend.python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
         model = DefaultRiskModel(model=None)
+        loan = {col: 1.0 for col in ALL_FEATURES}
 
         with pytest.raises(RuntimeError, match="not trained or loaded"):
-            model.predict_proba({"principal_amount": 100})
+            model.predict_proba(loan)
 
     def test_predict_batch(self):
         """predict_batch returns predictions for multiple loans."""
-        from backend.python.models.default_risk_model import DefaultRiskModel
+        from backend.python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
         mock_clf = _make_mock_classifier([0.3, 0.7])
         model = DefaultRiskModel(model=mock_clf)
-        loans = [{"principal_amount": 100}, {"principal_amount": 200}]
+        loans = [{col: 1.0 for col in ALL_FEATURES}, {col: 2.0 for col in ALL_FEATURES}]
 
         probs = model.predict_batch(loans)
         assert len(probs) == 2
+
+    def test_predict_proba_validates_features(self):
+        """predict_proba raises ValueError when features are missing."""
+        from backend.python.models.default_risk_model import DefaultRiskModel
+
+        model = DefaultRiskModel(model=_make_mock_classifier([0.5]))
+        # Missing almost all features
+        with pytest.raises(ValueError, match="Missing required features"):
+            model.predict_proba({"principal_amount": 100})
 
     def test_feature_columns_alias(self):
         """FEATURE_COLUMNS is an alias for ALL_FEATURES."""

@@ -15,26 +15,26 @@ _METRIC_ALIAS_TO_ID: dict[str, str] = {
 }
 
 _ASSET_QUALITY_REGISTRY = {
-    "version": "asset-quality-ssot-1.0",
+    "version": "asset-quality-ssot-1.1",
     "asset_quality_kpis": {
         "par_30": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100",
+            "formula": "SUM(outstanding_balance WHERE dpd >= 30 OR status IN ['delinquent', 'defaulted']) / SUM(outstanding_balance) * 100",
             "unit": "percentage",
         },
         "par_60": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 60) / SUM(outstanding_balance) * 100",
+            "formula": "SUM(outstanding_balance WHERE dpd >= 60 OR status IN ['delinquent', 'defaulted']) / SUM(outstanding_balance) * 100",
             "unit": "percentage",
         },
         "par_90": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 90) / SUM(outstanding_balance) * 100",
+            "formula": "SUM(outstanding_balance WHERE dpd >= 90 OR status = 'defaulted') / SUM(outstanding_balance) * 100",
             "unit": "percentage",
         },
         "npl_90_proxy": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 90) / SUM(outstanding_balance) * 100",
+            "formula": "SUM(outstanding_balance WHERE dpd >= 90 OR status = 'defaulted') / SUM(outstanding_balance) * 100",
             "unit": "percentage",
         },
         "npl_180_proxy": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 180) / SUM(outstanding_balance) * 100",
+            "formula": "SUM(outstanding_balance WHERE dpd >= 180 OR status = 'defaulted') / SUM(outstanding_balance) * 100",
             "unit": "percentage",
         },
     },

@@ -99,8 +99,8 @@ class TestKPIEngineV2(unittest.TestCase):
         value, context = engine.calculate_ltv()
 
         # Check calculation
-        self.assertIsInstance(value, float)
-        self.assertGreaterEqual(value, 0.0)
+        self.assertIsInstance(value, Decimal)
+        self.assertGreaterEqual(float(value), 0.0)
 
         # Check audit trail
         self.assertEqual(len(engine._audit_records), 1)

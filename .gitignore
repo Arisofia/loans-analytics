@@ -59,7 +59,10 @@ data/metrics/
 data/archives/
 data/agent_outputs/
 data/usage_metrics/
+data/samples/*.csv
 data/raw/*.csv
+backend/data/usage_metrics/
+backend/data/samples/*.csv
 exports/
 outputs/
 reports/

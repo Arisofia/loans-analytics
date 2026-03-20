@@ -1148,10 +1148,16 @@ if app is not None:
     _risk_model_cache: dict = {}
 
     def _get_risk_model():
+        """
+        Get the default risk model based on the configured backend.
+        Canonical backend: xgb (XGBoost)
+        Experimental backend: torch (PyTorch MLP)
+        """
         backend = os.getenv("DEFAULT_RISK_MODEL_BACKEND", "xgb").strip().lower()
         if _risk_model_cache.get("backend") != backend:
             _risk_model_cache.clear()
             _risk_model_cache["backend"] = backend
+            logger.info("Risk model backend selected: %s", backend)
 
         if "model" not in _risk_model_cache:
             try:
