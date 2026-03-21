@@ -10,7 +10,7 @@ from typing import Any, Optional
 try:
     import websockets
 except ImportError:  # pragma: no cover - optional in limited environments
-    websockets = None
+    websockets = None  # type: ignore[assignment]
 
 
 class KPIWebSocketClient:
@@ -22,9 +22,7 @@ class KPIWebSocketClient:
         connect_timeout: float = 5.0,
         receive_timeout: float = 5.0,
     ):
-        self.ws_url = ws_url or os.getenv(
-            "KPI_WS_URL", "ws://localhost:8000/analytics/kpis/stream"
-        )
+        self.ws_url = ws_url or os.getenv("KPI_WS_URL", "ws://localhost:8000/analytics/kpis/stream")
         self.connect_timeout = connect_timeout
         self.receive_timeout = receive_timeout
 
@@ -38,7 +36,10 @@ class KPIWebSocketClient:
         if not websockets:
             raise ImportError("websockets package is required for KPIWebSocketClient")
 
-        query_parts = [f"once={'true' if once else 'false'}", f"interval_seconds={interval_seconds}"]
+        query_parts = [
+            f"once={'true' if once else 'false'}",
+            f"interval_seconds={interval_seconds}",
+        ]
         if kpi_keys:
             query_parts.append(f"kpi_keys={','.join(kpi_keys)}")
         stream_url = f"{self.ws_url}?{'&'.join(query_parts)}"

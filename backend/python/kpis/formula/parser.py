@@ -22,5 +22,6 @@ class FormulaParser:
         return ParsedFormula(
             raw=normalized,
             is_comparison=("current_month" in normalized or "previous_month" in normalized),
-            is_arithmetic=any(op in normalized for op in [" + ", " - ", " * ", " / "]) and "(" in normalized,
+            is_arithmetic=any(op in normalized for op in [" + ", " - ", " * ", " / "])
+            and "(" in normalized,
         )

@@ -14,7 +14,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
 REPORT_MD_NAME = "service_status_report.md"
 REPORT_JSON_NAME = "service_status_report.json"
 
@@ -132,10 +131,7 @@ class ServiceStatusChecker:
                 line
                 for line in stdout.strip().split("\n")
                 if line
-                and not any(
-                    exclude in line
-                    for exclude in [REPORT_MD_NAME, REPORT_JSON_NAME]
-                )
+                and not any(exclude in line for exclude in [REPORT_MD_NAME, REPORT_JSON_NAME])
             ]
             has_changes = bool(filtered_lines)
             status["details"]["uncommitted_changes"] = has_changes

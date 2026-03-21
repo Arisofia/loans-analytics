@@ -311,6 +311,24 @@ def _newton_raphson(f, df, x0: float, tol: float = _TOLERANCE, max_iter: int = _
     return None
 
 
+def _find_bracket(f, flo: float) -> float | None:
+    """Scan candidate hi values to find one where f has the opposite sign from f(lo).
+
+    Returns a new ``hi`` such that ``flo * f(hi) < 0``, or ``None`` if no
+    suitable candidate is found among the default scales.
+    """
+    for scale in [2.0, 5.0, 10.0, 50.0]:
+        try:
+            if flo * f(scale) < 0:
+                return scale
+        except (ZeroDivisionError, OverflowError):
+            logger.debug(
+                "Numerical error when evaluating function at scale=%s; trying next candidate.",
+                scale,
+            )
+    return None
+
+
 def _bisect(f, lo: float = -0.999, hi: float = 10.0, tol: float = _TOLERANCE, max_iter: int = 200):
     """Bisection method on [lo, hi].  Returns root or ``None``."""
     try:
@@ -319,19 +337,10 @@ def _bisect(f, lo: float = -0.999, hi: float = 10.0, tol: float = _TOLERANCE, ma
         return None
     if flo * fhi > 0:
         # No sign change in [lo, hi] — try to find a bracket
-        for scale in [2.0, 5.0, 10.0, 50.0]:
-            try:
-                fhi = f(scale)
-                if flo * fhi < 0:
-                    hi = scale
-                    break
-            except (ZeroDivisionError, OverflowError):
-                logger.debug(
-                    "Numerical error when evaluating function at scale=%s; trying next candidate.",
-                    scale,
-                )
-        else:
+        new_hi = _find_bracket(f, flo)
+        if new_hi is None:
             return None
+        hi = new_hi
 
     for _ in range(max_iter):
         mid = (lo + hi) / 2.0

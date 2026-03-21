@@ -315,7 +315,9 @@ class CalculationPhase:
         date_col = next(
             (col for col in ("origination_date", "FechaDesembolso") if col in df.columns), None
         )
-        amount_col = next((col for col in ("amount", "MontoDesembolsado") if col in df.columns), None)
+        amount_col = next(
+            (col for col in ("amount", "MontoDesembolsado") if col in df.columns), None
+        )
 
         if not client_col or not date_col or not amount_col:
             return empty
@@ -639,9 +641,9 @@ class CalculationPhase:
             metric_aliases=["par30", "par60", "par90"],
         )
         return {
-            "par_30": round(float(ssot_metrics.get("par30", 0.0)), 4),
-            "par_60": round(float(ssot_metrics.get("par60", 0.0)), 4),
-            "par_90": round(float(ssot_metrics.get("par90", 0.0)), 4),
+            "par_30": round(float(ssot_metrics["par30"]), 4),
+            "par_60": round(float(ssot_metrics["par60"]), 4),
+            "par_90": round(float(ssot_metrics["par90"]), 4),
         }
 
     @staticmethod
@@ -821,9 +823,7 @@ class CalculationPhase:
             metrics["cluster_centroids"] = centroids
 
         except Exception as exc:
-            raise ValueError(
-                f"CRITICAL: Advanced clustering pipeline failed: {exc}"
-            ) from exc
+            raise ValueError(f"CRITICAL: Advanced clustering pipeline failed: {exc}") from exc
 
         return metrics
 

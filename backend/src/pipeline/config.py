@@ -27,13 +27,9 @@ def _load_required_yaml_dict(file_path: Path, label: str) -> Dict[str, Any]:
     if data is None:
         raise ValueError(f"{legacy_message} [{label} YAML empty at {file_path}]")
     if not isinstance(data, dict):
-        raise ValueError(
-            f"{legacy_message} [{label} YAML must be a mapping at {file_path}]"
-        )
+        raise ValueError(f"{legacy_message} [{label} YAML must be a mapping at {file_path}]")
     if not data:
-        raise ValueError(
-            f"{legacy_message} [{label} YAML contains no keys at {file_path}]"
-        )
+        raise ValueError(f"{legacy_message} [{label} YAML contains no keys at {file_path}]")
 
     return data
 
@@ -82,15 +78,11 @@ class PipelineConfig:
         missing_sections = [section for section in required_sections if section not in config_data]
         if missing_sections:
             missing = ", ".join(missing_sections)
-            raise ValueError(
-                f"Pipeline configuration missing required sections: {missing}"
-            )
+            raise ValueError(f"Pipeline configuration missing required sections: {missing}")
 
         for section in required_sections:
             if not isinstance(config_data[section], dict):
-                raise ValueError(
-                    f"Pipeline configuration section '{section}' must be a mapping"
-                )
+                raise ValueError(f"Pipeline configuration section '{section}' must be a mapping")
 
         return cls(
             ingestion=config_data["ingestion"],

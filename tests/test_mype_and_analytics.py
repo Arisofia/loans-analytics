@@ -7,6 +7,7 @@ Covers:
                  project_growth
   - Document 18: Settings loads portfolio_targets_2026 from YAML
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -29,27 +30,30 @@ from backend.src.analytics import (
     standardize_numeric,
 )
 
-
 # -----------------------------------------------------------------------------
 # Fixtures
 # -----------------------------------------------------------------------------
 
+
 @pytest.fixture
 def sample_df() -> pd.DataFrame:
-    return pd.DataFrame({
-        "loan_amount":      [12000, 8000,  16000],
-        "appraised_value":  [15000, 10000, 20000],
-        "borrower_income":  [60000, 45000, 80000],
-        "monthly_debt":     [500,   400,   300],
-        "principal_balance":[10000, 5000,  15000],
-        "interest_rate":    [0.05,  0.07,  0.06],
-        "loan_status":      ["current", "delinquent", "current"],
-    })
+    return pd.DataFrame(
+        {
+            "loan_amount": [12000, 8000, 16000],
+            "appraised_value": [15000, 10000, 20000],
+            "borrower_income": [60000, 45000, 80000],
+            "monthly_debt": [500, 400, 300],
+            "principal_balance": [10000, 5000, 15000],
+            "interest_rate": [0.05, 0.07, 0.06],
+            "loan_status": ["current", "delinquent", "current"],
+        }
+    )
 
 
 # -----------------------------------------------------------------------------
 # MYPEBusinessRules (Document 16)
 # -----------------------------------------------------------------------------
+
 
 class TestMYPEHighRiskClassification:
     def test_flags_multiple_reasons(self):
@@ -67,9 +71,9 @@ class TestMYPEHighRiskClassification:
 
     def test_at_thresholds_triggers_flags(self):
         metrics = {
-            "dpd":             MYPEBusinessRules.NPL_DAYS_THRESHOLD,
-            "utilization":     MYPEBusinessRules.HIGH_RISK_CRITERIA["utilization"],
-            "npl_ratio":       MYPEBusinessRules.HIGH_RISK_CRITERIA["npl_ratio"],
+            "dpd": MYPEBusinessRules.NPL_DAYS_THRESHOLD,
+            "utilization": MYPEBusinessRules.HIGH_RISK_CRITERIA["utilization"],
+            "npl_ratio": MYPEBusinessRules.HIGH_RISK_CRITERIA["npl_ratio"],
             "collection_rate": MYPEBusinessRules.HIGH_RISK_CRITERIA["collection_rate"] - 0.01,
         }
         is_high, reasons = MYPEBusinessRules.classify_high_risk(metrics)
@@ -88,13 +92,24 @@ class TestMYPEIndustryAdjustment:
 
     def test_unknown_falls_back_to_other(self):
         other = MYPEBusinessRules.calculate_industry_adjustment(IndustryType.OTHER)
-        unk   = MYPEBusinessRules.calculate_industry_adjustment("UNKNOWN_INDUSTRY")
+        unk = MYPEBusinessRules.calculate_industry_adjustment("UNKNOWN_INDUSTRY")
         assert unk == other
 
     def test_impacts_facility_recommendation(self):
-        base = {"dpd":0,"utilization":0.3,"npl_ratio":0.01,"collection_rate":0.98,"revenue":300000,"avg_balance":60000}
-        m_dec = MYPEBusinessRules.evaluate_facility_approval(700000, {**base, "industry": IndustryType.MANUFACTURING})
-        o_dec = MYPEBusinessRules.evaluate_facility_approval(700000, {**base, "industry": IndustryType.OTHER})
+        base = {
+            "dpd": 0,
+            "utilization": 0.3,
+            "npl_ratio": 0.01,
+            "collection_rate": 0.98,
+            "revenue": 300000,
+            "avg_balance": 60000,
+        }
+        m_dec = MYPEBusinessRules.evaluate_facility_approval(
+            700000, {**base, "industry": IndustryType.MANUFACTURING}
+        )
+        o_dec = MYPEBusinessRules.evaluate_facility_approval(
+            700000, {**base, "industry": IndustryType.OTHER}
+        )
         assert m_dec.recommended_amount > o_dec.recommended_amount
 
 
@@ -141,8 +156,12 @@ class TestMYPERotation:
 class TestMYPEFacilityApproval:
     def test_recommends_collateral_for_high_risk(self):
         metrics = {
-            "dpd": 45, "utilization": 0.88, "npl_ratio": 0.06,
-            "collection_rate": 0.8, "revenue": 220000, "avg_balance": 90000,
+            "dpd": 45,
+            "utilization": 0.88,
+            "npl_ratio": 0.06,
+            "collection_rate": 0.8,
+            "revenue": 220000,
+            "avg_balance": 90000,
             "industry": IndustryType.TRADE,
         }
         dec = MYPEBusinessRules.evaluate_facility_approval(200000, metrics, 50000)
@@ -154,8 +173,12 @@ class TestMYPEFacilityApproval:
 
     def test_approves_low_risk(self):
         metrics = {
-            "dpd": 5, "utilization": 0.35, "npl_ratio": 0.01,
-            "collection_rate": 0.97, "revenue": 500000, "avg_balance": 80000,
+            "dpd": 5,
+            "utilization": 0.35,
+            "npl_ratio": 0.01,
+            "collection_rate": 0.97,
+            "revenue": 500000,
+            "avg_balance": 80000,
             "industry": IndustryType.MANUFACTURING,
         }
         dec = MYPEBusinessRules.evaluate_facility_approval(300000, metrics, 50000)
@@ -166,9 +189,13 @@ class TestMYPEFacilityApproval:
 
     def test_flags_critical_npl(self):
         metrics = {
-            "dpd": MYPEBusinessRules.NPL_DAYS_THRESHOLD + 10, "utilization": 0.4,
-            "npl_ratio": 0.02, "collection_rate": 0.9,
-            "revenue": 250000, "avg_balance": 100000, "industry": IndustryType.TRADE,
+            "dpd": MYPEBusinessRules.NPL_DAYS_THRESHOLD + 10,
+            "utilization": 0.4,
+            "npl_ratio": 0.02,
+            "collection_rate": 0.9,
+            "revenue": 250000,
+            "avg_balance": 100000,
+            "industry": IndustryType.TRADE,
         }
         dec = MYPEBusinessRules.evaluate_facility_approval(100000, metrics, 20000)
         assert dec.approved is False
@@ -177,8 +204,12 @@ class TestMYPEFacilityApproval:
 
     def test_reduces_recommendation_when_rotation_low(self):
         metrics = {
-            "dpd": 10, "utilization": 0.4, "npl_ratio": 0.02,
-            "collection_rate": 0.95, "revenue": 150000, "avg_balance": 60000,
+            "dpd": 10,
+            "utilization": 0.4,
+            "npl_ratio": 0.02,
+            "collection_rate": 0.95,
+            "revenue": 150000,
+            "avg_balance": 60000,
             "industry": IndustryType.SERVICES,
         }
         dec = MYPEBusinessRules.evaluate_facility_approval(150000, metrics, 50000)
@@ -187,9 +218,16 @@ class TestMYPEFacilityApproval:
         assert dec.recommended_amount == pytest.approx(120000, rel=1e-3)
 
     def test_pod_and_collateral_behavior(self):
-        healthy  = {"dpd":5,"utilization":0.2,"npl_ratio":0.01,"collection_rate":0.99,"revenue":500000,"avg_balance":150000}
+        healthy = {
+            "dpd": 5,
+            "utilization": 0.2,
+            "npl_ratio": 0.01,
+            "collection_rate": 0.99,
+            "revenue": 500000,
+            "avg_balance": 150000,
+        }
         stressed = {**healthy, "dpd": 80}
-        h = MYPEBusinessRules.evaluate_facility_approval(100000, healthy,  20000)
+        h = MYPEBusinessRules.evaluate_facility_approval(100000, healthy, 20000)
         s = MYPEBusinessRules.evaluate_facility_approval(100000, stressed, 20000)
         assert 0.0 <= h.pod <= 1.0
         assert s.pod >= h.pod
@@ -199,6 +237,7 @@ class TestMYPEFacilityApproval:
 # -----------------------------------------------------------------------------
 # Settings - 2026 Portfolio Targets (Document 18)
 # -----------------------------------------------------------------------------
+
 
 class TestSettings2026Targets:
     def test_targets_loaded(self):
@@ -222,7 +261,9 @@ class TestSettings2026Targets:
 
     def test_required_growth_achievable(self):
         """Historical monthly disbursements ($3M avg) >> $300K net AUM growth needed."""
-        required_net = settings.portfolio_targets_2026.get("required_monthly_net_growth_usd", 300_000)
+        required_net = settings.portfolio_targets_2026.get(
+            "required_monthly_net_growth_usd", 300_000
+        )
         assert required_net <= 500_000, "Monthly net growth requirement is unrealistically high"
 
     def test_guardrails_still_loaded(self):
@@ -254,16 +295,31 @@ portfolio_targets_2026:
 # src/analytics (Document 17)
 # -----------------------------------------------------------------------------
 
+
 class TestStandardizeNumeric:
     def test_handles_symbols(self):
-        s = pd.Series(["$1,200","€2,500","25%","£3,000","¥4,500","₽5,500","","nan","abc",None," 7,500 "])
+        s = pd.Series(
+            [
+                "$1,200",
+                "€2,500",
+                "25%",
+                "£3,000",
+                "¥4,500",
+                "₽5,500",
+                "",
+                "nan",
+                "abc",
+                None,
+                " 7,500 ",
+            ]
+        )
         c = standardize_numeric(s)
-        assert c.iloc[0]  == 1200.0
-        assert c.iloc[1]  == 2500.0
-        assert c.iloc[2]  == 25.0
-        assert c.iloc[3]  == 3000.0
-        assert c.iloc[4]  == 4500.0
-        assert c.iloc[5]  == 5500.0
+        assert c.iloc[0] == 1200.0
+        assert c.iloc[1] == 2500.0
+        assert c.iloc[2] == 25.0
+        assert c.iloc[3] == 3000.0
+        assert c.iloc[4] == 4500.0
+        assert c.iloc[5] == 5500.0
         assert pd.isna(c.iloc[6])
         assert pd.isna(c.iloc[7])
         assert pd.isna(c.iloc[8])
@@ -313,27 +369,32 @@ class TestCalculateQualityScore:
 class TestPortfolioKPIs:
     def test_returns_expected_metrics(self, sample_df):
         metrics, enriched = portfolio_kpis(sample_df)
-        assert set(metrics.keys()) == {"delinquency_rate","portfolio_yield","average_ltv","average_dti"}
+        assert set(metrics.keys()) == {
+            "delinquency_rate",
+            "portfolio_yield",
+            "average_ltv",
+            "average_dti",
+        }
         assert "ltv_ratio" in enriched.columns
         assert "dti_ratio" in enriched.columns
 
-        bal  = pd.to_numeric(sample_df["principal_balance"])
-        rat  = pd.to_numeric(sample_df["interest_rate"])
-        amt  = pd.to_numeric(sample_df["loan_amount"])
-        val  = pd.to_numeric(sample_df["appraised_value"])
-        inc  = pd.to_numeric(sample_df["borrower_income"])
-        dbt  = pd.to_numeric(sample_df["monthly_debt"])
-        delinq = (sample_df["loan_status"] == "delinquent")
+        bal = pd.to_numeric(sample_df["principal_balance"])
+        rat = pd.to_numeric(sample_df["interest_rate"])
+        amt = pd.to_numeric(sample_df["loan_amount"])
+        val = pd.to_numeric(sample_df["appraised_value"])
+        inc = pd.to_numeric(sample_df["borrower_income"])
+        dbt = pd.to_numeric(sample_df["monthly_debt"])
+        delinq = sample_df["loan_status"] == "delinquent"
 
-        expected_delinq_rate  = bal[delinq].sum() / bal.sum()
-        expected_yield        = (bal * rat).sum() / bal.sum()
-        expected_ltv          = (amt / val).mean()
-        expected_dti          = (dbt / (inc / 12)).mean()
+        expected_delinq_rate = bal[delinq].sum() / bal.sum()
+        expected_yield = (bal * rat).sum() / bal.sum()
+        expected_ltv = (amt / val).mean()
+        expected_dti = (dbt / (inc / 12)).mean()
 
         assert metrics["delinquency_rate"] == pytest.approx(expected_delinq_rate, rel=1e-6)
-        assert metrics["portfolio_yield"]  == pytest.approx(expected_yield,       rel=1e-6)
-        assert metrics["average_ltv"]      == pytest.approx(expected_ltv,         rel=1e-6)
-        assert metrics["average_dti"]      == pytest.approx(expected_dti,         rel=1e-6)
+        assert metrics["portfolio_yield"] == pytest.approx(expected_yield, rel=1e-6)
+        assert metrics["average_ltv"] == pytest.approx(expected_ltv, rel=1e-6)
+        assert metrics["average_dti"] == pytest.approx(expected_dti, rel=1e-6)
 
     def test_missing_column_raises(self, sample_df):
         df = sample_df.drop(columns=["loan_amount"])
@@ -342,7 +403,12 @@ class TestPortfolioKPIs:
 
     def test_handles_empty_frame(self, sample_df):
         metrics, enriched = portfolio_kpis(sample_df.iloc[:0])
-        assert metrics == {"delinquency_rate": 0.0,"portfolio_yield": 0.0,"average_ltv": 0.0,"average_dti": 0.0}
+        assert metrics == {
+            "delinquency_rate": 0.0,
+            "portfolio_yield": 0.0,
+            "average_ltv": 0.0,
+            "average_dti": 0.0,
+        }
         assert enriched.empty
 
     def test_zero_principal_yield_is_zero(self, sample_df):
@@ -364,8 +430,8 @@ class TestPortfolioKPIs:
         metrics, enriched = portfolio_kpis(df)
         pos = df["borrower_income"] > 0
         assert enriched.loc[~pos, "dti_ratio"].isna().all()
-        assert enriched.loc[pos,  "dti_ratio"].notna().all()
-        expected = (df.loc[pos,"monthly_debt"] / (df.loc[pos,"borrower_income"] / 12)).mean()
+        assert enriched.loc[pos, "dti_ratio"].notna().all()
+        expected = (df.loc[pos, "monthly_debt"] / (df.loc[pos, "borrower_income"] / 12)).mean()
         assert metrics["average_dti"] == pytest.approx(expected)
 
 
@@ -373,9 +439,9 @@ class TestProjectGrowth:
     def test_builds_monotonic_path(self):
         proj = project_growth(1.0, 2.0, 100, 200, periods=4)
         assert len(proj) == 4
-        assert proj["yield"].iloc[0]       == 1.0
-        assert proj["yield"].iloc[-1]      == 2.0
-        assert proj["loan_volume"].iloc[0]  == 100
+        assert proj["yield"].iloc[0] == 1.0
+        assert proj["yield"].iloc[-1] == 2.0
+        assert proj["loan_volume"].iloc[0] == 100
         assert proj["loan_volume"].iloc[-1] == 200
 
     def test_rejects_insufficient_periods(self):
@@ -400,20 +466,21 @@ class TestProjectGrowth:
 # 2026 targets vs actual AUM - integration smoke test
 # -----------------------------------------------------------------------------
 
+
 class TestPortfolioVsTargets2026:
     """Integration: compare live AUM against 2026 monthly targets."""
 
     def test_mar_2026_target_reachable_from_current_aum(self):
         """Current AUM $8.36M vs Jan-2026 target $8.5M - gap is <2%."""
         current_aum = 8_364_154  # INTERMEDIA snapshot 2026-03-13
-        jan_target  = settings.portfolio_targets_2026["2026-01"]
+        jan_target = settings.portfolio_targets_2026["2026-01"]
         gap_pct = (jan_target - current_aum) / current_aum * 100
         assert gap_pct < 5.0, f"Jan-2026 gap {gap_pct:.1f}% seems unreachable"
 
     def test_dec_2026_implies_43pct_growth(self):
         current_aum = 8_364_154
-        dec_target  = settings.portfolio_targets_2026["2026-12"]
-        growth_pct  = (dec_target - current_aum) / current_aum * 100
+        dec_target = settings.portfolio_targets_2026["2026-12"]
+        growth_pct = (dec_target - current_aum) / current_aum * 100
         assert 30 < growth_pct < 60, f"Dec-2026 growth {growth_pct:.1f}% out of expected range"
 
     def test_monthly_net_growth_within_historical_capacity(self):
@@ -421,6 +488,6 @@ class TestPortfolioVsTargets2026:
         Average monthly disbursements $3M >> $300K net AUM growth needed.
         Even with 90% collection rate, net is well above the $300K target.
         """
-        monthly_disb_avg = 3_070_455   # LTM average from loan tape
+        monthly_disb_avg = 3_070_455  # LTM average from loan tape
         required_net = 300_000
         assert monthly_disb_avg > required_net * 5, "Historical disbursements insufficient"

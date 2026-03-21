@@ -13,7 +13,7 @@ Metrics exposed:
 
 Usage:
     from backend.python.monitoring.kpi_metrics import KPIMetricsExporter
-    
+
     exporter = KPIMetricsExporter()
     exporter.publish_kpi_result(kpi_name, kpi_result)
     metrics_text = exporter.generate_metrics_text()
@@ -34,6 +34,7 @@ _KPI_NAME_LABEL = 'kpi_name="'
 @dataclass
 class ThresholdMetricLabels:
     """Labels for threshold metrics."""
+
     kpi_name: str
     threshold_status: str  # normal, warning, critical, not_configured
     category: str = "general"
@@ -133,9 +134,7 @@ class KPIMetricsExporter:
                 "owner_email": owner_email,
             }
 
-            logger.info(
-                f"Published KPI metrics: {kpi_name}={value} status={threshold_status}"
-            )
+            logger.info(f"Published KPI metrics: {kpi_name}={value} status={threshold_status}")
 
         except Exception as e:
             logger.error(f"Error publishing KPI metrics for {kpi_name}: {e}", exc_info=True)

@@ -23,7 +23,9 @@ def test_credit_line_category_kpis_uses_ssot_for_par_metrics() -> None:
         }
     )
 
-    with patch("backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi") as mock_calc:
+    with patch(
+        "backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi"
+    ) as mock_calc:
         # 2 categories * (par30, par90) = 4 calls
         mock_calc.side_effect = [
             {"value": 12.3},

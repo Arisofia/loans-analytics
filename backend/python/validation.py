@@ -11,6 +11,7 @@ import polars as pl
 
 from backend.python.config import settings
 
+
 def _missing_columns(df: Any, columns: List[str]) -> List[str]:
     return [col for col in columns if col not in df.columns]
 

@@ -1,7 +1,7 @@
 # Abaco Loans Analytics - Repository Map
 
-**Last Updated**: 2026-03-20  
-**Audit Status**: P8 Documentation Remediation
+**Last Updated**: 2026-03-21  
+**Audit Status**: Production Readiness Remediation Complete
 
 ## Directory Structure
 
@@ -29,22 +29,20 @@
 - `src/analytics/__init__.py` — Compatibility analytics helpers
   - Utility-only module retained for legacy/test support; not the KPI SSoT owner.
 
-- `python/` — Python application layer
-  - `kpis/` — **KPI engine (SSoT)** — all KPI computation routes through here
-    - `engine.py` — KPIEngineV2 (standard & derived KPIs)
-    - `ssot_asset_quality.py` — PAR/NPL canonical formulas
-    - `formula_engine.py` — SQL-like KPI formula parser
-    - `lending_kpis.py` — Lending-specific ratio computations
-  - `apps/` — Service layer
-    - `analytics/api/service.py` — KPI health scoring (SSoT health check paths)
-  - `models/` — ML/Risk models
-    - `default_risk_model.py` — XGBoost default probability (with fail-fast validation)
-  - `multi_agent/` — LLM-based analysis agents
-    - `orchestrator.py` — Multi-agent coordinator
-    - `protocol.py` — Agent communication protocol
-    - `guardrails.py` — PII redaction & input sanitization
-
-- `data-processor/` — Legacy data processing wrapper (deprecated, routes to canonical pipeline)
+#### `python/` — Python application layer (backend/python/)
+- `kpis/` — **KPI engine (SSoT)** — all KPI computation routes through here
+  - `engine.py` — KPIEngineV2 (standard & derived KPIs)
+  - `ssot_asset_quality.py` — PAR/NPL canonical formulas
+  - `formula_engine.py` — SQL-like KPI formula parser
+  - `lending_kpis.py` — Lending-specific ratio computations
+- `apps/` — Service layer
+  - `analytics/api/service.py` — KPI health scoring (SSoT health check paths)
+- `models/` — ML/Risk models
+  - `default_risk_model.py` — XGBoost default probability (with fail-fast validation)
+- `multi_agent/` — LLM-based analysis agents
+  - `orchestrator.py` — Multi-agent coordinator
+  - `protocol.py` — Agent communication protocol
+  - `guardrails.py` — PII redaction & input sanitization
 
 #### `scripts/` — Canonical execution scripts
 - `data/run_data_pipeline.py` — **Primary pipeline entrypoint**
@@ -66,7 +64,7 @@
 - `migrations/` — Supabase migration scripts (14-digit timestamps, lexicographic order)
 - `sql/` — Raw SQL utilities
 - `star_schema/` — Dimensional schema definitions
-- `samples/` — Sample loan data for development
+- `samples/` — (planned) Sample loan data for development
 
 ### Documentation
 
@@ -85,16 +83,9 @@
 - `KPI-Operating-Model.md` — *(DocumentationP8)* KPI ownership & update procedures
 - `kpi_lineage.md` — *(DocumentationP8)* KPI dependency graph & upstream sources
 - `API_SECURITY_GUIDE.md` — API endpoint hardening
-- `CREDENTIALS_SETUP.md` — Credential vaults, service accounts
-- `GITHUB_ACTIONS_SECURITY.md` — CI/CD security policies
 - `operations/` — Operational procedures
   - `SCRIPT_CANONICAL_MAP.md` — All production-ready scripts & their purpose
   - `MASTER_DELIVERY_TODO.md` — *(DocumentationP8)* Pre-production checklist
-
-#### Data Lineage & Architecture
-- `architecture/` — System design documents
-- `migration.md` — Historical migration decisions
-- `data_model.md` — ER diagrams & schema evolution
 
 ### Testing
 
@@ -118,17 +109,9 @@
 - `streamlit_app/app.py` — Main analytics dashboard
 - `components/` — Reusable UI components
 
-#### `exports/` — Report & file outputs
-- Generated compliance reports
-- CSV/Parquet data exports
-
 ### Utilities & Tools
 
 - `tools/` — Miscellaneous scripts (testing, validation)
-- `scripts/performance/` — Profiling & benchmarking
-- `infra/` — Infrastructure-as-Code (Bicep, Terraform, K8s manifests)
-- `nginx-conf/` — Reverse proxy configuration
-- `templates/` — Email, report templates
 
 ---
 
@@ -177,9 +160,6 @@
 - `backend/src/agents/multi_agent/__init__.py` — Legacy shim (use `backend.python.multi_agent` directly)
   - Deprecation target: Q2 2026
   - Status: Explicit imports with DeprecationWarning added
-  
-- `backend/data-processor/` — Legacy data processing wrapper  
-  - Replacement: Use `src/pipeline/` directly
 
 ---
 

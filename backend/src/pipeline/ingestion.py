@@ -254,7 +254,9 @@ class IngestionPhase:
                     "mdscposteado, infoclientefinal)."
                 )
 
-        missing = [col for col in ("loan_id", "amount", "status", "borrower_id") if col not in df.columns]
+        missing = [
+            col for col in ("loan_id", "amount", "status", "borrower_id") if col not in df.columns
+        ]
         if missing:
             raise ValueError(
                 "CRITICAL: Google Sheets data cannot be normalized to canonical schema; "

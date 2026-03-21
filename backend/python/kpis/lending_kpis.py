@@ -62,9 +62,13 @@ def _merge_customer_segments(
     cat_col = _col(customer_df, ["categorialineacredito"])
     clt_col = _col(customer_df, ["client_type"])
     if cat_col:
-        df = df.merge(customer_df[[loan_id, cat_col]].drop_duplicates(loan_id), on=loan_id, how="left")
+        df = df.merge(
+            customer_df[[loan_id, cat_col]].drop_duplicates(loan_id), on=loan_id, how="left"
+        )
     if clt_col and clt_col not in df.columns:
-        df = df.merge(customer_df[[loan_id, clt_col]].drop_duplicates(loan_id), on=loan_id, how="left")
+        df = df.merge(
+            customer_df[[loan_id, clt_col]].drop_duplicates(loan_id), on=loan_id, how="left"
+        )
     return df
 
 
@@ -175,6 +179,7 @@ def _build_mype_decision_row(
 # CDR by cohort
 # ---------------------------------------------------------------------------
 
+
 def cdr_by_cohort(loans_df: pd.DataFrame) -> dict[str, Any]:
     disb_col = _col(loans_df, ["disbursement_date", "FechaDesembolso"])
     disb_amt = _col(loans_df, ["disbursement_amount", "MontoDesembolsado"])
@@ -248,7 +253,10 @@ def cdr_by_cohort(loans_df: pd.DataFrame) -> dict[str, Any]:
 # Liquidation rate
 # ---------------------------------------------------------------------------
 
-def liquidation_rate(loans_df: pd.DataFrame, payments_df: pd.DataFrame | None = None) -> dict[str, Any]:
+
+def liquidation_rate(
+    loans_df: pd.DataFrame, payments_df: pd.DataFrame | None = None
+) -> dict[str, Any]:
     status_col = _col(loans_df, ["loan_status"])
     bal_col = _col(loans_df, ["outstanding_loan_value"])
     rec_col = _col(loans_df, ["recovery_value", "recovery_amount"])
@@ -302,6 +310,7 @@ def liquidation_rate(loans_df: pd.DataFrame, payments_df: pd.DataFrame | None = 
 # LGD/ECL by segment
 # ---------------------------------------------------------------------------
 
+
 def lgd_ecl_by_segment(
     loans_df: pd.DataFrame,
     customer_df: pd.DataFrame | None = None,
@@ -351,6 +360,7 @@ def lgd_ecl_by_segment(
 # ---------------------------------------------------------------------------
 # Balance sheet proxy
 # ---------------------------------------------------------------------------
+
 
 def balance_sheet_proxy(
     loans_df: pd.DataFrame,
@@ -418,6 +428,7 @@ def balance_sheet_proxy(
 # Approval metrics
 # ---------------------------------------------------------------------------
 
+
 def approval_metrics(customer_df: pd.DataFrame) -> dict[str, Any]:
     app_status_col = _col(customer_df, ["application_status"])
     chan_col = _col(customer_df, ["sales_channel"])
@@ -425,9 +436,23 @@ def approval_metrics(customer_df: pd.DataFrame) -> dict[str, Any]:
     if app_status_col:
         statuses = customer_df[app_status_col].value_counts().to_dict()
         total = len(customer_df)
-        approved = int(customer_df[app_status_col].astype(str).str.lower().str.contains("approv", na=False).sum())
-        declined = int(customer_df[app_status_col].astype(str).str.lower().str.contains("declin|reject", na=False).sum())
-        auto_dec = int(customer_df[app_status_col].astype(str).str.lower().str.contains("auto", na=False).sum())
+        approved = int(
+            customer_df[app_status_col]
+            .astype(str)
+            .str.lower()
+            .str.contains("approv", na=False)
+            .sum()
+        )
+        declined = int(
+            customer_df[app_status_col]
+            .astype(str)
+            .str.lower()
+            .str.contains("declin|reject", na=False)
+            .sum()
+        )
+        auto_dec = int(
+            customer_df[app_status_col].astype(str).str.lower().str.contains("auto", na=False).sum()
+        )
     else:
         statuses = {}
         total = len(customer_df)
@@ -438,7 +463,13 @@ def approval_metrics(customer_df: pd.DataFrame) -> dict[str, Any]:
         for ch, grp in customer_df.groupby(chan_col, dropna=False):
             app_in_ch = len(grp)
             appr_in_ch = (
-                int(grp[app_status_col].astype(str).str.lower().str.contains("approv", na=False).sum())
+                int(
+                    grp[app_status_col]
+                    .astype(str)
+                    .str.lower()
+                    .str.contains("approv", na=False)
+                    .sum()
+                )
                 if app_status_col
                 else app_in_ch
             )
@@ -475,6 +506,7 @@ def approval_metrics(customer_df: pd.DataFrame) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Cure rate by period
 # ---------------------------------------------------------------------------
+
 
 def cure_rate_by_period(
     payments_df: pd.DataFrame,
@@ -531,6 +563,7 @@ def cure_rate_by_period(
 # Promise-to-pay metrics
 # ---------------------------------------------------------------------------
 
+
 def promise_to_pay_metrics(payments_df: pd.DataFrame) -> dict[str, Any]:
     cust_col = _col(payments_df, ["customer_id"])
     stat_col = _col(payments_df, ["true_payment_status"])
@@ -580,6 +613,7 @@ def promise_to_pay_metrics(payments_df: pd.DataFrame) -> dict[str, Any]:
 # MYPE approval batch
 # ---------------------------------------------------------------------------
 
+
 def mype_approval_batch(
     loans_df: pd.DataFrame,
     payments_df: pd.DataFrame | None = None,
@@ -605,7 +639,11 @@ def mype_approval_batch(
         else False
     )
 
-    clients = df.groupby(cust_col).agg(**_build_mype_agg_dict(cust_col, bal_col, dpd_col, disb_col, tpv_col)).reset_index()
+    clients = (
+        df.groupby(cust_col)
+        .agg(**_build_mype_agg_dict(cust_col, bal_col, dpd_col, disb_col, tpv_col))
+        .reset_index()
+    )
     ce_map = _build_collection_map(payments_df)
 
     decisions: list[dict[str, float | str]] = []
@@ -644,6 +682,7 @@ def mype_approval_batch(
 # Master report
 # ---------------------------------------------------------------------------
 
+
 def build_lending_kpi_report(
     loans_df: pd.DataFrame,
     payments_df: pd.DataFrame,
@@ -653,7 +692,9 @@ def build_lending_kpi_report(
     liq = liquidation_rate(loans_df, payments_df)
     ecl = lgd_ecl_by_segment(loans_df, customer_df)
     bs = balance_sheet_proxy(loans_df, payments_df)
-    appr = approval_metrics(customer_df) if customer_df is not None else {"status": "no_customer_data"}
+    appr = (
+        approval_metrics(customer_df) if customer_df is not None else {"status": "no_customer_data"}
+    )
     cure = cure_rate_by_period(payments_df)
     ptp = promise_to_pay_metrics(payments_df)
     mype = mype_approval_batch(loans_df, payments_df)

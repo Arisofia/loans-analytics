@@ -134,7 +134,18 @@ class TestNullHandling:
         df = pd.DataFrame(
             {
                 "loan_id": [f"L{i:03d}" for i in range(1, 11)],
-                "amount": [1000.0, 2000.0, None, 4000.0, 5000.0, 6000.0, 7000.0, 8000.0, 9000.0, 10000.0],
+                "amount": [
+                    1000.0,
+                    2000.0,
+                    None,
+                    4000.0,
+                    5000.0,
+                    6000.0,
+                    7000.0,
+                    8000.0,
+                    9000.0,
+                    10000.0,
+                ],
                 "status": ["active"] * 9 + [None],
                 "dpd": [0, 5, 10, 15, 0, 0, 0, 0, 0, 0],
             }
@@ -180,7 +191,9 @@ class TestNullHandling:
         out, metrics = transformer._handle_nulls(df)
 
         # Null must be filled with 0, not the median
-        assert out["amount"].iloc[-1] == pytest.approx(0.0), "Expected structural zero, not median imputation"
+        assert out["amount"].iloc[-1] == pytest.approx(
+            0.0
+        ), "Expected structural zero, not median imputation"
         # An opacity flag column must be created
         assert "amount_is_missing" in out.columns
         assert bool(out["amount_is_missing"].iloc[-1]) is True

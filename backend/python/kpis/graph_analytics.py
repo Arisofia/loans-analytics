@@ -69,8 +69,10 @@ try:
 except ImportError:  # pragma: no cover
     nx = cast(Any, None)
     _NX = False
-    logger.warning("networkx not installed — graph modules will return empty results. "
-                   "Install with: pip install networkx")
+    logger.warning(
+        "networkx not installed — graph modules will return empty results. "
+        "Install with: pip install networkx"
+    )
 
 try:
     _community = importlib.import_module("community")
@@ -84,6 +86,7 @@ except ImportError:
 # ─────────────────────────────────────────────────────────────────────────────
 # Shared helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _col(df: pd.DataFrame, candidates: list[str]) -> str | None:
     for c in candidates:
@@ -112,6 +115,7 @@ def _calculate_ssot_npl_metrics(balance: pd.Series, dpd: pd.Series) -> tuple[flo
 # ─────────────────────────────────────────────────────────────────────────────
 # Module-level helpers (extracted for readability and SonarQube compliance)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _assign_client_tier(score: float, high_thresh: float, low_thresh: float) -> str:
     """Assign trust tier based on PageRank percentile thresholds."""
@@ -167,18 +171,18 @@ def _build_dpd_lookup(
 def _compute_hhi(series: pd.Series, df: pd.DataFrame, total: float) -> dict:
     """Compute HHI concentration index for a grouping series."""
     grouped = df.groupby(series)["_bal"].sum()
-    shares  = grouped / total
-    hhi_val = float((shares ** 2).sum() * 10000)
-    top     = grouped.sort_values(ascending=False)
+    shares = grouped / total
+    hhi_val = float((shares**2).sum() * 10000)
+    top = grouped.sort_values(ascending=False)
     return {
-        "hhi":               round(hhi_val, 1),
-        "equivalent_n":      round(1 / (hhi_val / 10000), 1) if hhi_val > 0 else 0,
+        "hhi": round(hhi_val, 1),
+        "equivalent_n": round(1 / (hhi_val / 10000), 1) if hhi_val > 0 else 0,
         "concentration_level": _concentration_level(hhi_val),
-        "top1_pct":          round(float(top.iloc[0] / total * 100), 1) if len(top) > 0 else 0,
-        "top3_pct":          round(float(top.head(3).sum() / total * 100), 1),
-        "top10_pct":         round(float(top.head(10).sum() / total * 100), 1),
-        "top1_name":         str(top.index[0]) if len(top) > 0 else "",
-        "top1_balance_usd":  round(float(top.iloc[0]), 2) if len(top) > 0 else 0,
+        "top1_pct": round(float(top.iloc[0] / total * 100), 1) if len(top) > 0 else 0,
+        "top3_pct": round(float(top.head(3).sum() / total * 100), 1),
+        "top10_pct": round(float(top.head(10).sum() / total * 100), 1),
+        "top1_name": str(top.index[0]) if len(top) > 0 else "",
+        "top1_balance_usd": round(float(top.iloc[0]), 2) if len(top) > 0 else 0,
     }
 
 
@@ -220,7 +224,7 @@ def _k_factor_from_channel(
     organic_keywords = ["referral", "referido", "word", "organic", "viral", "invite"]
     organic_mask = channels.str.contains("|".join(organic_keywords), na=False)
     n_organic = int(organic_mask.sum())
-    n_total   = len(channels)
+    n_total = len(channels)
     referral_rate = n_organic / max(n_total, 1)
     avg_invitations = 1.0
     conv = referral_rate if referral_rate > 0 else 0.05
@@ -228,15 +232,15 @@ def _k_factor_from_channel(
         conv = conversion_rate
     k = avg_invitations * conv
     return {
-        "k_factor":          round(k, 3),
-        "avg_invitations":   avg_invitations,
-        "conversion_rate":   round(conv, 3),
-        "organic_clients":   n_organic,
-        "total_clients":     n_total,
-        "organic_rate_pct":  round(referral_rate * 100, 1),
-        "confidence":        "medium",
-        "data_source":       f"sales_channel column ({ch_col})",
-        "growth_status":     "exponential" if k >= 1.0 else "sub-viral",
+        "k_factor": round(k, 3),
+        "avg_invitations": avg_invitations,
+        "conversion_rate": round(conv, 3),
+        "organic_clients": n_organic,
+        "total_clients": n_total,
+        "organic_rate_pct": round(referral_rate * 100, 1),
+        "confidence": "medium",
+        "data_source": f"sales_channel column ({ch_col})",
+        "growth_status": "exponential" if k >= 1.0 else "sub-viral",
         "to_reach_k1": (
             f"Need conversion rate >= {1/avg_invitations:.1%} OR "
             f"avg invites >= {1/max(conv, 0.001):.1f} per client"
@@ -263,10 +267,9 @@ def _score_community(
     if avg_dpd > dpd_threshold:
         flags.append("HIGH_DPD_CLUSTER")
 
-    sub_nodes = (
-        [f"C:{cid}" for cid in client_ids]
-        + [f"D:{did}" for did in comm.get("debtor_ids", [])]
-    )
+    sub_nodes = [f"C:{cid}" for cid in client_ids] + [
+        f"D:{did}" for did in comm.get("debtor_ids", [])
+    ]
     sub = graph.subgraph([n for n in sub_nodes if n in graph])
     if sub.number_of_nodes() > 1 and nx.density(sub) > 2 * avg_density:
         flags.append("DENSE_CLUSTER")
@@ -279,14 +282,14 @@ def _score_community(
 
     risk_score = min(100, len(flags) * 30 + int(avg_dpd))
     return {
-        "community_id":      comm["community_id"],
-        "flag_types":        flags,
-        "size":              comm["size"],
-        "client_count":      comm["client_count"],
-        "client_ids":        client_ids[:15],
-        "avg_dpd":           round(avg_dpd, 1),
+        "community_id": comm["community_id"],
+        "flag_types": flags,
+        "size": comm["size"],
+        "client_count": comm["client_count"],
+        "client_ids": client_ids[:15],
+        "avg_dpd": round(avg_dpd, 1),
         "total_balance_usd": round(total_bal, 2),
-        "risk_score":        risk_score,
+        "risk_score": risk_score,
     }
 
 
@@ -303,12 +306,12 @@ def _compute_loan_tape_hhi(loans_df: pd.DataFrame) -> dict | None:
     if total_lt <= 0:
         return None
     grouped = lt.groupby("_pag")["_bal"].sum()
-    top_lt  = grouped.sort_values(ascending=False)
-    hhi_lt  = float(((grouped / total_lt) ** 2).sum() * 10000)
+    top_lt = grouped.sort_values(ascending=False)
+    hhi_lt = float(((grouped / total_lt) ** 2).sum() * 10000)
     return {
-        "hhi":      round(hhi_lt, 1),
+        "hhi": round(hhi_lt, 1),
         "top1_name": str(top_lt.index[0]) if len(top_lt) > 0 else "",
-        "top1_pct":  round(float(top_lt.iloc[0] / total_lt * 100), 1),
+        "top1_pct": round(float(top_lt.iloc[0] / total_lt * 100), 1),
         "top10_pct": round(float(top_lt.head(10).sum() / total_lt * 100), 1),
     }
 
@@ -320,18 +323,18 @@ def _k_factor_from_repeat(
 ) -> dict:
     """Estimate viral K-factor via repeat-borrower proxy when referral data is absent."""
     loans_per = loans_df[cust_col].value_counts()
-    repeat    = int((loans_per > 1).sum())
-    total     = int(len(loans_per))
-    proxy_k   = (repeat / max(total, 1)) * 0.3
-    conv      = conversion_rate if conversion_rate is not None else 0.05
+    repeat = int((loans_per > 1).sum())
+    total = int(len(loans_per))
+    proxy_k = (repeat / max(total, 1)) * 0.3
+    conv = conversion_rate if conversion_rate is not None else 0.05
     return {
-        "k_factor":        round(proxy_k, 3),
+        "k_factor": round(proxy_k, 3),
         "conversion_rate": conv,
-        "repeat_clients":  repeat,
-        "total_clients":   total,
-        "confidence":      "low",
-        "data_source":     "repeat_borrower_rate proxy (no referral col)",
-        "growth_status":   "exponential" if proxy_k >= 1.0 else "sub-viral",
+        "repeat_clients": repeat,
+        "total_clients": total,
+        "confidence": "low",
+        "data_source": "repeat_borrower_rate proxy (no referral col)",
+        "growth_status": "exponential" if proxy_k >= 1.0 else "sub-viral",
         "note": (
             "Low confidence — add referral/invite tracking to CRM to get accurate K. "
             "Recommended: tag sales_channel='referral' in HubSpot for organic clients."
@@ -342,6 +345,7 @@ def _k_factor_from_repeat(
 # ─────────────────────────────────────────────────────────────────────────────
 # Build transaction graph (bipartite: clients ↔ emisores/pagadores)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _build_intermedia_edges(
     graph: Any,
@@ -459,6 +463,7 @@ def build_transaction_graph(
 # PageRank Financial Score
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def pagerank_scores(
     graph: Any | None,
     alpha: float = 0.85,
@@ -495,30 +500,34 @@ def pagerank_scores(
     for node, score in pr.items():
         ndata = graph.nodes[node]
         ntype = ndata.get("node_type")
-        nid   = ndata.get("id", node)
-        deg   = graph.degree(node)
-        exp   = sum(d.get("weight", 1) for _, _, d in graph.edges(node, data=True))
+        nid = ndata.get("id", node)
+        deg = graph.degree(node)
+        exp = sum(d.get("weight", 1) for _, _, d in graph.edges(node, data=True))
 
         if ntype == "client":
-            client_rows.append({
-                "id":                 nid,
-                "pagerank":           round(score, 6),
-                "degree":             deg,
-                "total_exposure_usd": round(exp, 2),
-            })
+            client_rows.append(
+                {
+                    "id": nid,
+                    "pagerank": round(score, 6),
+                    "degree": deg,
+                    "total_exposure_usd": round(exp, 2),
+                }
+            )
         elif ntype == "debtor":
-            debtor_rows.append({
-                "id":                 nid,
-                "pagerank":           round(score, 6),
-                "client_count":       deg,
-                "total_exposure_usd": round(exp, 2),
-            })
+            debtor_rows.append(
+                {
+                    "id": nid,
+                    "pagerank": round(score, 6),
+                    "client_count": deg,
+                    "total_exposure_usd": round(exp, 2),
+                }
+            )
 
     # Tier assignment (top 15% = HIGH_TRUST, bottom 20% = LOW_TRUST)
     if client_rows:
         scores = sorted([r["pagerank"] for r in client_rows])
         high_thresh = float(np.percentile(scores, 85))
-        low_thresh  = float(np.percentile(scores, 20))
+        low_thresh = float(np.percentile(scores, 20))
         for r in client_rows:
             r["tier"] = _assign_client_tier(r["pagerank"], high_thresh, low_thresh)
     else:
@@ -528,15 +537,17 @@ def pagerank_scores(
     debtor_rows.sort(key=lambda x: x["pagerank"], reverse=True)
 
     return {
-        "status":               "ok",
-        "client_scores":        client_rows,
-        "debtor_scores":        debtor_rows[:50],
+        "status": "ok",
+        "client_scores": client_rows,
+        "debtor_scores": debtor_rows[:50],
         "high_trust_threshold": high_thresh,
         "graph_stats": {
-            "nodes":           graph.number_of_nodes(),
-            "edges":           graph.number_of_edges(),
-            "density":         round(nx.density(graph), 6),
-            "avg_degree":      round(sum(d for _, d in graph.degree()) / max(graph.number_of_nodes(), 1), 2),
+            "nodes": graph.number_of_nodes(),
+            "edges": graph.number_of_edges(),
+            "density": round(nx.density(graph), 6),
+            "avg_degree": round(
+                sum(d for _, d in graph.degree()) / max(graph.number_of_nodes(), 1), 2
+            ),
         },
         "top_clients": client_rows[:10],
         "top_debtors": debtor_rows[:10],
@@ -546,6 +557,7 @@ def pagerank_scores(
 # ─────────────────────────────────────────────────────────────────────────────
 # Community Detection (Louvain / greedy modularity fallback)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def detect_communities(
     graph: Any | None,
@@ -597,24 +609,26 @@ def detect_communities(
     for comm_id, nodes in community_map.items():
         clients = [n for n in nodes if graph.nodes[n].get("node_type") == "client"]
         debtors = [n for n in nodes if graph.nodes[n].get("node_type") == "debtor"]
-        rows.append({
-            "community_id":  comm_id,
-            "size":          len(nodes),
-            "client_count":  len(clients),
-            "debtor_count":  len(debtors),
-            "client_ids":    [graph.nodes[n].get("id", n) for n in clients][:20],
-            "debtor_ids":    [graph.nodes[n].get("id", n) for n in debtors][:10],
-            "flag_review":   len(clients) >= 3 and len(debtors) >= 2,
-        })
+        rows.append(
+            {
+                "community_id": comm_id,
+                "size": len(nodes),
+                "client_count": len(clients),
+                "debtor_count": len(debtors),
+                "client_ids": [graph.nodes[n].get("id", n) for n in clients][:20],
+                "debtor_ids": [graph.nodes[n].get("id", n) for n in debtors][:10],
+                "flag_review": len(clients) >= 3 and len(debtors) >= 2,
+            }
+        )
 
     rows.sort(key=lambda x: int(cast(int, x["size"])), reverse=True)
 
     return {
-        "status":          "ok",
+        "status": "ok",
         "num_communities": len(rows),
-        "modularity":      round(modularity, 4) if modularity is not None else None,
-        "algorithm":       algo,
-        "communities":     rows[:50],
+        "modularity": round(modularity, 4) if modularity is not None else None,
+        "algorithm": algo,
+        "communities": rows[:50],
         "flagged_for_review": sum(1 for r in rows if r["flag_review"]),
     }
 
@@ -622,6 +636,7 @@ def detect_communities(
 # ─────────────────────────────────────────────────────────────────────────────
 # Fraud Ring Detection
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def detect_fraud_rings(
     graph: Any | None,
@@ -666,7 +681,9 @@ def detect_fraud_rings(
     for comm in comm_result["communities"]:
         if comm["size"] < min_community_size:
             continue
-        ring = _score_community(comm, dpd_by_client, bal_by_client, dpd_threshold, avg_density, graph)
+        ring = _score_community(
+            comm, dpd_by_client, bal_by_client, dpd_threshold, avg_density, graph
+        )
         if ring is not None:
             rings.append(ring)
 
@@ -674,16 +691,17 @@ def detect_fraud_rings(
     flagged_bal = sum(r["total_balance_usd"] for r in rings)
 
     return {
-        "status":               "ok",
-        "fraud_rings":          rings,
-        "total_rings_flagged":  len(rings),
-        "flagged_balance_usd":  round(flagged_bal, 2),
+        "status": "ok",
+        "fraud_rings": rings,
+        "total_rings_flagged": len(rings),
+        "flagged_balance_usd": round(flagged_bal, 2),
     }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Concentration HHI
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def concentration_hhi(
     intermedia_df: pd.DataFrame,
@@ -746,15 +764,16 @@ def concentration_hhi(
 
 # Fintech B2B benchmarks from the strategy document (section 4.1)
 _BENCHMARKS = {
-    "cac_fintech_b2b_usd":    1450,
-    "cac_saas_b2b_usd":       702,
-    "cac_target_abaco_usd":   500,
-    "ltv_cac_healthy_ratio":  3.0,
-    "npl_latam_pct":          4.8,
-    "npl_oecd_pct":           2.2,
-    "npl_target_abaco_pct":   3.5,
-    "loss_rate_abs_pct":      9.9,   # KBRA ABS small business mature vintage
+    "cac_fintech_b2b_usd": 1450,
+    "cac_saas_b2b_usd": 702,
+    "cac_target_abaco_usd": 500,
+    "ltv_cac_healthy_ratio": 3.0,
+    "npl_latam_pct": 4.8,
+    "npl_oecd_pct": 2.2,
+    "npl_target_abaco_pct": 3.5,
+    "loss_rate_abs_pct": 9.9,  # KBRA ABS small business mature vintage
 }
+
 
 def calc_unit_economics(
     loans_df: pd.DataFrame,
@@ -772,17 +791,17 @@ def calc_unit_economics(
     When marketing_spend_usd is None, estimates via disbursement_amount × assumed_cost_rate.
     """
     disb_col = _col(loans_df, ["disbursement_date", "FechaDesembolso"])
-    amt_col  = _col(loans_df, ["disbursement_amount", "MontoDesembolsado"])
+    amt_col = _col(loans_df, ["disbursement_amount", "MontoDesembolsado"])
     cust_col = _col(loans_df, ["customer_id", "CodCliente"])
     pay_date = _col(payments_df, ["true_payment_date", "payment_date"])
-    pay_amt  = _col(payments_df, ["true_total_payment", "payment_amount"])
+    pay_amt = _col(payments_df, ["true_total_payment", "payment_amount"])
 
     if disb_col is None or cust_col is None:
         return {"status": "error", "message": "Missing disbursement_date or customer_id"}
 
     dates = pd.to_datetime(loans_df[disb_col], errors="coerce")
-    cutoff      = dates.max()
-    window_start= cutoff - pd.DateOffset(months=trailing_months)
+    cutoff = dates.max()
+    window_start = cutoff - pd.DateOffset(months=trailing_months)
 
     # New clients in window (first-ever operation in window)
     all_first = loans_df.groupby(cust_col).apply(
@@ -803,8 +822,14 @@ def calc_unit_economics(
 
     # LTV: total payment revenue / total active clients × avg lifetime months
     ltv, avg_lifetime_months = _estimate_ltv(
-        loans_df, payments_df, cust_col, disb_col,
-        pay_date, pay_amt, window_start, trailing_months,
+        loans_df,
+        payments_df,
+        cust_col,
+        disb_col,
+        pay_date,
+        pay_amt,
+        window_start,
+        trailing_months,
     )
 
     ltv_cac = ltv / cac if cac > 0 else 0.0
@@ -815,25 +840,25 @@ def calc_unit_economics(
 
     return {
         "status": "ok",
-        "trailing_months":          trailing_months,
-        "new_clients_acquired":     new_clients,
-        "total_clients":            int(loans_df[cust_col].nunique()),
-        "marketing_spend_est_usd":  round(float(marketing_val), 2),
-        "cac_usd":                  round(float(cac), 2),
-        "ltv_usd":                  round(float(ltv), 2),
-        "ltv_cac_ratio":            round(float(ltv_cac), 2),
-        "avg_lifetime_months":      round(float(avg_lifetime_months), 1),
+        "trailing_months": trailing_months,
+        "new_clients_acquired": new_clients,
+        "total_clients": int(loans_df[cust_col].nunique()),
+        "marketing_spend_est_usd": round(float(marketing_val), 2),
+        "cac_usd": round(float(cac), 2),
+        "ltv_usd": round(float(ltv), 2),
+        "ltv_cac_ratio": round(float(ltv_cac), 2),
+        "avg_lifetime_months": round(float(avg_lifetime_months), 1),
         # Benchmarks
         "benchmarks": _BENCHMARKS,
         "vs_benchmark": {
-            "cac_vs_fintech_b2b":   round(_BENCHMARKS["cac_fintech_b2b_usd"] / max(cac, 1), 1),
-            "cac_vs_target":        "ok" if cac <= _BENCHMARKS["cac_target_abaco_usd"] else "above_target",
-            "ltv_cac_vs_3x":        "ok" if ltv_cac >= 3.0 else f"below_3x ({ltv_cac:.2f}x)",
+            "cac_vs_fintech_b2b": round(_BENCHMARKS["cac_fintech_b2b_usd"] / max(cac, 1), 1),
+            "cac_vs_target": "ok" if cac <= _BENCHMARKS["cac_target_abaco_usd"] else "above_target",
+            "ltv_cac_vs_3x": "ok" if ltv_cac >= 3.0 else f"below_3x ({ltv_cac:.2f}x)",
         },
         "graph_strategy": {
             "effective_cac_via_hub_usd": round(effective_cac_if_hub, 2),
-            "hub_client_multiplier":     hub_multiplier_assumption,
-            "explanation":               (
+            "hub_client_multiplier": hub_multiplier_assumption,
+            "explanation": (
                 f"If a hub client (centrality top 15%) refers {hub_multiplier_assumption} organics, "
                 f"effective CAC drops from ${cac:,.0f} to ${effective_cac_if_hub:,.0f}"
             ),
@@ -844,6 +869,7 @@ def calc_unit_economics(
 # ─────────────────────────────────────────────────────────────────────────────
 # Viral K-Factor
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def viral_k_factor(
     loans_df: pd.DataFrame,
@@ -863,12 +889,12 @@ def viral_k_factor(
     Returns K estimate with confidence level (high/medium/low).
     """
     cust_col = _col(loans_df, ["customer_id", "CodCliente"])
-    ch_col   = _col(loans_df, ["sales_channel", "Sales Channel", "canal"])
+    ch_col = _col(loans_df, ["sales_channel", "Sales Channel", "canal"])
 
     result: dict[str, Any] = {
         "status": "ok",
-        "k_target":        1.0,
-        "interpretation":  "K > 1 = exponential growth; K < 1 = decays without paid acquisition",
+        "k_target": 1.0,
+        "interpretation": "K > 1 = exponential growth; K < 1 = decays without paid acquisition",
     }
 
     if ch_col and cust_col:
@@ -886,6 +912,7 @@ def viral_k_factor(
 # ─────────────────────────────────────────────────────────────────────────────
 # NPL Benchmarks
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def npl_benchmarks(
     intermedia_df: pd.DataFrame,
@@ -927,6 +954,7 @@ def npl_benchmarks(
     # Loss rate estimate: NPL × LGD
     try:
         from backend.python.config import settings
+
         lgd = settings.risk.loss_given_default
     except Exception:
         lgd = 0.10
@@ -935,20 +963,20 @@ def npl_benchmarks(
 
     return {
         "status": "ok",
-        "npl_180_pct":         round(npl_180, 2),
-        "npl_90_pct":          round(npl_90, 2),
-        "loss_rate_est_pct":   round(loss_rate, 2),
-        "lgd_assumption":      lgd,
+        "npl_180_pct": round(npl_180, 2),
+        "npl_90_pct": round(npl_90, 2),
+        "loss_rate_est_pct": round(loss_rate, 2),
+        "lgd_assumption": lgd,
         "benchmarks": {
-            "npl_latam_pct":           _BENCHMARKS["npl_latam_pct"],
-            "npl_oecd_pct":            _BENCHMARKS["npl_oecd_pct"],
-            "npl_target_abaco_pct":    _BENCHMARKS["npl_target_abaco_pct"],
-            "loss_rate_abs_kbra_pct":  _BENCHMARKS["loss_rate_abs_pct"],
+            "npl_latam_pct": _BENCHMARKS["npl_latam_pct"],
+            "npl_oecd_pct": _BENCHMARKS["npl_oecd_pct"],
+            "npl_target_abaco_pct": _BENCHMARKS["npl_target_abaco_pct"],
+            "loss_rate_abs_kbra_pct": _BENCHMARKS["loss_rate_abs_pct"],
         },
         "vs_benchmark": {
-            "vs_latam":  "better" if npl_180 < _BENCHMARKS["npl_latam_pct"] else "worse",
-            "vs_oecd":   "better" if npl_180 < _BENCHMARKS["npl_oecd_pct"]  else "worse",
-            "vs_target": "ok"     if npl_180 < _BENCHMARKS["npl_target_abaco_pct"] else "breach",
+            "vs_latam": "better" if npl_180 < _BENCHMARKS["npl_latam_pct"] else "worse",
+            "vs_oecd": "better" if npl_180 < _BENCHMARKS["npl_oecd_pct"] else "worse",
+            "vs_target": "ok" if npl_180 < _BENCHMARKS["npl_target_abaco_pct"] else "breach",
         },
     }
 
@@ -956,6 +984,7 @@ def npl_benchmarks(
 # ─────────────────────────────────────────────────────────────────────────────
 # Master Report
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def build_graph_kpi_report(
     intermedia_df: pd.DataFrame,
@@ -976,14 +1005,14 @@ def build_graph_kpi_report(
                 errors="coerce",
             ).fillna(0)
 
-    G        = build_transaction_graph(intermedia_df, loans_df)
-    pr       = pagerank_scores(G)
-    comms    = detect_communities(G)
-    rings    = detect_fraud_rings(G, intermedia_df)
-    hhi      = concentration_hhi(intermedia_df, loans_df)
-    ue       = calc_unit_economics(loans_df, payments_df)
+    G = build_transaction_graph(intermedia_df, loans_df)
+    pr = pagerank_scores(G)
+    comms = detect_communities(G)
+    rings = detect_fraud_rings(G, intermedia_df)
+    hhi = concentration_hhi(intermedia_df, loans_df)
+    ue = calc_unit_economics(loans_df, payments_df)
     k_factor = viral_k_factor(loans_df)
-    npl      = npl_benchmarks(intermedia_df)
+    npl = npl_benchmarks(intermedia_df)
 
     # Decision logic example from strategy doc
     def graph_adjusted_score(base_score: float, pagerank: float, community_risk: str) -> dict:
@@ -993,32 +1022,32 @@ def build_graph_kpi_report(
         if community_risk == "HIGH":
             adjusted *= 0.50
         return {
-            "base_score":    base_score,
-            "pagerank":      pagerank,
+            "base_score": base_score,
+            "pagerank": pagerank,
             "community_risk": community_risk,
             "adjusted_score": round(adjusted, 1),
-            "decision":       "APPROVE" if adjusted > 700 else "REVIEW",
+            "decision": "APPROVE" if adjusted > 700 else "REVIEW",
         }
 
     return {
-        "generated_at":        datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "graph": {
-            "nodes":           G.number_of_nodes() if G else 0,
-            "edges":           G.number_of_edges() if G else 0,
+            "nodes": G.number_of_nodes() if G else 0,
+            "edges": G.number_of_edges() if G else 0,
             "networkx_available": _NX,
         },
-        "pagerank":            pr,
-        "communities":         comms,
-        "fraud_rings":         rings,
-        "concentration_hhi":   hhi,
-        "unit_economics":      ue,
-        "viral_k_factor":      k_factor,
-        "npl_benchmarks":      npl,
+        "pagerank": pr,
+        "communities": comms,
+        "fraud_rings": rings,
+        "concentration_hhi": hhi,
+        "unit_economics": ue,
+        "viral_k_factor": k_factor,
+        "npl_benchmarks": npl,
         "decision_logic_example": graph_adjusted_score(750, 0.90, "LOW"),
         "copilot_instructions": {
-            "to_add_referral_data":     "Add 'sales_channel=referral' in HubSpot → export to customer.csv",
-            "to_improve_pd_auc":        "Join Equifax score + payment cadence features to build_pd_model()",
-            "to_activate_graph_score":  "Use pagerank['client_scores'] in decision_logic() above",
-            "to_connect_neo4j":         "Replace build_transaction_graph() with Neo4j GDS PageRank query",
+            "to_add_referral_data": "Add 'sales_channel=referral' in HubSpot → export to customer.csv",
+            "to_improve_pd_auc": "Join Equifax score + payment cadence features to build_pd_model()",
+            "to_activate_graph_score": "Use pagerank['client_scores'] in decision_logic() above",
+            "to_connect_neo4j": "Replace build_transaction_graph() with Neo4j GDS PageRank query",
         },
     }

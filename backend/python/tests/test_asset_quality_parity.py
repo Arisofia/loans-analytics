@@ -31,7 +31,9 @@ def _loans_snapshot() -> pd.DataFrame:
 
 def _intermedia_from_loans(loans: pd.DataFrame) -> pd.DataFrame:
     cutoff = pd.Timestamp("2026-03-13")
-    due_dates = cutoff - pd.to_timedelta(pd.to_numeric(loans["days_past_due"], errors="coerce"), unit="D")
+    due_dates = cutoff - pd.to_timedelta(
+        pd.to_numeric(loans["days_past_due"], errors="coerce"), unit="D"
+    )
     return pd.DataFrame(
         {
             "TotalSaldoVigente": pd.to_numeric(loans["outstanding_loan_value"], errors="coerce"),

@@ -246,19 +246,17 @@ def _status(ok: bool) -> str:
     return "ok" if ok else "breach"
 
 
-def _build_guardrail_status(extended_kpis: dict[str, Any]) -> dict[str, dict[str, float | str | None]]:
+def _build_guardrail_status(
+    extended_kpis: dict[str, Any],
+) -> dict[str, dict[str, float | str | None]]:
     """Evaluate current KPI values against configured thresholds."""
     rotation = extended_kpis.get("portfolio_rotation", {})
     concentration = extended_kpis.get("concentration", {})
     dpd_buckets = extended_kpis.get("dpd_buckets", {})
 
     rotation_value = _to_float(rotation.get("rotation_x"))
-    top1_value = _to_float(
-        concentration.get("top_1_debtor_pct", concentration.get("top_1_pct"))
-    )
-    top10_value = _to_float(
-        concentration.get("top_10_debtor_pct", concentration.get("top_10_pct"))
-    )
+    top1_value = _to_float(concentration.get("top_1_debtor_pct", concentration.get("top_1_pct")))
+    top10_value = _to_float(concentration.get("top_10_debtor_pct", concentration.get("top_10_pct")))
     par30_value = _to_float(dpd_buckets.get("dpd_30_plus_pct"))
     par90_value = _to_float(dpd_buckets.get("dpd_90_plus_pct", dpd_buckets.get("dpd_90_plus")))
     npl180_value = _to_float(dpd_buckets.get("dpd_180_plus_pct"))
@@ -273,8 +271,7 @@ def _build_guardrail_status(extended_kpis: dict[str, Any]) -> dict[str, dict[str
             "value": top1_value,
             "target": settings.financial.max_single_obligor_concentration * 100,
             "status": _status(
-                (top1_value or 100.0)
-                <= (settings.financial.max_single_obligor_concentration * 100)
+                (top1_value or 100.0) <= (settings.financial.max_single_obligor_concentration * 100)
             ),
         },
         "top10_debtor": {
@@ -297,7 +294,9 @@ def _build_guardrail_status(extended_kpis: dict[str, Any]) -> dict[str, dict[str
         "npl_180": {
             "value": npl180_value,
             "target": settings.financial.max_default_rate * 100,
-            "status": _status((npl180_value or 100.0) <= (settings.financial.max_default_rate * 100)),
+            "status": _status(
+                (npl180_value or 100.0) <= (settings.financial.max_default_rate * 100)
+            ),
         },
     }
 
@@ -311,12 +310,8 @@ def _build_sql_view_mirrors(extended_kpis: dict[str, Any]) -> dict[str, Any]:
         "kpi_customer_types": extended_kpis.get("nsm_customer_types", {}),
         "kpi_concentration": extended_kpis.get("concentration", {}),
         "kpi_weighted_apr": {"weighted_apr": extended_kpis.get("weighted_apr", 0.0)},
-        "kpi_weighted_fee_rate": {
-            "weighted_fee_rate": extended_kpis.get("weighted_fee_rate", 0.0)
-        },
-        "kpi_active_unique_customers": {
-            "count": executive_strip.get("total_customers", 0)
-        },
+        "kpi_weighted_fee_rate": {"weighted_fee_rate": extended_kpis.get("weighted_fee_rate", 0.0)},
+        "kpi_active_unique_customers": {"count": executive_strip.get("total_customers", 0)},
         "kpi_average_ticket": {
             "avg_ticket_usd": _to_float(executive_strip.get("total_outstanding_loan_value")),
             "total_loans": executive_strip.get("total_loans", 0),

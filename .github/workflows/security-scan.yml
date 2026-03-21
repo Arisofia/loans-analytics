@@ -28,7 +28,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Keep full history so CodeQL can build PR diff range reliably
+          fetch-depth: 0
 
       - name: Detect Code Scanning availability
         id: check_code_scanning_availability

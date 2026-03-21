@@ -41,13 +41,7 @@ def resolve_dpd_heuristic(df: pd.DataFrame) -> pd.Series:
 
     status = df[status_col].astype(str).str.lower()
     dpd = pd.Series([0.0] * len(df), index=df.index, dtype=float)
-    dpd = dpd.mask(
-        status.str.contains(r"90\+|default|charged", regex=True, na=False), 100.0
-    )
-    dpd = dpd.mask(
-        status.str.contains(r"60-89|60\+", regex=True, na=False), 75.0
-    )
-    dpd = dpd.mask(
-        status.str.contains(r"30-59|30\+", regex=True, na=False), 45.0
-    )
+    dpd = dpd.mask(status.str.contains(r"90\+|default|charged", regex=True, na=False), 100.0)
+    dpd = dpd.mask(status.str.contains(r"60-89|60\+", regex=True, na=False), 75.0)
+    dpd = dpd.mask(status.str.contains(r"30-59|30\+", regex=True, na=False), 45.0)
     return dpd

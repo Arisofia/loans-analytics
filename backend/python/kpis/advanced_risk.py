@@ -16,10 +16,12 @@ from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metri
 def _safe_pct(numerator: float | Decimal, denominator: float | Decimal) -> Decimal:
     """Calculate percentage using Decimal for precision. Return as Decimal."""
     num_dec = Decimal(str(numerator)) if isinstance(numerator, float) else Decimal(numerator)
-    denom_dec = Decimal(str(denominator)) if isinstance(denominator, float) else Decimal(denominator)
+    denom_dec = (
+        Decimal(str(denominator)) if isinstance(denominator, float) else Decimal(denominator)
+    )
     if denom_dec <= 0:
-        return Decimal('0')
-    return (num_dec / denom_dec) * Decimal('100')
+        return Decimal("0")
+    return (num_dec / denom_dec) * Decimal("100")
 
 
 def _normalize_interest_rate(series: pd.Series) -> pd.Series:
@@ -85,7 +87,9 @@ def _status_series(df: pd.DataFrame) -> pd.Series:
     return df[status_col].astype(str).str.lower().fillna("active")
 
 
-def _calculate_ssot_par_metrics(balance: pd.Series, dpd: pd.Series, status: pd.Series) -> dict[str, float]:
+def _calculate_ssot_par_metrics(
+    balance: pd.Series, dpd: pd.Series, status: pd.Series
+) -> dict[str, float]:
     """Calculate PAR metrics via SSOT formula engine and return rounded floats."""
     values = calculate_asset_quality_metrics(
         balance,
@@ -173,7 +177,7 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
         par30 = round(float(par30_pct), 2)
         par60 = round(float(par60_pct), 2)
         par90 = round(float(par90_pct), 2)
-    
+
     default_count = Decimal(str(default_mask.sum()))
     default_rate_pct = _safe_pct(default_count, Decimal(str(total_loans)))
     default_rate = round(float(default_rate_pct), 2)
@@ -191,14 +195,18 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
     principal_sum = Decimal(str(principal.sum()))
     fee_yield_pct = _safe_pct(fee_sum, principal_sum)
     fee_yield = round(float(fee_yield_pct), 2)
-    
+
     interest_yield_pct = _safe_pct(Decimal(str((interest_rate * balance).sum())), total_balance)
     interest_yield = float(interest_yield_pct)  # Keep as Decimal for addition
     total_yield = round(float(Decimal(str(interest_yield)) + Decimal(str(fee_yield))), 2)
 
     recovery = _resolve_series(df, ["recovery_value", "Recovery Value", "recovery_amount"])
     default_balance = Decimal(str(balance[default_mask].sum()))
-    recovery_sum = Decimal(str(recovery[default_mask].sum())) if default_mask.any() else Decimal(str(recovery.sum()))
+    recovery_sum = (
+        Decimal(str(recovery[default_mask].sum()))
+        if default_mask.any()
+        else Decimal(str(recovery.sum()))
+    )
     recovery_rate_pct = _safe_pct(recovery_sum, default_balance)
     recovery_rate = round(float(recovery_rate_pct), 2)
 
@@ -208,13 +216,15 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
     ].sum()
     if total_balance > 0 and not exposure_by_borrower.empty:
         shares = exposure_by_borrower / float(total_balance)
-        concentration_hhi = round(float((Decimal(str(shares.pow(2).sum())) * Decimal('10000'))), 2)
+        concentration_hhi = round(float((Decimal(str(shares.pow(2).sum())) * Decimal("10000"))), 2)
     else:
         concentration_hhi = 0.0
 
     loans_per_borrower = borrower_id.value_counts(dropna=False)
     repeat_borrowers = int((loans_per_borrower > 1).sum())
-    repeat_borrower_pct = _safe_pct(Decimal(str(repeat_borrowers)), Decimal(str(len(loans_per_borrower))))
+    repeat_borrower_pct = _safe_pct(
+        Decimal(str(repeat_borrowers)), Decimal(str(len(loans_per_borrower)))
+    )
     repeat_borrower_rate = round(float(repeat_borrower_pct), 2)
 
     dpd_buckets = [

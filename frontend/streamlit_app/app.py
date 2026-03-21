@@ -191,7 +191,9 @@ def _resolve_kpi_snapshot_month(input_analytics_facts: pd.DataFrame) -> Optional
         return None
     for kpi_col_name in ("month", "month_end", "date"):
         if kpi_col_name in input_analytics_facts.columns:
-            kpi_parsed = pd.to_datetime(input_analytics_facts[kpi_col_name], errors="coerce").dropna()
+            kpi_parsed = pd.to_datetime(
+                input_analytics_facts[kpi_col_name], errors="coerce"
+            ).dropna()
             if not kpi_parsed.empty:
                 return kpi_parsed.max()
     return None
@@ -202,7 +204,7 @@ def build_kpi_snapshot(
 ) -> tuple[dict[str, dict], Optional[pd.Timestamp]]:
     """
     Build KPI snapshot with threshold metadata.
-    
+
     Returns:
         Tuple of (enriched_kpi_snapshot, month) where enriched_kpi_snapshot is
         a dict mapping kpi_name -> {value: ..., threshold_status: ..., ...}
@@ -228,10 +230,10 @@ def build_kpi_snapshot(
         kpi_root_value_item = input_dashboard_metrics.get(unique_root_key_var)
         if isinstance(kpi_root_value_item, (int, float)):
             kpi_snapshot.setdefault(unique_root_key_var, float(kpi_root_value_item))
-    
+
     # Enrich with threshold metadata
     enriched_snapshot = enrich_kpis_with_thresholds(kpi_snapshot)
-    
+
     return enriched_snapshot, kpi_snapshot_month
 
 
@@ -431,7 +433,9 @@ with st.sidebar:
 st.title("💰 ABACO Financial Intelligence")
 global_dashboard_metrics_var = load_kpi_dashboard()
 global_analytics_facts_var = load_analytics_facts()
-global_api_kpi_snapshot, global_api_snapshot_month, global_is_api_source = load_kpi_snapshot_from_api()
+global_api_kpi_snapshot, global_api_snapshot_month, global_is_api_source = (
+    load_kpi_snapshot_from_api()
+)
 
 with st.expander("🔗 Dashboard Links & Strategic Reporting", expanded=True):
     deployed_dashboard_url = os.getenv(
@@ -464,14 +468,21 @@ with st.expander("🔗 Dashboard Links & Strategic Reporting", expanded=True):
         else:
             st.warning("Generate KPI exports first to create strategic report artifacts.")
 
-if not global_is_api_source and not global_dashboard_metrics_var and global_analytics_facts_var.empty:
+if (
+    not global_is_api_source
+    and not global_dashboard_metrics_var
+    and global_analytics_facts_var.empty
+):
     st.warning(
         "No KPI exports detected. Generate KPI exports from the sidebar or add "
         "complete_kpi_dashboard.json and analytics_facts.csv to the exports "
         "directory."
     )
 if global_is_api_source:
-    global_kpi_snapshot, global_snapshot_month_var = global_api_kpi_snapshot, global_api_snapshot_month
+    global_kpi_snapshot, global_snapshot_month_var = (
+        global_api_kpi_snapshot,
+        global_api_snapshot_month,
+    )
 else:
     global_kpi_snapshot, global_snapshot_month_var = build_kpi_snapshot(
         global_dashboard_metrics_var, global_analytics_facts_var

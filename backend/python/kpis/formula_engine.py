@@ -169,7 +169,9 @@ class KPIFormulaEngine:
             try:
                 normalized[key] = Decimal(str(raw_thresholds[key]))
             except Exception:
-                logger.debug("Invalid threshold '%s' for KPI definition: %s", key, raw_thresholds[key])
+                logger.debug(
+                    "Invalid threshold '%s' for KPI definition: %s", key, raw_thresholds[key]
+                )
         return normalized
 
     @staticmethod

@@ -172,11 +172,15 @@ class UnifiedPipeline:
             "duration_seconds": phase_results.get("duration_seconds", 0.0),
         }
 
-    def _fail_on_phase_error(self, phase_name: str, phase_label: str, phase_results: Dict[str, Any]) -> None:
+    def _fail_on_phase_error(
+        self, phase_name: str, phase_label: str, phase_results: Dict[str, Any]
+    ) -> None:
         """Raise when a pipeline phase did not complete successfully."""
         if phase_results.get("status") == "success":
             return
-        raise RuntimeError(f"{phase_label} ({phase_name.title()}) failed: {phase_results.get('error')}")
+        raise RuntimeError(
+            f"{phase_label} ({phase_name.title()}) failed: {phase_results.get('error')}"
+        )
 
     def _complete_early_mode(
         self,
@@ -206,7 +210,9 @@ class UnifiedPipeline:
             pipeline_span.set_attribute(PIPELINE_STATUS_ATTR, final_results["status"])
             pipeline_span.set_attribute(PIPELINE_DURATION_ATTR, final_results["duration_seconds"])
             status = StatusCode.OK if final_results["status"] == "success" else StatusCode.ERROR
-            description = None if status == StatusCode.OK else str(final_results.get("error", "failed"))
+            description = (
+                None if status == StatusCode.OK else str(final_results.get("error", "failed"))
+            )
             pipeline_span.set_status(Status(status, description))
             return
 
@@ -457,7 +463,9 @@ class UnifiedPipeline:
         hashing the ingestion configuration instead of using an opaque sentinel value.
         """
         try:
-            ingestion_config = self.config.ingestion if isinstance(self.config.ingestion, dict) else {}
+            ingestion_config = (
+                self.config.ingestion if isinstance(self.config.ingestion, dict) else {}
+            )
             canonical_ingestion = json.dumps(ingestion_config, sort_keys=True, default=str)
             source_component = str(source_hint or "default")
             payload = f"ingestion_source|{source_component}|{canonical_ingestion}"

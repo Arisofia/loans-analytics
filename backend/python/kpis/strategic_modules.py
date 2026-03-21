@@ -51,11 +51,13 @@ HEAD_OF_PRICING = "Head of Pricing"  # KPI owner for pricing-related metrics (AP
 # Shared helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _col(df: pd.DataFrame, candidates: list[str]) -> str | None:
     for c in candidates:
         if c in df.columns:
             return c
     return None
+
 
 def _num(df: pd.DataFrame, col: str) -> pd.Series:
     return pd.to_numeric(df[col], errors="coerce").fillna(0.0)
@@ -85,6 +87,7 @@ def _calculate_ssot_asset_quality_metrics(
 # 3.1  Exposure-Weighted Outlier Detection
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def detect_exposure_weighted_outliers(
     loans_df: pd.DataFrame,
     z_threshold: float = 2.58,
@@ -106,11 +109,11 @@ def detect_exposure_weighted_outliers(
     }
     """
     loan_id_col = _col(loans_df, ["loan_id", "Loan ID", "id"])
-    bal_col     = _col(loans_df, ["outstanding_loan_value", "outstanding_balance", "TotalSaldoVigente"])
-    apr_col     = _col(loans_df, ["interest_rate_apr", "interest_rate", "TasaInteres"])
-    dpd_col     = _col(loans_df, ["days_past_due", "dpd", "DPD", "days_in_default"])
-    term_col    = _col(loans_df, ["term", "Term", "term_days"])
-    util_col    = _col(loans_df, ["porcentaje_utilizado", "line_utilization", "Porcentaje_Utilizado"])
+    bal_col = _col(loans_df, ["outstanding_loan_value", "outstanding_balance", "TotalSaldoVigente"])
+    apr_col = _col(loans_df, ["interest_rate_apr", "interest_rate", "TasaInteres"])
+    dpd_col = _col(loans_df, ["days_past_due", "dpd", "DPD", "days_in_default"])
+    term_col = _col(loans_df, ["term", "Term", "term_days"])
+    util_col = _col(loans_df, ["porcentaje_utilizado", "line_utilization", "Porcentaje_Utilizado"])
 
     if bal_col is None:
         logger.warning("detect_exposure_weighted_outliers: no balance column found")
@@ -131,28 +134,32 @@ def detect_exposure_weighted_outliers(
     if util_col:
         variables["line_util_pct"] = _num(loans_df, util_col)
 
-    alerts:  list[dict] = []
+    alerts: list[dict] = []
     summary: dict[str, dict] = {}
 
     for var_name, series in variables.items():
         # Exposure-weighted mean and std
         w_mean = float((series * bal).sum() / total_w)
-        w_var  = float(((series - w_mean) ** 2 * bal).sum() / total_w)
-        w_std  = float(np.sqrt(w_var)) if w_var > 0 else 0.0
+        w_var = float(((series - w_mean) ** 2 * bal).sum() / total_w)
+        w_std = float(np.sqrt(w_var)) if w_var > 0 else 0.0
 
         if w_std == 0:
-            summary[var_name] = {"mean_w": w_mean, "std_w": 0.0,
-                                  "outlier_count": 0, "outlier_balance_usd": 0.0}
+            summary[var_name] = {
+                "mean_w": w_mean,
+                "std_w": 0.0,
+                "outlier_count": 0,
+                "outlier_balance_usd": 0.0,
+            }
             continue
 
-        z_scores  = (series - w_mean) / w_std
+        z_scores = (series - w_mean) / w_std
         flag_mask = z_scores.abs() > z_threshold
-        flag_bal  = float(bal[flag_mask].sum())
+        flag_bal = float(bal[flag_mask].sum())
 
         summary[var_name] = {
-            "mean_w":              round(w_mean, 4),
-            "std_w":               round(w_std,  4),
-            "outlier_count":       int(flag_mask.sum()),
+            "mean_w": round(w_mean, 4),
+            "std_w": round(w_std, 4),
+            "outlier_count": int(flag_mask.sum()),
             "outlier_balance_usd": round(flag_bal, 2),
         }
 
@@ -160,29 +167,32 @@ def detect_exposure_weighted_outliers(
             flag_df = loans_df[flag_mask].copy()
             for idx in flag_df.index:
                 loan_id = str(flag_df.at[idx, loan_id_col]) if loan_id_col else str(idx)
-                alerts.append({
-                    "loan_id":        loan_id,
-                    "variable":       var_name,
-                    "value":          round(float(series.at[idx]), 4),
-                    "z_score":        round(float(z_scores.at[idx]), 2),
-                    "outstanding_usd": round(float(bal.at[idx]), 2),
-                })
+                alerts.append(
+                    {
+                        "loan_id": loan_id,
+                        "variable": var_name,
+                        "value": round(float(series.at[idx]), 4),
+                        "z_score": round(float(z_scores.at[idx]), 2),
+                        "outstanding_usd": round(float(bal.at[idx]), 2),
+                    }
+                )
 
     alerts.sort(key=lambda x: abs(x["z_score"]), reverse=True)
     total_bal = sum(a["outstanding_usd"] for a in alerts)
 
     return {
-        "alerts":                  alerts[:200],  # cap at 200 for export size
-        "summary":                 summary,
-        "total_flagged":           len(alerts),
+        "alerts": alerts[:200],  # cap at 200 for export size
+        "summary": summary,
+        "total_flagged": len(alerts),
         "total_flagged_balance_usd": round(total_bal, 2),
-        "z_threshold":             z_threshold,
+        "z_threshold": z_threshold,
     }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 3.2  Private helpers for build_pd_model
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _detect_pd_columns(
     loans_df: pd.DataFrame,
@@ -201,11 +211,11 @@ def _build_pd_feature_matrix(
     """Build feature matrix from loan tape. DPD excluded to avoid target leakage."""
     feature_cols: dict[str, str] = {}
     for fname, aliases in [
-        ("apr",         ["interest_rate_apr", "interest_rate", "TasaInteres"]),
-        ("term",        ["term", "Term", "term_days"]),
+        ("apr", ["interest_rate_apr", "interest_rate", "TasaInteres"]),
+        ("term", ["term", "Term", "term_days"]),
         ("disb_amount", ["disbursement_amount", "MontoDesembolsado"]),
         ("outstanding", ["outstanding_loan_value", "TotalSaldoVigente"]),
-        ("tpv",         ["tpv", "TPV", "total_portfolio_value"]),
+        ("tpv", ["tpv", "TPV", "total_portfolio_value"]),
     ]:
         c = _col(loans_df, aliases)
         if c:
@@ -232,10 +242,15 @@ def _run_pd_cross_validation(
 ) -> Any:
     """Stratified k-fold AUC; falls back to unweighted CV when sklearn < 1.4."""
     from sklearn.model_selection import StratifiedKFold, cross_val_score
+
     skf = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=42)
     try:
         return cross_val_score(
-            clf, X_scaled, y, cv=skf, scoring="roc_auc",
+            clf,
+            X_scaled,
+            y,
+            cv=skf,
+            scoring="roc_auc",
             params={"sample_weight": weights.values},
         )
     except TypeError:
@@ -247,6 +262,7 @@ def _compute_pd_calibration(y: pd.Series, pd_scores: Any) -> float | None:
     try:
         from sklearn.calibration import calibration_curve
         from numpy.polynomial.polynomial import polyfit as npfit
+
         frac_pos, mean_pred = calibration_curve(y, pd_scores, n_bins=5)
         return float(npfit(mean_pred, frac_pos, 1)[1]) if len(frac_pos) > 1 else 1.0
     except Exception:
@@ -256,6 +272,7 @@ def _compute_pd_calibration(y: pd.Series, pd_scores: Any) -> float | None:
 # ─────────────────────────────────────────────────────────────────────────────
 # 3.2  Guarded Probability of Default (PD) Model
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def build_pd_model(
     loans_df: pd.DataFrame,
@@ -306,11 +323,11 @@ def build_pd_model(
     n_neg = int((y == 0).sum())
     if n_pos < min_defaults or n_neg < min_non_defaults:
         return {
-            "status":         "insufficient_data",
-            "n_defaults":     n_pos,
+            "status": "insufficient_data",
+            "n_defaults": n_pos,
             "n_non_defaults": n_neg,
-            "min_required":   f"{min_defaults} defaults + {min_non_defaults} non-defaults",
-            "message":        "Dataset does not meet minimum class size for stable PD model.",
+            "min_required": f"{min_defaults} defaults + {min_non_defaults} non-defaults",
+            "message": "Dataset does not meet minimum class size for stable PD model.",
         }
 
     X_raw, feature_cols = _build_pd_feature_matrix(loans_df)
@@ -328,12 +345,12 @@ def build_pd_model(
     calib_slope = _compute_pd_calibration(y, pd_scores)
 
     feature_importance = {
-        fname: round(float(coef), 4)
-        for fname, coef in zip(feature_cols.keys(), clf.coef_[0])
+        fname: round(float(coef), 4) for fname, coef in zip(feature_cols.keys(), clf.coef_[0])
     }
     loan_ids = (
         loans_df[loan_id_col].astype(str).tolist()
-        if loan_id_col else [str(i) for i in range(len(loans_df))]
+        if loan_id_col
+        else [str(i) for i in range(len(loans_df))]
     )
     pd_output = sorted(
         [{"loan_id": lid, "pd_score": round(float(s), 4)} for lid, s in zip(loan_ids, pd_scores)],
@@ -342,25 +359,26 @@ def build_pd_model(
     )
 
     return {
-        "status":              "ok",
-        "auc_mean":            round(float(auc_scores.mean()), 4),
-        "auc_std":             round(float(auc_scores.std()),  4),
-        "auc_by_fold":         [round(float(s), 4) for s in auc_scores],
-        "calibration_slope":   round(calib_slope, 4) if calib_slope else None,
-        "feature_importance":  feature_importance,
-        "features_used":       list(feature_cols.keys()),
-        "n_defaults":          n_pos,
-        "n_non_defaults":      n_neg,
+        "status": "ok",
+        "auc_mean": round(float(auc_scores.mean()), 4),
+        "auc_std": round(float(auc_scores.std()), 4),
+        "auc_by_fold": [round(float(s), 4) for s in auc_scores],
+        "calibration_slope": round(calib_slope, 4) if calib_slope else None,
+        "feature_importance": feature_importance,
+        "features_used": list(feature_cols.keys()),
+        "n_defaults": n_pos,
+        "n_non_defaults": n_neg,
         "default_rate_actual": round(n_pos / (n_pos + n_neg) * 100, 2),
-        "cv_folds":            cv_folds,
-        "model_type":          "logistic_regression_exposure_weighted",
-        "pd_scores":           pd_output[:500],
+        "cv_folds": cv_folds,
+        "model_type": "logistic_regression_exposure_weighted",
+        "pd_scores": pd_output[:500],
     }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 7.0  Predictive KPIs
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def predict_kpis(
     loans_df: pd.DataFrame,
@@ -400,17 +418,19 @@ def predict_kpis(
         for h in range(1, horizon + 1):
             month = cutoff + pd.DateOffset(months=h)
             point = float(slope * (len(series) - 1 + h) + intercept)
-            rows.append({
-                "month":  month.strftime("%Y-%m"),
-                "value":  round(max(point, 0), 2),
-                "lower":  round(max(point - 1.5 * sigma, 0), 2),
-                "upper":  round(point + 1.5 * sigma, 2),
-            })
+            rows.append(
+                {
+                    "month": month.strftime("%Y-%m"),
+                    "value": round(max(point, 0), 2),
+                    "lower": round(max(point - 1.5 * sigma, 0), 2),
+                    "upper": round(point + 1.5 * sigma, 2),
+                }
+            )
         return rows
 
     # ── AUM monthly series ─────────────────────────────────────────────
     disb_col = _col(loans_df, ["disbursement_date", "FechaDesembolso"])
-    bal_col  = _col(loans_df, ["outstanding_loan_value", "outstanding_balance"])
+    bal_col = _col(loans_df, ["outstanding_loan_value", "outstanding_balance"])
     disb_amt_col = _col(loans_df, ["disbursement_amount", "MontoDesembolsado"])
     aum_series: pd.Series = pd.Series(dtype=float)
     if disb_col and disb_amt_col:
@@ -423,7 +443,7 @@ def predict_kpis(
 
     # ── Revenue monthly series ─────────────────────────────────────────
     pay_date_col = _col(payments_df, ["true_payment_date", "payment_date"])
-    pay_amt_col  = _col(payments_df, ["true_total_payment", "payment_amount", "amount"])
+    pay_amt_col = _col(payments_df, ["true_total_payment", "payment_amount", "amount"])
     rev_series: pd.Series = pd.Series(dtype=float)
     if pay_date_col and pay_amt_col:
         payments_df["_month"] = pd.to_datetime(
@@ -482,22 +502,22 @@ def predict_kpis(
             par90_series = monthly_df.set_index("_month")["par90"].astype(float).tail(12)
 
     return {
-        "horizon_months":  horizon_months,
-        "generated_at":    datetime.now(timezone.utc).isoformat(),
-        "aum_forecast":    _linear_forecast(aum_series,  horizon_months),
+        "horizon_months": horizon_months,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "aum_forecast": _linear_forecast(aum_series, horizon_months),
         "revenue_forecast": _linear_forecast(rev_series, horizon_months),
-        "par30_forecast":  _linear_forecast(par30_series, horizon_months),
-        "par90_forecast":  _linear_forecast(par90_series, horizon_months),
-        "methodology":     "linear_trend_1.5sigma_bands",
+        "par30_forecast": _linear_forecast(par30_series, horizon_months),
+        "par90_forecast": _linear_forecast(par90_series, horizon_months),
+        "methodology": "linear_trend_1.5sigma_bands",
         "data_notes": {
-            "aum":     "monthly disbursement_amount by origination month (bullet-loan proxy)",
-            "par":     "vintage approximation from single DPD snapshot — no historical PAR archives",
+            "aum": "monthly disbursement_amount by origination month (bullet-loan proxy)",
+            "par": "vintage approximation from single DPD snapshot — no historical PAR archives",
             "revenue": "true_total_payment per payment month from real_payment.csv",
         },
         "training_months": {
-            "aum":     int(len(aum_series)),
+            "aum": int(len(aum_series)),
             "revenue": int(len(rev_series)),
-            "par30":   int(len(par30_series)),
+            "par30": int(len(par30_series)),
         },
     }
 
@@ -505,6 +525,7 @@ def predict_kpis(
 # ─────────────────────────────────────────────────────────────────────────────
 # 7.1  Compliance Dashboard
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def build_compliance_dashboard(
     loans_df: pd.DataFrame,
@@ -539,60 +560,64 @@ def build_compliance_dashboard(
     if guardrails is None:
         try:
             from backend.python.config import settings
+
             guardrails = {
-                "rotation_x":              settings.financial.min_rotation,
-                "top1_concentration_pct":  settings.financial.max_single_obligor_concentration * 100,
+                "rotation_x": settings.financial.min_rotation,
+                "top1_concentration_pct": settings.financial.max_single_obligor_concentration * 100,
                 "top10_concentration_pct": settings.financial.max_top_10_concentration * 100,
-                "par30_pct":               5.0,
-                "par90_pct":               settings.financial.max_default_rate * 100 / 2,
-                "npl_180_pct":             settings.financial.max_default_rate * 100,
-                "utilization_pct_min":     settings.financial.utilization_min * 100,
-                "utilization_pct_max":     settings.financial.utilization_max * 100,
-                "apr_pct_min":             settings.financial.target_apr_min * 100,
-                "apr_pct_max":             settings.financial.target_apr_max * 100,
-                "ce_6m_pct":               settings.financial.min_ce_6m * 100,
-                "dscr":                    settings.financial.min_dscr,
+                "par30_pct": 5.0,
+                "par90_pct": settings.financial.max_default_rate * 100 / 2,
+                "npl_180_pct": settings.financial.max_default_rate * 100,
+                "utilization_pct_min": settings.financial.utilization_min * 100,
+                "utilization_pct_max": settings.financial.utilization_max * 100,
+                "apr_pct_min": settings.financial.target_apr_min * 100,
+                "apr_pct_max": settings.financial.target_apr_max * 100,
+                "ce_6m_pct": settings.financial.min_ce_6m * 100,
+                "dscr": settings.financial.min_dscr,
             }
         except Exception:
             guardrails = {}
 
     if owners is None:
         owners = {
-            "rotation_x":              "CFO",
-            "top1_concentration_pct":  "CRO",
+            "rotation_x": "CFO",
+            "top1_concentration_pct": "CRO",
             "top10_concentration_pct": "CRO",
-            "par30_pct":               HEAD_OF_RISK,
-            "par90_pct":               HEAD_OF_RISK,
-            "npl_180_pct":             HEAD_OF_RISK,
-            "utilization_pct":         "CFO",
-            "apr_pct_ann":             HEAD_OF_PRICING,
-            "dscr":                    "Finance",
-            "utilization_pct_min":     "CFO",
-            "apr_pct_min":             HEAD_OF_PRICING,
-            "ce_6m_pct":               "Head of Collections",
+            "par30_pct": HEAD_OF_RISK,
+            "par90_pct": HEAD_OF_RISK,
+            "npl_180_pct": HEAD_OF_RISK,
+            "utilization_pct": "CFO",
+            "apr_pct_ann": HEAD_OF_PRICING,
+            "dscr": "Finance",
+            "utilization_pct_min": "CFO",
+            "apr_pct_min": HEAD_OF_PRICING,
+            "ce_6m_pct": "Head of Collections",
         }
 
     # ── Compute actuals ────────────────────────────────────────────────
-    bal_col  = _col(loans_df, ["outstanding_loan_value", "outstanding_balance", "TotalSaldoVigente"])
+    bal_col = _col(loans_df, ["outstanding_loan_value", "outstanding_balance", "TotalSaldoVigente"])
     disb_col = _col(loans_df, ["disbursement_date", "FechaDesembolso"])
-    apr_col  = _col(loans_df, ["interest_rate_apr", "interest_rate", "TasaInteres"])
-    dpd_col  = _col(loans_df, ["days_past_due", "dpd", "DPD", "days_in_default"])
-    deb_col  = _col(loans_df, ["pagador", "cliente", "emisor", "Emisor", "debtor_id", "payer_id"])
+    apr_col = _col(loans_df, ["interest_rate_apr", "interest_rate", "TasaInteres"])
+    dpd_col = _col(loans_df, ["days_past_due", "dpd", "DPD", "days_in_default"])
+    deb_col = _col(loans_df, ["pagador", "cliente", "emisor", "Emisor", "debtor_id", "payer_id"])
     util_col = _col(loans_df, ["porcentaje_utilizado", "Porcentaje_Utilizado", "line_utilization"])
     line_col = _col(loans_df, ["lineacredito", "LineaCredito", "credit_line"])
     noi_col = _col(loans_df, ["net_operating_income", "net_income", "ebitda", "noi"])
-    debt_service_col = _col(loans_df, ["debt_service", "total_debt_service", "debt_service_amount", "monthly_debt_service"])
+    debt_service_col = _col(
+        loans_df,
+        ["debt_service", "total_debt_service", "debt_service_amount", "monthly_debt_service"],
+    )
 
     loans_df = loans_df.reset_index(drop=True)
-    bal  = _num(loans_df, bal_col)  if bal_col  else pd.Series([0.0] * len(loans_df))
-    dpd  = _num(loans_df, dpd_col)  if dpd_col  else pd.Series([0.0] * len(loans_df))
-    apr  = _num(loans_df, apr_col)  if apr_col  else pd.Series([0.0] * len(loans_df))
+    bal = _num(loans_df, bal_col) if bal_col else pd.Series([0.0] * len(loans_df))
+    dpd = _num(loans_df, dpd_col) if dpd_col else pd.Series([0.0] * len(loans_df))
+    apr = _num(loans_df, apr_col) if apr_col else pd.Series([0.0] * len(loans_df))
     total_bal = bal.sum()
 
     # Rotation (12m)
     rotation_actual = 0.0
     if disb_col and bal_col:
-        dates    = pd.to_datetime(loans_df[disb_col], errors="coerce")
+        dates = pd.to_datetime(loans_df[disb_col], errors="coerce")
         disb_amt = _col(loans_df, ["disbursement_amount", "MontoDesembolsado"])
         if disb_amt:
             cutoff = dates.max()
@@ -603,8 +628,8 @@ def build_compliance_dashboard(
     # Concentration
     top1_pct = top10_pct = 0.0
     if deb_col and total_bal > 0:
-        deb_bal  = loans_df.assign(_b=bal).groupby(deb_col)["_b"].sum().sort_values(ascending=False)
-        top1_pct  = float(deb_bal.iloc[0] / total_bal * 100) if len(deb_bal) > 0 else 0.0
+        deb_bal = loans_df.assign(_b=bal).groupby(deb_col)["_b"].sum().sort_values(ascending=False)
+        top1_pct = float(deb_bal.iloc[0] / total_bal * 100) if len(deb_bal) > 0 else 0.0
         top10_pct = float(deb_bal.head(10).sum() / total_bal * 100)
 
     # PAR/NPL via SSOT-first path with compatibility fallback.
@@ -640,7 +665,7 @@ def build_compliance_dashboard(
     # If scheduled amount is missing, use disbursement_amount in trailing 6m as proxy.
     ce_actual: float | None = None
     pay_amt = _col(payments_df, ["true_total_payment", "payment_amount"])
-    sched   = _col(loans_df, ["total_scheduled", "scheduled_payment", "ValorAprobado"])
+    sched = _col(loans_df, ["total_scheduled", "scheduled_payment", "ValorAprobado"])
     disb_amt = _col(loans_df, ["disbursement_amount", "MontoDesembolsado"])
     if pay_amt:
         pay_date = _col(payments_df, ["true_payment_date", "payment_date"])
@@ -668,38 +693,48 @@ def build_compliance_dashboard(
             dscr_actual = noi_sum / debt_service_sum
 
     actuals = {
-        "rotation_x":              round(rotation_actual, 2),
-        "top1_concentration_pct":  round(top1_pct, 1),
+        "rotation_x": round(rotation_actual, 2),
+        "top1_concentration_pct": round(top1_pct, 1),
         "top10_concentration_pct": round(top10_pct, 1),
-        "par30_pct":               round(par30, 1),
-        "par90_pct":               round(par90, 1),
-        "npl_180_pct":             round(npl180, 1),
-        "utilization_pct":         round(util_actual, 1) if util_actual is not None else None,
-        "apr_pct_ann":             round(apr_ann, 1) if apr_ann is not None else None,
-        "ce_6m_pct":               round(ce_actual, 1) if ce_actual is not None else None,
-        "dscr":                    round(dscr_actual, 2) if dscr_actual is not None else None,
+        "par30_pct": round(par30, 1),
+        "par90_pct": round(par90, 1),
+        "npl_180_pct": round(npl180, 1),
+        "utilization_pct": round(util_actual, 1) if util_actual is not None else None,
+        "apr_pct_ann": round(apr_ann, 1) if apr_ann is not None else None,
+        "ce_6m_pct": round(ce_actual, 1) if ce_actual is not None else None,
+        "dscr": round(dscr_actual, 2) if dscr_actual is not None else None,
     }
     data_sources = {
-        "par":           f"loan.{dpd_col}" if dpd_col else "NO_DATA",
+        "par": f"loan.{dpd_col}" if dpd_col else "NO_DATA",
         "concentration": f"loan.{deb_col}" if deb_col else "NO_DATA",
-        "ce_6m":         "payments.true_total_payment / loan.disbursement_amount (6m proxy)" if not sched else f"payments.true_total_payment / loan.{sched}",
-        "utilization":   f"loan.{util_col}" if util_col else (f"loan.{line_col}" if line_col else "NO_DATA"),
-        "apr":           f"loan.{apr_col} (annual decimal ×100)" if apr_col else "NO_DATA",
-        "dscr":          (f"loan.{noi_col} / loan.{debt_service_col}" if (noi_col and debt_service_col) else "NO_DATA"),
+        "ce_6m": (
+            "payments.true_total_payment / loan.disbursement_amount (6m proxy)"
+            if not sched
+            else f"payments.true_total_payment / loan.{sched}"
+        ),
+        "utilization": (
+            f"loan.{util_col}" if util_col else (f"loan.{line_col}" if line_col else "NO_DATA")
+        ),
+        "apr": f"loan.{apr_col} (annual decimal ×100)" if apr_col else "NO_DATA",
+        "dscr": (
+            f"loan.{noi_col} / loan.{debt_service_col}"
+            if (noi_col and debt_service_col)
+            else "NO_DATA"
+        ),
     }
 
     # ── Build compliance rows ──────────────────────────────────────────
     # metric → (actual_key, target, lower_is_better, warning_band)
     metric_defs = {
-        "rotation_x":             ("rotation_x",             4.5,  False, 0.3),
-        "top1_concentration_pct": ("top1_concentration_pct", 4.0,  True,  1.0),
-        "top10_concentration_pct":("top10_concentration_pct",30.0, True,  3.0),
-        "par30_pct":              ("par30_pct",               5.0,  True,  1.0),
-        "par90_pct":              ("par90_pct",               2.0,  True,  0.5),
-        "npl_180_pct":            ("npl_180_pct",             4.0,  True,  0.5),
-        "utilization_pct":        ("utilization_pct",         75.0, False, 5.0),
-        "dscr":                   ("dscr",                    float(guardrails.get("dscr", 1.2)) if guardrails else 1.2, False, 0.1),
-        "ce_6m_pct":              ("ce_6m_pct",               96.0, False, 2.0),
+        "rotation_x": ("rotation_x", 4.5, False, 0.3),
+        "top1_concentration_pct": ("top1_concentration_pct", 4.0, True, 1.0),
+        "top10_concentration_pct": ("top10_concentration_pct", 30.0, True, 3.0),
+        "par30_pct": ("par30_pct", 5.0, True, 1.0),
+        "par90_pct": ("par90_pct", 2.0, True, 0.5),
+        "npl_180_pct": ("npl_180_pct", 4.0, True, 0.5),
+        "utilization_pct": ("utilization_pct", 75.0, False, 5.0),
+        "dscr": ("dscr", float(guardrails.get("dscr", 1.2)) if guardrails else 1.2, False, 0.1),
+        "ce_6m_pct": ("ce_6m_pct", 96.0, False, 2.0),
     }
 
     apr_min = float(guardrails.get("apr_pct_min", 36.0)) if guardrails else 36.0
@@ -712,19 +747,21 @@ def build_compliance_dashboard(
         actual = actuals.get(act_key)
         if actual is None:
             counts["no_data"] += 1
-            rows.append({
-                "metric":       metric,
-                "actual":       "NO_DATA",
-                "target":       target,
-                "variance":     None,
-                "variance_pct": None,
-                "status":       "no_data",
-                "lower_is_better": lower_is_better,
-                "owner":        owners.get(metric, "—"),
-            })
+            rows.append(
+                {
+                    "metric": metric,
+                    "actual": "NO_DATA",
+                    "target": target,
+                    "variance": None,
+                    "variance_pct": None,
+                    "status": "no_data",
+                    "lower_is_better": lower_is_better,
+                    "owner": owners.get(metric, "—"),
+                }
+            )
             continue
-        var    = actual - target
-        var_pct= round(var / target * 100, 1) if target else 0.0
+        var = actual - target
+        var_pct = round(var / target * 100, 1) if target else 0.0
 
         if lower_is_better:
             if actual <= target:
@@ -742,31 +779,35 @@ def build_compliance_dashboard(
                 stat = "breach"
 
         counts[stat] += 1
-        rows.append({
-            "metric":       metric,
-            "actual":       actual,
-            "target":       target,
-            "variance":     round(var, 2),
-            "variance_pct": var_pct,
-            "status":       stat,
-            "lower_is_better": lower_is_better,
-            "owner":        owners.get(metric, "—"),
-        })
+        rows.append(
+            {
+                "metric": metric,
+                "actual": actual,
+                "target": target,
+                "variance": round(var, 2),
+                "variance_pct": var_pct,
+                "status": stat,
+                "lower_is_better": lower_is_better,
+                "owner": owners.get(metric, "—"),
+            }
+        )
 
     # APR range check (min <= APR <= max) as explicit compliance metric.
     apr_actual = actuals.get("apr_pct_ann")
     if apr_actual is None:
         counts["no_data"] += 1
-        rows.append({
-            "metric":       "apr_pct_ann",
-            "actual":       "NO_DATA",
-            "target":       f"{apr_min:.1f}-{apr_max:.1f}",
-            "variance":     None,
-            "variance_pct": None,
-            "status":       "no_data",
-            "lower_is_better": False,
-            "owner":        owners.get("apr_pct_ann", owners.get("apr_pct_min", HEAD_OF_PRICING)),
-        })
+        rows.append(
+            {
+                "metric": "apr_pct_ann",
+                "actual": "NO_DATA",
+                "target": f"{apr_min:.1f}-{apr_max:.1f}",
+                "variance": None,
+                "variance_pct": None,
+                "status": "no_data",
+                "lower_is_better": False,
+                "owner": owners.get("apr_pct_ann", owners.get("apr_pct_min", HEAD_OF_PRICING)),
+            }
+        )
     else:
         apr_warn_band = 2.0
         if apr_actual < apr_min:
@@ -783,46 +824,48 @@ def build_compliance_dashboard(
             apr_stat = "ok"
 
         counts[apr_stat] += 1
-        rows.append({
-            "metric":       "apr_pct_ann",
-            "actual":       apr_actual,
-            "target":       f"{apr_min:.1f}-{apr_max:.1f}",
-            "variance":     apr_var,
-            "variance_pct": apr_var_pct,
-            "status":       apr_stat,
-            "lower_is_better": False,
-            "owner":        owners.get("apr_pct_ann", owners.get("apr_pct_min", HEAD_OF_PRICING)),
-        })
+        rows.append(
+            {
+                "metric": "apr_pct_ann",
+                "actual": apr_actual,
+                "target": f"{apr_min:.1f}-{apr_max:.1f}",
+                "variance": apr_var,
+                "variance_pct": apr_var_pct,
+                "status": apr_stat,
+                "lower_is_better": False,
+                "owner": owners.get("apr_pct_ann", owners.get("apr_pct_min", HEAD_OF_PRICING)),
+            }
+        )
 
     # ── Variance decomposition (qualitative drivers) ───────────────────
     variance_decomp = {
         "top1_concentration_pct": {
-            "driver":      "La Constancia LTDA — single pagador dominates",
-            "magnitude":   round(top1_pct - 4.0, 1),
+            "driver": "La Constancia LTDA — single pagador dominates",
+            "magnitude": round(top1_pct - 4.0, 1),
             "explanation": (
                 f"La Constancia represents ~{top1_pct:.0f}% of AUM vs 4% guardrail. "
                 "Reduce exposure by originating with competing debtors or applying per-debtor cap."
             ),
         },
         "par30_pct": {
-            "driver":      "Plazo extension + 2026 payment recording lag",
-            "magnitude":   round(par30 - 5.0, 1),
+            "driver": "Plazo extension + 2026 payment recording lag",
+            "magnitude": round(par30 - 5.0, 1),
             "explanation": (
                 "PAR30 elevated; partial cause is INTERMEDIA DPD calculated from "
                 "FechaPagoProgramado without 2026 payment records. Verify with real collections."
             ),
         },
         "par90_pct": {
-            "driver":      "Structural: factoring ops with extended terms breach 90-day bucket",
-            "magnitude":   round(par90 - 2.0, 1),
+            "driver": "Structural: factoring ops with extended terms breach 90-day bucket",
+            "magnitude": round(par90 - 2.0, 1),
             "explanation": (
                 "PAR90 guardrail (2%) is aggressive for a 46-day median term book. "
                 "Recommend reviewing guardrail calibration against peer benchmarks."
             ),
         },
         "rotation_x": {
-            "driver":      "AUM growth outpacing disbursement velocity in trailing 12m",
-            "magnitude":   round(rotation_actual - 4.5, 2),
+            "driver": "AUM growth outpacing disbursement velocity in trailing 12m",
+            "magnitude": round(rotation_actual - 4.5, 2),
             "explanation": (
                 f"Rotation {rotation_actual:.1f}x vs target 4.5x. "
                 "Accelerate collections cycle or reduce average term to recover velocity."
@@ -883,11 +926,11 @@ def build_compliance_dashboard(
         }
 
     return {
-        "generated_at":         datetime.now(timezone.utc).isoformat(),
-        "metrics":              rows,
-        "summary":              counts,
-        "actuals":              actuals,
-        "data_sources":         data_sources,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "metrics": rows,
+        "summary": counts,
+        "actuals": actuals,
+        "data_sources": data_sources,
         "variance_decomposition": variance_decomp,
     }
 
@@ -897,25 +940,86 @@ def build_compliance_dashboard(
 # ─────────────────────────────────────────────────────────────────────────────
 
 _IMPACT_MAP = {
-    "top1_concentration_pct":  ("high",   "medium", "Credit / Risk",      "Cap single-debtor exposure. Originate diversification ops with alternative pagadores."),
-    "top10_concentration_pct": ("high",   "low",    "Credit / Risk",      "Activate debtor-limit alerts. Rebalance origination pipeline away from top-10 cluster."),
-    "par30_pct":               ("high",   "medium", "Collections",        "Launch DPD 15+ early warning workflow. Assign KAM follow-up for outstanding ops."),
-    "par90_pct":               ("high",   "high",   "Collections / Risk", "Escalate 90+ DPD bucket to recovery team. Review provisions and LGD assumptions."),
-    "npl_180_pct":             ("medium", "medium", "Risk / Finance",     "Review NPL provisioning; confirm write-off criteria and recovery pipeline status."),
-    "revenue_usd":             ("high",   "medium", "Sales",              "Revenue under target trajectory. Activate KAM recovery plan and prioritize quick-conversion opportunities."),
-    "rotation_x":              ("medium", "medium", "Operations",         "Reduce average term by 5–10 days on new originations. Prioritise faster-cycling segments."),
-    "ce_6m_pct":               ("high",   "medium", "Collections",        "Audit 6M collection shortfall by KAM and debtor. Escalate top-5 lagging accounts."),
-    "apr_pct_ann":             ("medium", "low",    "Pricing",            "Recalibrate APR corridor by segment/channel. Review floor exceptions and competitiveness trade-offs."),
-    "dscr":                    ("high",   "medium", "Finance / Risk",     "Improve debt-service coverage by tightening affordability policy and restructuring weak cash-flow profiles."),
+    "top1_concentration_pct": (
+        "high",
+        "medium",
+        "Credit / Risk",
+        "Cap single-debtor exposure. Originate diversification ops with alternative pagadores.",
+    ),
+    "top10_concentration_pct": (
+        "high",
+        "low",
+        "Credit / Risk",
+        "Activate debtor-limit alerts. Rebalance origination pipeline away from top-10 cluster.",
+    ),
+    "par30_pct": (
+        "high",
+        "medium",
+        "Collections",
+        "Launch DPD 15+ early warning workflow. Assign KAM follow-up for outstanding ops.",
+    ),
+    "par90_pct": (
+        "high",
+        "high",
+        "Collections / Risk",
+        "Escalate 90+ DPD bucket to recovery team. Review provisions and LGD assumptions.",
+    ),
+    "npl_180_pct": (
+        "medium",
+        "medium",
+        "Risk / Finance",
+        "Review NPL provisioning; confirm write-off criteria and recovery pipeline status.",
+    ),
+    "revenue_usd": (
+        "high",
+        "medium",
+        "Sales",
+        "Revenue under target trajectory. Activate KAM recovery plan and prioritize quick-conversion opportunities.",
+    ),
+    "rotation_x": (
+        "medium",
+        "medium",
+        "Operations",
+        "Reduce average term by 5–10 days on new originations. Prioritise faster-cycling segments.",
+    ),
+    "ce_6m_pct": (
+        "high",
+        "medium",
+        "Collections",
+        "Audit 6M collection shortfall by KAM and debtor. Escalate top-5 lagging accounts.",
+    ),
+    "apr_pct_ann": (
+        "medium",
+        "low",
+        "Pricing",
+        "Recalibrate APR corridor by segment/channel. Review floor exceptions and competitiveness trade-offs.",
+    ),
+    "dscr": (
+        "high",
+        "medium",
+        "Finance / Risk",
+        "Improve debt-service coverage by tightening affordability policy and restructuring weak cash-flow profiles.",
+    ),
 }
 
 _NO_DATA_ACTION_MAP = {
-    "apr_pct_ann": ("medium", "low", "Pricing", "APR data unavailable. Complete APR field mapping in loan tape and backfill historical values for policy monitoring."),
-    "dscr":        ("high",   "medium", "Finance / Risk", "DSCR data unavailable. Integrate NOI and debt service fields from borrower financials to enable covenant monitoring."),
+    "apr_pct_ann": (
+        "medium",
+        "low",
+        "Pricing",
+        "APR data unavailable. Complete APR field mapping in loan tape and backfill historical values for policy monitoring.",
+    ),
+    "dscr": (
+        "high",
+        "medium",
+        "Finance / Risk",
+        "DSCR data unavailable. Integrate NOI and debt service fields from borrower financials to enable covenant monitoring.",
+    ),
 }
 
 
 # ── 7.2 Private helpers ────────────────────────────────────────────────────────
+
 
 def _plan_impact_rank(impact: str) -> int:
     return {"high": 0, "medium": 1, "low": 2}.get(str(impact).lower(), 3)
@@ -937,8 +1041,10 @@ def _plan_is_stronger(candidate: dict[str, Any], current: dict[str, Any]) -> boo
 def _canonical_plan_metric(metric: Any) -> str:
     metric_s = str(metric).strip().lower()
     return {
-        "par30_pct": "par30", "par90_pct": "par90",
-        "revenue_usd": "revenue", "apr_pct_ann": "apr",
+        "par30_pct": "par30",
+        "par90_pct": "par90",
+        "revenue_usd": "revenue",
+        "apr_pct_ann": "apr",
     }.get(metric_s, metric_s)
 
 
@@ -950,8 +1056,10 @@ def _plan_policy_lookup(metric: Any, policy_map: dict[str, Any]) -> Any:
     if canonical in policy_map:
         return policy_map[canonical]
     fallback = {
-        "par30": "par30_pct", "par90": "par90_pct",
-        "revenue": "revenue_usd", "apr": "apr_pct_ann",
+        "par30": "par30_pct",
+        "par90": "par90_pct",
+        "revenue": "revenue_usd",
+        "apr": "apr_pct_ann",
     }.get(canonical)
     if fallback and fallback in policy_map:
         return policy_map[fallback]
@@ -978,12 +1086,18 @@ def _load_compliance_actions(
                 action_text = f"{action_text} Driver: {vd_driver}."
             elif vd_expl:
                 action_text = f"{action_text} Context: {vd_expl}"
-            actions.append({
-                "area": area, "action": action_text, "impact": impact, "effort": effort,
-                "source": "compliance", "metric": row["metric"],
-                "variance": row.get("variance"),
-                "_sort_key": (0 if impact == "high" else 1, row.get("variance", 0)),
-            })
+            actions.append(
+                {
+                    "area": area,
+                    "action": action_text,
+                    "impact": impact,
+                    "effort": effort,
+                    "source": "compliance",
+                    "metric": row["metric"],
+                    "variance": row.get("variance"),
+                    "_sort_key": (0 if impact == "high" else 1, row.get("variance", 0)),
+                }
+            )
         elif row["status"] == "no_data":
             no_data_meta = _plan_policy_lookup(row.get("metric"), _NO_DATA_ACTION_MAP)
             if not no_data_meta:
@@ -993,11 +1107,18 @@ def _load_compliance_actions(
                 action_text = f"{action_text} Driver: {vd_driver}."
             elif vd_expl:
                 action_text = f"{action_text} Context: {vd_expl}"
-            actions.append({
-                "area": area, "action": action_text, "impact": impact, "effort": effort,
-                "source": "compliance", "metric": row["metric"], "variance": None,
-                "_sort_key": (0 if impact == "high" else 1, 0),
-            })
+            actions.append(
+                {
+                    "area": area,
+                    "action": action_text,
+                    "impact": impact,
+                    "effort": effort,
+                    "source": "compliance",
+                    "metric": row["metric"],
+                    "variance": None,
+                    "_sort_key": (0 if impact == "high" else 1, 0),
+                }
+            )
     return actions
 
 
@@ -1013,30 +1134,40 @@ def _load_forecast_actions(forecast: dict[str, Any]) -> list[dict[str, Any]]:
         if len(rows) < 2:
             continue
         first_val = rows[0].get("value", 0)
-        last_val  = rows[-1].get("value", 0)
+        last_val = rows[-1].get("value", 0)
         if kpi_name in ("PAR30", "PAR90") and last_val > first_val * 1.1:
-            actions.append({
-                "area": "Risk",
-                "action": (
-                    f"{kpi_name} forecast rises {first_val:.1f}% → {last_val:.1f}% over "
-                    f"{len(rows)} months. Pre-emptively tighten underwriting for "
-                    "high-DPD segments."
-                ),
-                "impact": "high", "effort": "medium", "source": "forecast",
-                "metric": kpi_name.lower(), "variance": round(last_val - first_val, 2),
-                "_sort_key": (0, last_val - first_val),
-            })
+            actions.append(
+                {
+                    "area": "Risk",
+                    "action": (
+                        f"{kpi_name} forecast rises {first_val:.1f}% → {last_val:.1f}% over "
+                        f"{len(rows)} months. Pre-emptively tighten underwriting for "
+                        "high-DPD segments."
+                    ),
+                    "impact": "high",
+                    "effort": "medium",
+                    "source": "forecast",
+                    "metric": kpi_name.lower(),
+                    "variance": round(last_val - first_val, 2),
+                    "_sort_key": (0, last_val - first_val),
+                }
+            )
         elif kpi_name == "Revenue" and last_val < first_val * 0.9:
-            actions.append({
-                "area": "Sales",
-                "action": (
-                    f"Revenue forecast declines ${first_val:,.0f} → ${last_val:,.0f}/month. "
-                    "Activate KAM pipeline review; prioritise upgrades in $50–150K bucket."
-                ),
-                "impact": "high", "effort": "medium", "source": "forecast",
-                "metric": "revenue", "variance": round(last_val - first_val, 2),
-                "_sort_key": (0, first_val - last_val),
-            })
+            actions.append(
+                {
+                    "area": "Sales",
+                    "action": (
+                        f"Revenue forecast declines ${first_val:,.0f} → ${last_val:,.0f}/month. "
+                        "Activate KAM pipeline review; prioritise upgrades in $50–150K bucket."
+                    ),
+                    "impact": "high",
+                    "effort": "medium",
+                    "source": "forecast",
+                    "metric": "revenue",
+                    "variance": round(last_val - first_val, 2),
+                    "_sort_key": (0, first_val - last_val),
+                }
+            )
     return actions
 
 
@@ -1046,18 +1177,23 @@ def _load_outlier_actions(outlier_alerts: list[dict] | None) -> list[dict[str, A
         return []
     total_flagged_bal = sum(a.get("outstanding_usd", 0) for a in outlier_alerts[:20])
     top_var = outlier_alerts[0].get("variable", "unknown")
-    return [{
-        "area": "Risk",
-        "action": (
-            f"{len(outlier_alerts)} exposure-weighted outliers flagged "
-            f"(total ${total_flagged_bal:,.0f} outstanding). "
-            f"Top anomaly variable: {top_var}. "
-            "Review weekly watchlist in CRO pack."
-        ),
-        "impact": "medium", "effort": "low", "source": "outlier",
-        "metric": "outlier_detection", "variance": None,
-        "_sort_key": (1, -total_flagged_bal),
-    }]
+    return [
+        {
+            "area": "Risk",
+            "action": (
+                f"{len(outlier_alerts)} exposure-weighted outliers flagged "
+                f"(total ${total_flagged_bal:,.0f} outstanding). "
+                f"Top anomaly variable: {top_var}. "
+                "Review weekly watchlist in CRO pack."
+            ),
+            "impact": "medium",
+            "effort": "low",
+            "source": "outlier",
+            "metric": "outlier_detection",
+            "variance": None,
+            "_sort_key": (1, -total_flagged_bal),
+        }
+    ]
 
 
 def _load_pd_model_actions(pd_result: dict[str, Any] | None) -> list[dict[str, Any]]:
@@ -1067,17 +1203,22 @@ def _load_pd_model_actions(pd_result: dict[str, Any] | None) -> list[dict[str, A
     top_pd = [r for r in pd_result.get("pd_scores", []) if r["pd_score"] >= 0.50]
     if not top_pd:
         return []
-    return [{
-        "area": "Credit",
-        "action": (
-            f"PD model identifies {len(top_pd)} loans with PD >= 50% "
-            f"(AUC {pd_result.get('auc_mean', 0):.3f}). "
-            "Flag for enhanced monitoring, provisioning review, and collections escalation."
-        ),
-        "impact": "high", "effort": "low", "source": "pd_model",
-        "metric": "probability_of_default", "variance": None,
-        "_sort_key": (0, -len(top_pd)),
-    }]
+    return [
+        {
+            "area": "Credit",
+            "action": (
+                f"PD model identifies {len(top_pd)} loans with PD >= 50% "
+                f"(AUC {pd_result.get('auc_mean', 0):.3f}). "
+                "Flag for enhanced monitoring, provisioning review, and collections escalation."
+            ),
+            "impact": "high",
+            "effort": "low",
+            "source": "pd_model",
+            "metric": "probability_of_default",
+            "variance": None,
+            "_sort_key": (0, -len(top_pd)),
+        }
+    ]
 
 
 def _consolidate_plan_actions(actions: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1098,8 +1239,12 @@ def _consolidate_plan_actions(actions: list[dict[str, Any]]) -> list[dict[str, A
         secondary = current if primary is action else action
         if secondary.get("action") and secondary["action"] not in primary.get("action", ""):
             primary["action"] = f"{primary['action']} Additional context: {secondary['action']}"
-        primary_sources = {s.strip() for s in str(primary.get("source", "")).split("+") if s.strip()}
-        secondary_sources = {s.strip() for s in str(secondary.get("source", "")).split("+") if s.strip()}
+        primary_sources = {
+            s.strip() for s in str(primary.get("source", "")).split("+") if s.strip()
+        }
+        secondary_sources = {
+            s.strip() for s in str(secondary.get("source", "")).split("+") if s.strip()
+        }
         primary["source"] = "+".join(sorted(primary_sources | secondary_sources)) or "compliance"
         if primary.get("variance") is None and secondary.get("variance") is not None:
             primary["variance"] = secondary.get("variance")
@@ -1108,10 +1253,10 @@ def _consolidate_plan_actions(actions: list[dict[str, Any]]) -> list[dict[str, A
 
 
 def build_next_steps_plan(
-    forecast:    dict[str, Any],
-    compliance:  dict[str, Any],
+    forecast: dict[str, Any],
+    compliance: dict[str, Any],
     outlier_alerts: list[dict] | None = None,
-    pd_result:   dict[str, Any] | None = None,
+    pd_result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Synthesise alerts, compliance gaps, forecast signals, and PD scores
@@ -1148,6 +1293,6 @@ def build_next_steps_plan(
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "action_count": len(actions),
-        "actions":      actions,
+        "actions": actions,
         "sources_used": list({a["source"] for a in actions}),
     }

@@ -1,6 +1,6 @@
 """Canonical multi-agent namespace under src/agents.
 
-DEPRECATED: This module is a shim for backward compatibility. 
+DEPRECATED: This module is a shim for backward compatibility.
 Please import from `backend.python.multi_agent` directly.
 """
 
@@ -35,7 +35,7 @@ warnings.warn(
     "Importing from `backend.src.agents.multi_agent` is deprecated and will be removed in Q2 2026. "
     "Please import from `backend.python.multi_agent` directly.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 __all__ = [

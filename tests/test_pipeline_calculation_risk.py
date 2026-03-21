@@ -862,9 +862,7 @@ class TestSilentHandlerHardening:
 
     def test_rollup_sum_raises_on_non_datetime_column(self):
         """_rollup_sum must raise CRITICAL ValueError when the date column is not datetime-like."""
-        df = pd.DataFrame(
-            {"txn_date": ["not-a-date", "also-not-a-date"], "amount": [100.0, 200.0]}
-        )
+        df = pd.DataFrame({"txn_date": ["not-a-date", "also-not-a-date"], "amount": [100.0, 200.0]})
         phase = object.__new__(CalculationPhase)
         with pytest.raises(ValueError, match="CRITICAL:"):
             phase._rollup_sum(df, "txn_date", ["amount"], "daily", 30)

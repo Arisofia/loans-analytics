@@ -435,21 +435,32 @@ if app is not None:
 
     # --- Prometheus metrics (exposes GET /metrics) ---
     try:
-        from prometheus_fastapi_instrumentator import Instrumentator  # type: ignore[import-untyped]
+        from prometheus_fastapi_instrumentator import Instrumentator
 
         Instrumentator().instrument(app).expose(app, endpoint="/metrics")
     except ImportError:
         logger.warning("prometheus-fastapi-instrumentator not installed; /metrics disabled")
 
     # --- Rate limiting middleware ---
-    _RATE_LIMIT_EXEMPT = {"/health", "/metrics", "/metrics/kpis", DOCS_PATH, "/openapi.json", REDOC_PATH}
+    _RATE_LIMIT_EXEMPT = {
+        "/health",
+        "/metrics",
+        "/metrics/kpis",
+        DOCS_PATH,
+        "/openapi.json",
+        REDOC_PATH,
+    }
     _AUTH_PATHS = {"/auth/token", "/auth/login", "/auth/refresh"}
 
     @app.middleware("http")
     async def rate_limit_middleware(request: Request, call_next):
         """Enforce sliding-window rate limits per client IP on all non-exempt routes."""
         path = request.url.path
-        if path not in _RATE_LIMIT_EXEMPT and not path.startswith(REDOC_PATH) and not path.startswith(DOCS_PATH):
+        if (
+            path not in _RATE_LIMIT_EXEMPT
+            and not path.startswith(REDOC_PATH)
+            and not path.startswith(DOCS_PATH)
+        ):
             client_ip = (request.client.host if request.client else None) or "unknown"
             limiter = auth_limiter if path in _AUTH_PATHS else api_limiter
             if not limiter.is_allowed(client_ip):
@@ -825,7 +836,9 @@ if app is not None:
                     kpis = await service.get_latest_kpis(kpi_keys=requested_keys or None)
                 except Exception as fetch_exc:
                     logger.error("KPI stream fetch failed: %s", fetch_exc)
-                    await websocket.send_json({"event": "error", "detail": "KPI fetch failed — stream terminated"})
+                    await websocket.send_json(
+                        {"event": "error", "detail": "KPI fetch failed — stream terminated"}
+                    )
                     break
                 if kpis:
                     _publish_kpi_metrics(kpis, category="portfolio")
@@ -1057,7 +1070,9 @@ if app is not None:
             trace_id, summary = await _resolve_full_analysis_summary(
                 request, service, kpis, kpi_summary, roll_rates
             )
-            return await _map_full_analysis_response(request, service, kpis, trace_id, summary, roll_rates)
+            return await _map_full_analysis_response(
+                request, service, kpis, trace_id, summary, roll_rates
+            )
         except Exception as e:
             logger.error("Error in get_full_analysis: %s", e)
             raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
@@ -1389,7 +1404,7 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
 
 
 if __name__ == "__main__":
-    import uvicorn  # type: ignore[import-untyped]
+    import uvicorn
 
     host = os.getenv("API_HOST", "127.0.0.1")
     port = int(os.getenv("API_PORT", "8000"))

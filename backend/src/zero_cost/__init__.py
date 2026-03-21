@@ -30,12 +30,12 @@ from .xirr import contractual_apr, loan_xirr, portfolio_xirr, xirr
 
 __all__ = [
     "ZeroCostStorage",
-  "LendIdMapper",
+    "LendIdMapper",
     "ControlMoraAdapter",
     "MonthlySnapshotBuilder",
-  "FuzzyIncomeMatcher",
+    "FuzzyIncomeMatcher",
     "LoanTapeLoader",
-  "Crosswalk",
+    "Crosswalk",
     "DPDCalculator",
     "PipelineRouter",
     "Exporter",
@@ -48,4 +48,3 @@ __all__ = [
     "loan_xirr",
     "portfolio_xirr",
 ]
-

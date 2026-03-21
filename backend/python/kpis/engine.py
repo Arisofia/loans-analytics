@@ -54,7 +54,9 @@ logger = get_logger(__name__)
 
 # Log message format constants
 _LOG_KPI_CALCULATED = "Calculated %s: %s"
-_LOG_KPI_CALCULATION_ERROR = "Failed to calculate %s: %s"  # Error message template for KPI calculation failures
+_LOG_KPI_CALCULATION_ERROR = (
+    "Failed to calculate %s: %s"  # Error message template for KPI calculation failures
+)
 
 # Loan statuses considered non-performing for NPL calculations.
 # Used in both the broad (DPD≥30) and strict (DPD≥90) NPL definitions.
@@ -144,22 +146,30 @@ class KPIEngineV2:
             raise ValueError(f"Missing required columns for PAR30: {', '.join(missing)}")
         d30_60 = pd.to_numeric(self.df["dpd_30_60_usd"], errors="coerce").fillna(0.0).sum()
         d60_90 = pd.to_numeric(self.df["dpd_60_90_usd"], errors="coerce").fillna(0.0).sum()
-        d90p   = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
-        total  = pd.to_numeric(self.df["total_receivable_usd"], errors="coerce").fillna(0.0).sum()
+        d90p = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
+        total = pd.to_numeric(self.df["total_receivable_usd"], errors="coerce").fillna(0.0).sum()
         if total <= 0:
             return Decimal("0.00"), "v1_legacy_buckets"
-        return Decimal(str(round(((d30_60 + d60_90 + d90p) / total) * 100, 2))).quantize(Decimal("0.01")), "v1_legacy_buckets"
+        return (
+            Decimal(str(round(((d30_60 + d60_90 + d90p) / total) * 100, 2))).quantize(
+                Decimal("0.01")
+            ),
+            "v1_legacy_buckets",
+        )
 
     def _calc_par90_legacy(self) -> tuple[Decimal, str]:
         required = ["dpd_90_plus_usd", "total_receivable_usd"]
         missing = [col for col in required if col not in self.df.columns]
         if missing:
             raise ValueError(f"Missing required columns for PAR90: {', '.join(missing)}")
-        d90p  = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
+        d90p = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
         total = pd.to_numeric(self.df["total_receivable_usd"], errors="coerce").fillna(0.0).sum()
         if total <= 0:
             return Decimal("0.00"), "v1_legacy_buckets"
-        return Decimal(str(round((d90p / total) * 100, 2))).quantize(Decimal("0.01")), "v1_legacy_buckets"
+        return (
+            Decimal(str(round((d90p / total) * 100, 2))).quantize(Decimal("0.01")),
+            "v1_legacy_buckets",
+        )
 
     # ─────────────────────────────────────────────────────────────────────────
 
@@ -167,9 +177,11 @@ class KPIEngineV2:
         """Calculate Portfolio at Risk (30+ days)."""
         kpi_name = "PAR30"
         try:
-            balance_col = self._resolve_col(self.df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd")
+            balance_col = self._resolve_col(
+                self.df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd"
+            )
             dpd_col = self._resolve_col(self.df, "dpd", "days_past_due")
-            
+
             # Map legacy columns if needed for SSoT
             if not dpd_col and "dpd_30_60_usd" in self.df.columns:
                 # If we only have legacy buckets, we can't use SSoT easily without reconstruction
@@ -205,7 +217,9 @@ class KPIEngineV2:
         """Calculate Portfolio at Risk (90+ days)."""
         kpi_name = "PAR90"
         try:
-            balance_col = self._resolve_col(self.df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd")
+            balance_col = self._resolve_col(
+                self.df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd"
+            )
             dpd_col = self._resolve_col(self.df, "dpd", "days_past_due")
 
             if not dpd_col and "dpd_90_plus_usd" in self.df.columns:
@@ -427,7 +441,10 @@ class KPIEngineV2:
             except Exception as e:
                 # Bypass division by zero for historically unavailable metrics. Inapplicable formulas shouldn't kill the dataset context.
                 if "Division by zero" in str(e):
-                    logger.warning("Skipping dynamic KPI %s due to zero-division math (e.g., missing previous month data).", kpi_name)
+                    logger.warning(
+                        "Skipping dynamic KPI %s due to zero-division math (e.g., missing previous month data).",
+                        kpi_name,
+                    )
                     continue
                 logger.error("Dynamic KPI %s failed: %s", kpi_name, e)
                 # Fail-fast mandate: do not return partial/silent failures
@@ -536,9 +553,11 @@ class KPIEngineV2:
 
     def _calculate_derived_risk_kpis(self, df: pd.DataFrame) -> Dict[str, Decimal]:
         """Compute derived risk KPIs not covered by the formula catalog."""
-        balance_col = self._resolve_col(df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd")
+        balance_col = self._resolve_col(
+            df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd"
+        )
         dpd_col = self._resolve_col(df, "dpd", "days_past_due")
-        
+
         if not balance_col or not dpd_col:
             return {}
 
@@ -549,8 +568,12 @@ class KPIEngineV2:
             actor=getattr(self, "actor", "system"),
             metric_aliases=["par30", "par90", "npl", "npl90"],
         )
-        
-        active_df = df[df["status"].isin(["active", "delinquent", "defaulted"])] if "status" in df.columns else df
+
+        active_df = (
+            df[df["status"].isin(["active", "delinquent", "defaulted"])]
+            if "status" in df.columns
+            else df
+        )
         total_out = Decimal(str(active_df[balance_col].sum()))
 
         if total_out <= 0:
@@ -567,7 +590,8 @@ class KPIEngineV2:
         # defaulted_outstanding_ratio is strictly status-based defaults
         defaulted_out = Decimal(
             str(active_df.loc[active_df["status"].isin(_NPL_STRICT_STATUSES), balance_col].sum())
-            if "status" in active_df.columns else 0.0
+            if "status" in active_df.columns
+            else 0.0
         )
 
         kpis: Dict[str, Decimal] = {

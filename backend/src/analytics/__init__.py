@@ -87,13 +87,14 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
         enriched[col] = standardize_numeric(enriched[col])
 
     with np.errstate(divide="ignore", invalid="ignore"):
-        enriched["ltv_ratio"] = enriched["loan_amount"] / enriched["appraised_value"].replace(0, np.nan)
+        enriched["ltv_ratio"] = enriched["loan_amount"] / enriched["appraised_value"].replace(
+            0, np.nan
+        )
 
     income_positive = enriched["borrower_income"] > 0
     enriched["dti_ratio"] = np.nan
-    enriched.loc[income_positive, "dti_ratio"] = (
-        enriched.loc[income_positive, "monthly_debt"]
-        / (enriched.loc[income_positive, "borrower_income"] / 12.0)
+    enriched.loc[income_positive, "dti_ratio"] = enriched.loc[income_positive, "monthly_debt"] / (
+        enriched.loc[income_positive, "borrower_income"] / 12.0
     )
 
     principal_series = enriched["principal_balance"].dropna()
@@ -105,8 +106,16 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
     weighted_interest = (enriched["principal_balance"] * enriched["interest_rate"]).dropna()
     portfolio_yield = float(weighted_interest.sum()) / principal_sum if principal_sum > 0 else 0.0
 
-    average_ltv = float(enriched["ltv_ratio"].mean(skipna=True)) if not enriched["ltv_ratio"].dropna().empty else 0.0
-    average_dti = float(enriched["dti_ratio"].mean(skipna=True)) if not enriched["dti_ratio"].dropna().empty else 0.0
+    average_ltv = (
+        float(enriched["ltv_ratio"].mean(skipna=True))
+        if not enriched["ltv_ratio"].dropna().empty
+        else 0.0
+    )
+    average_dti = (
+        float(enriched["dti_ratio"].mean(skipna=True))
+        if not enriched["dti_ratio"].dropna().empty
+        else 0.0
+    )
 
     metrics = {
         "delinquency_rate": delinquency_rate,
@@ -128,7 +137,9 @@ def project_growth(
     if periods < 2:
         raise ValueError("periods must be at least 2")
 
-    base_month = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    base_month = datetime.now(timezone.utc).replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None
+    )
     months = pd.date_range(base_month, periods=periods, freq="MS")
 
     projection = pd.DataFrame(

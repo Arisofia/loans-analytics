@@ -300,7 +300,11 @@ class PipelineRouter:
     ) -> dict[str, pd.DataFrame]:
         tab_name = self._extract_gsheets_tab(source)
         adapter = self._get_sheets_adapter()
-        records = adapter.fetch_intermedia_raw() if tab_name.upper() == "INTERMEDIA" else adapter.fetch_sheet_raw(tab_name)
+        records = (
+            adapter.fetch_intermedia_raw()
+            if tab_name.upper() == "INTERMEDIA"
+            else adapter.fetch_sheet_raw(tab_name)
+        )
         df = pd.DataFrame(records)
 
         empty = pd.Series(index=df.index, dtype="object")
@@ -311,9 +315,7 @@ class PipelineRouter:
                 if col not in frame.columns:
                     continue
                 candidate = frame[col].astype(str).str.strip()
-                candidate = candidate.mask(
-                    candidate.str.lower().isin({"", "nan", "none", "null"})
-                )
+                candidate = candidate.mask(candidate.str.lower().isin({"", "nan", "none", "null"}))
                 result = result.fillna(candidate)
             return result
 
@@ -331,7 +333,9 @@ class PipelineRouter:
 
         # One-line behavioral fix requested: ignore pre-disbursement rows in DPD computation.
         dpd = ((snapshot_month.normalize() - due_date).dt.days.clip(lower=0)).fillna(0)
-        dpd = dpd.where(disbursement_date.notna() & (disbursement_date <= snapshot_month), 0).astype(int)
+        dpd = dpd.where(
+            disbursement_date.notna() & (disbursement_date <= snapshot_month), 0
+        ).astype(int)
 
         # KAM resolution from INTERMEDIA first, then fallback from DESEMBOLSOS (CJ/CL).
         kam_hunter = _first_non_empty(df, ["Cod_Kam_hunter", "CJ"])
@@ -350,7 +354,9 @@ class PipelineRouter:
             des_kam = des_kam_hunter.fillna(des_kam_farmer)
 
             des_client = _first_non_empty(desembolsos_df, ["CodCliente"]).astype(str)
-            des_numero = _first_non_empty(desembolsos_df, ["NumeroDesembolso", "NumeroInterno"]).astype(str)
+            des_numero = _first_non_empty(
+                desembolsos_df, ["NumeroDesembolso", "NumeroInterno"]
+            ).astype(str)
 
             map_by_client = pd.Series(des_kam.values, index=des_client).dropna()
             map_by_numero = pd.Series(des_kam.values, index=des_numero).dropna()

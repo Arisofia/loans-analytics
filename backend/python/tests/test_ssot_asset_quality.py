@@ -31,7 +31,9 @@ def test_calculate_asset_quality_metrics_normalizes_status_values() -> None:
     dpd = pd.Series([10.0, 95.0, 190.0])
     status = pd.Series(["Current", "DELINQUENT", "in default"])
 
-    with patch("backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi") as mock_calc:
+    with patch(
+        "backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi"
+    ) as mock_calc:
         mock_calc.return_value = {"value": 0.0}
         calculate_asset_quality_metrics(
             balance,

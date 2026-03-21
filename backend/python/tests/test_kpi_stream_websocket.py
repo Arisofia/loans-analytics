@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 from fastapi.testclient import TestClient
 
@@ -55,7 +55,9 @@ def test_kpi_stream_websocket_supports_kpi_key_filter_param():
 
     app.dependency_overrides[get_kpi_service] = _make_mock_kpi_service
     try:
-        with client.websocket_connect("/analytics/kpis/stream?once=true&kpi_keys=PAR30") as websocket:
+        with client.websocket_connect(
+            "/analytics/kpis/stream?once=true&kpi_keys=PAR30"
+        ) as websocket:
             payload = websocket.receive_json()
     finally:
         app.dependency_overrides.pop(get_kpi_service, None)

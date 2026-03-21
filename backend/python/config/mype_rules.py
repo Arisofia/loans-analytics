@@ -68,10 +68,14 @@ class MYPEBusinessRules:
     @classmethod
     def calculate_industry_adjustment(cls, industry: IndustryType | str | None) -> float:
         try:
-            industry_key = industry if isinstance(industry, IndustryType) else IndustryType(str(industry))
+            industry_key = (
+                industry if isinstance(industry, IndustryType) else IndustryType(str(industry))
+            )
         except Exception:
             industry_key = IndustryType.OTHER
-        return cls.INDUSTRY_MULTIPLIERS.get(industry_key, cls.INDUSTRY_MULTIPLIERS[IndustryType.OTHER])
+        return cls.INDUSTRY_MULTIPLIERS.get(
+            industry_key, cls.INDUSTRY_MULTIPLIERS[IndustryType.OTHER]
+        )
 
     @classmethod
     def classify_npl(cls, dpd: int | float) -> tuple[bool, str]:
@@ -81,7 +85,9 @@ class MYPEBusinessRules:
         return False, f"Loan current/watchlist: DPD {int(value)}"
 
     @classmethod
-    def check_rotation_target(cls, annual_disbursement: float, average_balance: float) -> tuple[float, bool, str]:
+    def check_rotation_target(
+        cls, annual_disbursement: float, average_balance: float
+    ) -> tuple[float, bool, str]:
         if average_balance <= 0:
             return 0.0, False, "Average balance unavailable"
 
@@ -132,7 +138,9 @@ class MYPEBusinessRules:
         is_high_risk, high_risk_reasons = cls.classify_high_risk(metrics)
         reasons.extend(high_risk_reasons)
 
-        rotation, meets_rotation, rotation_message = cls.check_rotation_target(annual_revenue, avg_balance)
+        rotation, meets_rotation, rotation_message = cls.check_rotation_target(
+            annual_revenue, avg_balance
+        )
         if not meets_rotation:
             reasons.append(rotation_message.replace("below", "below (Rotation)"))
 

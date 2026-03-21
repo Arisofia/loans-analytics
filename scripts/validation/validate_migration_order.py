@@ -27,10 +27,10 @@ MIGRATION_DIR = Path(__file__).parent.parent.parent / "db" / "migrations"
 INDEX_FILE = MIGRATION_DIR / "migration_index.yml"
 
 # Migration naming pattern: NN_name or YYYYMMDDhhmmss_name
-MIGRATION_PATTERN = re.compile(r'^(\d{2,14})_[a-z0-9_]+\.sql$')
+MIGRATION_PATTERN = re.compile(r"^(\d{2,14})_[a-z0-9_]+\.sql$")
 
 # Init migration must come first
-INIT_MIGRATION_PATTERN = re.compile(r'^000?_init')
+INIT_MIGRATION_PATTERN = re.compile(r"^000?_init")
 
 
 def extract_sort_key(migration_name: str) -> Tuple[int, str]:
@@ -42,7 +42,7 @@ def extract_sort_key(migration_name: str) -> Tuple[int, str]:
     match = MIGRATION_PATTERN.match(migration_name)
     if not match:
         raise ValueError(f"Invalid migration name format: {migration_name}")
-    
+
     numeric_part = match.group(1)
     return (int(numeric_part), migration_name)
 
@@ -62,25 +62,25 @@ def validate_migration_format(migrations: List[str]) -> Tuple[bool, List[str]]:
 def validate_monotonic_order(migrations: List[str]) -> Tuple[bool, List[str]]:
     """Validate that migrations are in strictly monotonic order."""
     errors = []
-    
+
     try:
         sorted_migrations = sorted(migrations, key=lambda m: extract_sort_key(m))
     except ValueError as e:
         errors.append(f"  {e}")
         return False, errors
-    
+
     if migrations != sorted_migrations:
         errors.append("  Migration order is not monotonic (not sortable).")
         errors.append("  Expected sorted order:")
         for i, mig in enumerate(sorted_migrations, 1):
-            mark = "[OK]" if i <= len(migrations) and mig == migrations[i-1] else "[X]"
+            mark = "[OK]" if i <= len(migrations) and mig == migrations[i - 1] else "[X]"
             errors.append(f"    {i:2d}. {mig} {mark}")
         errors.append("\n  Current order:")
         for i, mig in enumerate(migrations, 1):
-            expected = sorted_migrations[i-1] if i <= len(sorted_migrations) else "?"
+            expected = sorted_migrations[i - 1] if i <= len(sorted_migrations) else "?"
             mark = "[OK]" if mig == expected else "[X]"
             errors.append(f"    {i:2d}. {mig} {mark}")
-    
+
     return len(errors) == 0, errors
 
 
@@ -89,30 +89,30 @@ def validate_no_duplicates(migrations: List[str]) -> Tuple[bool, List[str]]:
     errors = []
     seen = set()
     duplicates = []
-    
+
     for migration in migrations:
         if migration in seen:
             duplicates.append(migration)
         seen.add(migration)
-    
+
     if duplicates:
         errors.append(f"  Found {len(duplicates)} duplicate migration(s):")
         for dup in sorted(set(duplicates)):
             count = migrations.count(dup)
             errors.append(f"    - {dup} (appears {count} times)")
-    
+
     return len(errors) == 0, errors
 
 
 def validate_init_first(migrations: List[str]) -> Tuple[bool, List[str]]:
     """Validate that init migrations come first."""
     errors = []
-    
+
     init_migrations = [m for m in migrations if INIT_MIGRATION_PATTERN.match(m)]
     if not init_migrations:
         errors.append("  No init migration found (expected: 00_init_*.sql)")
         return False, errors
-    
+
     first_migration = migrations[0] if migrations else None
     if first_migration and not INIT_MIGRATION_PATTERN.match(first_migration):
         errors.append(
@@ -120,41 +120,41 @@ def validate_init_first(migrations: List[str]) -> Tuple[bool, List[str]]:
             f"    Expected first: {init_migrations[0]}\n"
             f"    Found first: {first_migration}"
         )
-    
+
     return len(errors) == 0, errors
 
 
 def validate_index_file(index_path: Path) -> Tuple[bool, List[str], List[str]]:
     """Load and validate migration_index.yml."""
     errors = []
-    
+
     if not index_path.exists():
         errors.append(f"Migration index file not found: {index_path}")
         return False, errors, []
-    
+
     try:
-        with open(index_path, 'r') as f:
+        with open(index_path, "r") as f:
             data = yaml.safe_load(f)
     except Exception as e:
         errors.append(f"Error reading migration_index.yml: {e}")
         return False, errors, []
-    
-    if not data or 'ordered_migrations' not in data:
+
+    if not data or "ordered_migrations" not in data:
         errors.append("Migration index missing 'ordered_migrations' key")
         return False, errors, []
-    
-    migrations = data.get('ordered_migrations', [])
+
+    migrations = data.get("ordered_migrations", [])
     if not migrations:
         errors.append("No migrations found in ordered_migrations list")
         return False, errors, []
-    
+
     return True, errors, migrations
 
 
 def main():
     """Run all migration order validations."""
     print("[INFO] Validating migration order and determinism...\n")
-    
+
     # Load migration index
     is_loaded, load_errors, migrations = validate_index_file(INDEX_FILE)
     if not is_loaded:
@@ -162,12 +162,12 @@ def main():
         for error in load_errors:
             print(f"   {error}")
         return 1
-    
+
     print(f"[LIST] Found {len(migrations)} migrations in index\n")
-    
+
     all_valid = True
     all_errors = []
-    
+
     # Run all validations
     validations = [
         ("Migration naming convention", validate_migration_format),
@@ -175,20 +175,20 @@ def main():
         ("No duplicate migrations", validate_no_duplicates),
         ("Init migration first", validate_init_first),
     ]
-    
+
     for validation_name, validation_func in validations:
         is_valid, errors = validation_func(migrations)
         status_icon = "[PASS]" if is_valid else "[FAIL]"
         print(f"{status_icon} {validation_name}")
-        
+
         if errors:
             all_valid = False
             for error in errors:
                 print(f"   {error}")
             all_errors.extend(errors)
-        
+
         print()
-    
+
     # Print summary
     print("=" * 70)
     if all_valid:

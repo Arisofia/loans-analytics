@@ -40,14 +40,22 @@ def _build_kam_maps(desembolsos_df: pd.DataFrame) -> tuple[pd.Series, pd.Series]
     kam = kam_hunter.fillna(kam_farmer)
 
     # Prefer numeric customer code when available; fallback to CJ/Cliente_ textual key.
-    client_id = _first_non_empty(
-        desembolsos_df,
-        ["CodCliente", "CodCliente_"],
-    ).astype(str).str.strip()
-    client_name = _first_non_empty(
-        desembolsos_df,
-        ["Cliente_", "Cliente", "CJ"],
-    ).astype(str).str.strip()
+    client_id = (
+        _first_non_empty(
+            desembolsos_df,
+            ["CodCliente", "CodCliente_"],
+        )
+        .astype(str)
+        .str.strip()
+    )
+    client_name = (
+        _first_non_empty(
+            desembolsos_df,
+            ["Cliente_", "Cliente", "CJ"],
+        )
+        .astype(str)
+        .str.strip()
+    )
 
     mapped = pd.DataFrame({"cod_cliente": client_id, "client_name": client_name, "kam": kam})
     mapped["cod_cliente"] = mapped["cod_cliente"].astype(str).str.strip()
@@ -72,12 +80,18 @@ def _build_kam_maps(desembolsos_df: pd.DataFrame) -> tuple[pd.Series, pd.Series]
 
 
 def _build_overrides_from_intermedia(intermedia_df: pd.DataFrame) -> pd.DataFrame:
-    cod_cliente = _first_non_empty(intermedia_df, ["CodCliente", "cod_cliente"]).astype(str).str.strip()
-    cliente = _first_non_empty(intermedia_df, ["Cliente", "cliente", "client_name"]).astype(str).str.strip()
+    cod_cliente = (
+        _first_non_empty(intermedia_df, ["CodCliente", "cod_cliente"]).astype(str).str.strip()
+    )
+    cliente = (
+        _first_non_empty(intermedia_df, ["Cliente", "cliente", "client_name"])
+        .astype(str)
+        .str.strip()
+    )
     base = pd.DataFrame({"cod_cliente": cod_cliente, "cliente": cliente})
-    base = base[
-        ~base["cod_cliente"].str.lower().isin({"", "nan", "none", "null"})
-    ].drop_duplicates(subset=["cod_cliente"], keep="first")
+    base = base[~base["cod_cliente"].str.lower().isin({"", "nan", "none", "null"})].drop_duplicates(
+        subset=["cod_cliente"], keep="first"
+    )
     base["industry"] = ""
     base["kam"] = ""
     base["lt_customer_id"] = ""
@@ -119,14 +133,22 @@ def run(args: argparse.Namespace) -> None:
     if "lt_customer_id" not in overrides_df.columns:
         overrides_df["lt_customer_id"] = ""
     if "cliente" not in overrides_df.columns:
-        inter_cliente = _first_non_empty(intermedia_df, ["Cliente", "cliente", "client_name"]).astype(str).str.strip()
-        inter_cod = _first_non_empty(intermedia_df, ["CodCliente", "cod_cliente"]).astype(str).str.strip()
+        inter_cliente = (
+            _first_non_empty(intermedia_df, ["Cliente", "cliente", "client_name"])
+            .astype(str)
+            .str.strip()
+        )
+        inter_cod = (
+            _first_non_empty(intermedia_df, ["CodCliente", "cod_cliente"]).astype(str).str.strip()
+        )
         inter_map_df = pd.DataFrame({"cod_cliente": inter_cod, "cliente": inter_cliente})
         inter_map_df = inter_map_df[
             ~inter_map_df["cod_cliente"].str.lower().isin({"", "nan", "none", "null"})
         ].drop_duplicates(subset=["cod_cliente"], keep="first")
         inter_map = pd.Series(inter_map_df["cliente"].values, index=inter_map_df["cod_cliente"])
-        overrides_df["cliente"] = overrides_df["cod_cliente"].astype(str).str.strip().map(inter_map).fillna("")
+        overrides_df["cliente"] = (
+            overrides_df["cod_cliente"].astype(str).str.strip().map(inter_map).fillna("")
+        )
 
     before_missing = overrides_df["kam"].fillna("").astype(str).str.strip().eq("").sum()
 

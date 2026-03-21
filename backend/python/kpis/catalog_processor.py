@@ -28,8 +28,12 @@ class KPICatalogProcessor:
         self.loans_df = self.loans_df if self.loans_df is not None else pd.DataFrame()
         self.payments_df = self.payments_df if self.payments_df is not None else pd.DataFrame()
         self.customers_df = self.customers_df if self.customers_df is not None else pd.DataFrame()
-        self.collateral_df = self.collateral_df if self.collateral_df is not None else pd.DataFrame()
-        self.intermedia_df = self.intermedia_df if self.intermedia_df is not None else pd.DataFrame()
+        self.collateral_df = (
+            self.collateral_df if self.collateral_df is not None else pd.DataFrame()
+        )
+        self.intermedia_df = (
+            self.intermedia_df if self.intermedia_df is not None else pd.DataFrame()
+        )
         self.schedule_df = self.schedule_df if self.schedule_df is not None else pd.DataFrame()
 
     @staticmethod
@@ -243,12 +247,12 @@ class KPICatalogProcessor:
 
         # NSM + Guardrail KPI groups (wired to business_parameters.yml)
         nsm_customer_types = self.get_customer_types()
-        dpd_buckets        = self.get_dpd_buckets()
-        concentration      = self.get_concentration()
-        rotation           = self.get_portfolio_rotation()
-        weighted_apr       = self.get_weighted_apr()
-        weighted_fee_rate  = self.get_weighted_fee_rate()
-        graph_analytics    = self.get_graph_analytics()
+        dpd_buckets = self.get_dpd_buckets()
+        concentration = self.get_concentration()
+        rotation = self.get_portfolio_rotation()
+        weighted_apr = self.get_weighted_apr()
+        weighted_fee_rate = self.get_weighted_fee_rate()
+        graph_analytics = self.get_graph_analytics()
         portfolio_analytics = self.get_portfolio_analytics()
         lending_kpis = self.get_lending_kpis()
 
@@ -291,9 +295,12 @@ class KPICatalogProcessor:
             return self._empty_monthly_revenue_frame()
 
         if "recv_revenue_for_month" not in summary.columns:
-            summary["recv_revenue_for_month"] = (
-                pd.to_numeric(summary.get("recv_interest_for_month", 0), errors="coerce").fillna(0)
-                + pd.to_numeric(summary.get("recv_fee_for_month", 0), errors="coerce").fillna(0)
+            summary["recv_revenue_for_month"] = pd.to_numeric(
+                summary.get("recv_interest_for_month", 0), errors="coerce"
+            ).fillna(0) + pd.to_numeric(
+                summary.get("recv_fee_for_month", 0), errors="coerce"
+            ).fillna(
+                0
             )
 
         summary["sched_revenue"] = summary["recv_revenue_for_month"]
@@ -918,7 +925,11 @@ class KPICatalogProcessor:
 
         result["top_1_pct"] = result.get("top_1_debtor_pct", result.get("top_1_loan_pct", 0.0))
         result["top_10_pct"] = result.get("top_10_debtor_pct", result.get("top_10_loan_pct", 0.0))
-        shares = (self.loans_df.assign(_bal=bal).groupby(debtor_col)["_bal"].sum() / total) if debtor_col is not None else (bal / total)
+        shares = (
+            (self.loans_df.assign(_bal=bal).groupby(debtor_col)["_bal"].sum() / total)
+            if debtor_col is not None
+            else (bal / total)
+        )
         result["hhi"] = float((shares.pow(2).sum()) * 10000)
 
         return result
@@ -947,11 +958,14 @@ class KPICatalogProcessor:
         window_start = cutoff - pd.DateOffset(months=months)
 
         mask = disb_dates >= window_start
-        disb_12m = pd.to_numeric(self.loans_df.loc[mask, amount_col], errors="coerce").fillna(0).sum()
+        disb_12m = (
+            pd.to_numeric(self.loans_df.loc[mask, amount_col], errors="coerce").fillna(0).sum()
+        )
 
         aum = (
             pd.to_numeric(self.loans_df[bal_col], errors="coerce").fillna(0).sum()
-            if bal_col else disb_12m / max(months, 1)
+            if bal_col
+            else disb_12m / max(months, 1)
         )
 
         rotation = float(disb_12m / aum) if aum > 0 else 0.0
@@ -968,21 +982,22 @@ class KPICatalogProcessor:
             median_term_value = float(median_term) if pd.notna(median_term) else None
             result["avg_term_days"] = median_term_value
             result["theoretical_rotation_x"] = (
-                round(365 / median_term_value, 1) if median_term_value and median_term_value > 0 else None
+                round(365 / median_term_value, 1)
+                if median_term_value and median_term_value > 0
+                else None
             )
 
         return result
 
-    def get_customer_types(self, window_months: int = 3, recurrent_periods: int = 2,
-                           reactivation_gap_days: int = 90) -> dict:
+    def get_customer_types(
+        self, window_months: int = 3, recurrent_periods: int = 2, reactivation_gap_days: int = 90
+    ) -> dict:
         """New / Recurrent / Reactivated client segmentation.
         SQL parity: analytics.kpi_customer_types
         NSM supporting indicator.
         """
         loan_cols = self._loan_columns()
-        disb_col = loan_cols.get("date") or self._find_col(
-            ["disbursement_date", "FechaDesembolso"]
-        )
+        disb_col = loan_cols.get("date") or self._find_col(["disbursement_date", "FechaDesembolso"])
         cust_col = loan_cols.get("customer_id") or self._find_col(
             ["customer_id", "CodCliente", "borrower_id"]
         )
@@ -1002,14 +1017,13 @@ class KPICatalogProcessor:
         df["_month"] = dates.dt.to_period("M")
 
         first_op = df.groupby(cust_col)["_date"].min()
-        last_op_before = (
-            df[df["_date"] < window_start].groupby(cust_col)["_date"].max()
-        )
+        last_op_before = df[df["_date"] < window_start].groupby(cust_col)["_date"].max()
 
         recent_clients = set(df[df["_date"] >= window_start][cust_col].dropna().unique())
         new_clients = {c for c in recent_clients if first_op.get(c, cutoff) >= window_start}
         react_clients = {
-            c for c in recent_clients - new_clients
+            c
+            for c in recent_clients - new_clients
             if c in last_op_before.index
             and (window_start - last_op_before[c]).days >= reactivation_gap_days
         }
@@ -1022,17 +1036,17 @@ class KPICatalogProcessor:
             df["_tpv"] = pd.to_numeric(df[tpv_col], errors="coerce").fillna(0)
             client_months = (
                 df[df["_date"] >= trailing_12m]
-                .groupby([cust_col, "_month"])["_tpv"].sum()
+                .groupby([cust_col, "_month"])["_tpv"]
+                .sum()
                 .reset_index()
             )
             active_periods = (
-                client_months[client_months["_tpv"] > 0]
-                .groupby(cust_col)["_month"].nunique()
+                client_months[client_months["_tpv"] > 0].groupby(cust_col)["_month"].nunique()
             )
             recurrent_12m = set(active_periods[active_periods >= recurrent_periods].index)
-            nsm_tpv = float(df[
-                (df["_date"] >= trailing_12m) & (df[cust_col].isin(recurrent_12m))
-            ]["_tpv"].sum())
+            nsm_tpv = float(
+                df[(df["_date"] >= trailing_12m) & (df[cust_col].isin(recurrent_12m))]["_tpv"].sum()
+            )
             total_tpv = float(df[df["_date"] >= trailing_12m]["_tpv"].sum())
         else:
             nsm_tpv = total_tpv = 0.0
@@ -1049,9 +1063,7 @@ class KPICatalogProcessor:
             "total_tpv_12m_usd": round(total_tpv, 2),
             "recurrent_tpv_12m_pct": round(nsm_tpv / total_tpv * 100, 1) if total_tpv > 0 else 0.0,
             "recurrent_clients_12m": len(recurrent_12m),
-            "recurrent_rate_12m_pct": round(
-                len(recurrent_12m) / max(len(first_op), 1) * 100, 1
-            ),
+            "recurrent_rate_12m_pct": round(len(recurrent_12m) / max(len(first_op), 1) * 100, 1),
         }
 
     def _find_col(self, candidates: list[str]) -> str | None:
@@ -1060,7 +1072,6 @@ class KPICatalogProcessor:
             if c in self.loans_df.columns:
                 return c
         return None
-
 
     def get_revenue_forecast(
         self,
@@ -1192,7 +1203,9 @@ class KPICatalogProcessor:
                 completeness_checks[key] = 0.0
                 continue
             source_df = self.payments_df if key == "payment_date" else self.loans_df
-            completeness_checks[key] = float(source_df[col_name].notna().mean()) if not source_df.empty else 0.0
+            completeness_checks[key] = (
+                float(source_df[col_name].notna().mean()) if not source_df.empty else 0.0
+            )
         return completeness_checks
 
     def _compute_freshness_days(
@@ -1231,9 +1244,7 @@ class KPICatalogProcessor:
             return {"status": "unavailable", "reason": "intermedia_df is empty"}
 
         return build_graph_kpi_report(
-            intermedia_df=self.intermedia_df,
-            loans_df=self.loans_df,
-            payments_df=self.payments_df
+            intermedia_df=self.intermedia_df, loans_df=self.loans_df, payments_df=self.payments_df
         )
 
     def get_portfolio_analytics(self) -> dict[str, Any]:

@@ -544,7 +544,9 @@ class TransformationPhase:
             ],
         ).where(lambda series: (series > 0) & (series <= 720))
 
-        raw_term_months = self._coalesce_numeric_columns(df, ["term_months", "plazo", "plazo_meses"])
+        raw_term_months = self._coalesce_numeric_columns(
+            df, ["term_months", "plazo", "plazo_meses"]
+        )
         raw_term_months = raw_term_months.where((raw_term_months > 0) & (raw_term_months <= 240))
 
         existing_term_months = (
@@ -553,9 +555,15 @@ class TransformationPhase:
             else pd.Series(np.nan, index=df.index, dtype=float)
         )
         term_months_from_days = (term_days / 30.0).round(2)
-        final_term_months = existing_term_months.where(existing_term_months.notna(), raw_term_months)
-        final_term_months = final_term_months.where((final_term_months > 0) & (final_term_months <= 240))
-        final_term_months = final_term_months.where(final_term_months.notna(), term_months_from_days)
+        final_term_months = existing_term_months.where(
+            existing_term_months.notna(), raw_term_months
+        )
+        final_term_months = final_term_months.where(
+            (final_term_months > 0) & (final_term_months <= 240)
+        )
+        final_term_months = final_term_months.where(
+            final_term_months.notna(), term_months_from_days
+        )
         df["term_months"] = final_term_months
         self._track_derived_field(
             metrics, "term_months", existing_term_months.isna() & final_term_months.notna()
@@ -578,7 +586,9 @@ class TransformationPhase:
 
         derived_payment_frequency = pd.Series("bullet", index=df.index, dtype="object")
         derived_payment_frequency.loc[term_days > 90] = "installment"
-        disbursement_count = self._coalesce_numeric_columns(df, ["disbursement_count", "numerodesembolsos"])
+        disbursement_count = self._coalesce_numeric_columns(
+            df, ["disbursement_count", "numerodesembolsos"]
+        )
         derived_payment_frequency.loc[disbursement_count > 1] = "installment"
         payment_frequency_final = existing_payment_frequency.where(
             existing_payment_frequency.notna(), derived_payment_frequency
@@ -590,7 +600,9 @@ class TransformationPhase:
             existing_payment_frequency.isna() & payment_frequency_final.notna(),
         )
 
-        due_from_days = final_origination + pd.to_timedelta(term_days.round().astype("Int64"), unit="D")
+        due_from_days = final_origination + pd.to_timedelta(
+            term_days.round().astype("Int64"), unit="D"
+        )
         due_from_months = pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
         month_offsets = raw_term_months.round().astype("Int64")
         valid_month_mask = month_offsets.notna() & final_origination.notna()
@@ -603,7 +615,9 @@ class TransformationPhase:
             dim_leap = np.array([31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
             is_leap = (new_year % 4 == 0) & ((new_year % 100 != 0) | (new_year % 400 == 0))
             days_in_new_month = pd.Series(
-                np.where(is_leap.values, dim_leap[new_month.values - 1], dim_common[new_month.values - 1]),
+                np.where(
+                    is_leap.values, dim_leap[new_month.values - 1], dim_common[new_month.values - 1]
+                ),
                 index=orig.index,
             )
             new_day = orig.dt.day.clip(upper=days_in_new_month)
@@ -675,7 +689,9 @@ class TransformationPhase:
 
         final_as_of = existing_as_of.where(existing_as_of.notna(), as_of_candidates)
         df["as_of_date"] = final_as_of
-        self._track_derived_field(metrics, "as_of_date", existing_as_of.isna() & final_as_of.notna())
+        self._track_derived_field(
+            metrics, "as_of_date", existing_as_of.isna() & final_as_of.notna()
+        )
 
         derived_dpd = (final_as_of - final_due).dt.days.astype(float).clip(lower=0)
         dpd_final = dpd_source.where(dpd_source.notna(), derived_dpd).fillna(0.0)
@@ -723,7 +739,9 @@ class TransformationPhase:
             delinquent_exposed = delinquent_exposed & (status != "closed")
         derived_collections.loc[delinquent_exposed] = "Y"
 
-        collections_final = existing_collections.where(existing_collections.notna(), derived_collections)
+        collections_final = existing_collections.where(
+            existing_collections.notna(), derived_collections
+        )
         df["collections_eligible"] = collections_final
         self._track_derived_field(
             metrics,
@@ -736,7 +754,9 @@ class TransformationPhase:
         self, df: pd.DataFrame, exposure: pd.Series, metrics: Dict[str, Any]
     ) -> pd.DataFrame:
         """Derive utilization_pct from exposure over credit line."""
-        existing_util = self._coalesce_numeric_columns(df, ["utilization_pct", "porcentaje_utilizado"])
+        existing_util = self._coalesce_numeric_columns(
+            df, ["utilization_pct", "porcentaje_utilizado"]
+        )
         valid_existing_util = existing_util.where(existing_util >= 0)
         if valid_existing_util.dropna().median() < 2.0:
             valid_existing_util = valid_existing_util * 100
@@ -750,7 +770,9 @@ class TransformationPhase:
             exposure.loc[valid_limit_mask] / credit_limit.loc[valid_limit_mask] * 100
         )
 
-        util_final = valid_existing_util.where(valid_existing_util.notna(), derived_util).clip(lower=0)
+        util_final = valid_existing_util.where(valid_existing_util.notna(), derived_util).clip(
+            lower=0
+        )
         df["utilization_pct"] = util_final
         self._track_derived_field(
             metrics, "utilization_pct", valid_existing_util.isna() & util_final.notna()
@@ -761,7 +783,9 @@ class TransformationPhase:
         self, df: pd.DataFrame, metrics: Dict[str, Any]
     ) -> pd.DataFrame:
         """Infer government-sector tagging and populate gov labels where possible."""
-        existing_sector_col = next((c for c in ("government_sector", "goes") if c in df.columns), None)
+        existing_sector_col = next(
+            (c for c in ("government_sector", "goes") if c in df.columns), None
+        )
         if existing_sector_col is not None:
             existing_sector = df[existing_sector_col].astype(str).str.strip().str.upper()
             existing_sector = existing_sector.mask(
@@ -773,7 +797,9 @@ class TransformationPhase:
         gov_hint_col = next((c for c in ("gov", "ministry", "ministerio") if c in df.columns), None)
         if gov_hint_col is not None:
             gov_hint_upper = df[gov_hint_col].astype(str).str.strip().str.upper()
-            hint_is_gov = ~gov_hint_upper.isin({"", "NO", "NAN", "NONE", "NULL", "MISSING", "PRIVATE"})
+            hint_is_gov = ~gov_hint_upper.isin(
+                {"", "NO", "NAN", "NONE", "NULL", "MISSING", "PRIVATE"}
+            )
         else:
             hint_is_gov = pd.Series(False, index=df.index, dtype=bool)
 
@@ -803,7 +829,9 @@ class TransformationPhase:
         gov_missing = gov_existing.isin({"", "nan", "None", "none", "missing", "NO", "No"})
         if gov_hint_col is not None:
             gov_fill = df[gov_hint_col].astype(str).str.strip()
-            gov_fill_mask = gov_missing & (gov_fill != "") & (~gov_fill.str.upper().isin({"NAN", "NONE"}))
+            gov_fill_mask = (
+                gov_missing & (gov_fill != "") & (~gov_fill.str.upper().isin({"NAN", "NONE"}))
+            )
             df.loc[gov_fill_mask, "gov"] = gov_fill.loc[gov_fill_mask]
             self._track_derived_field(metrics, "gov", gov_fill_mask)
         else:
@@ -892,9 +920,7 @@ class TransformationPhase:
         )
         return df, final_last_payment_amount
 
-    def _derive_control_mora_tpv(
-        self, df: pd.DataFrame, metrics: Dict[str, Any]
-    ) -> pd.DataFrame:
+    def _derive_control_mora_tpv(self, df: pd.DataFrame, metrics: Dict[str, Any]) -> pd.DataFrame:
         """Derive TPV from payments when the field is missing."""
         existing_tpv = pd.to_numeric(
             (
@@ -1193,7 +1219,11 @@ class TransformationPhase:
 
         df[col] = df[col].fillna(0)
         if col in self.HIGH_NULL_WARNING_NUMERIC_COLUMNS:
-            logger.error("Column '%s' exceeds missing threshold (%.1f%% nulls). Fail-fast requires structural integrity for critical KPIs.", col, null_pct)
+            logger.error(
+                "Column '%s' exceeds missing threshold (%.1f%% nulls). Fail-fast requires structural integrity for critical KPIs.",
+                col,
+                null_pct,
+            )
             raise ValueError(f"Critical column {col} exceeds missing threshold ({null_pct:.1f}%)")
         return f"filled_zero (high_null: {null_pct:.1f}%)"
 

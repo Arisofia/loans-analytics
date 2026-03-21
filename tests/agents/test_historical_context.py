@@ -454,6 +454,7 @@ class TestForecasting(unittest.TestCase):
 
         self.assertIn("empty projections", str(context.exception))
 
+
 class TestHistoricalContextFailFast(unittest.TestCase):
     """Fail-fast behavior for no-data scenarios in REAL mode."""
 

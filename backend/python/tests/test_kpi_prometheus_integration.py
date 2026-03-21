@@ -58,7 +58,9 @@ def test_calculate_kpis_publishes_threshold_metrics():
 def test_single_kpi_publishes_metric_labels():
     client = TestClient(app)
 
-    single_response = client.post("/analytics/kpis/collection-rate", json=_sample_realtime_payload())
+    single_response = client.post(
+        "/analytics/kpis/collection-rate", json=_sample_realtime_payload()
+    )
     assert single_response.status_code == 200
 
     metrics_response = client.get("/metrics/kpis")

@@ -548,6 +548,7 @@ class TestCanonicalizeStatusNullHandling:
 
     def test_nan_float_returns_unknown(self):
         import math
+
         assert _canonicalize_status(math.nan) == "unknown"
 
     def test_whitespace_only_returns_unknown(self):

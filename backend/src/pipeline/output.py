@@ -158,8 +158,12 @@ class OutputPhase:
         exports["parquet"] = str(self._export_parquet(kpi_results, run_dir))
         exports["csv"] = str(self._export_csv(kpi_results, run_dir))
         exports["kpis"] = str(self._export_payload_json(kpi_results, run_dir, "kpis.json"))
-        self._export_optional_payload(exports, "segment_kpis", segment_kpis, run_dir, "segment_kpis.json")
-        self._export_optional_payload(exports, "time_series", time_series, run_dir, "time_series.json")
+        self._export_optional_payload(
+            exports, "segment_kpis", segment_kpis, run_dir, "segment_kpis.json"
+        )
+        self._export_optional_payload(
+            exports, "time_series", time_series, run_dir, "time_series.json"
+        )
         self._export_optional_payload(exports, "anomalies", anomalies, run_dir, "anomalies.json")
         self._export_optional_payload(
             exports,
@@ -351,7 +355,9 @@ class OutputPhase:
         try:
             return pd.read_parquet(data_path)
         except Exception as exc:
-            logger.error("Failed reading segment snapshot source file: %s. Fail-fast triggered.", exc)
+            logger.error(
+                "Failed reading segment snapshot source file: %s. Fail-fast triggered.", exc
+            )
             raise RuntimeError(f"Cannot read segment data from {data_path}: {exc}") from exc
 
     def _prepare_segment_snapshot_frame(
@@ -376,7 +382,9 @@ class OutputPhase:
             if dpd_col is not None
             else pd.Series([0.0] * len(working), index=working.index, dtype=float)
         )
-        working["__interest_rate"] = self._normalize_segment_interest_rate(working, interest_rate_col)
+        working["__interest_rate"] = self._normalize_segment_interest_rate(
+            working, interest_rate_col
+        )
         return working
 
     @staticmethod
@@ -396,11 +404,21 @@ class OutputPhase:
     ) -> Dict[str, list[Dict[str, Any]]]:
         """Build top segment rows for each configured segment dimension."""
         dimension_rows: Dict[str, list[Dict[str, Any]]] = {}
-        dimensions = ["company", "credit_line", "kam_hunter", "kam_farmer", "gov", "industry", "doc_type"]
+        dimensions = [
+            "company",
+            "credit_line",
+            "kam_hunter",
+            "kam_farmer",
+            "gov",
+            "industry",
+            "doc_type",
+        ]
         missing_markers = {"", "nan", "none", "null", "n/a", "missing", "unknown"}
 
         for dimension in dimensions:
-            rows = self._build_segment_dimension_rows(working, dimension, loan_id_col, missing_markers)
+            rows = self._build_segment_dimension_rows(
+                working, dimension, loan_id_col, missing_markers
+            )
             if rows:
                 dimension_rows[dimension] = rows
         return dimension_rows
@@ -439,7 +457,11 @@ class OutputPhase:
         if balance_sum <= 0:
             return None
 
-        loan_count = int(group[loan_id_col].astype(str).nunique()) if loan_id_col is not None else int(len(group))
+        loan_count = (
+            int(group[loan_id_col].astype(str).nunique())
+            if loan_id_col is not None
+            else int(len(group))
+        )
         row: Dict[str, Any] = {
             "segment": str(segment_name),
             "loan_count": loan_count,
@@ -778,7 +800,9 @@ class OutputPhase:
         original_name = str(row.get("kpi_name", ""))
         mapped_name = self._map_monitoring_kpi_name(original_name)
         if mapped_name not in name_to_key:
-            logger.warning("KPI not found in definitions: %s (mapped: %s)", original_name, mapped_name)
+            logger.warning(
+                "KPI not found in definitions: %s (mapped: %s)", original_name, mapped_name
+            )
             return None
 
         row_timestamp = row.get("timestamp")
@@ -1102,7 +1126,9 @@ class OutputPhase:
 
         canonical_risk = transformation_metrics.get("canonical_risk_state", {})
         if canonical_risk.get("opaque_ratio_rows", 0):
-            opaque_counts["ratio_pago_real_opaque"] = int(canonical_risk.get("opaque_ratio_rows", 0))
+            opaque_counts["ratio_pago_real_opaque"] = int(
+                canonical_risk.get("opaque_ratio_rows", 0)
+            )
         return opaque_counts
 
     def _attach_kpi_engine_audit_summary(

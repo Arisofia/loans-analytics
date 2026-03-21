@@ -65,16 +65,26 @@ class LoanRecord(BaseModel):
         default=None,
         description="Prior observation outstanding principal used as from-bucket exposure weight.",
     )
-    payment_frequency: Optional[str] = Field(default=None, description="Payment frequency descriptor")
+    payment_frequency: Optional[str] = Field(
+        default=None, description="Payment frequency descriptor"
+    )
     term_months: Optional[float] = Field(default=None, description="Loan term in months")
-    origination_date: Optional[datetime] = Field(default=None, description="Loan origination timestamp")
+    origination_date: Optional[datetime] = Field(
+        default=None, description="Loan origination timestamp"
+    )
     application_date: Optional[datetime] = Field(
         default=None, description="Loan application timestamp when available"
     )
     origination_fee: Optional[float] = Field(default=None, description="Origination fee amount")
-    origination_fee_taxes: Optional[float] = Field(default=None, description="Taxes charged over fees")
-    total_scheduled: Optional[float] = Field(default=None, description="Total scheduled collections amount")
-    last_payment_amount: Optional[float] = Field(default=None, description="Last collected payment amount")
+    origination_fee_taxes: Optional[float] = Field(
+        default=None, description="Taxes charged over fees"
+    )
+    total_scheduled: Optional[float] = Field(
+        default=None, description="Total scheduled collections amount"
+    )
+    last_payment_amount: Optional[float] = Field(
+        default=None, description="Last collected payment amount"
+    )
     recovery_value: Optional[float] = Field(
         default=None, description="Recovered amount from defaulted loans"
     )
@@ -94,7 +104,9 @@ class LoanRecord(BaseModel):
     issuer_name: Optional[str] = Field(default=None, description="Issuer display name segment")
     kam_hunter: Optional[str] = Field(default=None, description="KAM hunter segment")
     kam_farmer: Optional[str] = Field(default=None, description="KAM farmer segment")
-    advisory_channel: Optional[str] = Field(default=None, description="Advisory/digital channel segment")
+    advisory_channel: Optional[str] = Field(
+        default=None, description="Advisory/digital channel segment"
+    )
     utilization_pct: Optional[float] = Field(
         default=None, description="Utilization percentage for utilization-band segmentation"
     )
@@ -106,7 +118,9 @@ class LoanRecord(BaseModel):
     government_sector: Optional[str] = Field(
         default=None, description="GOES flag — identifies government-sector employer"
     )
-    ministry: Optional[str] = Field(default=None, description="Government ministry or institution name")
+    ministry: Optional[str] = Field(
+        default=None, description="Government ministry or institution name"
+    )
     capital_collected: Optional[float] = Field(
         default=None, description="Principal already collected (capitalcobrado)"
     )

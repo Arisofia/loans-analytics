@@ -67,10 +67,11 @@ logger = get_logger(__name__)
 
 # Module-level constants for common response messages
 DATA_MISSING_SCORE = 0.0
-DATA_MISSING_INTERPRETATION = "No loan data available. Score cannot be computed. Investigate data pipeline."
+DATA_MISSING_INTERPRETATION = (
+    "No loan data available. Score cannot be computed. Investigate data pipeline."
+)
 _PORTFOLIO_HEALTH_FORMULA = (
-    "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
-    "CostOfRisk(15pts) + DefaultRate(15pts)"
+    "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + " "CostOfRisk(15pts) + DefaultRate(15pts)"
 )
 
 try:
@@ -78,7 +79,7 @@ try:
 
     yaml: Any = _yaml
 except ImportError:  # pragma: no cover - optional dependency for catalog enrichment
-    yaml = None
+    yaml = None  # type: ignore[assignment]
 
 KPI_DEFINITIONS_PATH = (
     Path(__file__).resolve().parents[4] / "config" / "kpis" / "kpi_definitions.yaml"
@@ -1163,11 +1164,19 @@ class KPIService:
 
     @staticmethod
     def _float_field_error(field_name: str, series: pd.Series) -> str | None:
-        return None if pd.api.types.is_numeric_dtype(series) else f"Column '{field_name}' is not numeric."
+        return (
+            None
+            if pd.api.types.is_numeric_dtype(series)
+            else f"Column '{field_name}' is not numeric."
+        )
 
     @staticmethod
     def _str_field_error(field_name: str, series: pd.Series) -> str | None:
-        return None if pd.api.types.is_string_dtype(series) else f"Column '{field_name}' is not string type."
+        return (
+            None
+            if pd.api.types.is_string_dtype(series)
+            else f"Column '{field_name}' is not string type."
+        )
 
     @staticmethod
     def _datetime_field_error(field_name: str, series: pd.Series) -> str | None:
@@ -1690,7 +1699,9 @@ class KPIService:
         """Build a single VintageCurvePoint from a cohort group."""
         loan_count = len(group)
         npl_ratio = (float(group["is_npl"].sum()) / loan_count * 100) if loan_count > 0 else 0.0
-        cum_default = (float(group["is_default"].sum()) / loan_count * 100) if loan_count > 0 else 0.0
+        cum_default = (
+            (float(group["is_default"].sum()) / loan_count * 100) if loan_count > 0 else 0.0
+        )
         return VintageCurvePoint(
             months_on_book=mob_val,
             cumulative_default_rate=round(cum_default, 2),
@@ -1753,7 +1764,9 @@ class KPIService:
 
         # 3. Build Curves (one data point per cohort at its current MoB)
         curves: Dict[str, List[VintageCurvePoint]] = {
-            str(cohort): [self._build_vintage_curve_point(group, self._safe_int(group["mob"].iloc[0]))]
+            str(cohort): [
+                self._build_vintage_curve_point(group, self._safe_int(group["mob"].iloc[0]))
+            ]
             for cohort, group in df.groupby("cohort")
         }
 
@@ -2516,7 +2529,7 @@ class KPIService:
 
     @staticmethod
     def _build_growth_profitability_layer(metrics: dict[str, float]) -> AnalysisLayer:
-        nim = metrics.get("gross_margin_pct", 0.0)  # Using gross margin as proxy for NIM
+        nim = metrics["gross_margin_pct"]  # Using gross margin as proxy for NIM
         clv_cac = (
             (metrics["customer_lifetime_value"] / metrics["cac"]) if metrics["cac"] > 0 else 0.0
         )

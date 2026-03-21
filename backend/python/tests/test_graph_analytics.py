@@ -19,7 +19,9 @@ def _intermedia_df() -> pd.DataFrame:
 
 
 def test_npl_benchmarks_uses_ssot_for_npl_90_and_npl_180() -> None:
-    with patch("backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi") as mock_calc:
+    with patch(
+        "backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi"
+    ) as mock_calc:
         mock_calc.side_effect = [{"value": 12.34}, {"value": 6.78}]
 
         result = npl_benchmarks(_intermedia_df())

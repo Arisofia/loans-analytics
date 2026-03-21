@@ -42,7 +42,9 @@ def _registry_data() -> dict:
 
 
 def test_calculate_kpi_returns_ssot_metadata() -> None:
-    engine = KPIFormulaEngine(_sample_df(), actor="unit-test", run_id="run-123", registry_data=_registry_data())
+    engine = KPIFormulaEngine(
+        _sample_df(), actor="unit-test", run_id="run-123", registry_data=_registry_data()
+    )
 
     result = engine.calculate_kpi("par_30")
 
@@ -63,7 +65,9 @@ def test_calculate_kpi_returns_ssot_metadata() -> None:
 
 
 def test_calculate_kpi_records_audit_entry() -> None:
-    engine = KPIFormulaEngine(_sample_df(), actor="qa", run_id="audit-1", registry_data=_registry_data())
+    engine = KPIFormulaEngine(
+        _sample_df(), actor="qa", run_id="audit-1", registry_data=_registry_data()
+    )
 
     _ = engine.calculate_kpi("par_30")
     records = engine.get_audit_records()
@@ -154,11 +158,20 @@ def test_comparison_formula_uses_latest_and_previous_month_balances() -> None:
             "outstanding_balance": [100.0, 150.0, 200.0, 100.0],
         }
     )
-    reg = {"version": "1", "test_kpis": {"growth": {"formula": "(current_month_balance - previous_month_balance) / previous_month_balance * 100", "unit": "pct"}}}
+    reg = {
+        "version": "1",
+        "test_kpis": {
+            "growth": {
+                "formula": "(current_month_balance - previous_month_balance) / previous_month_balance * 100",
+                "unit": "pct",
+            }
+        },
+    }
     engine = KPIFormulaEngine(df, registry_data=reg)
     result = engine.calculate_kpi("growth")
-    
+
     assert float(result["value"]) == pytest.approx(20.0)
+
 
 def test_comparison_formula_raises_when_previous_month_is_zero() -> None:
     df = pd.DataFrame(
@@ -167,11 +180,20 @@ def test_comparison_formula_raises_when_previous_month_is_zero() -> None:
             "outstanding_balance": [500.0, 500.0],
         }
     )
-    reg = {"version": "1", "test_kpis": {"growth": {"formula": "(current_month_balance - previous_month_balance) / previous_month_balance * 100", "unit": "pct"}}}
+    reg = {
+        "version": "1",
+        "test_kpis": {
+            "growth": {
+                "formula": "(current_month_balance - previous_month_balance) / previous_month_balance * 100",
+                "unit": "pct",
+            }
+        },
+    }
     engine = KPIFormulaEngine(df, registry_data=reg)
-    
+
     result = engine.calculate_kpi("growth")
     assert result["value"] == Decimal("0.0")
+
 
 def test_dpd_bucket_formulas_support_range_logic_via_aggregation_deltas() -> None:
     df = pd.DataFrame(
@@ -181,20 +203,33 @@ def test_dpd_bucket_formulas_support_range_logic_via_aggregation_deltas() -> Non
         }
     )
     reg = {
-        "version": "1", 
+        "version": "1",
         "test_kpis": {
-            "f_1_30": {"formula": "(SUM(outstanding_balance WHERE dpd <= 30) - SUM(outstanding_balance WHERE dpd <= 0)) / SUM(outstanding_balance) * 100", "unit": "pct"},
-            "f_31_60": {"formula": "(SUM(outstanding_balance WHERE dpd <= 60) - SUM(outstanding_balance WHERE dpd <= 30)) / SUM(outstanding_balance) * 100", "unit": "pct"},
-            "f_61_90": {"formula": "(SUM(outstanding_balance WHERE dpd <= 90) - SUM(outstanding_balance WHERE dpd <= 60)) / SUM(outstanding_balance) * 100", "unit": "pct"},
-            "f_90_plus": {"formula": "SUM(outstanding_balance WHERE dpd > 90) / SUM(outstanding_balance) * 100", "unit": "pct"},
-        }
+            "f_1_30": {
+                "formula": "(SUM(outstanding_balance WHERE dpd <= 30) - SUM(outstanding_balance WHERE dpd <= 0)) / SUM(outstanding_balance) * 100",
+                "unit": "pct",
+            },
+            "f_31_60": {
+                "formula": "(SUM(outstanding_balance WHERE dpd <= 60) - SUM(outstanding_balance WHERE dpd <= 30)) / SUM(outstanding_balance) * 100",
+                "unit": "pct",
+            },
+            "f_61_90": {
+                "formula": "(SUM(outstanding_balance WHERE dpd <= 90) - SUM(outstanding_balance WHERE dpd <= 60)) / SUM(outstanding_balance) * 100",
+                "unit": "pct",
+            },
+            "f_90_plus": {
+                "formula": "SUM(outstanding_balance WHERE dpd > 90) / SUM(outstanding_balance) * 100",
+                "unit": "pct",
+            },
+        },
     }
     engine = KPIFormulaEngine(df, registry_data=reg)
-    
+
     assert float(engine.calculate_kpi("f_1_30")["value"]) == pytest.approx(20.0)
     assert float(engine.calculate_kpi("f_31_60")["value"]) == pytest.approx(30.0)
     assert float(engine.calculate_kpi("f_61_90")["value"]) == pytest.approx(0.0)
     assert float(engine.calculate_kpi("f_90_plus")["value"]) == pytest.approx(40.0)
+
 
 def test_where_clause_supports_or_conditions_for_npl_ratio_style_formulas() -> None:
     df = pd.DataFrame(
@@ -204,11 +239,20 @@ def test_where_clause_supports_or_conditions_for_npl_ratio_style_formulas() -> N
             "outstanding_balance": [100.0, 200.0, 300.0],
         }
     )
-    reg = {"version": "1", "test_kpis": {"npl": {"formula": "SUM(outstanding_balance WHERE dpd > 90 OR status = 'defaulted') / SUM(outstanding_balance) * 100", "unit": "pct"}}}
+    reg = {
+        "version": "1",
+        "test_kpis": {
+            "npl": {
+                "formula": "SUM(outstanding_balance WHERE dpd > 90 OR status = 'defaulted') / SUM(outstanding_balance) * 100",
+                "unit": "pct",
+            }
+        },
+    }
     engine = KPIFormulaEngine(df, registry_data=reg)
     result = engine.calculate_kpi("npl")
-    
+
     assert float(result["value"]) == pytest.approx(83.33333333)
+
 
 def test_where_clause_supports_and_conditions() -> None:
     df = pd.DataFrame(
@@ -218,8 +262,16 @@ def test_where_clause_supports_and_conditions() -> None:
             "outstanding_balance": [100.0, 200.0, 300.0],
         }
     )
-    reg = {"version": "1", "test_kpis": {"npl_and": {"formula": "SUM(outstanding_balance WHERE dpd > 30 AND status != 'defaulted') / SUM(outstanding_balance) * 100", "unit": "pct"}}}
+    reg = {
+        "version": "1",
+        "test_kpis": {
+            "npl_and": {
+                "formula": "SUM(outstanding_balance WHERE dpd > 30 AND status != 'defaulted') / SUM(outstanding_balance) * 100",
+                "unit": "pct",
+            }
+        },
+    }
     engine = KPIFormulaEngine(df, registry_data=reg)
     result = engine.calculate_kpi("npl_and")
-    
+
     assert float(result["value"]) == pytest.approx(33.33333333)

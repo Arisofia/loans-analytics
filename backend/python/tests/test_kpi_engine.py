@@ -394,9 +394,7 @@ class TestDerivedRiskKPIAudit(unittest.TestCase):
                 "outstanding_balance": [10_000.0, 8_000.0],
             }
         )
-        result = engine._top_10_borrower_concentration(
-            df, "outstanding_balance", Decimal("18000")
-        )
+        result = engine._top_10_borrower_concentration(df, "outstanding_balance", Decimal("18000"))
         self.assertEqual(result, Decimal("0.0"))
 
     # 8 — derived risk KPIs returns empty dict when required columns are absent

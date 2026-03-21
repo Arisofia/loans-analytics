@@ -50,22 +50,20 @@ def _eval_only_warning(value: float, warning_thresh: float) -> str:
 
 def load_kpi_thresholds() -> dict[str, dict]:
     """Load KPI threshold configs from SSOT registry."""
-    registry_path = (
-        Path(__file__).resolve().parents[3] / "config" / "kpis" / "kpi_definitions.yaml"
-    )
+    registry_path = Path(__file__).resolve().parents[3] / "config" / "kpis" / "kpi_definitions.yaml"
     if not registry_path.exists():
         return {}
-    
+
     with registry_path.open("r", encoding="utf-8") as handle:
         registry = yaml.safe_load(handle) or {}
-    
+
     # Flatten registry into simple kpi_name -> thresholds mapping
     thresholds_map: dict[str, dict] = {}
     for section_key, section_value in registry.items():
         if not section_key.endswith("_kpis") or not isinstance(section_value, dict):
             continue
         _extract_kpi_thresholds_from_section(section_value, thresholds_map)
-    
+
     return thresholds_map
 
 
@@ -75,34 +73,34 @@ def get_threshold_status(
 ) -> str:
     """
     Determine normalized threshold status from a KPI value and threshold config.
-    
+
     Args:
         kpi_value: The KPI metric value
         thresholds: Dict with optional keys: critical, warning, target
                    Supports both direction conventions:
                    - High-is-good: warning/critical are minimum targets
                    - Low-is-good: warning/critical are maximum targets
-    
+
     Returns:
         One of: "normal", "warning", "critical", "not_configured"
     """
     if not thresholds or not isinstance(thresholds, dict):
         return "not_configured"
-    
+
     # Convert to float for comparison
     value = float(kpi_value)
-    
+
     # Extract thresholds, handling both naming conventions
     critical_val = thresholds.get("critical")
     warning_val = thresholds.get("warning")
     # No usable thresholds
     if critical_val is None and warning_val is None:
         return "not_configured"
-    
+
     # Infer direction from available thresholds
     # If critical > warning or target, assume high-is-good (e.g., collection rate)
     # If critical < warning or target, assume low-is-good (e.g., days past due)
-    
+
     # Simple heuristic: if we have both critical and warning, compare them
     if critical_val is not None and warning_val is not None:
         critical_thresh = float(critical_val)
@@ -118,7 +116,7 @@ def get_threshold_status(
 
     if warning_val is not None:
         return _eval_only_warning(value, float(warning_val))
-    
+
     return "not_configured"
 
 
@@ -128,29 +126,29 @@ def enrich_kpis_with_thresholds(
 ) -> dict[str, dict[str, Any]]:
     """
     Transform flat KPI values into rich objects with threshold metadata.
-    
+
     Args:
         kpi_snapshot: Dict of {kpi_name: value}
         thresholds_map: Dict mapping kpi_name -> thresholds config.
                        If None, loads from SSOT registry.
-    
+
     Returns:
         Dict of {kpi_name: {value: ..., threshold_status: ..., thresholds: ...}}
     """
     if thresholds_map is None:
         thresholds_map = load_kpi_thresholds()
-    
+
     enriched = {}
-    
+
     for kpi_name, value in kpi_snapshot.items():
         # Look up threshold config from registry
         thresholds = thresholds_map.get(kpi_name, {})
         threshold_status = get_threshold_status(value, thresholds)
-        
+
         enriched[kpi_name] = {
             "value": value,
             "threshold_status": threshold_status,
             "thresholds": thresholds or {},
         }
-    
+
     return enriched

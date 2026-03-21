@@ -19,7 +19,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple, Set
+from typing import List, Tuple
 
 # Documentation root
 DOCS_ROOT = Path(__file__).parent.parent / "docs"
@@ -28,7 +28,7 @@ REPO_ROOT = Path(__file__).parent.parent
 
 def find_markdown_files() -> List[Path]:
     """Find all markdown files in the repository."""
-    files = []
+    files: List[Path] = []
     # Include root-level MD files and docs/
     for pattern in ["*.md", "docs/**/*.md", "config/**/*.md"]:
         files.extend(REPO_ROOT.glob(pattern))
@@ -42,15 +42,15 @@ def extract_markdown_links(content: str) -> List[Tuple[str, int]]:
     """
     links = []
     # Match [text](path) patterns
-    pattern = r'\[.+?\]\((.+?)\)'
-    
-    for line_num, line in enumerate(content.split('\n'), 1):
+    pattern = r"\[.+?\]\((.+?)\)"
+
+    for line_num, line in enumerate(content.split("\n"), 1):
         for match in re.finditer(pattern, line):
             link = match.group(1)
             # Skip external links (http://, https://, etc.)
-            if not link.startswith(('http://', 'https://', 'mailto:', '#')):
+            if not link.startswith(("http://", "https://", "mailto:", "#")):
                 links.append((link, line_num))
-    
+
     return links
 
 
@@ -60,78 +60,76 @@ def resolve_link(link: str, from_file: Path) -> Path | None:
     Returns the resolved Path if file exists, None otherwise.
     """
     # Handle relative paths
-    if link.startswith('../') or link.startswith('./'):
+    if link.startswith("../") or link.startswith("./"):
         # Relative to the referencing file's directory
         resolved = (from_file.parent / link).resolve()
-    elif link.startswith('/'):
+    elif link.startswith("/"):
         # Absolute from repo root
-        resolved = (REPO_ROOT / link.lstrip('/')).resolve()
+        resolved = (REPO_ROOT / link.lstrip("/")).resolve()
     else:
         # Relative to file's directory
         resolved = (from_file.parent / link).resolve()
-    
+
     # Return only if within repo
     if resolved.is_file() and resolved.is_relative_to(REPO_ROOT):
         return resolved
-    
+
     return None
 
 
 def validate_links() -> Tuple[int, List[str]]:
     """
     Validate all documentation links.
-    
+
     Returns:
         (error_count, list_of_errors)
     """
     errors = []
     markdown_files = find_markdown_files()
-    
+
     for md_file in markdown_files:
         # Skip this validation script itself
         if "validate_doc_links" in str(md_file):
             continue
-        
+
         try:
-            content = md_file.read_text(encoding='utf-8')
+            content = md_file.read_text(encoding="utf-8")
         except Exception as e:
             errors.append(f"{md_file}: Failed to read — {e}")
             continue
-        
+
         links = extract_markdown_links(content)
-        
+
         for link, line_num in links:
             resolved = resolve_link(link, md_file)
-            if resolved is None and not link.startswith('#'):
+            if resolved is None and not link.startswith("#"):
                 # Link not found (skip anchor-only links)
-                errors.append(
-                    f"{md_file}:{line_num}: Broken link → {link}"
-                )
-    
+                errors.append(f"{md_file}:{line_num}: Broken link → {link}")
+
     return len(errors), errors
 
 
 def main():
     parser = argparse.ArgumentParser(description="Validate documentation links")
-    parser.add_argument('--fix', action='store_true', help="Attempt to fix broken links")
+    parser.add_argument("--fix", action="store_true", help="Attempt to fix broken links")
     args = parser.parse_args()
-    
+
     error_count, errors = validate_links()
-    
+
     if error_count == 0:
         print("✓ All documentation links valid")
         return 0
-    
+
     print(f"✗ Found {error_count} broken documentation link(s):\n")
     for error in errors:
         print(f"  {error}")
-    
+
     if args.fix:
         print("\n[FIX NOT IMPLEMENTED] Manual review required")
         print("See: docs/operations/MASTER_DELIVERY_TODO.md, Phase 3 Documentation")
-    
+
     return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

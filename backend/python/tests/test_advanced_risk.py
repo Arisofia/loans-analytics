@@ -68,7 +68,9 @@ class TestAdvancedRiskMetrics(unittest.TestCase):
         self.assertEqual(metrics["dpd_buckets"], [])
 
     def test_par_metrics_use_ssot_formula_engine(self):
-        with patch("backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi") as mock_calc:
+        with patch(
+            "backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi"
+        ) as mock_calc:
             mock_calc.side_effect = [
                 {"value": 11.11},
                 {"value": 22.22},

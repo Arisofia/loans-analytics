@@ -205,7 +205,9 @@ class TestStrategicModules(unittest.TestCase):
         loans = self._sample_loans()
         payments = self._sample_payments()
 
-        with patch("backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi") as mock_calc:
+        with patch(
+            "backend.python.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi"
+        ) as mock_calc:
             mock_calc.side_effect = [
                 {"value": 10.1},
                 {"value": 5.2},
@@ -363,9 +365,7 @@ class TestStrategicModules(unittest.TestCase):
         }
 
         plan = build_next_steps_plan(forecast=forecast, compliance=compliance)
-        par30_like_actions = [
-            a for a in plan["actions"] if a["metric"] in ("par30_pct", "par30")
-        ]
+        par30_like_actions = [a for a in plan["actions"] if a["metric"] in ("par30_pct", "par30")]
 
         self.assertEqual(len(par30_like_actions), 1)
         self.assertEqual(par30_like_actions[0]["source"], "compliance+forecast")
@@ -411,9 +411,7 @@ class TestStrategicModules(unittest.TestCase):
         }
 
         plan = build_next_steps_plan(forecast=forecast, compliance=compliance)
-        revenue_actions = [
-            a for a in plan["actions"] if a["metric"] in ("revenue_usd", "revenue")
-        ]
+        revenue_actions = [a for a in plan["actions"] if a["metric"] in ("revenue_usd", "revenue")]
 
         self.assertEqual(len(revenue_actions), 1)
         self.assertEqual(revenue_actions[0]["source"], "compliance+forecast")
