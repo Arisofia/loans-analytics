@@ -7,7 +7,7 @@
 
 ### Root Configuration
 - `.github/workflows/` — CI/CD pipelines (tests, security, deployment)
-- `docker-compose.yml`, `docker-compose.zero-cost.yml` — Local dev stack definition
+- `docker-compose.yml` — Local dev stack definition
 - `Dockerfile`, `Dockerfile.dashboard`, `Dockerfile.pipeline` — Container images
 - `Makefile` — Development task automation (format, lint, test, deploy)
 - `pyproject.toml` — Python project configuration (build, tests, dependencies)

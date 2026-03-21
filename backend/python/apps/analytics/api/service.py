@@ -917,12 +917,18 @@ class KPIService:
         self, metrics: dict[str, float]
     ) -> PortfolioHealthScore:
         """Map numeric KPI metrics into the composite portfolio health object."""
+        required_metrics = ("par30", "collection_rate", "npl", "cor", "default_rate")
+        missing_metrics = [name for name in required_metrics if name not in metrics]
+        if missing_metrics:
+            missing = ", ".join(missing_metrics)
+            raise ValueError(f"Missing required portfolio health metrics: {missing}")
+
         payload = calculate_portfolio_health_score(
-            par30=float(metrics.get("par30", 0.0)),
-            collection_rate=float(metrics.get("collection_rate", 0.0)),
-            npl=float(metrics.get("npl", 0.0)),
-            cost_of_risk=float(metrics.get("cor", 0.0)),
-            default_rate=float(metrics.get("default_rate", 0.0)),
+            par30=float(metrics["par30"]),
+            collection_rate=float(metrics["collection_rate"]),
+            npl=float(metrics["npl"]),
+            cost_of_risk=float(metrics["cor"]),
+            default_rate=float(metrics["default_rate"]),
         )
         components = [PortfolioHealthComponent(**item) for item in payload.get("components", [])]
         traffic_light_value = str(payload.get("traffic_light", "critical"))
