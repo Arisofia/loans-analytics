@@ -79,7 +79,7 @@ try:
 
     yaml: Any = _yaml
 except ImportError:  # pragma: no cover - optional dependency for catalog enrichment
-    yaml = None  # type: ignore[assignment]
+    yaml = None
 
 KPI_DEFINITIONS_PATH = (
     Path(__file__).resolve().parents[4] / "config" / "kpis" / "kpi_definitions.yaml"

@@ -118,6 +118,7 @@ class CalculationPhase:
         self,
         clean_data_path: Optional[Path] = None,
         df: Optional[pd.DataFrame] = None,
+        run_dir: Optional[Path] = None,
     ) -> Dict[str, Any]:
         """Execute the calculation phase.
 
