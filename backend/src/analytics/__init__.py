@@ -1,3 +1,10 @@
+"""Compatibility analytics helpers.
+
+This module provides utility calculations used by legacy/test paths.
+It is not the canonical KPI SSoT implementation. Canonical KPI formulas
+and production KPI computation paths live under ``backend/python/kpis``.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

@@ -22,6 +22,12 @@
   - `transformation.py` — Data cleaning & null handling
   - `calculation.py` — KPI & risk model computation
   - `output.py` — Results export & Supabase sync
+- `src/zero_cost/` — **Canonical legacy loan-tape / Control-de-Mora path**
+  - Used by zero-cost migration and historical loan-tape workflows.
+  - Kept intentionally in parallel with `src/pipeline/` for route-specific compatibility.
+  - Covered by `tests/zero_cost/` and routed by `pipeline_router.py`.
+- `src/analytics/__init__.py` — Compatibility analytics helpers
+  - Utility-only module retained for legacy/test support; not the KPI SSoT owner.
 
 - `python/` — Python application layer
   - `kpis/` — **KPI engine (SSoT)** — all KPI computation routes through here
@@ -99,7 +105,7 @@
 - `test_pipeline_*.py` — Phase-specific integration tests
 - `agents/` — Multi-agent testing
 - `security/` — Security regression tests
-- `zero_cost/` — Zero-cost lending mode tests
+- `zero_cost/` — Zero-cost path tests (validates `backend/src/zero_cost/` canonical legacy flow)
 
 #### `backend/python/tests/` — Unit tests for Python libraries
 - `test_kpi_engine.py` — KPIEngineV2 unit tests
