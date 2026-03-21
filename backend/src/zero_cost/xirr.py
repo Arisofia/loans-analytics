@@ -75,7 +75,8 @@ def xirr(
     -------
     float
         Annual rate of return (e.g., 0.25 = 25 %).  Returns ``float('nan')``
-        when convergence fails (equivalent to Excel #NUM!).
+        when convergence fails (equivalent to Excel #NUM!). Callers should
+        validate with ``np.isfinite(rate)`` before downstream use.
 
     Raises
     ------
@@ -160,6 +161,12 @@ def xirr_dataframe(
         Column containing dates.
     guess:
         Initial rate guess.
+
+    Returns
+    -------
+    float
+        XIRR value or ``float('nan')`` when convergence fails. Callers should
+        validate with ``np.isfinite(rate)`` before downstream use.
     """
     df = df.sort_values(date_col).reset_index(drop=True)
     return xirr(df[cashflow_col].tolist(), df[date_col].tolist(), guess=guess)
@@ -220,6 +227,9 @@ def loan_xirr(
     Returns
     -------
     float
+        XIRR value for the loan, or ``float('nan')`` when convergence fails.
+        Callers should validate with ``np.isfinite(rate)`` before downstream
+        aggregation or persistence.
         XIRR (annual rate) or ``float('nan')`` if not computable.
     """
     loan_row = disbursements_df[disbursements_df[loan_id_col] == loan_id]
