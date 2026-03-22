@@ -22,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      outputs:
+        supabase_ready: ${{ steps.check-secrets.outputs.supabase_ready }}
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
@@ -37,6 +39,18 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+        - name: Check Supabase secrets availability
+          id: check-secrets
+          env:
+            SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+            SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          run: |
+            if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ]; then
+              echo "supabase_ready=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "supabase_ready=false" >> "$GITHUB_OUTPUT"
+            fi
+
       - name: Run mypy type checking (strict mode)
         run: |
           python -m mypy . --no-incremental
@@ -51,7 +65,7 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
     needs: unit-tests
-    if: ${{ needs.unit-tests.result == 'success' && secrets.SUPABASE_URL != '' && secrets.SUPABASE_ANON_KEY != '' }}
+      if: ${{ needs.unit-tests.result == 'success' && needs.unit-tests.outputs.supabase_ready == 'true' }}
     permissions:
       contents: read
     env:
@@ -79,7 +93,7 @@ jobs:
   integration-tests-skipped:
     runs-on: ubuntu-latest
     needs: unit-tests
-    if: ${{ needs.unit-tests.result == 'success' && (secrets.SUPABASE_URL == '' || secrets.SUPABASE_ANON_KEY == '') }}
+     if: ${{ needs.unit-tests.result == 'success' && needs.unit-tests.outputs.supabase_ready == 'false' }}
     permissions:
       contents: read
     steps:
