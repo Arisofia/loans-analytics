@@ -32,36 +32,43 @@ st.title("🔮 Predictive Analytics")
 st.subheader("Probability of Default (PD) Model Control Room")
 
 # ---------------------------------------------------------------------------
-# Load Model Metadata
+# Section 0: Feature Selection (Information Value)
 # ---------------------------------------------------------------------------
-MODEL_DIR = Path("models/risk")
-METADATA_PATH = MODEL_DIR / "default_risk_metadata.json"
-
-if not METADATA_PATH.exists():
-    st.warning("No trained model found. Please run the retraining pipeline.")
-    if st.button("Run Initial Training"):
-        with st.spinner("Training model..."):
-            from scripts.ml.retrain_pipeline import run_pipeline
-            success = run_pipeline(
-                Path("data/samples/abaco_sample_data_20260202.csv"),
-                MODEL_DIR
-            )
-            if success:
-                st.success("Model trained successfully!")
-                st.rerun()
-            else:
-                st.error("Training failed. Check logs.")
-    st.stop()
-
-with open(METADATA_PATH) as f:
-    metadata = json.load(f)
-
-metrics = metadata.get("metrics", {})
+IV_PATH = Path("models/risk/iv_ranking.json")
+if IV_PATH.exists():
+    with open(IV_PATH) as f:
+        iv_data = json.load(f)
+    
+    st.header("1. Predictive Power (Information Value)")
+    st.info("The Information Value (IV) reveals which variables from your data actually separate defaults from paid loans.")
+    
+    iv_df = pd.DataFrame([
+        {"Variable": k, "IV": v, "Power": "Fuerte" if v > 0.3 else "Medio" if v > 0.1 else "Débil" if v > 0.02 else "None"}
+        for k, v in iv_data.items()
+    ]).sort_values("IV", ascending=False)
+    
+    col_iv1, col_iv2 = st.columns([2, 1])
+    with col_iv1:
+        fig_iv = px.bar(
+            iv_df, x="IV", y="Variable", orientation="h",
+            color="Power",
+            color_discrete_map={"Fuerte": "#00cc96", "Medio": "#636efa", "Débil": "#ef553b", "None": "#30363d"},
+            title="Information Value (IV) Ranking"
+        )
+        fig_iv.update_layout(template="plotly_dark")
+        st.plotly_chart(fig_iv, use_container_width=True)
+    
+    with col_iv2:
+        st.write("### Top Predictors")
+        for idx, row in iv_df.head(3).iterrows():
+            st.success(f"**{row['Variable']}** (IV: {row['IV']:.3f})")
+    
+    st.divider()
 
 # ---------------------------------------------------------------------------
 # Section 1: Model Health & Validation
 # ---------------------------------------------------------------------------
-st.header("Model Health & Validation")
+st.header("2. Model Health & Validation")
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
