@@ -258,6 +258,7 @@ class DefaultRiskModel:
 
         # KS Statistic
         from scipy.stats import ks_2samp
+
         pos_proba = y_proba[y_test == 1]
         neg_proba = y_proba[y_test == 0]
         ks_stat, _ = ks_2samp(pos_proba, neg_proba)

@@ -37,6 +37,7 @@ try:
     if env_local.exists():
         load_dotenv(env_local, override=True)
 except ImportError:
+    # python-dotenv is optional for this script
     pass
 
 REPO = "Arisofia/abaco-loans-analytics"

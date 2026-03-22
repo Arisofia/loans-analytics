@@ -64,7 +64,7 @@ def validate_monotonic_order(migrations: List[str]) -> Tuple[bool, List[str]]:
     errors = []
 
     try:
-        sorted_migrations = sorted(migrations, key=lambda m: extract_sort_key(m))
+        sorted_migrations = sorted(migrations, key=extract_sort_key)
     except ValueError as e:
         errors.append(f"  {e}")
         return False, errors

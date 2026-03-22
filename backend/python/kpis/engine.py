@@ -59,9 +59,6 @@ _LOG_KPI_CALCULATION_ERROR = (
 )
 
 # Loan statuses considered non-performing for NPL calculations.
-# Used in both the broad (DPD≥30) and strict (DPD≥90) NPL definitions.
-_NPL_BROAD_STATUSES: tuple[str, ...] = ("delinquent", "defaulted")
-_NPL_STRICT_STATUSES: tuple[str, ...] = ("defaulted",)
 
 
 class KPIEngineV2:

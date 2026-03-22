@@ -24,13 +24,16 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from backend.python.features.feature_store import FeatureStore
-from backend.python.models.default_risk_model import DefaultRiskModel
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger("retrain_pipeline")
 
+
 def run_pipeline(input_path: Path, model_dir: Path, threshold_auc: float = 0.7) -> bool:
+    from backend.python.features.feature_store import FeatureStore
+    from backend.python.models.default_risk_model import DefaultRiskModel
+
     logger.info("Starting retraining pipeline with input: %s", input_path)
 
     if not input_path.exists():
@@ -57,13 +60,15 @@ def run_pipeline(input_path: Path, model_dir: Path, threshold_auc: float = 0.7) 
     logger.info("Features versioned as: %s", version)
 
     # 3. Train Model
-    metrics = model_helper.train(df) # train() internally prepares features
+    metrics = model_helper.train(df)  # train() internally prepares features
     logger.info("Training complete. Metrics: %s", json.dumps(metrics, indent=2))
 
     # 4. Validation & Deployment
     current_auc = metrics.get("auc_roc", 0)
     if current_auc < threshold_auc:
-        logger.warning("AUC (%.4f) below threshold (%.4f). Aborting deployment.", current_auc, threshold_auc)
+        logger.warning(
+            "AUC (%.4f) below threshold (%.4f). Aborting deployment.", current_auc, threshold_auc
+        )
         return False
 
     # Save model
@@ -77,9 +82,12 @@ def run_pipeline(input_path: Path, model_dir: Path, threshold_auc: float = 0.7) 
 
     return True
 
+
 def main():
     parser = argparse.ArgumentParser(description="Retrain PD model")
-    parser.add_argument("--input", type=Path, default=Path("data/samples/abaco_sample_data_20260202.csv"))
+    parser.add_argument(
+        "--input", type=Path, default=Path("data/samples/abaco_sample_data_20260202.csv")
+    )
     parser.add_argument("--output-dir", type=Path, default=Path("models/risk"))
     parser.add_argument("--threshold", type=float, default=0.7)
 
@@ -87,6 +95,7 @@ def main():
 
     success = run_pipeline(args.input, args.output_dir, args.threshold)
     sys.exit(0 if success else 1)
+
 
 if __name__ == "__main__":
     main()

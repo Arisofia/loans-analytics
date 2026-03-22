@@ -861,6 +861,7 @@ if app is not None:
             try:
                 await websocket.send_json({"event": "error", "detail": INTERNAL_SERVER_ERROR})
             except Exception:
+                # Connection might be already closed
                 pass
 
     @app.post("/analytics/risk-alerts", response_model=RiskAlertsResponse)

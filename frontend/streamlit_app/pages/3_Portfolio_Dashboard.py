@@ -769,6 +769,7 @@ def _normalize_payment_history(value: Any) -> str:
         if isinstance(parsed, dict):
             return json.dumps([parsed])
     except (json.JSONDecodeError, TypeError):
+        # Treat unparseable text as empty history
         pass
     return "[]"
 

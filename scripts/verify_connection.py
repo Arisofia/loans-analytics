@@ -82,7 +82,7 @@ def _check_group(
             print(f"              → {location}")
             bad.append(key)
         else:
-            print(f"  ✓ OK       {key}  ({_mask(val)})")
+            print(f"  ✓ OK       {key}")
             ok.append(key)
     return bad, ok
 
@@ -205,10 +205,10 @@ def main() -> None:
     for secret_name, note in GITHUB_CI_SECRETS.items():
         val = os.environ.get(secret_name, "")
         if val and not _is_placeholder(val):
-            print(f"  ✓ LOCAL    {secret_name}  ({_mask(val)})")
+            print(f"  ✓ LOCAL    {secret_name}  (Set)")
         else:
             tag = "○ NOT SET " if secret_name == "SNYK_TOKEN" else "⚠ MISSING "
-            print(f"  {tag} {secret_name}  ← {note}")
+            print(f"  {tag} {secret_name}")
     print("  Run: python scripts/setup_github_secrets.py --token <PAT>  to upload")
 
     # ── Section 8: Live Supabase ping ────────────────────────
@@ -252,7 +252,7 @@ def main() -> None:
         # Service role ping
         try:
             admin: Client = create_client(url, service_key)
-            resp2 = admin.table("kpi_timeseries_daily").select("id").limit(1).execute()
+            admin.table("kpi_timeseries_daily").select("id").limit(1).execute()
             print("  ✓ Service role  → Admin access confirmed")
         except Exception as exc:
             err = str(exc)

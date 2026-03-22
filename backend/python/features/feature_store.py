@@ -11,7 +11,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -84,7 +84,7 @@ class FeatureStore:
 
         return features
 
-    def get_features_for_loan(self, loan_id: str) -> Optional[Dict[str, Any]]:
+    def get_features_for_loan(self, loan_id: str) -> dict[str, Any] | None:
         """Retrieve features for a specific loan from the latest version.
 
         Parameters
@@ -111,9 +111,7 @@ class FeatureStore:
             logger.error("Error retrieving features for loan %s: %s", loan_id, e)
             return None
 
-    def save_features(
-        self, features: pd.DataFrame, version: Optional[str] = None
-    ) -> Path:
+    def save_features(self, features: pd.DataFrame, version: str | None = None) -> Path:
         """Persist features to disk with versioning.
 
         Parameters

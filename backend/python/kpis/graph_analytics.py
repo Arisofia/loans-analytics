@@ -944,7 +944,6 @@ def npl_benchmarks(
     else:
         active["_dpd"] = 0.0
 
-    npl_180 = 0.0
     try:
         npl_90, npl_180 = _calculate_ssot_npl_metrics(active["_bal"], active["_dpd"])
     except Exception:
