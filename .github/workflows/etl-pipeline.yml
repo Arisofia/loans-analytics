@@ -78,10 +78,12 @@ jobs:
       input_csv: ${{ steps.resolve.outputs.input_csv }}
       mode: ${{ steps.resolve.outputs.mode }}
       run_type: ${{ steps.resolve.outputs.run_type }}
+      supabase_ready: ${{ steps.secret_gate.outputs.supabase_ready }}
     steps:
       - uses: actions/checkout@v4.1.7
 
       - name: Check required secrets
+        id: secret_gate
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -92,10 +94,12 @@ jobs:
           [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && MISSING="$MISSING SUPABASE_SERVICE_ROLE_KEY"
           [ -z "$SUPABASE_ANON_KEY" ]         && MISSING="$MISSING SUPABASE_ANON_KEY"
           if [ -n "$MISSING" ]; then
-            echo "❌ Missing required secrets:$MISSING"
-            echo "   Add them in Settings → Secrets and variables → Actions"
-            exit 1
+            echo "::warning title=Supabase secrets missing::Skipping Supabase ETL jobs. Missing:$MISSING"
+            echo "supabase_ready=false" >> "$GITHUB_OUTPUT"
+            echo "Supabase ETL jobs were skipped because required secrets are missing:$MISSING" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
+          echo "supabase_ready=true" >> "$GITHUB_OUTPUT"
           echo "✅ All required secrets present"
 
       - name: Resolve pipeline inputs and verify files
@@ -165,8 +169,11 @@ jobs:
       contents: read
     needs: [preflight, test]
     if: |
-      needs.preflight.outputs.run_type == 'ingest' ||
-      needs.preflight.outputs.run_type == 'both'
+      needs.preflight.outputs.supabase_ready == 'true' &&
+      (
+        needs.preflight.outputs.run_type == 'ingest' ||
+        needs.preflight.outputs.run_type == 'both'
+      )
     steps:
       - uses: actions/checkout@v4.1.7
 
@@ -243,8 +250,11 @@ jobs:
       contents: read
     needs: [preflight, test]
     if: |
-      needs.preflight.outputs.run_type == 'snapshot' ||
-      needs.preflight.outputs.run_type == 'both'
+      needs.preflight.outputs.supabase_ready == 'true' &&
+      (
+        needs.preflight.outputs.run_type == 'snapshot' ||
+        needs.preflight.outputs.run_type == 'both'
+      )
     steps:
       - uses: actions/checkout@v4.1.7
 
@@ -278,6 +288,19 @@ jobs:
             data/duckdb/
             exports/
           retention-days: 30
+
+  etl-skipped:
+    name: Report skipped Supabase ETL jobs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [preflight, test]
+    if: ${{ needs.preflight.outputs.supabase_ready != 'true' }}
+    steps:
+      - name: Report skip reason
+        run: |
+          echo "::warning title=ETL jobs skipped::Configure SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_ANON_KEY to run ETL jobs."
+          echo "Supabase ETL jobs were skipped because required secrets are not configured." >> "$GITHUB_STEP_SUMMARY"
 
   # ---------------------------------------------------------------------------
   # 5. Post summary

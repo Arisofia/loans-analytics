@@ -22,7 +22,7 @@ This guide covers production deployment of the Abaco Loans Analytics platform ac
 # Database
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_KEY=your_service_key  # Admin operations only
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # Admin operations only
 
 # LLM Providers (choose one or multiple)
 OPENAI_API_KEY=your-openai-key-here
@@ -34,10 +34,23 @@ APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=...
 OTEL_EXPORTER_OTLP_ENDPOINT=https://your-collector:4318
 
 # Security
-JWT_SECRET_KEY=your-256-bit-secret  # Generate with: openssl rand -hex 32
+API_JWT_SECRET=your-256-bit-secret  # Generate with: openssl rand -hex 32
 API_RATE_LIMIT_ENABLED=true
 AUTH_RATE_LIMIT_PER_MINUTE=5
 ```
+
+### GitHub Actions Secrets Checklist
+
+Required to run all CI and ETL workflows end-to-end:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+Optional but recommended:
+
+- `OPENAI_API_KEY` (LLM-enabled tests/features)
+- `SNYK_TOKEN` (dependency vulnerability scan)
 
 ### Optional Configuration
 
