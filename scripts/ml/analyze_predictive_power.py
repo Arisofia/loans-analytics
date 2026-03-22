@@ -15,15 +15,15 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from backend.python.models.woe_iv_engine import WoEIVEngine
-from backend.python.features.feature_store import FeatureStore
+from backend.python.models.woe_iv_engine import WoEIVEngine  # noqa: E402
+from backend.python.features.feature_store import FeatureStore  # noqa: E402
 
 def main():
     loan_path = REPO_ROOT / "data" / "raw" / "loan_data.csv"
     cust_path = REPO_ROOT / "data" / "raw" / "customer_data.csv"
     
     if not loan_path.exists() or not cust_path.exists():
-        print(f"Error: Data files not found.")
+        print("Error: Data files not found.")
         return
 
     # 1. Load and Merge Data

@@ -141,7 +141,6 @@ class DefaultRiskModel:
         
         Matches ScorecardModel.build_model_dataset logic for consistency.
         """
-        import pandas as pd
         if "is_default" in df.columns:
             return df["is_default"].astype(int)
 

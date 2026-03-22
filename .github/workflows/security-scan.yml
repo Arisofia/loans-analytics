@@ -16,7 +16,6 @@ jobs:
       security-events: write
       actions: read
     env:
-      # Avoid unstable PR diff-range extension generation in Dependabot branches.
       CODEQL_ACTION_DIFF_INFORMED_QUERIES: "false"
 
     strategy:
@@ -52,11 +51,8 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-
           config-file: ./.github/codeql-config.yml
         env:
-          # Disable PR diff analysis to prevent undefined value errors in extension pack
-          # This forces CodeQL to analyze the full codebase instead of just PR diffs
           CODEQL_EXTRACTOR_PYTHON_OPTION_ANALYZE_PR_DIFF: "false"
 
       - name: Autobuild
@@ -137,7 +133,7 @@ jobs:
           fi
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
@@ -162,7 +158,6 @@ jobs:
 
       - name: Run bandit security linter
         run: |
-          # Dynamically discover Python source directories
           SCAN_DIRS=()
           for dir in backend/python backend/src frontend scripts; do
             if [ -d "$dir" ]; then
@@ -176,8 +171,7 @@ jobs:
             bandit -r "${SCAN_DIRS[@]}" -f sarif -o bandit-results.sarif \
               --severity-level medium
           else
-            echo "⚠️  No Python source directories found to scan"
-            # Create empty placeholder files
+            echo "⚠️ No Python source directories found to scan"
             echo "[]" > bandit-report.json
             printf '%s\n' "{\"version\":\"2.1.0\",\"\$schema\":\"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json\",\"runs\":[]}" > bandit-results.sarif
           fi
@@ -191,7 +185,7 @@ jobs:
 
       - name: Upload security reports
         if: always()
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # actions/upload-artifact@v4.3.6
+        uses: actions/upload-artifact@v4
         with:
           name: security-reports
           path: |
@@ -211,7 +205,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Full history for gitleaks to scan all commits
+          fetch-depth: 0
 
       - name: Install Gitleaks CLI
         run: |
@@ -250,7 +244,7 @@ jobs:
 
       - name: Upload Gitleaks report
         if: always()
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # actions/upload-artifact@v4.3.6
+        uses: actions/upload-artifact@v4
         with:
           name: gitleaks-report
           path: |

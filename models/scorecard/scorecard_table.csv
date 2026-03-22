@@ -1,33 +1,33 @@
 feature,bin,woe,event_rate,points
-loan_age_days,"(-inf, 334.50)",-2.27866329778035,0.11807296086518916,-66.6
-loan_age_days,"[334.50, 546.50)",1.2296574214936493,0.003993334697576519,107.0
-loan_age_days,"[546.50, 586.50)",3.093520549032867,0.0006213525168163048,199.2
-loan_age_days,"[586.50, 618.50)",6.673925354777973,1.7324089619090515e-05,376.4
-loan_age_days,"[618.50, 665.50)",7.478932078070823,7.745413424350546e-06,416.3
-loan_age_days,"[665.50, inf)",4.540134019879227,0.00014631478027739864,270.8
-loan_age_days,Special,0.0,0.0,46.1
-loan_age_days,Missing,0.0,0.0,46.1
-interest_rate_apr,"(-inf, 0.54)",-1.302460224014359,0.048016195675621855,10.5
-interest_rate_apr,"[0.54, 0.63)",-0.4162107661879517,0.020367058887766524,34.7
-interest_rate_apr,"[0.63, 0.66)",1.456731742183183,0.003184718346756046,86.0
-interest_rate_apr,"[0.66, 0.67)",9.329834775739101,1.216775933145463e-06,301.6
-interest_rate_apr,"[0.67, 0.79)",2.566906213494895,0.0010516149337251863,116.4
-interest_rate_apr,"[0.79, inf)",1.4240027395120567,0.0032903268459140446,85.1
-interest_rate_apr,Special,0.0,0.0,46.1
-interest_rate_apr,Missing,0.0,0.0,46.1
-term,"(-inf, 31.50)",0.9207581922233885,0.005430773809780569,48.5
-term,"[31.50, 32.50)",9.150718664893382,1.455457894330846e-06,69.4
-term,"[32.50, 35.50)",5.014515647547222,9.105229133091135e-05,58.9
-term,"[35.50, 38.50)",3.7090945614385475,0.0003358317283059255,55.6
-term,"[38.50, 59.50)",-0.5214753568113517,0.022576852188185278,44.8
-term,"[59.50, inf)",-0.5930639282962278,0.024211787781897514,44.6
-term,Special,0.0,0.0,46.1
-term,Missing,0.0,0.0,46.1
+loan_age_days,"(-inf, 334.50)",-2.27866329778035,0.11807296086518916,-72.6
+loan_age_days,"[334.50, 546.50)",1.2296574214936493,0.003993334697576519,99.6
+loan_age_days,"[546.50, 586.50)",3.093520549032867,0.0006213525168163048,191.1
+loan_age_days,"[586.50, 618.50)",6.673925354777973,1.7324089619090515e-05,366.9
+loan_age_days,"[618.50, 665.50)",7.478932078070823,7.745413424350546e-06,406.4
+loan_age_days,"[665.50, inf)",4.540134019879227,0.00014631478027739864,262.1
+loan_age_days,Special,0.0,0.0,39.2
+loan_age_days,Missing,0.0,0.0,39.2
+interest_rate_apr,"(-inf, 0.54)",-1.302460224014359,0.048016195675621855,4.4
+interest_rate_apr,"[0.54, 0.63)",-0.4162107661879517,0.020367058887766524,28.1
+interest_rate_apr,"[0.63, 0.66)",1.456731742183183,0.003184718346756046,78.2
+interest_rate_apr,"[0.66, 0.67)",9.329834775739101,1.216775933145463e-06,288.7
+interest_rate_apr,"[0.67, 0.79)",2.566906213494895,0.0010516149337251863,107.9
+interest_rate_apr,"[0.79, inf)",1.4240027395120567,0.0032903268459140446,77.3
+interest_rate_apr,Special,0.0,0.0,39.2
+interest_rate_apr,Missing,0.0,0.0,39.2
+term,"(-inf, 31.50)",0.9207581922233885,0.005430773809780569,40.9
+term,"[31.50, 32.50)",9.150718664893382,1.455457894330846e-06,55.5
+term,"[32.50, 35.50)",5.014515647547222,9.105229133091135e-05,48.1
+term,"[35.50, 38.50)",3.7090945614385475,0.0003358317283059255,45.8
+term,"[38.50, 59.50)",-0.5214753568113517,0.022576852188185278,38.3
+term,"[59.50, inf)",-0.5930639282962278,0.024211787781897514,38.2
+term,Special,0.0,0.0,39.2
+term,Missing,0.0,0.0,39.2
 pagador,"['02 CAD IMPORT INC.'
  'ADMINISTRADORA INMOBILIARIA COMERCIAL, S.A. DE C.V.'
  'Tramsal S.A. de C.V. TRAMSAL' ... 'QUDOX, S.A. DE C.V.'
  'LIVSMART AMERICAS, S. A. DE C. V.'
- 'Electrolab Medic S.A. de C.V. Electrolab']",4.490608704549674,0.00015374236036124028,228.0
+ 'Electrolab Medic S.A. de C.V. Electrolab']",4.490608704549674,0.00015374236036124028,227.3
 pagador,"['UNILEVER EL SALVADOR SSC SA DE CV'
  'PROLOGIX FLEET SERVICES, S.A. DE C.V.'
  'INVERSIONES MONTECARLO, S.A. DE C.V.' 'MIRNA ELIZABETH  PEREZ'
@@ -95,9 +95,9 @@ pagador,"['UNILEVER EL SALVADOR SSC SA DE CV'
  'ESCARRSA DE C.V.' 'HEXAGAS EL SALVADOR'
  'UNION COMERCIAL DE EL SALVADOR, S.A. DE C.V.' 'DURALAC SA'
  'FRUTAS E IMPORTACIONES SALVADOREÑAS, S.A. DE C.V.'
- 'VINARDELL POWER SYSTEM, S.A. DE C.V.']",-0.3352786229062068,0.0188134371785648,32.6
-pagador,Special,0.0,0.0,46.1
-pagador,Missing,0.0,0.0,46.1
+ 'VINARDELL POWER SYSTEM, S.A. DE C.V.']",-0.3352786229062068,0.0188134371785648,25.2
+pagador,Special,0.0,0.0,39.2
+pagador,Missing,0.0,0.0,39.2
 industry,"['Actividades Inmobiliarias Realizadas a Cambio de una Retribución o por Contrata'
  'Actividades creativas artísticas y de esparcimiento'
  'Actividades de contabilidad, teneduría de libros y auditoría; asesoramiento en materia de impuestos'
@@ -162,16 +162,16 @@ industry,"['Actividades Inmobiliarias Realizadas a Cambio de una Retribución o 
  'Venta de vehículos automotores'
  'Venta de productos para uso agropecuario'
  'Venta al por mayor de otros artículos textiles n.c.p.'
- 'Transporte nacional de carga']",5.2616118192429,7.111922787346923e-05,783.8
+ 'Transporte nacional de carga']",5.2616118192429,7.111922787346923e-05,454.3
 industry,"['Venta de partes, piezas y accesorios nuevos para vehículos automotores'
  'Fabricación de productos plásticos n.c.p.'
- 'Venta al por mayor de lubricantes, grasas y otros aceites para automotores, maquinaria industrial, etc.']",2.6647495789402598,0.0009536883616288139,419.7
+ 'Venta al por mayor de lubricantes, grasas y otros aceites para automotores, maquinaria industrial, etc.']",2.6647495789402598,0.0009536883616288139,249.5
 industry,"['Venta al por menor de otros productos n.c.p.'
  'Venta al por mayor de otros productos'
  'Fabricación de artículos metálicos de uso personal y/o doméstico'
  'Construcción de obras de ingeniería civil n.c.p.'
  'Fabricación de productos metálicos para uso estructural'
- 'Venta al por menor de artículos eléctricos y de iluminación']",0.07557862295321893,0.012554421067919519,56.7
+ 'Venta al por menor de artículos eléctricos y de iluminación']",0.07557862295321893,0.012554421067919519,45.2
 industry,"['nan'
  'Venta al por mayor de maquinaria, equipo, accesorios y materiales para la industria metálica y de sus productos'
  'Servicios n.c.p.' 'Servicios de seguridad privados'
@@ -186,9 +186,9 @@ industry,"['nan'
  'Reparación y mantenimiento de equipo eléctrico' 'Actividades jurídicas'
  'Venta al por mayor de otro tipo de maquinaria y equipo con sus accesorios y partes'
  'Actividades inmobiliarias realizadas con bienes propios o arrendados n.c.p.'
- 'Fabricación de productos elaborados de metal ncp']",-0.3487844124196733,0.019064374164837892,-2.8
-industry,Special,0.0,0.0,46.1
-industry,Missing,0.0,0.0,46.1
+ 'Fabricación de productos elaborados de metal ncp']",-0.3487844124196733,0.019064374164837892,11.7
+industry,Special,0.0,0.0,39.2
+industry,Missing,0.0,0.0,39.2
 cliente,"['VERTEX STUDIO, S.A. DE C.V. ' 'Alvaro Anival Asencio Garza'
  'AXEL STEVEN MARROQUIN VELASQUEZ' 'AVERIS ISRAEL LEIVA ZUNIGA'
  'AUDIT & TAX SERVICES, S.A. DE C.V. ' 'ALEXANDER ARNOLDO NARVAEZ CINCO'
@@ -338,7 +338,7 @@ cliente,"['VERTEX STUDIO, S.A. DE C.V. ' 'Alvaro Anival Asencio Garza'
  'RAVICORP INDUSTRIA, S.A. DE C.V. ' 'GRUPO CAT, S.A. DE C.V.'
  'ADVANTAGE, S.A. DE C.V.'
  'LUBRICANTES SERVICIOS Y ADITIVOS, S.A. DE C.V.' 'SEMDITEC, S.A. DE C.V.'
- 'ANGEL ANTONIO OSTORGA PORTAL']",3.029229951191361,0.0006625843829857297,121.9
+ 'ANGEL ANTONIO OSTORGA PORTAL']",3.029229951191361,0.0006625843829857297,115.6
 cliente,"['LLANTAS Y REENCAUCHES DE CENTROAMERICA S.A. DE C.V. LLANREC SA DE CV'
  'ESTRUCTURAS METALICAS PINTO, S.A. DE C.V.'
  'SERVICIOS TECNICOS INDUSTRIALES, S.A. DE C.V.'
@@ -375,55 +375,68 @@ cliente,"['LLANTAS Y REENCAUCHES DE CENTROAMERICA S.A. DE C.V. LLANREC SA DE CV'
  'MULTIPROYECTOS MECANICOS, S.A. DE C.V.'
  'ISABELLA GARCIA-MANZO GUTIERREZ' 'Yanira de Jesus Batres Castillo'
  'SALVADOR ANTONIO HERNANDEZ URRUTIA' 'CORPORACION E:SCALA, S.A. DE C.V.'
- 'FAMIN, S.A. DE C.V.' 'COBAR & COBAR, S.A. DE C.V. ']",-0.4097828667386123,0.020239202509263386,35.9
-cliente,Special,0.0,0.0,46.1
-cliente,Missing,0.0,0.0,46.1
-late_payment_rate,"(-inf, 0.04)",0.6426653886867575,0.0010191500146653305,113.0
-late_payment_rate,"[0.04, 0.79)",0.921190557542193,0.0007715850132780795,142.0
-late_payment_rate,"[0.79, inf)",-1.0199743626697986,0.005350891184180212,-60.0
-late_payment_rate,Special,0.0,0.0,46.1
-late_payment_rate,Missing,0.0,0.0,46.1
-max_consecutive_late,"(-inf, 0.50)",0.6426653886867575,0.0010191500146653305,16.3
-max_consecutive_late,"[0.50, inf)",-0.7441255337980781,0.004066184454436682,80.7
-max_consecutive_late,Special,0.0,0.0,46.1
-max_consecutive_late,Missing,0.0,0.0,46.1
-n_late_payments,"(-inf, 0.50)",0.6426653886867575,0.0010191500146653305,16.3
-n_late_payments,"[0.50, inf)",-0.7441255337980781,0.004066184454436682,80.7
-n_late_payments,Special,0.0,0.0,46.1
-n_late_payments,Missing,0.0,0.0,46.1
-disbursement_amount,"(-inf, 69.95)",0.2091189709502066,0.011002287059453976,46.3
-disbursement_amount,"[69.95, 144.47)",0.7373668857991413,0.0065167800962093615,46.7
-disbursement_amount,"[144.47, 190.09)",3.8282135417643506,0.0002981297992008117,49.1
-disbursement_amount,"[190.09, 228.94)",1.121522802814492,0.004447336326003375,47.0
-disbursement_amount,"[228.94, 462.81)",-0.024484203219714118,0.013857344021891564,46.1
-disbursement_amount,"[462.81, 2306.09)",-0.32105809307619726,0.018552721823121343,45.9
-disbursement_amount,"[2306.09, inf)",-0.6777983710483202,0.02629648670059076,45.6
-disbursement_amount,Special,0.0,0.0,46.1
-disbursement_amount,Missing,0.0,0.0,46.1
-tpv,"(-inf, 84.97)",0.2114305103916685,0.010977163061344214,51.4
-tpv,"[84.97, 170.42)",0.7528949842583055,0.006417012853768403,64.7
-tpv,"[170.42, 221.62)",3.5621834081035164,0.0003889567811198276,134.0
-tpv,"[221.62, 270.15)",1.0530669745684351,0.00476094466630183,72.1
-tpv,"[270.15, 546.27)",0.011023299923311747,0.013380405581231698,46.4
-tpv,"[546.27, 2722.27)",-0.3258552722060162,0.018640273387482198,38.1
-tpv,"[2722.27, inf)",-0.6973781671041661,0.026802504171555837,28.9
-tpv,Special,0.0,0.0,46.1
-tpv,Missing,0.0,0.0,46.1
-origination_fee,"(-inf, 0.21)",0.07441854946663273,0.012568810410877665,45.4
-origination_fee,"[0.21, 0.56)",0.7654546484819171,0.0063374289153625835,38.9
-origination_fee,"[0.56, 0.72)",4.15885236878092,0.00021421369039695327,7.0
-origination_fee,"[0.72, 1.28)",-0.12187843721617231,0.015253256926595137,47.3
-origination_fee,"[1.28, 7.19)",-0.16521314249184726,0.015918030429045795,47.7
-origination_fee,"[7.19, inf)",-0.3643679336714496,0.019357995058169358,49.6
-origination_fee,Special,0.0,0.0,46.1
-origination_fee,Missing,0.0,0.0,46.1
-origination_fee_taxes,"(-inf, 0.34)",-0.04718391856792081,0.01417099056741414,46.2
-origination_fee_taxes,"[0.34, 0.55)",2.6656982264012106,0.0009527849381668679,43.8
-origination_fee_taxes,"[0.55, 0.94)",0.2386241615753324,0.010685822987585102,45.9
-origination_fee_taxes,"[0.94, inf)",-0.36779724698133975,0.019423202029857006,46.5
-origination_fee_taxes,Special,0.0,0.0,46.1
-origination_fee_taxes,Missing,0.0,0.0,46.1
-n_payments,"(-inf, 1.50)",0.13949587212213999,0.0016845057899288155,52.8
-n_payments,"[1.50, inf)",-0.5436485515949965,0.0033299824434658504,20.1
-n_payments,Special,0.0,0.0,46.1
-n_payments,Missing,0.0,0.0,46.1
+ 'FAMIN, S.A. DE C.V.' 'COBAR & COBAR, S.A. DE C.V. ']",-0.4097828667386123,0.020239202509263386,28.9
+cliente,Special,0.0,0.0,39.2
+cliente,Missing,0.0,0.0,39.2
+payment_amount_std,"(-inf, 387.13)",0.27050815183448496,0.002542755727654082,44.9
+payment_amount_std,"[387.13, 523.31)",0.46632683039851663,0.002091501123669231,49.0
+payment_amount_std,"[523.31, 628.87)",3.7650790692747425,7.739339060444238e-05,118.4
+payment_amount_std,"[628.87, 1052.71)",3.5700850117174987,9.405491171106331e-05,114.3
+payment_amount_std,"[1052.71, 2249.21)",0.1829470054329354,0.002774795119017309,43.1
+payment_amount_std,"[2249.21, inf)",-0.6881432762706412,0.006604947507088459,24.8
+payment_amount_std,Special,0.0,0.0,39.2
+payment_amount_std,Missing,0.0,0.0,39.2
+late_payment_rate,"(-inf, 0.04)",0.6426653886867575,0.0010191500146653305,108.5
+late_payment_rate,"[0.04, 0.79)",0.921190557542193,0.0007715850132780795,138.6
+late_payment_rate,"[0.79, inf)",-1.0199743626697986,0.005350891184180212,-70.8
+late_payment_rate,Special,0.0,0.0,39.2
+late_payment_rate,Missing,0.0,0.0,39.2
+n_late_payments,"(-inf, 0.50)",0.6426653886867575,0.0010191500146653305,8.2
+n_late_payments,"[0.50, inf)",-0.7441255337980781,0.004066184454436682,75.1
+n_late_payments,Special,0.0,0.0,39.2
+n_late_payments,Missing,0.0,0.0,39.2
+max_consecutive_late,"(-inf, 0.50)",0.6426653886867575,0.0010191500146653305,8.2
+max_consecutive_late,"[0.50, inf)",-0.7441255337980781,0.004066184454436682,75.1
+max_consecutive_late,Special,0.0,0.0,39.2
+max_consecutive_late,Missing,0.0,0.0,39.2
+disbursement_amount,"(-inf, 69.95)",0.2091189709502066,0.011002287059453976,39.9
+disbursement_amount,"[69.95, 144.47)",0.7373668857991413,0.0065167800962093615,41.7
+disbursement_amount,"[144.47, 190.09)",3.8282135417643506,0.0002981297992008117,52.1
+disbursement_amount,"[190.09, 228.94)",1.121522802814492,0.004447336326003375,43.0
+disbursement_amount,"[228.94, 462.81)",-0.024484203219714118,0.013857344021891564,39.1
+disbursement_amount,"[462.81, 2306.09)",-0.32105809307619726,0.018552721823121343,38.1
+disbursement_amount,"[2306.09, inf)",-0.6777983710483202,0.02629648670059076,36.9
+disbursement_amount,Special,0.0,0.0,39.2
+disbursement_amount,Missing,0.0,0.0,39.2
+tpv,"(-inf, 84.97)",0.2114305103916685,0.010977163061344214,43.5
+tpv,"[84.97, 170.42)",0.7528949842583055,0.006417012853768403,54.5
+tpv,"[170.42, 221.62)",3.5621834081035164,0.0003889567811198276,111.3
+tpv,"[221.62, 270.15)",1.0530669745684351,0.00476094466630183,60.5
+tpv,"[270.15, 546.27)",0.011023299923311747,0.013380405581231698,39.5
+tpv,"[546.27, 2722.27)",-0.3258552722060162,0.018640273387482198,32.6
+tpv,"[2722.27, inf)",-0.6973781671041661,0.026802504171555837,25.1
+tpv,Special,0.0,0.0,39.2
+tpv,Missing,0.0,0.0,39.2
+equifax_score,"(-inf, 130.00)",-0.22163577884345287,0.016142195562919348,33.7
+equifax_score,"[130.00, 542.50)",0.7672710916963013,0.006066119580300898,58.4
+equifax_score,"[542.50, inf)",2.3654218876595596,0.0012329617441731928,98.4
+equifax_score,Special,0.0,0.0,39.2
+equifax_score,Missing,0.0,0.0,39.2
+origination_fee,"(-inf, 0.21)",0.07441854946663273,0.012568810410877665,38.6
+origination_fee,"[0.21, 0.56)",0.7654546484819171,0.0063374289153625835,32.6
+origination_fee,"[0.56, 0.72)",4.15885236878092,0.00021421369039695327,3.1
+origination_fee,"[0.72, 1.28)",-0.12187843721617231,0.015253256926595137,40.3
+origination_fee,"[1.28, 7.19)",-0.16521314249184726,0.015918030429045795,40.7
+origination_fee,"[7.19, inf)",-0.3643679336714496,0.019357995058169358,42.4
+origination_fee,Special,0.0,0.0,39.2
+origination_fee,Missing,0.0,0.0,39.2
+origination_fee_taxes,"(-inf, 0.34)",-0.04718391856792081,0.01417099056741414,39.4
+origination_fee_taxes,"[0.34, 0.55)",2.6656982264012106,0.0009527849381668679,32.0
+origination_fee_taxes,"[0.55, 0.94)",0.2386241615753324,0.010685822987585102,38.6
+origination_fee_taxes,"[0.94, inf)",-0.36779724698133975,0.019423202029857006,40.2
+origination_fee_taxes,Special,0.0,0.0,39.2
+origination_fee_taxes,Missing,0.0,0.0,39.2
+n_payments,"(-inf, 1.50)",0.13949587212213999,0.0016845057899288155,50.1
+n_payments,"[1.50, inf)",-0.5436485515949965,0.0033299824434658504,-3.3
+n_payments,Special,0.0,0.0,39.2
+n_payments,Missing,0.0,0.0,39.2

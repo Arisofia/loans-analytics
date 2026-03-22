@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
@@ -40,7 +40,7 @@ jobs:
       - name: Run mypy type checking (strict mode)
         run: |
           python -m mypy . --no-incremental
-        continue-on-error: false  # MUST pass - type safety is non-negotiable
+        continue-on-error: false
 
       - name: Validate migration governance
         run: python scripts/maintenance/validate_migration_index.py
@@ -51,17 +51,15 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
     needs: unit-tests
-    if: needs.unit-tests.result == 'success'
+    if: ${{ needs.unit-tests.result == 'success' && secrets.SUPABASE_URL != '' && secrets.SUPABASE_ANON_KEY != '' }}
     permissions:
       contents: read
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
@@ -71,16 +69,24 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      - name: Run integration tests
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          pytest tests/ -v -m "integration" --tb=short
+
+  integration-tests-skipped:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    if: ${{ needs.unit-tests.result == 'success' && (secrets.SUPABASE_URL == '' || secrets.SUPABASE_ANON_KEY == '') }}
+    permissions:
+      contents: read
+    steps:
       - name: Report skipped integration tests
-        if: env.SUPABASE_URL == '' || env.SUPABASE_ANON_KEY == ''
         run: |
           echo "::warning title=Integration tests skipped::Missing SUPABASE_URL or SUPABASE_ANON_KEY secrets"
           echo "Integration tests were skipped because required Supabase secrets are not configured." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Run integration tests
-        if: env.SUPABASE_URL != '' && env.SUPABASE_ANON_KEY != ''
-        run: |
-          pytest tests/ -v -m "integration" --tb=short
 
   multi-agent-tests:
     runs-on: ubuntu-latest
@@ -93,7 +99,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
@@ -118,7 +124,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
@@ -201,7 +207,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip

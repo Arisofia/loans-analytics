@@ -35,9 +35,10 @@ from __future__ import annotations
 import json
 import logging
 import pickle
+import re
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -75,6 +76,38 @@ class ScorecardModel:
         self.metadata: Dict[str, Any] = {}
         self.feature_names_woe: List[str] = []     # WoE column names
 
+    @staticmethod
+    def _normalize_column_name(column_name: str) -> str:
+        normalized = re.sub(r"[^a-z0-9]+", "_", str(column_name).strip().lower())
+        return normalized.strip("_")
+
+    @classmethod
+    def _normalize_dataframe_columns(cls, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df.columns = [cls._normalize_column_name(column_name) for column_name in df.columns]
+        return df
+
+    @classmethod
+    def _find_column(
+        cls,
+        columns: Sequence[str],
+        aliases: Sequence[str],
+    ) -> Optional[str]:
+        normalized_map = {column: cls._normalize_column_name(column) for column in columns}
+        normalized_aliases = [cls._normalize_column_name(alias) for alias in aliases]
+
+        for alias in normalized_aliases:
+            for column, normalized_column in normalized_map.items():
+                if normalized_column == alias:
+                    return column
+
+        for alias in normalized_aliases:
+            for column, normalized_column in normalized_map.items():
+                if alias and (alias in normalized_column or normalized_column in alias):
+                    return column
+
+        return None
+
     # ── Data preparation ────────────────────────────────────────────────────
 
     @staticmethod
@@ -84,15 +117,14 @@ class ScorecardModel:
         customer_df: pd.DataFrame,
     ) -> pd.DataFrame:
         """Merge loan, payment history, and customer data into a flat model table."""
-        # Normalize column names
-        loan_df.columns = loan_df.columns.str.strip().str.lower().str.replace(" ", "_")
-        payment_df.columns = payment_df.columns.str.strip().str.lower().str.replace(" ", "_")
-        customer_df.columns = customer_df.columns.str.strip().str.lower().str.replace(" ", "_")
+        loan_df = ScorecardModel._normalize_dataframe_columns(loan_df)
+        payment_df = ScorecardModel._normalize_dataframe_columns(payment_df)
+        customer_df = ScorecardModel._normalize_dataframe_columns(customer_df)
 
         # Target variable
-        status_col = next(
-            (c for c in loan_df.columns if c in ["status", "current_status", "estado", "loan_status"]),
-            None,
+        status_col = ScorecardModel._find_column(
+            loan_df.columns,
+            ["status", "current_status", "estado", "loan_status", "application_status"],
         )
         if status_col is None:
             raise ValueError("No status column found in loan_df. Expected: status/current_status/estado/loan_status")
@@ -104,9 +136,9 @@ class ScorecardModel:
         )
 
         # Origination date
-        date_col = next(
-            (c for c in loan_df.columns if "disburs" in c or "originat" in c or "fecha_desembolso" in c),
-            None,
+        date_col = ScorecardModel._find_column(
+            loan_df.columns,
+            ["disbursement_date", "origination_date", "fecha_desembolso", "loan_date"],
         )
         if date_col:
             loan_df[date_col] = pd.to_datetime(loan_df[date_col], errors="coerce")
@@ -131,27 +163,36 @@ class ScorecardModel:
             )
 
         # Behavioral features from payment history
-        loan_id_col_pay = next(
-            (c for c in payment_df.columns if "loan_id" in c or "prestamo_id" in c or "id_prestamo" in c),
-            None,
+        loan_id_col_pay = ScorecardModel._find_column(
+            payment_df.columns,
+            ["loan_id", "prestamo_id", "id_prestamo", "new_loan_id", "old_loan_id"],
         )
-        loan_id_col_loan = next(
-            (c for c in loan_df.columns if c in ["loan_id", "id_prestamo", "prestamo_id"]),
-            None,
+        loan_id_col_loan = ScorecardModel._find_column(
+            loan_df.columns,
+            ["loan_id", "id_prestamo", "prestamo_id", "new_loan_id", "old_loan_id"],
         )
 
         if loan_id_col_pay and loan_id_col_loan:
-            status_pay_col = next(
-                (c for c in payment_df.columns if "status" in c or "estado" in c),
-                None,
+            status_pay_col = ScorecardModel._find_column(
+                payment_df.columns,
+                ["payment_status", "true_payment_status", "status", "estado"],
             )
-            amount_pay_col = next(
-                (c for c in payment_df.columns if "amount" in c or "monto" in c or "valor" in c),
-                None,
+            amount_pay_col = ScorecardModel._find_column(
+                payment_df.columns,
+                [
+                    "true_total_payment",
+                    "total_payment",
+                    "payment_amount",
+                    "last_payment_amount",
+                    "true_principal_payment",
+                    "amount",
+                    "monto",
+                    "valor",
+                ],
             )
-            date_pay_col = next(
-                (c for c in payment_df.columns if "date" in c or "fecha" in c),
-                None,
+            date_pay_col = ScorecardModel._find_column(
+                payment_df.columns,
+                ["true_payment_date", "payment_date", "date", "fecha"],
             )
 
             if status_pay_col:
@@ -204,23 +245,23 @@ class ScorecardModel:
                 loan_df = loan_df.merge(beh, on=loan_id_col_loan, how="left")
 
         # Customer features
-        cust_id_col_cust = next(
-            (c for c in customer_df.columns if "customer_id" in c or "cliente_id" in c or "borrower_id" in c),
-            None,
+        cust_id_col_cust = ScorecardModel._find_column(
+            customer_df.columns,
+            ["customer_id", "cliente_id", "borrower_id"],
         )
-        cust_id_col_loan = next(
-            (c for c in loan_df.columns if "customer_id" in c or "cliente_id" in c or "borrower_id" in c),
-            None,
+        cust_id_col_loan = ScorecardModel._find_column(
+            loan_df.columns,
+            ["customer_id", "cliente_id", "borrower_id"],
         )
 
         if cust_id_col_cust and cust_id_col_loan:
-            industry_col = next(
-                (c for c in customer_df.columns if "industry" in c or "sector" in c or "giro" in c),
-                None,
+            industry_col = ScorecardModel._find_column(
+                customer_df.columns,
+                ["industry", "sector", "giro"],
             )
-            score_col = next(
-                (c for c in customer_df.columns if "equifax" in c or "score" in c or "buro" in c),
-                None,
+            score_col = ScorecardModel._find_column(
+                customer_df.columns,
+                ["equifax_score", "external_credit_score", "internal_credit_score", "score", "buro"],
             )
 
             keep_cols = [cust_id_col_cust]
@@ -433,6 +474,9 @@ class ScorecardModel:
 
     def _build_scorecard_table(self) -> None:
         """Create a human-readable table of points per bin."""
+        if self.lr_model is None:
+            raise ValueError("Model must be fitted before building scorecard table.")
+            
         offset, factor = self._calculate_scaling_params(BASE_SCORE, BASE_ODDS, PDO)
         n_feats = len(self.selected_features)
         intercept = self.lr_model.intercept_[0]
@@ -447,7 +491,8 @@ class ScorecardModel:
             
             # Use binning table rows except 'Totals'
             for idx, row in bt.iterrows():
-                if idx == bt.index[-1]: continue
+                if idx == bt.index[-1]:
+                    continue
                 
                 woe = row["WoE"]
                 event_rate = row["Event rate"]
@@ -465,17 +510,26 @@ class ScorecardModel:
 
     def predict_score(self, loan_features: Dict[str, Any]) -> int:
         """Predict score for a single loan."""
+        if self.lr_model is None:
+            raise ValueError("Model must be fitted before prediction.")
+            
         df = pd.DataFrame([loan_features])
         woe_df = self._transform_woe(df, self.selected_features)
         log_odds = self.lr_model.decision_function(woe_df.values)
         return int(self._scale_score(log_odds)[0])
 
     def predict_score_batch(self, df: pd.DataFrame) -> np.ndarray:
+        if self.lr_model is None:
+            raise ValueError("Model must be fitted before prediction.")
+            
         woe_df = self._transform_woe(df, self.selected_features)
         log_odds = self.lr_model.decision_function(woe_df.values)
         return self._scale_score(log_odds)
 
     def predict_proba(self, loan_features: Dict[str, Any]) -> float:
+        if self.lr_model is None:
+            raise ValueError("Model must be fitted before prediction.")
+            
         df = pd.DataFrame([loan_features])
         woe_df = self._transform_woe(df, self.selected_features)
         return float(self.lr_model.predict_proba(woe_df.values)[0, 1])
