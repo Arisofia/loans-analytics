@@ -30,8 +30,11 @@ def main():
     loans = pd.read_csv(loan_path, low_memory=False)
     cust = pd.read_csv(cust_path, low_memory=False)
     
-    # Merge on Loan ID
-    df = pd.merge(loans, cust[['Loan ID', 'Equifax Score', 'Product Type', 'Industry', 'Client Type']], on='Loan ID', how='left', validate="one_to_one")
+    # Merge on Loan ID - ensure customer data is unique per loan
+    # Only take columns that are NOT in loans already, plus the join key
+    cust_cols = ['Loan ID', 'Equifax Score', 'Industry', 'Client Type']
+    cust_subset = cust[cust_cols].drop_duplicates(subset=['Loan ID'])
+    df = pd.merge(loans, cust_subset, on='Loan ID', how='left')
     
     # Map raw columns to names expected by FeatureStore
     col_map = {

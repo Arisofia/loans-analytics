@@ -63,6 +63,9 @@ class FeatureStore:
         feature_cols = [c for c in enriched_df.columns if c not in exclude]
 
         features = enriched_df[feature_cols].copy()
+        
+        # Ensure unique columns (in case of overlap during merge)
+        features = features.loc[:, ~features.columns.duplicated()]
 
         # Ensure numeric conversion
         for col in features.columns:

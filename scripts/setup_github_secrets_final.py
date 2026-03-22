@@ -103,7 +103,7 @@ def upload_secrets(env_path: Path, token: str) -> None:
             'Programs', 'Git', 'cmd', 'git.exe'
         )
         origin = os.popen(f'"{git_cmd}" remote get-url origin').read().strip()
-    except:
+    except Exception:
         origin = ''
     
     if not origin:
