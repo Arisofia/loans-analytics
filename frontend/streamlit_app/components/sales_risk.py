@@ -3,7 +3,7 @@ import plotly.express as px
 import streamlit as st
 
 from .visualizations import apply_theme
-
+from .risk_prediction import render_predictive_risk
 
 def render_sales_performance(merged, load_agent_headcount):
     """Render sales performance charts or team capacity."""
@@ -56,7 +56,15 @@ def render_sales_performance(merged, load_agent_headcount):
 def render_risk_analysis(merged):
     """Render risk analysis charts and metrics."""
     st.markdown('<div data-testid="dashboard-risk">', unsafe_allow_html=True)
-    st.header("⚠️ Risk Analysis")
+    
+    # 🧪 Predictive Analysis (Zero-cost ML integration)
+    try:
+        render_predictive_risk(merged)
+    except Exception as e:
+        st.error(f"Predictive component failed to render: {e}")
+    
+    st.divider()
+    st.header("⚠️ Descriptive Risk Analysis")
     r_col1, r_col2 = st.columns(2)
     with r_col1:
         if "days_in_default" in merged.columns:

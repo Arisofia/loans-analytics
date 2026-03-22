@@ -254,6 +254,14 @@ class DefaultRiskModel:
         y_proba = self.model.predict_proba(X_test)[:, 1]
 
         auc = roc_auc_score(y_test, y_proba)
+        gini = 2 * auc - 1
+
+        # KS Statistic
+        from scipy.stats import ks_2samp
+        pos_proba = y_proba[y_test == 1]
+        neg_proba = y_proba[y_test == 0]
+        ks_stat, _ = ks_2samp(pos_proba, neg_proba)
+
         accuracy = accuracy_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred, zero_division=0)
         recall = recall_score(y_test, y_pred, zero_division=0)
@@ -299,6 +307,8 @@ class DefaultRiskModel:
 
         metrics: Dict[str, Any] = {
             "auc_roc": round(auc, 4),
+            "gini_coefficient": round(gini, 4),
+            "ks_statistic": round(ks_stat, 4),
             "cv_auc_mean": round(float(np.mean(cv_aucs)), 4),
             "cv_auc_std": round(float(np.std(cv_aucs)), 4),
             "accuracy": round(accuracy, 4),
