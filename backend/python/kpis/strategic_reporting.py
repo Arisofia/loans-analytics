@@ -399,8 +399,8 @@ def generate_strategic_report(data_dir: str | Path, exports_dir: str | Path) -> 
 
     summary = build_strategic_summary(dashboard_payload)
     links = {
-        "streamlit_local": "http://localhost:8501",
-        "grafana_local": "http://localhost:3001/dashboards",
+        "streamlit_local": "http://127.0.0.1:8501",
+        "grafana_local": "http://127.0.0.1:3001/dashboards",
         "streamlit_prod": "https://abaco-analytics-dashboard.azurewebsites.net",
         "dashboard_docs": "docs/analytics/dashboards.md",
     }

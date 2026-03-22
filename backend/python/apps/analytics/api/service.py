@@ -71,7 +71,8 @@ DATA_MISSING_INTERPRETATION = (
     "No loan data available. Score cannot be computed. Investigate data pipeline."
 )
 _PORTFOLIO_HEALTH_FORMULA = (
-    "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + " "CostOfRisk(15pts) + DefaultRate(15pts)"
+    "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
+    + "CostOfRisk(15pts) + DefaultRate(15pts)"
 )
 
 try:

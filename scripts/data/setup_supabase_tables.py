@@ -97,7 +97,7 @@ def main() -> None:
     print("\nSupabase REST APIs do not support arbitrary SQL execution for DDL.")
     print("Please apply the migration manually using one of the following options:\n")
     print("Option A: Supabase Dashboard (SQL Editor)")
-    print("  1. Open Supabase Dashboard → SQL Editor")
+    print("  1. Open Supabase Dashboard -> SQL Editor")
     print(f"  2. Open the file: {migration_file}")
     print("  3. Copy its contents into the SQL Editor")
     print("  4. Execute the SQL")

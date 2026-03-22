@@ -3,7 +3,7 @@ import os
 import pytest
 import requests
 
-BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://localhost:8000")
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://127.0.0.1:8000")
 RUN_E2E = os.getenv("RUN_E2E", "0") == "1"
 
 pytestmark = [

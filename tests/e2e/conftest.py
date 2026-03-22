@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 import requests
 
-DEFAULT_FRONTEND_URLS = ("http://localhost:8501", "http://localhost:8000")
+DEFAULT_FRONTEND_URLS = ("http://127.0.0.1:8501", "http://127.0.0.1:8000")
 
 
 def _streamlit_health_url(base_url: str) -> str:
@@ -40,7 +40,7 @@ def frontend_base_url() -> str:
 
 @pytest.fixture(scope="session")
 def backend_base_url() -> str:
-    return os.getenv("BACKEND_BASE_URL", "http://localhost:8000")
+    return os.getenv("BACKEND_BASE_URL", "http://127.0.0.1:8000")
 
 
 @pytest.fixture(scope="session")

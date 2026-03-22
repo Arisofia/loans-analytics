@@ -28,7 +28,7 @@ st.title("Monitoring & Control")
 # API base URL from server-side configuration (environment variable).
 # Not sourced from a Streamlit widget, so CodeQL does not treat it as
 # a RemoteFlowSource. Set ABACO_API_BASE in .env or deployment config.
-API_BASE: str = os.environ.get("ABACO_API_BASE", "http://localhost:8000")
+API_BASE: str = os.environ.get("ABACO_API_BASE", "http://127.0.0.1:8000")
 
 API_BASE_SAFE = sanitize_api_base(API_BASE)
 if API_BASE_SAFE is None:

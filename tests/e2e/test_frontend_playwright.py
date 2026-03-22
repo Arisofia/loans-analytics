@@ -8,7 +8,7 @@ sync_playwright = pytest.importorskip(
     reason="playwright is required only for optional e2e tests",
 ).sync_playwright
 
-DEFAULT_FRONTEND_URLS = ("http://localhost:8501", "http://localhost:8000")
+DEFAULT_FRONTEND_URLS = ("http://127.0.0.1:8501", "http://127.0.0.1:8000")
 RUN_E2E = os.getenv("RUN_E2E", "0") == "1"
 
 pytestmark = [

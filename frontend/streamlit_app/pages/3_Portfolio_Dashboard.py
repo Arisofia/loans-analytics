@@ -130,7 +130,7 @@ CORE_REQUIRED_COLUMNS = [
 ]
 
 MONITORING_EVENTS_ENDPOINT = "/monitoring/events"
-ABACO_API_BASE = os.environ.get("ABACO_API_BASE", "http://localhost:8000")
+ABACO_API_BASE = os.environ.get("ABACO_API_BASE", "http://127.0.0.1:8000")
 ABACO_API_BASE_SAFE = sanitize_api_base(ABACO_API_BASE)
 AGENT_OUTPUTS_DIR = REPO_ROOT / "data" / "agent_outputs"
 AGENT_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)

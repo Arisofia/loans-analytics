@@ -22,7 +22,7 @@ class KPIWebSocketClient:
         connect_timeout: float = 5.0,
         receive_timeout: float = 5.0,
     ):
-        self.ws_url = ws_url or os.getenv("KPI_WS_URL", "ws://localhost:8000/analytics/kpis/stream")
+        self.ws_url = ws_url or os.getenv("KPI_WS_URL", "ws://127.0.0.1:8000/analytics/kpis/stream")
         self.connect_timeout = connect_timeout
         self.receive_timeout = receive_timeout
 
