@@ -1,0 +1,429 @@
+feature,bin,woe,event_rate,points
+loan_age_days,"(-inf, 334.50)",-2.27866329778035,0.11807296086518916,-66.6
+loan_age_days,"[334.50, 546.50)",1.2296574214936493,0.003993334697576519,107.0
+loan_age_days,"[546.50, 586.50)",3.093520549032867,0.0006213525168163048,199.2
+loan_age_days,"[586.50, 618.50)",6.673925354777973,1.7324089619090515e-05,376.4
+loan_age_days,"[618.50, 665.50)",7.478932078070823,7.745413424350546e-06,416.3
+loan_age_days,"[665.50, inf)",4.540134019879227,0.00014631478027739864,270.8
+loan_age_days,Special,0.0,0.0,46.1
+loan_age_days,Missing,0.0,0.0,46.1
+interest_rate_apr,"(-inf, 0.54)",-1.302460224014359,0.048016195675621855,10.5
+interest_rate_apr,"[0.54, 0.63)",-0.4162107661879517,0.020367058887766524,34.7
+interest_rate_apr,"[0.63, 0.66)",1.456731742183183,0.003184718346756046,86.0
+interest_rate_apr,"[0.66, 0.67)",9.329834775739101,1.216775933145463e-06,301.6
+interest_rate_apr,"[0.67, 0.79)",2.566906213494895,0.0010516149337251863,116.4
+interest_rate_apr,"[0.79, inf)",1.4240027395120567,0.0032903268459140446,85.1
+interest_rate_apr,Special,0.0,0.0,46.1
+interest_rate_apr,Missing,0.0,0.0,46.1
+term,"(-inf, 31.50)",0.9207581922233885,0.005430773809780569,48.5
+term,"[31.50, 32.50)",9.150718664893382,1.455457894330846e-06,69.4
+term,"[32.50, 35.50)",5.014515647547222,9.105229133091135e-05,58.9
+term,"[35.50, 38.50)",3.7090945614385475,0.0003358317283059255,55.6
+term,"[38.50, 59.50)",-0.5214753568113517,0.022576852188185278,44.8
+term,"[59.50, inf)",-0.5930639282962278,0.024211787781897514,44.6
+term,Special,0.0,0.0,46.1
+term,Missing,0.0,0.0,46.1
+pagador,"['02 CAD IMPORT INC.'
+ 'ADMINISTRADORA INMOBILIARIA COMERCIAL, S.A. DE C.V.'
+ 'Tramsal S.A. de C.V. TRAMSAL' ... 'QUDOX, S.A. DE C.V.'
+ 'LIVSMART AMERICAS, S. A. DE C. V.'
+ 'Electrolab Medic S.A. de C.V. Electrolab']",4.490608704549674,0.00015374236036124028,228.0
+pagador,"['UNILEVER EL SALVADOR SSC SA DE CV'
+ 'PROLOGIX FLEET SERVICES, S.A. DE C.V.'
+ 'INVERSIONES MONTECARLO, S.A. DE C.V.' 'MIRNA ELIZABETH  PEREZ'
+ 'DIGICEL, S.A. DE C.V.' 'ALMACENES VIDRI SA DE CV'
+ 'CORPAN, S.A. DE C.V. '
+ 'CTE TELECOM SA DE CV COMPAÑIA DE TELECOMUNICACIONES DE EL SALVADOR SA DE CV'
+ 'DINANT EL SALVADOR, S.A. DE C.V. ' 'TRANSACTEL EL SALVADOR SA DE CV'
+ 'Franquicias Internacionales, S.A de C.V.' 'CAJAS PLEGADIZAS SA DE CV'
+ 'TECNUTRAL SA DE CV TECNUTRAL' 'DISTRIBUIDORA CUSCATLAN, S.A. DE C.V.'
+ 'MARIA ISABEL RIVERA' 'MULTIVISIÓN SA DE CV ' 'CALLEJA, S.A. DE C.V. '
+ 'PAVICON, SA DE CV' 'KYOCERA AVX COMPONENTS PTE. LIMITADA. KYOCERA AVX'
+ 'FONDO DE TITULARIZACION DE INMUEBLES RICORP TITULARIZADORA PLAZA MUNDO APOPA'
+ 'ECO FOODS SA DE CV ECO FOODS' 'Intcomex S.A. de C.V.'
+ 'LA CASA DEL REPUESTO, S.A. DE C.V.'
+ 'SUMIN, S.A. DE C.V. (SUSHIITO) SUSHIITO'
+ 'PRODUCTOS ALIMENTICIOS DIANA, SA DE CV'
+ 'EMPAQUES Y SABORES SA DE CV EMPAQSA'
+ 'INGENIO CENTRAL AZUCARERO JIBOA SA DE CV' 'INDUSTRIAS SANCHIA SA DE CV'
+ 'STEINER S.A. DE C.V.' 'RANSA, S.A. DE C.V. '
+ 'CORPORACIÓN BONIMA, SA DE CV '
+ 'LABORATORIOS BIOLOGICOS VETERINARIOS SA DE CV ' 'MISION CRISTIANA ELIM'
+ 'ECO FOODS, S.A. DE C.V.' 'AVICOLA SALVADOREÑA, SA DE CV'
+ 'OUTLANDER GROUP, S.A. DE C.V. MOTO CITY' 'MEDRANO FLORES, S.A. DE C.V. '
+ 'DRY CLEAN EL SALVADOR,S.A DE C.V.'
+ 'CONTROL Y MONITOREO INTERNACIONAL EL SALVADOR, S.A. DE C.V.'
+ 'CARIBE HOSPITALITY EL SALVADOR, S.A. DE C.V.'
+ 'MC. CORMICK DE CENTROAMERICA SA DE CV' 'CAYSSER S.A. DE C.V.'
+ 'FORZA ENERGY, SA DE CV' 'CONSTRUCTORA DISA, S.A. DE C.V.'
+ 'LABORATORIOS ARSAL, S.A. DE C.V.' 'UDP TELEFONICA MULTISERVICIOS-ETESAL'
+ 'TELEMOVIL EL SALVADOR, S.A. DE C.V. '
+ 'CONSTRUCTIVA, S.A DE C.V CONSTRUCTIVA, S.A DE C.V.'
+ 'Comercializadora 503 S.A. de C.V. C503'
+ 'WÄRTSILA EL SALVADOR, S.A. DE C.V.'
+ 'COMPAÑÍA INDUSTRIAL ALIMENTICIA SA DE CV'
+ 'EMBOTELLADORA LA CASCADA, SA DE CV '
+ 'Transactel El Salvador S.A de C.V. Telus' 'SAINT GERMAIN, S.A. DE C.V.'
+ 'TEXTILES SAN ANDRES, S.A. DE C.V. '
+ 'OPERACIONES QUIMICAS, S.A. DE C.V. '
+ 'COMERCIALIZADORA E IMPORTADORA LOS RIOS, S.A. DE C.V.'
+ 'IMPORQUIN, S.A. DE C.V. ' 'FREUND LTDA DE C.V. '
+ 'ALIMENTOS Y TURISMO, S.A. DE C.V. ' 'PULLMANTUR SA DE CV' 'ARCH LATAM'
+ 'CONDOMINIO LOS SENDEROS DE OPICO ' 'LA SULTANA SA DE CV'
+ 'RETAIL SPORT S.A. DE C.V.' 'FARMACIAS UNO, S.A. DE C.V. '
+ 'DISTRIBUIDORA MORAZAN, S.A. DE C.V. ' 'INOX SULUTIONS, S.A. DE C.V.'
+ 'CEMENTOS PROGRESO EL SALVADOR, S.A. DE C.V.'
+ 'ADQUISICIONES EXTERNAS, S.A. DE C.V. ' 'FERRETERIA EPA, S.A. DE C.V.'
+ 'DON LI, S.A. DE C.V. ' 'INVERSIONES CROMEYER, SA DE CV'
+ 'MECK INFLUENCE ES, SA DE CV' 'GETCOM INTERNATIONAL SA DE CV'
+ 'FINOS TEXTILES DE EL SALVADOR, S.A. DE C.V.' 'RAUL ERNESTO MENDOZA GALO'
+ 'REXCARGO EL SALVADOR, SA DE CV ' 'SESEPRO, S.A. DE C.V.'
+ 'DISTRIBUIDORA LA CENTRAL, S.A. DE C.V.'
+ 'Corporacion de Tiendas Internacionales S.A. de C.V. Sears'
+ 'ADEL Morazán' 'CONDOMINIOS LOS GIRASOLES' 'CONDOMINIO LOS PINOS'
+ 'POLIETILENO Y FLEXOGRAFIA, S.A DE C.V. POLIFLEX, S.A. DE C.V.'
+ 'Unifi Central America LTDA de CV' 'OPP FILM EL SALVADOR SA DE CV '
+ 'COMPAÑIA SALVADOREÑA TELESERVICES, S.A. DE C.V. '
+ 'LA CASA DE LAS BATERIAS S.A DE C.V' 'DROGUERIA UNIVERSAL, S.A. DE C.V.'
+ 'DICOMA' 'TOM SAWYER, S.A. DE C.V.  TOM SAWYER, S.A. DE C.V.'
+ 'INVERSIONES BRIKO, S.A. DE C.V.' 'PAHNAS SA DE CV'
+ 'CORPORACIÓN BURGOS DE OSMA, S.A. DE C.V.'
+ 'INVERSIONES AVANTE, S.A. DE C.V.' 'SOLCON DE EL SALVADOR SA DE CV'
+ 'JORGE EDGARDO GIRON' 'LA FABRIL DE ACEITES S.A DE C.V'
+ 'DISTRIBUIDORA HORIZONTES, S.A. DE C.V. '
+ 'PRODUCCION DE QUIMICOS FORMULADOS, S.A. DE C.V.' 'SWEET BOTTLING, S.A.'
+ 'ESCARRSA DE C.V.' 'HEXAGAS EL SALVADOR'
+ 'UNION COMERCIAL DE EL SALVADOR, S.A. DE C.V.' 'DURALAC SA'
+ 'FRUTAS E IMPORTACIONES SALVADOREÑAS, S.A. DE C.V.'
+ 'VINARDELL POWER SYSTEM, S.A. DE C.V.']",-0.3352786229062068,0.0188134371785648,32.6
+pagador,Special,0.0,0.0,46.1
+pagador,Missing,0.0,0.0,46.1
+industry,"['Actividades Inmobiliarias Realizadas a Cambio de una Retribución o por Contrata'
+ 'Actividades creativas artísticas y de esparcimiento'
+ 'Actividades de contabilidad, teneduría de libros y auditoría; asesoramiento en materia de impuestos'
+ 'Actividades de correo distintas a las actividades postales nacionales'
+ 'Actividades de post producción de películas, videos y programas de televisión'
+ 'Actividades de mantenimiento del orden público y de seguridad'
+ 'Actividades de producción cinematográfica'
+ 'Actividades de servicios de sistemas de seguridad'
+ 'Construcción de edificios residenciales'
+ 'Alquiler de maquinaria y equipo'
+ 'Alquiler de instalaciones con refrigeración para almacenamiento y conservación de alimentos y otros productos'
+ 'Actividades para la prestación de sistemas de seguridad'
+ 'Elaboración de productos alimenticios ncp'
+ 'Edición de programas informáticos (software)'
+ 'Consultorías y gestión de servicios informáticosTICOS'
+ 'Consultorías y gestión de servicios informáticos'
+ 'Fabricación de otros tipos de maquinaria de uso general'
+ 'Fabricación de partes, piezas y accesorios para vehículos automotores'
+ 'Fabricación de maquinaria de uso especial ncp'
+ 'Fabricación de maquinaria para la elaboración de alimentos, bebidas y tabaco'
+ 'Enseñanza superior no universitaria' 'Elaboración de productos de café'
+ 'Fabricación de lápices, bolígrafos, sellos y artículos de librería en generalOS'
+ 'Fabricación de jabones, detergentes y similares para limpieza'
+ 'Fabricación de productos de arcilla para la construcción'
+ 'Investigación de mercados y realización de encuestas de opinión pública'
+ 'MANTENIMIENTO Y REP. AUTOMOTRIZ' 'Manipulación de carga'
+ 'Instalaciones eléctricas' 'Impresión'
+ 'Fabricación de productos minerales no metálicos ncp'
+ 'Fabricación de productos manufacturados n.c.p.'
+ 'Servicios relacionados con la impresión' 'Servicios de correo nacional'
+ 'Servicios de ingeniería' 'Servicios de preparación de comidas ncp'
+ 'Servicios para el transporte ncp'
+ 'Reparación y mantenimiento de productos elaborados de metal'
+ 'Servicios administrativos de oficinas'
+ 'Instalación de maquinaria y equipo industrial'
+ 'Manufactura de productos farmacéuticos, sustancias químicas y productos botánicos'
+ 'Otras actividades combinadas de mantenimiento de edificios e instalaciones ncp'
+ 'Otras actividades de tecnología de información y servicios de computadora'
+ 'Servicio de beneficio de café'
+ 'Reparación y mantenimiento de equipos n.c.p.'
+ 'Reparación mecánica de vehículos automotores' 'Publicidad'
+ 'Procesamiento y conservación de pescado, crustáceos y moluscos'
+ 'Servicios de arquitectura y planificación urbana y servicios conexos'
+ 'Venta al por mayor de productos agrícolas'
+ 'Venta al por mayor de productos lácteos'
+ 'Venta al por mayor de productos medicinales, cosméticos, perfumería y productos de limpieza'
+ 'Venta al por menor de alimentos n.c.p.'
+ 'Venta al por menor de otros productos n.c.p..P'
+ 'Venta al por menor de frutas y hortalizas'
+ 'Venta al por mayor de equipamiento para uso médico, odontológico, veterinario y servicios conexos'
+ 'VENTA DE PRODUCTOS FARMACEUTICOS Y MEDICINALES'
+ 'Venta al por mayor de alimentos'
+ 'Venta al por mayor de artículos de ferretería y pinturerías'
+ 'VENTA AL POR MAYOR DE ELECTRODOMESTICOS Y ARTICULOS DEL HOGAR EXCEPTO BAZAR ; ARTICULOS DE ILUMINACION'
+ 'Transporte de pasajeros mediante taxis y autos con chofer'
+ 'Transporte de pasajeros por vía terrestre ncp'
+ 'Transporte de carga urbano' 'Servicios relacionados con la impresiónIÓN'
+ 'Venta de equipos e instrumentos de uso profesional y científico y aparatos de medida y control'
+ 'Venta de equipo y accesorios de telecomunicación'
+ 'Venta de combustibles, lubricantes y otros (gasolineras)'
+ 'Venta al por menor de computadoras y equipo periférico'
+ 'Venta de vehículos automotores'
+ 'Venta de productos para uso agropecuario'
+ 'Venta al por mayor de otros artículos textiles n.c.p.'
+ 'Transporte nacional de carga']",5.2616118192429,7.111922787346923e-05,783.8
+industry,"['Venta de partes, piezas y accesorios nuevos para vehículos automotores'
+ 'Fabricación de productos plásticos n.c.p.'
+ 'Venta al por mayor de lubricantes, grasas y otros aceites para automotores, maquinaria industrial, etc.']",2.6647495789402598,0.0009536883616288139,419.7
+industry,"['Venta al por menor de otros productos n.c.p.'
+ 'Venta al por mayor de otros productos'
+ 'Fabricación de artículos metálicos de uso personal y/o doméstico'
+ 'Construcción de obras de ingeniería civil n.c.p.'
+ 'Fabricación de productos metálicos para uso estructural'
+ 'Venta al por menor de artículos eléctricos y de iluminación']",0.07557862295321893,0.012554421067919519,56.7
+industry,"['nan'
+ 'Venta al por mayor de maquinaria, equipo, accesorios y materiales para la industria metálica y de sus productos'
+ 'Servicios n.c.p.' 'Servicios de seguridad privados'
+ 'Transporte de carga internacional'
+ 'Venta al por mayor de revistas, periódicos, libros, artículos de librería y artículos de papel y cartón en general'
+ 'VENTA AL POR MAYOR DE OTROS PRODUCTOS' 'TRANSPORTE DE CARGA INTERNACION'
+ 'Fabricación de productos químicos n.c.p.'
+ 'Actividades de consultoría en gestión empresarial'
+ 'Fabricación de muebles ncp'
+ 'Otras actividades especializadas de construcción'
+ 'Actividades de telecomunicación n.c.p.'
+ 'Reparación y mantenimiento de equipo eléctrico' 'Actividades jurídicas'
+ 'Venta al por mayor de otro tipo de maquinaria y equipo con sus accesorios y partes'
+ 'Actividades inmobiliarias realizadas con bienes propios o arrendados n.c.p.'
+ 'Fabricación de productos elaborados de metal ncp']",-0.3487844124196733,0.019064374164837892,-2.8
+industry,Special,0.0,0.0,46.1
+industry,Missing,0.0,0.0,46.1
+cliente,"['VERTEX STUDIO, S.A. DE C.V. ' 'Alvaro Anival Asencio Garza'
+ 'AXEL STEVEN MARROQUIN VELASQUEZ' 'AVERIS ISRAEL LEIVA ZUNIGA'
+ 'AUDIT & TAX SERVICES, S.A. DE C.V. ' 'ALEXANDER ARNOLDO NARVAEZ CINCO'
+ 'ALEXANDER ANTONIO RAMOS TORRES' 'ASPRICC, S.A. DE C.V.'
+ 'AIRBOX, S.A. DE C.V.' 'ARTISTA LIVE, S.A. DE C.V.'
+ 'ACEROS Y EQUIPOS, S.A. DE C.V. ' 'ACCESORIOS AG, S.A. DE C.V.'
+ 'ABAQUIN, S.A. DE C.V. ABAQUIN, S.A. DE C.V' 'ARCAJA, S.A DE C.V'
+ 'A&M INVERSIONES S.A DE C.V' 'AMERICA FORKLIFTS, S.A. DE C.V. '
+ 'BARCODES S.A. DE C.V.' 'CARLOS FRANCISCO ABARCA TEJADA'
+ 'CARLOS ANTONIO ARIAS SERRANO' 'CARGOYA, S.A. DE C.V. '
+ 'CAMINA PRODUCTIONS SA DE CV' 'C & F INVERSIONES, S.A. DE C.V.'
+ 'Booster Industrial Services SA de CV Booster'
+ 'BYRON EDGARDO REYES FLORES' 'BURO DE CENTROAMERICA, S.A. DE C.V.'
+ 'BRYAN EDEL GARCIA' 'BRISEYDA YAMILETH GUTIERREZ DE CAMPOS '
+ 'BRAND EXPERIENCE 503 S.A. DE C.V.' 'BIOTECH CORP, S.A. DE C.V.'
+ 'BERTILO ALEJANDRO MUÑOZ GONZALEZ' 'BEELDER EL SALVADOR, S.A. DE C.V.'
+ 'VICTOR MANUEL  REYES ZALES' 'ANGEL RICARDO ROMERO CORTEZ'
+ 'TECHNOLOGIES CONSULTANCY AND SERVICES, S.A. DE C.V.'
+ 'TBOM DE CENTROAMERICA, S.A. DE C.V.'
+ 'TALLERES RED DE EL SALVADOR, S.A. DE C.V.' 'TAIMO, S.A. DE C.V.'
+ 'Samuel Anibal Martinez Rivas' 'SUPER MARINO, S.A. DE C.V. '
+ 'CLAUDIA YAMILETH PORTILLO BONILLA' 'CLAUDIA GEORGINA  MARTINEZ ALVAREZ'
+ 'CESAR DAVID CASTILLO ESCOBAR' 'CESAR ANTONIO  CASTILLO MARTINEZ'
+ 'CENTRAL HIDRAULICA, SA DE CV ' 'CENTRAL HIDRAULICA, S.A. DE C.V.'
+ 'CATHERIN ESMERALDA RAMIREZ VASQUEZ' 'ANDRES ANTONIO ARIAS SERRANO'
+ 'CARLOS ROBERTO ALMENDAREZ DIAZ' 'CROSSWAY, S.A. DE C.V.'
+ 'CREATIVA CONSULTORES, S.A. DE C.V. ' 'CORPORACION GOMAR, S.A. DE C.V.'
+ 'CONSTRUCCIÓN Y MONTAJE, S.A. DE C.V.'
+ 'COMERCIAL EXPORTADORA, S.A. DE C.V. ' 'ANDREE DAVID GOMEZ PEREZ'
+ 'COLD CHAIN LOGISTICS, S.A. DE C.V. ' 'CODIAPAC, S.A. DE C.V.'
+ 'CODE CASTLE, S.A. DE C.V.' 'TPI TECHNOLOGIES, S.A. DE C.V.'
+ 'TORREFACTORA DE CENTROAMERICA, S.A. DE C.V.' 'TOAST MEDIA, S.A. DE C.V.'
+ 'ANDREA YAMILETH TOBAR FLORES' 'THE AFFAIR, S.A. DE C.V.'
+ 'TERESA GUADALUPE MARIN BARILLAS' 'ANA LISSETH AVALOS BARRERA'
+ 'EDWIN ARMANDO GUEVARA ALEMAN' 'ECOCLIMA, S.A. DE C.V.'
+ 'Distribuidora Ochoa SA de CV' 'DUMESA, S.A. DE C.V.'
+ 'DOROTEO RAFAEL RODRIGUEZ OSORIO' 'DORIS ELIZABETH MARROQUIN LARIOS'
+ 'DIVACO, S.A. DE C.V.' 'BARTOLOME CARCAMO BENITEZ'
+ 'DAVID ALEXANDER MARROQUIN GONZALEZ' 'DANIELA MARIA FIGUEROA CARRANZA'
+ 'DANIEL ALBERTO TOLOZA HIDALGO' 'Carlos Javier Guatemala Hernandez'
+ 'VICTOR MANUEL REYES ZALES' 'CYMCA, S.A. DE C.V.' 'CUBE, S.A. DE C.V.'
+ 'CTP COLOR, S.A. DE C.V.' 'Fruto Infinito SA de CV'
+ 'FORTALEZA SECURITY GROUP, S.A. DE C.V. '
+ 'FIRST SHOW COMPANY, S.A. DE C.V. ' 'FELIPE VASQUEZ GUZMAN'
+ 'FATIMA GABRIELA SERRANO VEGA' 'EV&EV, SA DE CV '
+ 'VILMA YANETH PEREZ DE TORRES' 'ESTEFHANI ARELI AQUINO BARRIERE'
+ 'ERCILIA BEATRIZ PINEDA MENDEZ' 'EQUITEC, S.A. DE C.V. '
+ 'EQUIPOS ESPECIALES, S.A. DE C.V. ' 'ENZO ALEJANDRO CIENFUEGOS RAMIREZ'
+ 'ENERGIA Y AIRE, S.A. DE C.V.' 'WALDEMAR  MONTALVO GALDAMEZ'
+ 'ELI OSMIN VALENCIA GUERRA' 'ELECTRIC SG, S.A. DE C.V.'
+ 'HENQUEZ, S.A. DE C.V.' 'H Y G NEGOCIOS, S.A. DE C.V.'
+ 'Gutierrez Rosales SA de CV GUROS' 'GUZMAN EXPRESS, S.A. DE C.V.'
+ 'GRUPO UNICOLOR SA DE CV' 'GRUPO TRANSCOMER, S.A. DE C.V.'
+ 'GRUPO TECNICO TEXTIL, S.A. DE C.V.' 'GRUPO SENIOR, S.A. DE C.V. '
+ 'GRUPO SCOALA, S.A.S' 'GRUPO PLAN B, S.A. DE C.V. '
+ 'GRUPO DIFRE, S.A. DE C.V.' 'GRUPO CENTURY, S.A. DE C.V.'
+ 'WILLIAMS ALEXANDER ABARCA CORDOVA' 'GRUPO CALO, S.A. DE C.V.'
+ 'GLOBAL SUPPLIER COMPANY, S.A. DE C.V. '
+ 'GERARDO ANTONIO SANTOS GONZALEZ' 'SISTEMAS PLIRET, S.A. DE C.V.'
+ 'SILVIA YESSENIA  VASQUEZ ' 'SIIS, S.A. DE C.V.'
+ 'SIGNO DE CENTROAMERICA, S.A. DE C.V. ' 'SIBCOMPANY, S.A. DE C.V. '
+ 'SERVINCA, S.A. DE C.V.' 'INTERMARKET TRADERS, S.A. DE C.V.'
+ 'WORLD LOGISTICS, S.A. DE C.V.'
+ 'INGENIERIA Y DISTRIBUCIÓN, S.A. DE C.V. '
+ 'INDUSTRIAS MAZEL, S.A. DE C.V.' 'IMPRESOS QUIJANO, S.A. DE C.V.'
+ 'IMPACTES, S.A. DE C.V.' 'IMDISAR, S.A. DE C.V.' 'IB PLUS, S.A. DE C.V.'
+ 'YEMA, S.A. DE C.V. ' 'HENRY ALEXANDER HENRIQUEZ GONZALEZ'
+ 'INVERSIONES RAMIREZ CASTILLO, S.A. DE C.V.'
+ 'INVERSIONES MAREM, S.A. DE C.V. ' 'INVERSIONES HALMMART, S.A. DE C.V.'
+ 'INVERSIONES GARSEIN, SA DE CV'
+ 'INTERNATIONAL TRANSPORT LOGISTICS, S.A. DE C.V. ITL, S.A. DE C.V. '
+ 'INTERNATIONAL LOGISTICS, S.A. DE C.V.'
+ 'INTERNATIONAL FREIGHT LOGISTICS, S.A. DE C.V. '
+ 'SULMA CICELA OSORIO RAMIREZ' 'SPACECIRCUS, S.A. DE C.V.'
+ 'SOSA RAMOS, S.A. DE C.V.' 'SOLUCIONES MERCADEO, S.A DE C.V.'
+ 'YUDITH MAGDALENA  VILLALOBOS DE MARQUEZ' 'SOLTECING, S.A. DE C.V.'
+ 'SMX, S.A.S DE C.V.' 'A TU SERVICIO, S.A. DE C.V. '
+ 'SIVAR FILMS, S.A. DE C.V. ' 'JOSE ADELIO HERNANDEZ'
+ 'JOSE ADAN FLORES NOCHES' 'JORGE AUGUSTO FUENTES VALLADARES'
+ 'JORGE ANDRES COBAR TREJO' 'JONATHAN EDGARDO RODRIGUEZ HERNANDEZ'
+ 'JOAB ABIEZER HERNANDEZ HERNANDEZ' 'JHOSELIN ABIGAIL CHAVEZ MARTINEZ'
+ 'JHONATAN ALEJANDRO AGUILAR DURAN ' 'JETPRINT, S.A. DE C.V.'
+ 'JAIME ANTONIO MORENO MURILLO' 'J.V. IRAHETA RAMIREZ Y COMPAÑIA'
+ 'Industrias Carnicas Pinelli SA de CV Industrias Carnicas Pineli'
+ 'ISRAEL ARMANDO FLORES EMESTICA' 'ISRAEL ALBERTO REGALO'
+ 'ISRAEL ALBERTO  DIAZ ROMAN' 'INVERSIONES TECH, S.A. DE C.V.'
+ 'Kevin Osvaldo Ortiz Ramirez' 'KLIMAS, S.A. DE C.V.'
+ 'KEVIN ALONSO  LUNA FIGUEROA' 'KARINA MARGARITA DE LEON MILLA'
+ 'KAREN ELIZABETH TOBAR DE LINARES' 'KALTMANN, S.A. DE C.V.'
+ 'JULIO CESAR  GALLEGOS MATA' 'JUAN JOSE LLOVERA SACA'
+ 'JUAN FERNANDO PEÑATE MALDONADO'
+ 'JR MANTENIMIENTO Y REMODELACIONES, S.A. DE C.V.'
+ 'JOSE SALVADOR MURCIA HERNANDEZ' 'JOSE ROBERTO BURGOS RUBALLO'
+ 'JOSE ANTONIO AGUILUZ RODAS' 'JOSE ALEXANDER CARRANZA ROSALES'
+ 'MARIO ERNESTO ZALDAÑA MOLINA' 'MARIA TERESA  PASCUAL BARRIENTOS '
+ 'MARIA LUISA OLIVA DE MARTINEZ' 'MARIA JOSE ANTONIA AVILA ESCOBAR'
+ 'MARIA JOSE ALGER SALINAS' 'MARIA ELENA ARDON DE LUNA'
+ 'M & P INVERSIONES, S.A. DE C.V.' 'LUIS EDGARDO TORRES RIVERA'
+ 'LUIS ARMANDO BELTRAN PACHECO ' 'LUIS ALONSO  MARTINEZ MELENDEZ'
+ 'LECONSTRUC, S.A. DE C.V. ' 'LABORATORIOS COMBISA, S.A. DE C.V.'
+ 'Maynor Ulices Guerrero Fajardo' 'Marcelino Jose Tusell Rovira'
+ 'MYNEFLOW TECHNOLOGIES, S.A.S. DE C.V.'
+ 'MULTISERVICIOS TECNOLOGICOS, S.A. DE C.V. '
+ 'MULTINATIONAL FREIGHT LOGISTICS, S.A. DE C.V.' 'MT2005, S.A. DE C.V. '
+ 'MR. PROJECT S.A DE C.V' 'MR. POPOROPO, S.A. DE C.V. ' 'MORENO ALEX CRUZ'
+ 'MOISES ALBERTO  SEGOVIA CASTILLO'
+ 'MERCADOS INTERNACIONALES, S.A. DE C.V.'
+ 'MEDIA SOLUTIONS, S.A. DE. C.V. ' 'MDU EL SALVADOR, S.A. DE C.V. '
+ 'MAURICIO ALEXANDER REYES' 'POLYBAG, S.A. DE.C.V.'
+ 'POLIMEROS DE EL SALVADOR, S.A. DE C.V. ' 'PMO EL SALVADOR, S.A. DE C.V.'
+ 'PINTART, S.A. DE C.V.' 'PATRICIA LISETH GARCIA JIMENEZ'
+ 'OSCAR DAVID CONTRERAS' 'ORCA EL SALVADOR, S.A. DE C.V.'
+ 'OFFICE SHOP, S.A. DE C.V. '
+ 'OBL EL SALVADOR, S.A. DE C.V.  OBL EL SALVADOR, S.A. DE C.V'
+ 'NORDIC EL SALVADOR, S.A. DE C.V.' 'NOE DAVID RIVERA ALVAREZ'
+ 'NESTOR MAURICIO LIPE' 'Multiples Tecnologias SA de CV MultiTec'
+ 'Multiples Inversiones Elite SA de CV'
+ 'RAVI CENTROAMERICA, S.A. DE C.V. ' 'RANCHO EL CARMEN, S.A. DE C.V.'
+ 'RAFAEL ALEXANDER AGUILAR AGUILAR'
+ 'R.M. PROYECTOS INDUSTRIALES, S.A. DE C.V.'
+ 'QUINTA CARMELITA. S.A.S. DE C.V.' 'QUDOX, S.A. DE C.V.'
+ 'PUBLIMOVIL, S.A. DE C.V. ' 'PUBLIMAGEN, S.A. DE C.V.'
+ 'PROTECCION EMPRESARIAL, S.A. DE C.V. ' 'PROTAPE, S.A. DE C.V.'
+ 'PROMOZ, S.A. DE C.V.' 'PROGEN CORP, S.A. DE C.V.'
+ 'PRODUCTOS DE CONCRETO, S.A. DE C.V.' 'PRODUCTOS ATLAS, S.A. DE C.V. '
+ 'PRI-ELECTRO, S.A. DE C.V.' 'SALVADOR MAURICIO  LARIN MARTINEZ'
+ 'S&S SOLUCIONES, SA DE CV' 'Ricardo Antonio Pulque Flores'
+ 'Raul Arnulfo Villalta Rodriguez' 'RYASA, S.A. DE C.V.'
+ 'ROWALT PHARMACEUTICAL, S.A. DE C.V.' 'RONY EDGARDO BARRERA CRUZ'
+ 'RONALD ADALBERTO RIVERA CARRILLO ' 'ROBERTO ANTONIO RIVERA PIMENTEL'
+ 'RICARDO ANDRÉS APARICIO RUIZ' 'REPUESTOS AUTOMOTRIZ DENSO S.A. DE C.V.'
+ 'RENE ROLANDO TORRES MEJIA' 'RENE FRANCISCO CALDERON MORALES'
+ 'RENE ALFREDO MURCIA EFIGENIO' 'REBECA NOHEMY VASQUEZ GARCIA'
+ 'ALQUIMIA COFFEE COMPANY, S.A. DE C.V. '
+ 'ALPHA EQUIPOS Y SERVICIOS, S.A. DE C.V. '
+ 'ALIMENTOS Y SERVICIOS SIVAR, S.A. DE C.V.'
+ 'ALEXIS WOSVELI MUÑOZ NAVARRETE' 'ALEXANDRA MICHELE MENGOTTI RAMIREZ'
+ 'ALEXANDER ERNESTO MAJANO' 'SERVICIOS TECNICOS MEDICOS, S.A. DE C.V.'
+ 'SERPROQUIN, S.A. DE C.V.' 'SERMAIN, S.A. DE C.V.'
+ 'SERCOMCEL, S.A DE C.V.'
+ 'SEGURIDAD Y SERVICIOS EXTREMA CONFIANZA, S.A. DE C.V. '
+ 'SEGA ALIMENTOS, S.A. DE C.V. ' 'SANCHEZ DURAN SA DE CV'
+ 'SALVADOR MAURICIO LARIN MARTINEZ' 'CARLOS OTONIEL JUÁREZ RODRÍGUEZ'
+ 'VEES SOLUTIONS, S.A. DE C.V. ' 'URSULA ASUNCION BARRERA DE LIZAMA'
+ 'URBMAN, S.A. DE C.V. ' 'Taller Industrial Ayala Chavez SA de CV'
+ 'TRANSRADI, S.A. DE C.V.' 'MYRNA DEL CARMEN GARCIA DE ARAUJO'
+ 'RAVICORP INDUSTRIA, S.A. DE C.V. ' 'GRUPO CAT, S.A. DE C.V.'
+ 'ADVANTAGE, S.A. DE C.V.'
+ 'LUBRICANTES SERVICIOS Y ADITIVOS, S.A. DE C.V.' 'SEMDITEC, S.A. DE C.V.'
+ 'ANGEL ANTONIO OSTORGA PORTAL']",3.029229951191361,0.0006625843829857297,121.9
+cliente,"['LLANTAS Y REENCAUCHES DE CENTROAMERICA S.A. DE C.V. LLANREC SA DE CV'
+ 'ESTRUCTURAS METALICAS PINTO, S.A. DE C.V.'
+ 'SERVICIOS TECNICOS INDUSTRIALES, S.A. DE C.V.'
+ 'CYMI FELIZZARI, S.A. DE C.V.' 'AB CORPORACIÓN, S.A. DE C.V.'
+ 'SKYLINE TECHNOLOGIES, S.A. DE C.V.'
+ 'KARLA STEPHANIA MELENDEZ DE GUARDADO' 'HENRY RENE MEDINA CHAVEZ'
+ 'COMERCIAL AGUIRREURRETA, S.A DE C.V ' 'TECNOSEL, S.A. DE C.V.'
+ 'SOLUCIONES LOGISTICAS INTERNACIONALES, S.A. DE C.V.'
+ 'INLAND SERVICES, S.A. DE C.V. ' 'KEVIN ENRIQUE  CABEZAS MORALES'
+ 'DAVID ALEXANDER MENJIVAR CONTRERAS' 'MANUEL ENRIQUE HERNANDEZ'
+ 'MATERIALES Y SOLUCIONES, S.A. DE C.V.'
+ 'AIRES INTERNACIONALES, S.A. DE C.V.' 'LABELS, S.A. DE C.V.'
+ 'PMS, S.A. DE C.V.' 'TECNOLOGIA DE EMPAQUES, S.A. DE C.V.'
+ 'TIEMPO FRIO, S.A. DE C.V.' 'REAL BROTHERS SECURITY, S.A. DE C.V.'
+ 'EMPAMETAL, S.A. DE C.V. '
+ 'CARTONES Y PAQUETES DE CENTRO AMERICA, S.A. DE C.V.'
+ 'OMAR DE JESUS URRUTIA GUZMAN' 'DISDEPRO, S.A. DE C.V.'
+ 'TRANSPORTES Y BODEGAS LOGISTICAS, S.A. DE C.V. '
+ 'EXPRESS FREIGHT EL SALVADOR, S.A DE C.V.'
+ 'QUIMICAS VISION, S.A. DE C.V.' 'DANILO ISAAC CORTEZ REYES'
+ 'SATELITE SOFTWARE, S.A. DE C.V.' 'JOHN RONALD MC CORMACK MASFERRER'
+ 'METALINK, S.A. DE C.V.' 'MAURICIO RAFAEL BARAHONA LEON'
+ 'KARLA IVETTE ORTIZ' 'Douglas Salvador Chavarria Melendez'
+ 'FRANKLIN JONATHAN JUAREZ FUENTES' 'MARIO ERNESTO SANCHEZ BELTRAN'
+ 'TRES DE TRES TRANSPORTES, S.A. DE C.V. '
+ 'INTEREXCHANGE COMMUNIATIONS NETWORK, S.A. DE C.V. '
+ 'SERVICIOS LOGISTICOS MG, S.A. DE C.V.' 'RAUL ARMANDO LARA GUERRERO'
+ 'CORPORACION DE SERVICIOS EN ENERGIA, S.A. DE C.V.'
+ 'SOLUCIONES & PROYECTOS, S.A. DE C.V.' 'CARLOS GERARDO MOLINA GONZALEZ'
+ 'INENTELECI, S.A. DE C.V. ' 'ELECTROMECANICA INDUSTRIAL, S.A. DE C.V. '
+ 'DINAMICA INDUSTRIAL, S.A. DE C.V. ' 'Juan Ramon Martinez Avelar'
+ 'DEYSI BEATRIZ  FIGUEROA GARCIA ' 'NELSON EDUARDO QUIJANO PEÑA'
+ 'TECNIGROUP, S.A. DE C.V.' 'LINK CORPORATIVO, S.A. DE C.V. '
+ 'MULTIPROYECTOS MECANICOS, S.A. DE C.V.'
+ 'ISABELLA GARCIA-MANZO GUTIERREZ' 'Yanira de Jesus Batres Castillo'
+ 'SALVADOR ANTONIO HERNANDEZ URRUTIA' 'CORPORACION E:SCALA, S.A. DE C.V.'
+ 'FAMIN, S.A. DE C.V.' 'COBAR & COBAR, S.A. DE C.V. ']",-0.4097828667386123,0.020239202509263386,35.9
+cliente,Special,0.0,0.0,46.1
+cliente,Missing,0.0,0.0,46.1
+late_payment_rate,"(-inf, 0.04)",0.6426653886867575,0.0010191500146653305,113.0
+late_payment_rate,"[0.04, 0.79)",0.921190557542193,0.0007715850132780795,142.0
+late_payment_rate,"[0.79, inf)",-1.0199743626697986,0.005350891184180212,-60.0
+late_payment_rate,Special,0.0,0.0,46.1
+late_payment_rate,Missing,0.0,0.0,46.1
+max_consecutive_late,"(-inf, 0.50)",0.6426653886867575,0.0010191500146653305,16.3
+max_consecutive_late,"[0.50, inf)",-0.7441255337980781,0.004066184454436682,80.7
+max_consecutive_late,Special,0.0,0.0,46.1
+max_consecutive_late,Missing,0.0,0.0,46.1
+n_late_payments,"(-inf, 0.50)",0.6426653886867575,0.0010191500146653305,16.3
+n_late_payments,"[0.50, inf)",-0.7441255337980781,0.004066184454436682,80.7
+n_late_payments,Special,0.0,0.0,46.1
+n_late_payments,Missing,0.0,0.0,46.1
+disbursement_amount,"(-inf, 69.95)",0.2091189709502066,0.011002287059453976,46.3
+disbursement_amount,"[69.95, 144.47)",0.7373668857991413,0.0065167800962093615,46.7
+disbursement_amount,"[144.47, 190.09)",3.8282135417643506,0.0002981297992008117,49.1
+disbursement_amount,"[190.09, 228.94)",1.121522802814492,0.004447336326003375,47.0
+disbursement_amount,"[228.94, 462.81)",-0.024484203219714118,0.013857344021891564,46.1
+disbursement_amount,"[462.81, 2306.09)",-0.32105809307619726,0.018552721823121343,45.9
+disbursement_amount,"[2306.09, inf)",-0.6777983710483202,0.02629648670059076,45.6
+disbursement_amount,Special,0.0,0.0,46.1
+disbursement_amount,Missing,0.0,0.0,46.1
+tpv,"(-inf, 84.97)",0.2114305103916685,0.010977163061344214,51.4
+tpv,"[84.97, 170.42)",0.7528949842583055,0.006417012853768403,64.7
+tpv,"[170.42, 221.62)",3.5621834081035164,0.0003889567811198276,134.0
+tpv,"[221.62, 270.15)",1.0530669745684351,0.00476094466630183,72.1
+tpv,"[270.15, 546.27)",0.011023299923311747,0.013380405581231698,46.4
+tpv,"[546.27, 2722.27)",-0.3258552722060162,0.018640273387482198,38.1
+tpv,"[2722.27, inf)",-0.6973781671041661,0.026802504171555837,28.9
+tpv,Special,0.0,0.0,46.1
+tpv,Missing,0.0,0.0,46.1
+origination_fee,"(-inf, 0.21)",0.07441854946663273,0.012568810410877665,45.4
+origination_fee,"[0.21, 0.56)",0.7654546484819171,0.0063374289153625835,38.9
+origination_fee,"[0.56, 0.72)",4.15885236878092,0.00021421369039695327,7.0
+origination_fee,"[0.72, 1.28)",-0.12187843721617231,0.015253256926595137,47.3
+origination_fee,"[1.28, 7.19)",-0.16521314249184726,0.015918030429045795,47.7
+origination_fee,"[7.19, inf)",-0.3643679336714496,0.019357995058169358,49.6
+origination_fee,Special,0.0,0.0,46.1
+origination_fee,Missing,0.0,0.0,46.1
+origination_fee_taxes,"(-inf, 0.34)",-0.04718391856792081,0.01417099056741414,46.2
+origination_fee_taxes,"[0.34, 0.55)",2.6656982264012106,0.0009527849381668679,43.8
+origination_fee_taxes,"[0.55, 0.94)",0.2386241615753324,0.010685822987585102,45.9
+origination_fee_taxes,"[0.94, inf)",-0.36779724698133975,0.019423202029857006,46.5
+origination_fee_taxes,Special,0.0,0.0,46.1
+origination_fee_taxes,Missing,0.0,0.0,46.1
+n_payments,"(-inf, 1.50)",0.13949587212213999,0.0016845057899288155,52.8
+n_payments,"[1.50, inf)",-0.5436485515949965,0.0033299824434658504,20.1
+n_payments,Special,0.0,0.0,46.1
+n_payments,Missing,0.0,0.0,46.1

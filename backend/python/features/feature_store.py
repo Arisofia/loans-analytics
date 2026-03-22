@@ -26,60 +26,60 @@ class FeatureStore:
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
-    def compute_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute_features(
+        self,
+        loan_df: pd.DataFrame,
+        payment_df: pd.DataFrame | None = None,
+        customer_df: pd.DataFrame | None = None,
+    ) -> pd.DataFrame:
         """Calculate engineered features from raw data.
 
         Parameters
         ----------
-        df : pd.DataFrame
+        loan_df : pd.DataFrame
             Raw loan data. Should include 'loan_id' for mapping.
+        payment_df : pd.DataFrame, optional
+            Payment history data for behavioral features.
+        customer_df : pd.DataFrame, optional
+            Customer profile data (industry, scores).
 
         Returns
         -------
         pd.DataFrame
             Calculated features.
         """
-        # Numeric base features
-        numeric_cols = [
-            "principal_amount",
-            "interest_rate",
-            "term_months",
-            "collateral_value",
-            "outstanding_balance",
-            "tpv",
-            "equifax_score",
-            "last_payment_amount",
-            "total_scheduled",
-            "origination_fee",
-            "days_past_due",
-        ]
+        # We reuse the logic from ScorecardModel to ensure consistency
+        from backend.python.models.scorecard_model import ScorecardModel
 
-        features = pd.DataFrame()
+        # If dataframes are missing, we use empty ones to avoid errors in build_model_dataset
+        p_df = payment_df if payment_df is not None else pd.DataFrame()
+        c_df = customer_df if customer_df is not None else pd.DataFrame()
 
-        # Preserve loan_id if present
-        if "loan_id" in df.columns:
-            features["loan_id"] = df["loan_id"]
+        # build_model_dataset performs normalization and merging
+        enriched_df = ScorecardModel.build_model_dataset(loan_df.copy(), p_df.copy(), c_df.copy())
 
-        for col in numeric_cols:
-            if col in df.columns:
-                features[col] = pd.to_numeric(df[col], errors="coerce")
-            else:
-                features[col] = 0.0
+        # Select only feature columns (exclude IDs and target)
+        exclude = ["is_default", "loan_id", "customer_id", "disbursement_date", "status", "current_status", "_is_late"]
+        feature_cols = [c for c in enriched_df.columns if c not in exclude]
 
-        # Engineered features
-        features["ltv_ratio"] = np.where(
-            features["collateral_value"] > 0,
-            features["outstanding_balance"] / features["collateral_value"] * 100,
-            0.0,
-        )
-        features["payment_ratio"] = np.where(
-            features["total_scheduled"] > 0,
-            features["last_payment_amount"] / features["total_scheduled"] * 100,
-            0.0,
-        )
+        features = enriched_df[feature_cols].copy()
 
-        # Normalization (optional, but requested by user)
-        # For now, we'll just ensure they are filled
+        # Ensure numeric conversion
+        for col in features.columns:
+            if features[col].dtype == object:
+                # Attempt to convert to numeric, if fail keep as is (could be categorical)
+                try:
+                    features[col] = pd.to_numeric(features[col])
+                except (ValueError, TypeError):
+                    pass
+
+        # Drop non-numeric columns that couldn't be converted
+        features = features.select_dtypes(include=[np.number, "bool"])
+
+        # Preserve loan_id if present for the feature store mapping
+        if "loan_id" in enriched_df.columns:
+            features.insert(0, "loan_id", enriched_df["loan_id"])
+
         features = features.fillna(0.0)
 
         return features

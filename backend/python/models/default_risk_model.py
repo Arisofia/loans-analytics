@@ -86,93 +86,110 @@ class DefaultRiskModel:
     # Feature engineering (requires pandas)
     # ------------------------------------------------------------------
     @staticmethod
-    def prepare_features(df: Any) -> Any:
+    def prepare_features(
+        df: Any,
+        payment_df: Optional[Any] = None,
+        customer_df: Optional[Any] = None,
+    ) -> Any:
         """Prepare and engineer features from raw loan data.
 
         Parameters
         ----------
         df : pandas.DataFrame
-            Raw loan data with columns matching ``NUMERIC_FEATURES``.
+            Raw loan data.
+        payment_df : pandas.DataFrame, optional
+            Payment history data.
+        customer_df : pandas.DataFrame, optional
+            Customer profile data.
 
         Returns
         -------
         pandas.DataFrame
             Engineered features ready for model input.
         """
+        try:
+            from backend.python.features.feature_store import FeatureStore
+            fs = FeatureStore()
+            # If df is already engineered (from FeatureStore), this will just ensure consistency
+            # If not, it will compute everything from build_model_dataset logic
+            return fs.compute_features(df, payment_df, customer_df)
+        except ImportError:
+            # Fallback to legacy logic if FeatureStore cannot be imported
+            import pandas as pd
+            features = pd.DataFrame()
+            for col in NUMERIC_FEATURES:
+                if col in df.columns:
+                    features[col] = pd.to_numeric(df[col], errors="coerce")
+                else:
+                    features[col] = 0.0
 
-        import pandas as pd  # noqa: F811 – lazy import
-
-        features = pd.DataFrame()
-
-        col_map = {
-            "Equifax Score": "equifax_score",
-            "equifax_score": "equifax_score",
-        }
-
-        for col in NUMERIC_FEATURES:
-            source_col = col_map.get(col, col)
-            if source_col in df.columns:
-                features[col] = pd.to_numeric(df[source_col], errors="coerce")
-            elif col in df.columns:
-                features[col] = pd.to_numeric(df[col], errors="coerce")
-            else:
-                features[col] = 0.0
-
-        # Engineered features
-        features["ltv_ratio"] = np.where(
-            features["collateral_value"] > 0,
-            features["outstanding_balance"] / features["collateral_value"] * 100,
-            0.0,
-        )
-        features["payment_ratio"] = np.where(
-            features["total_scheduled"] > 0,
-            features["last_payment_amount"] / features["total_scheduled"] * 100,
-            0.0,
-        )
-
-        # Fill NaN with median (robust to outliers)
-        for col in ALL_FEATURES:
-            if features[col].isna().any():
-                median_val = features[col].median()
-                features[col] = features[col].fillna(
-                    median_val if not np.isnan(median_val) else 0.0
-                )
-
-        return features[ALL_FEATURES]
+            features["ltv_ratio"] = np.where(
+                features["collateral_value"] > 0,
+                features["outstanding_balance"] / features["collateral_value"] * 100,
+                0.0,
+            )
+            features["payment_ratio"] = np.where(
+                features["total_scheduled"] > 0,
+                features["last_payment_amount"] / features["total_scheduled"] * 100,
+                0.0,
+            )
+            return features.fillna(0.0)
 
     @staticmethod
     def prepare_target(df: Any) -> Any:
-        """Prepare binary target: 1 = Default, 0 = Not Default."""
-        status_col = None
-        for col in ["current_status", "status"]:
-            if col in df.columns:
-                status_col = col
-                break
+        """Prepare binary target: 1 = Default, 0 = Not Default.
+        
+        Matches ScorecardModel.build_model_dataset logic for consistency.
+        """
+        import pandas as pd
+        if "is_default" in df.columns:
+            return df["is_default"].astype(int)
 
+        status_col = next(
+            (c for c in df.columns if c in ["status", "current_status", "estado"]),
+            None,
+        )
         if status_col is None:
             raise ValueError("No status column found in data")
 
-        return (df[status_col].str.strip().str.lower() == "default").astype(int)
+        return (
+            df[status_col].str.strip().str.lower()
+            .isin(["default", "defaulted", "mora", "en_mora", "castigado"])
+            .astype(int)
+        )
 
     def train(
         self,
         df: Any,
+        payment_df: Optional[Any] = None,
+        customer_df: Optional[Any] = None,
         test_size: float = 0.2,
         random_state: int = 42,
         exclude_features: Optional[List[str]] = None,
+        selected_features: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """Train the model on loan data and return evaluation metrics.
 
-        **Overfitting mitigation** (vs. original implementation):
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Raw loan data.
+        payment_df : pandas.DataFrame, optional
+            Payment history data.
+        customer_df : pandas.DataFrame, optional
+            Customer profile data.
+        test_size : float
+            Proportion of dataset to include in the test split.
+        random_state : int
+            Random seed for reproducibility.
+        exclude_features : list of str, optional
+            Features to explicitly remove from training.
+        selected_features : list of str, optional
+            Explicit list of features to use (e.g. from IV table).
+            If provided, this overrides ALL_FEATURES but still respects exclude_features.
 
-        * ``early_stopping_rounds=30`` halts training when validation AUC
-          stops improving, preventing the model from memorising noise.
-        * ``reg_alpha=1.0`` (L1) and ``reg_lambda=5.0`` (L2) shrink leaf
-          weights and encourage sparsity.
-        * ``min_child_weight=10`` requires each leaf to represent at least
-          10 samples, reducing sensitivity to individual records.
-        * ``max_depth=4`` (reduced from 5) limits tree complexity.
-        * ``gamma=1.0`` adds a minimum loss reduction for further splits.
+        **Overfitting mitigation** (vs. original implementation):
+        ...
         """
         import xgboost as xgb  # lazy
         from sklearn.metrics import (
@@ -186,13 +203,26 @@ class DefaultRiskModel:
         from sklearn.model_selection import StratifiedKFold, train_test_split
 
         logger.info("Preparing features and target...")
-        X = self.prepare_features(df)
+        X = self.prepare_features(df, payment_df, customer_df)
         y = self.prepare_target(df)
+
+        # Drop ID columns that might have been preserved by FeatureStore
+        X = X.drop(columns=[c for c in ["loan_id", "customer_id"] if c in X.columns])
+
+        # ── Feature selection ─────────────────────────────────────────────
+        if selected_features:
+            # Only keep columns that were selected AND exist in X
+            self.feature_names = [c for c in selected_features if c in X.columns]
+            X = X[self.feature_names]
+            logger.info("Using %d IV-selected features", len(self.feature_names))
+        else:
+            self.feature_names = list(X.columns)
 
         # Drop excluded features (e.g. days_past_due for origination model)
         if exclude_features:
             X = X.drop(columns=[c for c in exclude_features if c in X.columns])
             self.feature_names = list(X.columns)
+            logger.info("Dropped %d excluded features", len(exclude_features))
 
         # Class imbalance ratio for scale_pos_weight
         n_neg = int((y == 0).sum())
@@ -422,40 +452,54 @@ class DefaultRiskModel:
     # ------------------------------------------------------------------
     # Inference
     # ------------------------------------------------------------------
-    def predict_proba(self, loan_data: Dict[str, Any]) -> float:
+    def predict_proba(
+        self,
+        loan_data: Dict[str, Any],
+        payment_df: Optional[Any] = None,
+        customer_df: Optional[Any] = None,
+    ) -> float:
         """Return the default probability for a single loan.
 
         Parameters
         ----------
         loan_data:
             Dictionary whose keys are a superset of ``FEATURE_COLUMNS``.
+        payment_df: pandas.DataFrame, optional
+            Payment history data for behavioral features.
+        customer_df: pandas.DataFrame, optional
+            Customer profile data.
 
         Returns
         -------
         float
             Probability in [0, 1].
-
-        Raises
-        ------
-        ValueError
-            If one or more required features are missing.
         """
         if self.model is None:
             raise RuntimeError("Model not trained or loaded")
-
-        self.validate_features(loan_data)
 
         try:
             import pandas as pd  # noqa: F811
 
             df = pd.DataFrame([loan_data])
-            X = self.prepare_features(df)
-            X = X[[c for c in self.feature_names if c in X.columns]]
+            X = self.prepare_features(df, payment_df, customer_df)
+            
+            # Drop IDs
+            X = X.drop(columns=[c for c in ["loan_id", "customer_id"] if c in X.columns])
+
+            # Ensure all required features are present (might be 0.0 if missing)
+            for f in self.feature_names:
+                if f not in X.columns:
+                    X[f] = 0.0
+            
+            X = X[self.feature_names]
             proba = self.model.predict_proba(X)[:, 1]
             return float(proba[0])
         except ImportError:
             # Fallback: numpy-only path (no pandas available)
             import xgboost as xgb
+
+            # Validate features manually if pandas not available
+            self.validate_features(loan_data)
 
             features = np.array(
                 [[float(loan_data[col]) for col in self.feature_names]],
@@ -465,31 +509,46 @@ class DefaultRiskModel:
             preds = self.model.get_booster().predict(dmatrix)
             return max(0.0, min(1.0, float(preds[0])))
 
-    def predict_batch(self, loans: Union[List[Dict[str, Any]], Any]) -> Any:
+    def predict_batch(
+        self,
+        loans: Union[List[Dict[str, Any]], Any],
+        payment_df: Optional[Any] = None,
+        customer_df: Optional[Any] = None,
+    ) -> Any:
         """Return default probabilities for a batch of loans.
 
         Parameters
         ----------
         loans:
             Either a list of dicts or a pandas DataFrame.
+        payment_df: pandas.DataFrame, optional
+            Payment history data.
+        customer_df: pandas.DataFrame, optional
+            Customer profile data.
         """
         if self.model is None:
             raise RuntimeError("Model not trained or loaded")
-
-        if isinstance(loans, list):
-            for loan in loans:
-                self.validate_features(loan)
 
         try:
             import pandas as pd  # noqa: F811
 
             df = pd.DataFrame(loans) if isinstance(loans, list) else loans
-            X = self.prepare_features(df)
-            X = X[[c for c in self.feature_names if c in X.columns]]
+            X = self.prepare_features(df, payment_df, customer_df)
+            
+            # Ensure all required features are present
+            for f in self.feature_names:
+                if f not in X.columns:
+                    X[f] = 0.0
+                    
+            X = X[self.feature_names]
             return pd.Series(self.model.predict_proba(X)[:, 1], index=df.index)
         except ImportError:
             # Fallback: list-of-dicts only
             import xgboost as xgb
+
+            if isinstance(loans, list):
+                for loan in loans:
+                    self.validate_features(loan)
 
             rows = [[float(loan[col]) for col in self.feature_names] for loan in loans]
             features = np.array(rows, dtype=np.float32)

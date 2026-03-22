@@ -1,0 +1,37 @@
+{
+  "model_type": "WoE_Logistic_Scorecard",
+  "n_samples": 11708315,
+  "n_defaults": 158375,
+  "default_rate": 1.3526711572075059,
+  "n_features_selected": 14,
+  "metrics": {
+    "auc_roc": 0.9887467336728676,
+    "gini_coefficient": 0.9774934673457352,
+    "ks_statistic": 0.9232831889863589,
+    "cv_auc_mean": 0.9887542260564558,
+    "cv_auc_std": 0.00036062178660629593
+  },
+  "score_distribution": {
+    "defaults_mean_score": 463.7083314917127,
+    "non_defaults_mean_score": 1065.9890937961582,
+    "score_p25": 772.0,
+    "score_p50": 902.0,
+    "score_p75": 1462.0
+  },
+  "features": [
+    "loan_age_days",
+    "interest_rate_apr",
+    "term",
+    "pagador",
+    "industry",
+    "cliente",
+    "late_payment_rate",
+    "max_consecutive_late",
+    "n_late_payments",
+    "disbursement_amount",
+    "tpv",
+    "origination_fee",
+    "origination_fee_taxes",
+    "n_payments"
+  ]
+}

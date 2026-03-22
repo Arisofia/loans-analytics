@@ -31,29 +31,41 @@ st.markdown(
 st.title("🔮 Predictive Analytics")
 st.subheader("Probability of Default (PD) Model Control Room")
 
+MODEL_DIR = Path("models/risk")
+SCORECARD_DIR = Path("models/scorecard")
+
+# Load latest metrics
+metrics = {}
+metadata_path = MODEL_DIR / "default_risk_metadata.json"
+if metadata_path.exists():
+    with open(metadata_path) as f:
+        meta = json.load(f)
+        metrics = meta.get("metrics", {})
+
 # ---------------------------------------------------------------------------
 # Section 0: Feature Selection (Information Value)
 # ---------------------------------------------------------------------------
-IV_PATH = Path("models/risk/iv_ranking.json")
+IV_PATH = SCORECARD_DIR / "iv_table.csv"
 if IV_PATH.exists():
-    with open(IV_PATH) as f:
-        iv_data = json.load(f)
+    iv_df = pd.read_csv(IV_PATH)
     
     st.header("1. Predictive Power (Information Value)")
     st.info("The Information Value (IV) reveals which variables from your data actually separate defaults from paid loans.")
     
-    iv_df = pd.DataFrame([
-        {"Variable": k, "IV": v, "Power": "Fuerte" if v > 0.3 else "Medio" if v > 0.1 else "Débil" if v > 0.02 else "None"}
-        for k, v in iv_data.items()
-    ]).sort_values("IV", ascending=False)
+    iv_df["Power"] = iv_df["predictive_power"].map({
+        "Strong": "Fuerte",
+        "Medium": "Medio",
+        "Weak": "Débil",
+        "Useless": "None"
+    })
     
     col_iv1, col_iv2 = st.columns([2, 1])
     with col_iv1:
         fig_iv = px.bar(
-            iv_df, x="IV", y="Variable", orientation="h",
+            iv_df.head(15), x="iv", y="feature", orientation="h",
             color="Power",
             color_discrete_map={"Fuerte": "#00cc96", "Medio": "#636efa", "Débil": "#ef553b", "None": "#30363d"},
-            title="Information Value (IV) Ranking"
+            title="Information Value (IV) Ranking (Top 15)"
         )
         fig_iv.update_layout(template="plotly_dark")
         st.plotly_chart(fig_iv, use_container_width=True)
@@ -61,7 +73,7 @@ if IV_PATH.exists():
     with col_iv2:
         st.write("### Top Predictors")
         for idx, row in iv_df.head(3).iterrows():
-            st.success(f"**{row['Variable']}** (IV: {row['IV']:.3f})")
+            st.success(f"**{row['feature']}** (IV: {row['iv']:.3f})")
     
     st.divider()
 
@@ -111,17 +123,28 @@ st.divider()
 # ---------------------------------------------------------------------------
 # Section 3: Retraining Pipeline
 # ---------------------------------------------------------------------------
-st.header("Retraining Pipeline")
+st.header("3. Retraining Pipeline")
 with st.expander("Pipeline Configuration"):
-    input_file = st.text_input("Input Data Path", "data/samples/abaco_sample_data_20260202.csv")
+    loan_file = st.text_input("Loan Data Path", "data/samples/abaco_sample_data_20260202.csv")
+    payment_file = st.text_input("Payment Data Path (Optional)", "data/raw/real_payment.csv")
+    customer_file = st.text_input("Customer Data Path (Optional)", "data/raw/customer_data.csv")
+    
     threshold = st.slider("Deployment Threshold (AUC)", 0.5, 1.0, 0.7)
+    iv_thresh = st.slider("Feature Selection (IV Threshold)", 0.0, 0.5, 0.02, step=0.01)
 
     if st.button("Manual Retrain"):
-        with st.spinner("Executing retraining pipeline..."):
+        with st.spinner("Executing retraining pipeline (Phase 1 & 2)..."):
             from scripts.ml.retrain_pipeline import run_pipeline
-            success = run_pipeline(Path(input_file), MODEL_DIR, threshold_auc=threshold)
+            success = run_pipeline(
+                loan_path=Path(loan_file),
+                payment_path=Path(payment_file),
+                customer_path=Path(customer_file),
+                model_dir=MODEL_DIR,
+                threshold_auc=threshold,
+                iv_threshold=iv_thresh
+            )
             if success:
-                st.success("Retraining successful! New model deployed.")
+                st.success("Retraining successful! New XGBoost model deployed with IV-selected features.")
                 st.rerun()
             else:
                 st.error("Retraining failed or threshold not met.")
