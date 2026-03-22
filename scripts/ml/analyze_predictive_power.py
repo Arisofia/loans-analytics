@@ -31,7 +31,7 @@ def main():
     cust = pd.read_csv(cust_path, low_memory=False)
     
     # Merge on Loan ID
-    df = pd.merge(loans, cust[['Loan ID', 'Equifax Score', 'Product Type', 'Industry', 'Client Type']], on='Loan ID', how='left')
+    df = pd.merge(loans, cust[['Loan ID', 'Equifax Score', 'Product Type', 'Industry', 'Client Type']], on='Loan ID', how='left', validate="one_to_one")
     
     # Map raw columns to names expected by FeatureStore
     col_map = {

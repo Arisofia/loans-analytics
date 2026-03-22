@@ -67,6 +67,8 @@ IV_MEDIUM = 0.3
 class ScorecardModel:
     """WoE/IV logistic regression scorecard for credit default prediction."""
 
+    _NOT_FITTED_MSG = "Model must be fitted before prediction."
+
     def __init__(self) -> None:
         self.binning_map: Dict[str, Any] = {}      # feature -> OptimalBinning object
         self.iv_table: pd.DataFrame = pd.DataFrame()
@@ -121,48 +123,61 @@ class ScorecardModel:
         payment_df = ScorecardModel._normalize_dataframe_columns(payment_df)
         customer_df = ScorecardModel._normalize_dataframe_columns(customer_df)
 
-        # Target variable
+        loan_df = ScorecardModel._add_target_variable(loan_df)
+        loan_df = ScorecardModel._add_derived_loan_features(loan_df)
+        loan_df = ScorecardModel._add_behavioral_features(loan_df, payment_df)
+        loan_df = ScorecardModel._add_customer_features(loan_df, customer_df)
+
+        return loan_df
+
+    @staticmethod
+    def _add_target_variable(df: pd.DataFrame) -> pd.DataFrame:
         status_col = ScorecardModel._find_column(
-            loan_df.columns,
+            df.columns,
             ["status", "current_status", "estado", "loan_status", "application_status"],
         )
         if status_col is None:
-            raise ValueError("No status column found in loan_df. Expected: status/current_status/estado/loan_status")
+            raise ValueError("No status column found. Expected: status/current_status/estado/loan_status")
 
-        loan_df["is_default"] = (
-            loan_df[status_col].str.strip().str.lower()
+        df["is_default"] = (
+            df[status_col].str.strip().str.lower()
             .isin(["default", "defaulted", "mora", "en_mora", "castigado", "loss"])
             .astype(int)
         )
+        return df
 
+    @staticmethod
+    def _add_derived_loan_features(df: pd.DataFrame) -> pd.DataFrame:
         # Origination date
         date_col = ScorecardModel._find_column(
-            loan_df.columns,
+            df.columns,
             ["disbursement_date", "origination_date", "fecha_desembolso", "loan_date"],
         )
         if date_col:
-            loan_df[date_col] = pd.to_datetime(loan_df[date_col], errors="coerce")
-            loan_df["loan_age_days"] = (
-                pd.Timestamp.today() - loan_df[date_col]
+            df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+            df["loan_age_days"] = (
+                pd.Timestamp.today() - df[date_col]
             ).dt.days.clip(lower=0)
 
         # LTV ratio
-        if "outstanding_balance" in loan_df.columns and "collateral_value" in loan_df.columns:
-            loan_df["ltv_ratio"] = np.where(
-                loan_df["collateral_value"] > 0,
-                loan_df["outstanding_balance"] / loan_df["collateral_value"] * 100,
+        if "outstanding_balance" in df.columns and "collateral_value" in df.columns:
+            df["ltv_ratio"] = np.where(
+                df["collateral_value"] > 0,
+                df["outstanding_balance"] / df["collateral_value"] * 100,
                 np.nan,
             )
 
         # Payment ratio
-        if "last_payment_amount" in loan_df.columns and "total_scheduled" in loan_df.columns:
-            loan_df["payment_ratio"] = np.where(
-                loan_df["total_scheduled"] > 0,
-                loan_df["last_payment_amount"] / loan_df["total_scheduled"] * 100,
+        if "last_payment_amount" in df.columns and "total_scheduled" in df.columns:
+            df["payment_ratio"] = np.where(
+                df["total_scheduled"] > 0,
+                df["last_payment_amount"] / df["total_scheduled"] * 100,
                 np.nan,
             )
+        return df
 
-        # Behavioral features from payment history
+    @staticmethod
+    def _add_behavioral_features(loan_df: pd.DataFrame, payment_df: pd.DataFrame) -> pd.DataFrame:
         loan_id_col_pay = ScorecardModel._find_column(
             payment_df.columns,
             ["loan_id", "prestamo_id", "id_prestamo", "new_loan_id", "old_loan_id"],
@@ -172,113 +187,105 @@ class ScorecardModel:
             ["loan_id", "id_prestamo", "prestamo_id", "new_loan_id", "old_loan_id"],
         )
 
-        if loan_id_col_pay and loan_id_col_loan:
-            status_pay_col = ScorecardModel._find_column(
-                payment_df.columns,
-                ["payment_status", "true_payment_status", "status", "estado"],
-            )
-            amount_pay_col = ScorecardModel._find_column(
-                payment_df.columns,
-                [
-                    "true_total_payment",
-                    "total_payment",
-                    "payment_amount",
-                    "last_payment_amount",
-                    "true_principal_payment",
-                    "amount",
-                    "monto",
-                    "valor",
-                ],
-            )
-            date_pay_col = ScorecardModel._find_column(
-                payment_df.columns,
-                ["true_payment_date", "payment_date", "date", "fecha"],
-            )
+        if not (loan_id_col_pay and loan_id_col_loan):
+            return loan_df
 
-            if status_pay_col:
-                payment_df["_is_late"] = (
-                    payment_df[status_pay_col].astype(str).str.strip().str.lower()
-                    .isin(["late", "tardio", "tardío", "mora", "atrasado"])
-                    .astype(int)
-                )
+        status_pay_col = ScorecardModel._find_column(
+            payment_df.columns,
+            ["payment_status", "true_payment_status", "status", "estado"],
+        )
+        if not status_pay_col:
+            return loan_df
 
-                beh = payment_df.groupby(loan_id_col_pay).agg(
-                    n_payments=("_is_late", "count"),
-                    n_late_payments=("_is_late", "sum"),
-                ).reset_index()
-                beh.columns = [loan_id_col_loan, "n_payments", "n_late_payments"]
-                beh["late_payment_rate"] = np.where(
-                    beh["n_payments"] > 0,
-                    beh["n_late_payments"] / beh["n_payments"],
-                    0.0,
-                )
+        payment_df = payment_df.copy()
+        payment_df["_is_late"] = (
+            payment_df[status_pay_col].astype(str).str.strip().str.lower()
+            .isin(["late", "tardio", "tardío", "mora", "atrasado"])
+            .astype(int)
+        )
 
-                def max_consecutive(series: pd.Series) -> int:
-                    max_c = cur_c = 0
-                    for v in series:
-                        if v == 1:
-                            cur_c += 1
-                            max_c = max(max_c, cur_c)
-                        else:
-                            cur_c = 0
-                    return max_c
+        beh = payment_df.groupby(loan_id_col_pay).agg(
+            n_payments=("_is_late", "count"),
+            n_late_payments=("_is_late", "sum"),
+        ).reset_index()
+        beh.columns = [loan_id_col_loan, "n_payments", "n_late_payments"]
+        beh["late_payment_rate"] = np.where(
+            beh["n_payments"] > 0,
+            beh["n_late_payments"] / beh["n_payments"],
+            0.0,
+        )
 
-                consec = (
-                    payment_df.sort_values([loan_id_col_pay, date_pay_col] if date_pay_col else [loan_id_col_pay])
-                    .groupby(loan_id_col_pay)["_is_late"]
-                    .apply(max_consecutive)
-                    .reset_index()
-                )
-                consec.columns = [loan_id_col_loan, "max_consecutive_late"]
-                beh = beh.merge(consec, on=loan_id_col_loan, how="left")
+        # Max consecutive late
+        date_pay_col = ScorecardModel._find_column(
+            payment_df.columns,
+            ["true_payment_date", "payment_date", "date", "fecha"],
+        )
+        
+        def max_consecutive(series: pd.Series) -> int:
+            max_c = cur_c = 0
+            for v in series:
+                if v == 1:
+                    cur_c += 1
+                    max_c = max(max_c, cur_c)
+                else:
+                    cur_c = 0
+            return max_c
 
-                if amount_pay_col:
-                    payment_df[amount_pay_col] = pd.to_numeric(payment_df[amount_pay_col], errors="coerce")
-                    vol = (
-                        payment_df.groupby(loan_id_col_pay)[amount_pay_col]
-                        .std()
-                        .reset_index()
-                    )
-                    vol.columns = [loan_id_col_loan, "payment_amount_std"]
-                    beh = beh.merge(vol, on=loan_id_col_loan, how="left")
+        consec = (
+            payment_df.sort_values([loan_id_col_pay, date_pay_col] if date_pay_col else [loan_id_col_pay])
+            .groupby(loan_id_col_pay)["_is_late"]
+            .apply(max_consecutive)
+            .reset_index()
+        )
+        consec.columns = [loan_id_col_loan, "max_consecutive_late"]
+        beh = beh.merge(consec, on=loan_id_col_loan, how="left")
 
-                loan_df = loan_df.merge(beh, on=loan_id_col_loan, how="left")
+        # Payment amount volatility
+        amount_pay_col = ScorecardModel._find_column(
+            payment_df.columns,
+            ["true_total_payment", "total_payment", "payment_amount", "last_payment_amount", "amount"],
+        )
+        if amount_pay_col:
+            payment_df[amount_pay_col] = pd.to_numeric(payment_df[amount_pay_col], errors="coerce")
+            vol = payment_df.groupby(loan_id_col_pay)[amount_pay_col].std().reset_index()
+            vol.columns = [loan_id_col_loan, "payment_amount_std"]
+            beh = beh.merge(vol, on=loan_id_col_loan, how="left")
 
-        # Customer features
+        return loan_df.merge(beh, on=loan_id_col_loan, how="left")
+
+    @staticmethod
+    def _add_customer_features(loan_df: pd.DataFrame, customer_df: pd.DataFrame) -> pd.DataFrame:
         cust_id_col_cust = ScorecardModel._find_column(
-            customer_df.columns,
-            ["customer_id", "cliente_id", "borrower_id"],
+            customer_df.columns, ["customer_id", "cliente_id", "borrower_id"],
         )
         cust_id_col_loan = ScorecardModel._find_column(
-            loan_df.columns,
-            ["customer_id", "cliente_id", "borrower_id"],
+            loan_df.columns, ["customer_id", "cliente_id", "borrower_id"],
         )
 
-        if cust_id_col_cust and cust_id_col_loan:
-            industry_col = ScorecardModel._find_column(
-                customer_df.columns,
-                ["industry", "sector", "giro"],
-            )
-            score_col = ScorecardModel._find_column(
-                customer_df.columns,
-                ["equifax_score", "external_credit_score", "internal_credit_score", "score", "buro"],
-            )
+        if not (cust_id_col_cust and cust_id_col_loan):
+            return loan_df
 
-            keep_cols = [cust_id_col_cust]
-            if industry_col:
-                keep_cols.append(industry_col)
-                customer_df[industry_col] = customer_df[industry_col].astype(str).str.strip()
-            if score_col:
-                keep_cols.append(score_col)
-                customer_df[score_col] = pd.to_numeric(customer_df[score_col], errors="coerce")
+        industry_col = ScorecardModel._find_column(
+            customer_df.columns, ["industry", "sector", "giro"],
+        )
+        score_col = ScorecardModel._find_column(
+            customer_df.columns, ["equifax_score", "external_credit_score", "internal_credit_score", "score"],
+        )
 
-            loan_df = loan_df.merge(
-                customer_df[keep_cols].rename(columns={cust_id_col_cust: cust_id_col_loan}),
-                on=cust_id_col_loan,
-                how="left",
-            )
+        keep_cols = [cust_id_col_cust]
+        customer_df = customer_df.copy()
+        if industry_col:
+            keep_cols.append(industry_col)
+            customer_df[industry_col] = customer_df[industry_col].astype(str).str.strip()
+        if score_col:
+            keep_cols.append(score_col)
+            customer_df[score_col] = pd.to_numeric(customer_df[score_col], errors="coerce")
 
-        return loan_df
+        return loan_df.merge(
+            customer_df[keep_cols].rename(columns={cust_id_col_cust: cust_id_col_loan}),
+            on=cust_id_col_loan,
+            how="left",
+        )
 
     # ── WoE / IV ────────────────────────────────────────────────────────────
 
@@ -289,11 +296,6 @@ class ScorecardModel:
         target: str = "is_default",
     ) -> pd.DataFrame:
         """Compute WoE and IV for each candidate feature using OptimalBinning."""
-        try:
-            from optbinning import OptimalBinning
-        except ImportError as exc:
-            raise ImportError("pip install optbinning") from exc
-
         records = []
         self.binning_map = {}
 
@@ -301,64 +303,75 @@ class ScorecardModel:
             if feat not in df.columns or feat == target:
                 continue
             
-            series = df[feat]
-            y = df[target]
-
-            mask = series.notna()
-            if mask.sum() < 10:
-                continue
-                
-            x_clean = series[mask].values
-            y_clean = y[mask].values
-
-            if len(np.unique(x_clean)) < 2:
-                continue
-
-            dtype = "categorical" if series.dtype == object or series.dtype == bool else "numerical"
-
-            try:
-                ob = OptimalBinning(
-                    name=feat,
-                    dtype=dtype,
-                    solver="cp",
-                    max_n_bins=8,
-                    min_bin_size=0.03,
-                )
-                ob.fit(x_clean, y_clean)
-                bt = ob.binning_table.build()
-
-                iv_val = float(bt.loc[bt.index[:-1], "IV"].sum())
-                woe_vals = bt.loc[bt.index[:-1], "WoE"].dropna()
-                woe_range = round(float(woe_vals.max() - woe_vals.min()), 4) if len(woe_vals) > 0 else 0.0
-                n_bins = len(bt) - 1
-
-                self.binning_map[feat] = ob
-
-                if iv_val < IV_USELESS:
-                    power = "Useless"
-                elif iv_val < IV_WEAK:
-                    power = "Weak"
-                elif iv_val < IV_MEDIUM:
-                    power = "Medium"
-                else:
-                    power = "Strong"
-
-                records.append({
-                    "feature": feat,
-                    "iv": round(iv_val, 4),
-                    "predictive_power": power,
-                    "n_bins": n_bins,
-                    "woe_range": woe_range,
-                    "dtype": dtype,
-                })
-
-            except Exception as e:
-                logger.warning("Binning failed for %s: %s", feat, e)
-                continue
+            record = self._compute_feature_binning(df, feat, target)
+            if record:
+                records.append(record)
 
         iv_df = pd.DataFrame(records).sort_values("iv", ascending=False).reset_index(drop=True)
         self.iv_table = iv_df
         return iv_df
+
+    def _compute_feature_binning(self, df: pd.DataFrame, feat: str, target: str) -> Optional[Dict[str, Any]]:
+        """Compute Optimal Binning for a single feature."""
+        try:
+            from optbinning import OptimalBinning
+        except ImportError as exc:
+            raise ImportError("pip install optbinning") from exc
+
+        series = df[feat]
+        y = df[target]
+
+        mask = series.notna()
+        if mask.sum() < 10:
+            return None
+            
+        x_clean = series[mask].values
+        y_clean = y[mask].values
+
+        if len(np.unique(x_clean)) < 2:
+            return None
+
+        dtype = "categorical" if series.dtype == object or series.dtype == bool else "numerical"
+
+        try:
+            ob = OptimalBinning(
+                name=feat,
+                dtype=dtype,
+                solver="cp",
+                max_n_bins=8,
+                min_bin_size=0.03,
+            )
+            ob.fit(x_clean, y_clean)
+            bt = ob.binning_table.build()
+
+            iv_val = float(bt.loc[bt.index[:-1], "IV"].sum())
+            woe_vals = bt.loc[bt.index[:-1], "WoE"].dropna()
+            woe_range = round(float(woe_vals.max() - woe_vals.min()), 4) if len(woe_vals) > 0 else 0.0
+            n_bins = len(bt) - 1
+
+            self.binning_map[feat] = ob
+
+            if iv_val < IV_USELESS:
+                power = "Useless"
+            elif iv_val < IV_WEAK:
+                power = "Weak"
+            elif iv_val < IV_MEDIUM:
+                power = "Medium"
+            else:
+                power = "Strong"
+
+            return {
+                "feature": feat,
+                "iv": round(iv_val, 4),
+                "predictive_power": power,
+                "n_bins": n_bins,
+                "woe_range": woe_range,
+                "dtype": dtype,
+            }
+
+        except Exception as e:
+            logger.warning("Binning failed for %s: %s", feat, e)
+            return None
 
     def _transform_woe(self, df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
         """Transform features to WoE values."""
@@ -475,7 +488,7 @@ class ScorecardModel:
     def _build_scorecard_table(self) -> None:
         """Create a human-readable table of points per bin."""
         if self.lr_model is None:
-            raise ValueError("Model must be fitted before building scorecard table.")
+            raise ValueError(self._NOT_FITTED_MSG)
             
         offset, factor = self._calculate_scaling_params(BASE_SCORE, BASE_ODDS, PDO)
         n_feats = len(self.selected_features)
@@ -511,7 +524,7 @@ class ScorecardModel:
     def predict_score(self, loan_features: Dict[str, Any]) -> int:
         """Predict score for a single loan."""
         if self.lr_model is None:
-            raise ValueError("Model must be fitted before prediction.")
+            raise ValueError(self._NOT_FITTED_MSG)
             
         df = pd.DataFrame([loan_features])
         woe_df = self._transform_woe(df, self.selected_features)
@@ -520,7 +533,7 @@ class ScorecardModel:
 
     def predict_score_batch(self, df: pd.DataFrame) -> np.ndarray:
         if self.lr_model is None:
-            raise ValueError("Model must be fitted before prediction.")
+            raise ValueError(self._NOT_FITTED_MSG)
             
         woe_df = self._transform_woe(df, self.selected_features)
         log_odds = self.lr_model.decision_function(woe_df.values)
@@ -528,7 +541,7 @@ class ScorecardModel:
 
     def predict_proba(self, loan_features: Dict[str, Any]) -> float:
         if self.lr_model is None:
-            raise ValueError("Model must be fitted before prediction.")
+            raise ValueError(self._NOT_FITTED_MSG)
             
         df = pd.DataFrame([loan_features])
         woe_df = self._transform_woe(df, self.selected_features)
