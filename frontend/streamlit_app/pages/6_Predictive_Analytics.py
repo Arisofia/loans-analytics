@@ -197,7 +197,13 @@ if st.button("Predict Probability of Default"):
         st.subheader("Result")
         prob_pct = prob * 100
         
-        color = "green" if prob_pct < 10 else "orange" if prob_pct < 30 else "red"
+        if prob_pct < 10:
+            color = "green"
+        elif prob_pct < 30:
+            color = "orange"
+        else:
+            color = "red"
+            
         st.markdown(f"### Estimated PD: <span style='color:{color}'>{prob_pct:.2f}%</span>", unsafe_allow_html=True)
         
         if prob_pct < 10:

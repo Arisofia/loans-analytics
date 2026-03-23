@@ -559,9 +559,13 @@ def _coerce_numeric_nullable(series: pd.Series) -> pd.Series:
 
 
 def _derive_status(df: pd.DataFrame) -> pd.Series:
-    dpd_col = (
-        "days_past_due" if "days_past_due" in df.columns else "dpd" if "dpd" in df.columns else None
-    )
+    if "days_past_due" in df.columns:
+        dpd_col = "days_past_due"
+    elif "dpd" in df.columns:
+        dpd_col = "dpd"
+    else:
+        dpd_col = None
+
     dpd = _coerce_numeric(df[dpd_col]) if dpd_col else None
 
     if "status" in df.columns:

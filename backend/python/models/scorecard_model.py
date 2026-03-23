@@ -320,15 +320,12 @@ class ScorecardModel:
 
     @staticmethod
     def _iv_predictive_power(iv_value: float) -> str:
-        return (
-            "Useless"
-            if iv_value < IV_USELESS
-            else "Weak"
-            if iv_value < IV_WEAK
-            else "Medium"
-            if iv_value < IV_MEDIUM
-            else "Strong"
+        thresholds = (
+            (IV_USELESS, "Useless"),
+            (IV_WEAK, "Weak"),
+            (IV_MEDIUM, "Medium"),
         )
+        return next((label for limit, label in thresholds if iv_value < limit), "Strong")
 
     @staticmethod
     def _iv_feature_dtype(series: pd.Series) -> str:

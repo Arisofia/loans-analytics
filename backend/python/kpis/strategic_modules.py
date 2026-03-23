@@ -704,6 +704,13 @@ def build_compliance_dashboard(
         "ce_6m_pct": round(ce_actual, 1) if ce_actual is not None else None,
         "dscr": round(dscr_actual, 2) if dscr_actual is not None else None,
     }
+    if util_col:
+        util_source = f"loan.{util_col}"
+    elif line_col:
+        util_source = f"loan.{line_col}"
+    else:
+        util_source = "NO_DATA"
+
     data_sources = {
         "par": f"loan.{dpd_col}" if dpd_col else "NO_DATA",
         "concentration": f"loan.{deb_col}" if deb_col else "NO_DATA",
@@ -712,9 +719,7 @@ def build_compliance_dashboard(
             if not sched
             else f"payments.true_total_payment / loan.{sched}"
         ),
-        "utilization": (
-            f"loan.{util_col}" if util_col else (f"loan.{line_col}" if line_col else "NO_DATA")
-        ),
+        "utilization": util_source,
         "apr": f"loan.{apr_col} (annual decimal ×100)" if apr_col else "NO_DATA",
         "dscr": (
             f"loan.{noi_col} / loan.{debt_service_col}"

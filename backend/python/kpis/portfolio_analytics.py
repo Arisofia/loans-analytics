@@ -677,6 +677,13 @@ def equifax_vs_dpd_scatter(
 
     alpha_balance = sum(float(cast(float, s["total_balance_usd"])) for s in alpha_clients)
 
+    if r_sq < 0.1:
+        power = "weak"
+    elif r_sq < 0.3:
+        power = "moderate"
+    else:
+        power = "strong"
+
     return {
         "status": "ok",
         "scatter_data": scatter_data,
@@ -686,9 +693,7 @@ def equifax_vs_dpd_scatter(
             "r_squared": round(float(r_sq), 4),
             "interpretation": (
                 f"Each 1-point rise in Equifax score changes expected DPD by "
-                f"{slope:+.3f} days. R²={r_sq:.3f} — "
-                + ("weak" if r_sq < 0.1 else "moderate" if r_sq < 0.3 else "strong")
-                + " predictive power."
+                f"{slope:+.3f} days. R²={r_sq:.3f} — {power} predictive power."
             ),
         },
         "alpha_clients": sorted(alpha_clients, key=lambda x: float(cast(float, x["residual"])))[

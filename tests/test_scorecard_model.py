@@ -184,8 +184,7 @@ class TestDatasetConstruction:
 
     def test_ltv_ratio_computed(self, sample_data):
         df = self._build_dataset(sample_data)
-        if "ltv_ratio" in df.columns:
-            assert df["ltv_ratio"].notna().sum() > 0
+        assert ("ltv_ratio" not in df.columns) or (df["ltv_ratio"].notna().sum() > 0)
 
 
 class TestIVComputation:
@@ -296,14 +295,11 @@ class TestPersistence:
         save_dir = str(tmp_path / "scorecard_test")
         model.save(save_dir)
 
-        for fname in [
-            "lr_model.pkl",
-            "binning_map.pkl",
-            "iv_table.csv",
-            "scorecard_table.csv",
-            "metadata.json",
-        ]:
-            assert (Path(save_dir) / fname).exists(), f"{fname} not saved"
+        assert (Path(save_dir) / "lr_model.pkl").exists(), "lr_model.pkl not saved"
+        assert (Path(save_dir) / "binning_map.pkl").exists(), "binning_map.pkl not saved"
+        assert (Path(save_dir) / "iv_table.csv").exists(), "iv_table.csv not saved"
+        assert (Path(save_dir) / "scorecard_table.csv").exists(), "scorecard_table.csv not saved"
+        assert (Path(save_dir) / "metadata.json").exists(), "metadata.json not saved"
 
         loaded = SC.load(save_dir)
         assert loaded.lr_model is not None
