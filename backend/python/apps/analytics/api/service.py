@@ -788,9 +788,7 @@ class KPIService:
 
     def _convert_dict_records_to_dataframe(self, rows: list[dict] | None) -> pd.DataFrame:
         """Converts optional list-of-dict rows into a DataFrame."""
-        if rows:
-            return pd.DataFrame(rows)
-        return pd.DataFrame()
+        return pd.DataFrame(rows) if rows else pd.DataFrame()
 
     async def get_executive_analytics(
         self,
@@ -2572,7 +2570,12 @@ class KPIService:
 
     @staticmethod
     def _bucket_risk_intensity(value: float, threshold: float) -> str:
-        return "high" if value > threshold * 2 else "medium" if value > threshold else "low"
+        risk = "low"
+        if value > threshold * 2:
+            risk = "high"
+        elif value > threshold:
+            risk = "medium"
+        return risk
 
     def _build_heatmap_rows(
         self, buckets: list[dict[str, Any]]
@@ -2637,7 +2640,6 @@ class KPIService:
         # Derived Next-Gen KPIs
         npl_pct = par_metrics["par90"]
         lgd_pct = (100.0 - recovery_rate) if defaulted_balance > 0 else 0.0
-        cor_pct = loss_rate  # Use loss rate as a proxy for Cost of Risk
 
         self._populate_ltv_dti_ratios(df)
         active_borrowers, repeat_borrower_rate = self._calculate_borrower_metrics(df)
@@ -2660,7 +2662,7 @@ class KPIService:
             "recovery_rate": recovery_rate,
             "npl": npl_pct,
             "lgd": lgd_pct,
-            "cor": cor_pct,
+            "cor": loss_rate,
             "cash_on_hand": self._calculate_cash_on_hand(df),
             "yield": avg_interest_rate,
             "aum": total_outstanding,
@@ -2729,7 +2731,7 @@ class KPIService:
             return metrics
 
         balance = pd.to_numeric(df[balance_col], errors="coerce").fillna(0.0)
-        denom = float(balance.sum()) if total_outstanding <= 0 else float(total_outstanding)
+        denom = balance.sum() if total_outstanding <= 0 else total_outstanding
         if denom <= 0:
             return metrics
 
@@ -3026,9 +3028,7 @@ class KPIService:
         """Safely coerce optional numeric values to float."""
         candidate = default if value is None else value
         try:
-            if candidate is None or pd.isna(candidate):
-                return 0.0
-            return float(candidate)
+            return 0.0 if candidate is None or pd.isna(candidate) else float(candidate)
         except (TypeError, ValueError, OverflowError):
             return 0.0
 
@@ -3036,9 +3036,7 @@ class KPIService:
     def _safe_int(value: Any, default: int = 0) -> int:
         """Safely coerce scalar-like values to int for typed responses."""
         try:
-            if value is None or pd.isna(value):
-                return default
-            return int(float(value))
+            return default if value is None or pd.isna(value) else int(float(value))
         except (TypeError, ValueError, OverflowError):
             return default
 
@@ -3191,13 +3189,14 @@ class KPIService:
     def _map_dpd_to_bucket(dpd_value: float) -> str:
         if dpd_value <= 0:
             return "current"
-        if dpd_value <= 30:
+        elif dpd_value <= 30:
             return "1_30"
-        if dpd_value <= 60:
+        elif dpd_value <= 60:
             return "31_60"
-        if dpd_value <= 90:
+        elif dpd_value <= 90:
             return "61_90"
-        return "90_plus"
+        else:
+            return "90_plus"
 
     @staticmethod
     def _bucket_order() -> list[str]:

@@ -21,6 +21,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from backend.python.models.scorecard_model import ScorecardModel
 
 INDUSTRIES = [
     "Comercio al por menor",
@@ -91,10 +92,7 @@ def make_payment_df(loan_df: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
         disb_date = pd.Timestamp(loan["disbursement_date"])
 
         for p in range(n_payments):
-            if is_defaulted:
-                is_late = rng.random() < 0.6
-            else:
-                is_late = rng.random() < 0.05
+            is_late = rng.random() < (0.6 if is_defaulted else 0.05)
 
             payment_date = disb_date + pd.Timedelta(days=30 * (p + 1) + rng.randint(-5, 30))
 
@@ -142,8 +140,6 @@ def sample_data():
 @pytest.fixture(scope="module")
 def trained_model(sample_data):
     """Train a scorecard on synthetic data - shared across tests."""
-    from backend.python.models.scorecard_model import ScorecardModel
-
     loan_df, payment_df, customer_df = sample_data
     model = ScorecardModel()
     metrics = model.fit(loan_df, payment_df, customer_df, iv_threshold=0.01, cv_folds=3)
@@ -151,9 +147,14 @@ def trained_model(sample_data):
 
 
 class TestDatasetConstruction:
-    def test_build_dataset_with_empty_auxiliary_dataframes(self, sample_data):
-        from backend.python.models.scorecard_model import ScorecardModel
+    @staticmethod
+    def _build_dataset(sample_data):
+        loan_df, payment_df, customer_df = sample_data
+        return ScorecardModel.build_model_dataset(
+            loan_df.copy(), payment_df.copy(), customer_df.copy()
+        )
 
+    def test_build_dataset_with_empty_auxiliary_dataframes(self, sample_data):
         loan_df, _, _ = sample_data
         df = ScorecardModel.build_model_dataset(
             loan_df.copy(),
@@ -165,44 +166,24 @@ class TestDatasetConstruction:
         assert len(df) == len(loan_df)
 
     def test_target_created(self, sample_data):
-        from backend.python.models.scorecard_model import ScorecardModel
-
-        loan_df, payment_df, customer_df = sample_data
-        df = ScorecardModel.build_model_dataset(
-            loan_df.copy(), payment_df.copy(), customer_df.copy()
-        )
+        df = self._build_dataset(sample_data)
         assert "is_default" in df.columns
         assert df["is_default"].sum() > 0, "No defaults found - check status mapping"
 
     def test_behavioral_features_created(self, sample_data):
-        from backend.python.models.scorecard_model import ScorecardModel
-
-        loan_df, payment_df, customer_df = sample_data
-        df = ScorecardModel.build_model_dataset(
-            loan_df.copy(), payment_df.copy(), customer_df.copy()
-        )
+        df = self._build_dataset(sample_data)
         assert "n_late_payments" in df.columns, "Behavioral feature n_late_payments missing"
         assert "late_payment_rate" in df.columns
         assert "max_consecutive_late" in df.columns
 
     def test_customer_features_merged(self, sample_data):
-        from backend.python.models.scorecard_model import ScorecardModel
-
-        loan_df, payment_df, customer_df = sample_data
-        df = ScorecardModel.build_model_dataset(
-            loan_df.copy(), payment_df.copy(), customer_df.copy()
-        )
+        df = self._build_dataset(sample_data)
         assert (
             "industry" in df.columns or "equifax_score" in df.columns
         ), "Customer features not merged"
 
     def test_ltv_ratio_computed(self, sample_data):
-        from backend.python.models.scorecard_model import ScorecardModel
-
-        loan_df, payment_df, customer_df = sample_data
-        df = ScorecardModel.build_model_dataset(
-            loan_df.copy(), payment_df.copy(), customer_df.copy()
-        )
+        df = self._build_dataset(sample_data)
         if "ltv_ratio" in df.columns:
             assert df["ltv_ratio"].notna().sum() > 0
 
@@ -307,11 +288,10 @@ class TestScoreScaling:
 
 
 class TestPersistence:
-    def test_save_and_load_roundtrip(self, trained_model, sample_data, tmp_path):
+    def test_save_and_load_roundtrip(self, trained_model, tmp_path):
         from backend.python.models.scorecard_model import ScorecardModel as SC
 
         model, _ = trained_model
-        loan_df, payment_df, customer_df = sample_data
 
         save_dir = str(tmp_path / "scorecard_test")
         model.save(save_dir)
