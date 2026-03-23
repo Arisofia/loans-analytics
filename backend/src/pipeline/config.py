@@ -44,7 +44,16 @@ class PipelineConfig:
                 raise ValueError(f"Pipeline configuration section '{section}' must be a mapping")
         return cls(ingestion=config_data['ingestion'], transformation=config_data['transformation'], calculation=config_data['calculation'], output=config_data['output'], external_integrations=config_data['external_integrations'], observability=config_data['observability'])
 
-def load_business_rules(rules_path: Optional[Path]=None) -> Dict[str, Any]:
+def load_business_rules(rules_path: Optional[Path] = None) -> Dict[str, Any]:
+    """
+    Load business rules from YAML file.
+
+    Args:
+        rules_path: Path to business_rules.yaml
+
+    Returns:
+        Dictionary of business rules
+    """
     if rules_path is None:
         rules_path = Path(__file__).parent.parent.parent.parent / 'config' / 'business_rules.yaml'
     if not rules_path.exists():
