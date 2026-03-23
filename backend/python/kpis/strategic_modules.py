@@ -306,10 +306,7 @@ def _compute_dscr(loans_df: pd.DataFrame, noi_col: str | None, debt_service_col:
     return noi_sum / debt_service_sum if debt_service_sum > 0 else None
 
 def _evaluate_metric_status(actual: float, target: float, lower_is_better: bool, warn_band: float) -> str:
-    if lower_is_better:
-        index = int(actual <= target + warn_band) + int(actual <= target)
-        return ('breach', 'warning', 'ok')[index]
-    index = int(actual >= target - warn_band) + int(actual >= target)
+    index = (int(actual <= target + warn_band) + int(actual <= target)) if lower_is_better else (int(actual >= target - warn_band) + int(actual >= target))
     return ('breach', 'warning', 'ok')[index]
 
 def _build_core_metric_rows(actuals: dict[str, Any], guardrails: dict[str, Any], owners: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, int]]:
@@ -321,12 +318,12 @@ def _build_core_metric_rows(actuals: dict[str, Any], guardrails: dict[str, Any],
         if actual is None:
             counts['no_data'] += 1
             rows.append({'metric': metric, 'actual': 'NO_DATA', 'target': target, 'variance': None, 'variance_pct': None, 'status': 'no_data', 'lower_is_better': lower_is_better, 'owner': owners.get(metric, '—')})
-        else:
-            status = _evaluate_metric_status(float(actual), float(target), bool(lower_is_better), float(warn_band))
-            variance = float(actual) - float(target)
-            variance_pct = round(variance / float(target) * 100, 1) if target else 0.0
-            counts[status] += 1
-            rows.append({'metric': metric, 'actual': actual, 'target': target, 'variance': round(variance, 2), 'variance_pct': variance_pct, 'status': status, 'lower_is_better': lower_is_better, 'owner': owners.get(metric, '—')})
+            continue
+        status = _evaluate_metric_status(float(actual), float(target), bool(lower_is_better), float(warn_band))
+        variance = float(actual) - float(target)
+        variance_pct = round(variance / float(target) * 100, 1) if target else 0.0
+        counts[status] += 1
+        rows.append({'metric': metric, 'actual': actual, 'target': target, 'variance': round(variance, 2), 'variance_pct': variance_pct, 'status': status, 'lower_is_better': lower_is_better, 'owner': owners.get(metric, '—')})
     return (rows, counts)
 
 def _append_apr_row(rows: list[dict[str, Any]], counts: dict[str, int], actuals: dict[str, Any], owners: dict[str, Any], apr_min: float, apr_max: float) -> None:
@@ -465,11 +462,7 @@ def _compose_contextual_action(base_action: str, variance_details: dict[str, Any
     return f'{base_action} Context: {explanation}' if explanation else base_action
 
 def _resolve_compliance_meta(status: str, metric_name: Any) -> tuple[Any, Any, Any]:
-    if status in {'breach', 'warning'}:
-        return (_plan_policy_lookup(metric_name, _IMPACT_MAP), 'compliance', 'variance')
-    if status == 'no_data':
-        return (_plan_policy_lookup(metric_name, _NO_DATA_ACTION_MAP), 'compliance', None)
-    return (None, None, None)
+    return (_plan_policy_lookup(metric_name, _IMPACT_MAP), 'compliance', 'variance') if status in {'breach', 'warning'} else (_plan_policy_lookup(metric_name, _NO_DATA_ACTION_MAP), 'compliance', None) if status == 'no_data' else (None, None, None)
 
 def _build_compliance_action(row: dict[str, Any], variance_details: dict[str, Any]) -> dict[str, Any] | None:
     meta, source, variance_key = _resolve_compliance_meta(str(row.get('status', '')), row.get('metric'))

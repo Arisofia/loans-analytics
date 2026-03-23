@@ -46,6 +46,7 @@ except ImportError:
     from backend.python.supabase_pool import get_pool
 
 logger = get_logger(__name__)
+MAX_QUERY_LIMIT = 500
 
 
 def _safe_log_value(value: object, max_length: int = 200) -> str:
@@ -62,6 +63,25 @@ def _json_default(value: Any) -> str:
 
 def _json_dumps(value: Any) -> str:
     return json.dumps(value, default=_json_default)
+
+
+def _bounded_int(value: int, lower: int, upper: int) -> int:
+    return max(lower, min(value, upper))
+
+
+def _parse_json_object(value: Any, *, default: dict[str, Any] | None) -> dict[str, Any] | None:
+    if value is None:
+        return default
+    if isinstance(value, dict):
+        return value
+    if not isinstance(value, str):
+        return default
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        logger.warning('Invalid JSON payload encountered in monitoring row')
+        return default
+    return parsed if isinstance(parsed, dict) else default
 
 
 class MonitoringService:
@@ -107,7 +127,7 @@ class MonitoringService:
     ) -> list[OperationalEventResponse]:
         pool = await get_pool(settings.database_url)
 
-        limit = max(1, min(limit, 500))
+        limit = _bounded_int(limit, 1, MAX_QUERY_LIMIT)
         offset = max(0, offset)
 
         conditions: list[str] = []
@@ -196,7 +216,7 @@ class MonitoringService:
     ) -> list[CommandResponse]:
         pool = await get_pool(settings.database_url)
 
-        limit = max(1, min(limit, 500))
+        limit = _bounded_int(limit, 1, MAX_QUERY_LIMIT)
 
         params: list[Any] = []
         idx = 1
@@ -291,21 +311,11 @@ class MonitoringService:
 
     @staticmethod
     def _parse_json(value: Any) -> dict[str, Any]:
-        if value is None:
-            return {}
-        if isinstance(value, str):
-            parsed = json.loads(value)
-            return parsed if isinstance(parsed, dict) else {}
-        return value if isinstance(value, dict) else {}
+        return _parse_json_object(value, default={}) or {}
 
     @staticmethod
     def _parse_json_nullable(value: Any) -> dict[str, Any] | None:
-        if value is None:
-            return None
-        if isinstance(value, str):
-            parsed = json.loads(value)
-            return parsed if isinstance(parsed, dict) else None
-        return value if isinstance(value, dict) else None
+        return _parse_json_object(value, default=None)
 
     def _row_to_event(self, row: Any) -> OperationalEventResponse:
         return OperationalEventResponse(
