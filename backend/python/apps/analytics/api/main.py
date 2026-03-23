@@ -5,6 +5,7 @@ import re
 import sys
 import uuid
 import asyncio
+from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -201,10 +202,11 @@ async def _resolve_analysis_kpis(
 
 def _get_kpi_value(kpis: list[Any], candidates: list[str], default: float = 0.0) -> float:
     candidate_set = {candidate.lower() for candidate in candidates}
-    for kpi in kpis:
-        if (kpi.id or "").lower() in candidate_set:
-            return float(kpi.value)
-    return default
+    value = next(
+        (kpi.value for kpi in kpis if (kpi.id or "").lower() in candidate_set),
+        None,
+    )
+    return float(value) if value is not None else default
 
 
 def _build_full_analysis_recommendations(
@@ -235,20 +237,15 @@ def _build_full_analysis_recommendations(
         )
     if churn_90d > 10:
         recommendations.append("Launch 90-day retention interventions for at-risk borrowers.")
-    if (
-        roll_rates.summary.historical_coverage_pct > 0
-        and roll_rates.summary.portfolio_roll_forward_rate_pct >= 20
-    ):
-        recommendations.append(
-            "Tighten early-stage collections and underwriting triggers to reduce roll-forward migration."
-        )
-    if (
-        roll_rates.summary.historical_coverage_pct > 0
-        and roll_rates.summary.portfolio_cure_rate_pct < 30
-    ):
-        recommendations.append(
-            "Deploy targeted cure campaigns for delinquent borrowers to improve rollback to current status."
-        )
+    if roll_rates.summary.historical_coverage_pct > 0:
+        if roll_rates.summary.portfolio_roll_forward_rate_pct >= 20:
+            recommendations.append(
+                "Tighten early-stage collections and underwriting triggers to reduce roll-forward migration."
+            )
+        if roll_rates.summary.portfolio_cure_rate_pct < 30:
+            recommendations.append(
+                "Deploy targeted cure campaigns for delinquent borrowers to improve rollback to current status."
+            )
     if not recommendations:
         return [
             "Maintain underwriting and collections cadence with weekly KPI monitoring.",
@@ -296,10 +293,11 @@ def _format_transition_block(roll_rates: "RollRateAnalyticsResponse") -> str:
 
 
 def _avg_mature_npl(vintage: "VintageCurveResponse") -> float:
-    mature_ratios = [
+    if not (
+        mature_ratios := [
         point.npl_ratio for point in vintage.portfolio_average_curve if point.months_on_book >= 6
-    ]
-    if not mature_ratios:
+        ]
+    ):
         return 0.0
     return round(sum(mature_ratios) / len(mature_ratios), 2)
 
@@ -858,11 +856,12 @@ if app is not None:
             logger.info("KPI stream client disconnected")
         except Exception as e:
             logger.error("Error in KPI stream endpoint: %s", e)
-            try:
+            with suppress(Exception):
                 await websocket.send_json({"event": "error", "detail": INTERNAL_SERVER_ERROR})
-            except Exception:
-                # Connection might be already closed
-                pass
+
+    def _raise_internal_http_error(endpoint_name: str, exc: Exception) -> None:
+        logger.error("Error in %s: %s", endpoint_name, exc)
+        raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from exc
 
     @app.post("/analytics/risk-alerts", response_model=RiskAlertsResponse)
     async def get_risk_alerts(
@@ -1184,11 +1183,9 @@ if app is not None:
         Generate data quality profile for the provided loan portfolio data.
         """
         try:
-            dq_profile = await service.get_data_quality_profile(request.loans)
-            return dq_profile
+            return await service.get_data_quality_profile(request.loans)
         except Exception as e:
-            logger.error("Error in get_data_quality_profile: %s", e)
-            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
+            _raise_internal_http_error("get_data_quality_profile", e)
 
     @app.post(
         "/data-quality/validate",
@@ -1202,11 +1199,9 @@ if app is not None:
         columns and meets schema requirements.
         """
         try:
-            validation_result = await service.validate_loan_portfolio_schema(request.loans)
-            return validation_result
+            return await service.validate_loan_portfolio_schema(request.loans)
         except Exception as e:
-            logger.error("Error in validate_loan_data: %s", e)
-            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
+            _raise_internal_http_error("validate_loan_data", e)
 
     @app.get("/data/{file_path:path}")
     def get_data(file_path: str):
@@ -1290,7 +1285,7 @@ if app is not None:
         # API requests send percentage-like interest rates (e.g., 12.5), model expects decimal.
         rate = float(request.interest_rate)
         if rate > 1.0:
-            rate = rate / 100.0
+            rate /= 100.0
 
         ltv_ratio = max(0.0, float(request.ltv_ratio))
         collateral_value = loan_amount
@@ -1355,8 +1350,7 @@ if app is not None:
         try:
             return await service.get_nsm_recurrent_tpv()
         except Exception as e:
-            logger.error("Error in get_nsm: %s", e)
-            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
+            _raise_internal_http_error("get_nsm", e)
 
 
 def _sanitize_for_logging(value: str, max_length: int = 200) -> str:
@@ -1371,7 +1365,7 @@ def _sanitize_for_logging(value: str, max_length: int = 200) -> str:
     )
     sanitized = re.sub(r"[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]", "", sanitized)
     if len(sanitized) > max_length:
-        return sanitized[:max_length] + "...[truncated]"
+        return f"{sanitized[:max_length]}...[truncated]"
     return sanitized
 
 

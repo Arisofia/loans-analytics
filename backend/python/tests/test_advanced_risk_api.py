@@ -64,7 +64,7 @@ def test_advanced_risk_endpoint_returns_expected_shape():
     }
     assert expected_top_level_keys.issubset(body.keys())
     assert body["total_loans"] == 2
-    assert body["par90"] == 52.63
+    assert abs(body["par90"] - 52.63) < 1e-9
     assert len(body["dpd_buckets"]) == 5
     assert {bucket["bucket"] for bucket in body["dpd_buckets"]} == {
         "current",

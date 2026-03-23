@@ -464,7 +464,7 @@ class KPIService:
         catalog_key = KPI_API_TO_CATALOG_ID.get(normalized, kpi_id.lower())
         catalog_metadata = _load_catalog_kpi_metadata().get(catalog_key, {})
         default_metadata: dict[str, Any] = DEFAULT_KPI_METADATA.get(normalized, {})
-        definition_fallback = kpi_name or str(kpi_id)
+        definition_fallback = kpi_name or kpi_id
         thresholds = catalog_metadata.get("thresholds")
         if not isinstance(thresholds, dict):
             thresholds = {}
@@ -503,9 +503,7 @@ class KPIService:
             return "critical"
         if value >= warning:
             return "warning"
-        if target is None or value <= target:
-            return "on_target"
-        return "below_target"
+        return "on_target" if target is None or value <= target else "below_target"
 
     @staticmethod
     def _eval_lower_is_riskier(
@@ -518,9 +516,7 @@ class KPIService:
             return "critical"
         if value <= warning:
             return "warning"
-        if target is None or value >= target:
-            return "on_target"
-        return "below_target"
+        return "on_target" if target is None or value >= target else "below_target"
 
     @staticmethod
     def _evaluate_kpi_status(
@@ -710,11 +706,10 @@ class KPIService:
                 | (df["days_past_due"] > 30)
             ]
 
-            risk_loans: list[dict] = []
-            for _, rec in high_risk_df.iterrows():
-                risk_loans.append(self._build_loan_risk_alert(rec, ltv_threshold, dti_threshold))
-
-            return risk_loans
+            return [
+                self._build_loan_risk_alert(rec, ltv_threshold, dti_threshold)
+                for _, rec in high_risk_df.iterrows()
+            ]
         except Exception as e:
             logger.error(
                 "Error calculating risk alerts for actor %s: %s",
@@ -793,9 +788,7 @@ class KPIService:
 
     def _convert_dict_records_to_dataframe(self, rows: list[dict] | None) -> pd.DataFrame:
         """Converts optional list-of-dict rows into a DataFrame."""
-        if not rows:
-            return pd.DataFrame()
-        return pd.DataFrame(rows)
+        return pd.DataFrame() if not rows else pd.DataFrame(rows)
 
     async def get_executive_analytics(
         self,
@@ -883,6 +876,16 @@ class KPIService:
             "portfolio_health": portfolio_health,
         }
 
+    @staticmethod
+    def _empty_portfolio_health_score() -> PortfolioHealthScore:
+        return PortfolioHealthScore(
+            score=DATA_MISSING_SCORE,
+            traffic_light="critical",
+            components=[],
+            formula=_PORTFOLIO_HEALTH_FORMULA,
+            interpretation=DATA_MISSING_INTERPRETATION,
+        )
+
     def _build_risk_kpi_snapshot_from_metrics(
         self,
         metrics: dict[str, float],
@@ -953,23 +956,11 @@ class KPIService:
     ) -> PortfolioHealthScore:
         """Compute portfolio health score for the provided loan set."""
         if not loans:
-            return PortfolioHealthScore(
-                score=DATA_MISSING_SCORE,
-                traffic_light="critical",
-                components=[],
-                formula=_PORTFOLIO_HEALTH_FORMULA,
-                interpretation=DATA_MISSING_INTERPRETATION,
-            )
+            return self._empty_portfolio_health_score()
 
         df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
         if df.empty:
-            return PortfolioHealthScore(
-                score=DATA_MISSING_SCORE,
-                traffic_light="critical",
-                components=[],
-                formula=_PORTFOLIO_HEALTH_FORMULA,
-                interpretation=DATA_MISSING_INTERPRETATION,
-            )
+            return self._empty_portfolio_health_score()
         metrics = self._calculate_portfolio_performance_metrics(df)
         return self._build_portfolio_health_score_from_metrics(metrics)
 
@@ -993,10 +984,9 @@ class KPIService:
             recommendations.append(
                 "Prioritize remediation on the weakest health-score components this week."
             )
-        red_flags = [
+        if red_flags := [
             flag.flag for flag in risk_stratification.decision_flags if flag.status == "red"
-        ]
-        if red_flags:
+        ]:
             recommendations.append(f"Escalate red risk flags to committee: {', '.join(red_flags)}.")
         if not recommendations:
             recommendations.append(
@@ -1205,8 +1195,7 @@ class KPIService:
         for field_name, field_info in LoanRecord.model_fields.items():
             if field_name not in df.columns:
                 continue
-            error = KPIService._field_type_error(field_name, field_info, df[field_name])
-            if error:
+            if error := KPIService._field_type_error(field_name, field_info, df[field_name]):
                 errors.append(error)
         return errors
 
@@ -1623,10 +1612,10 @@ class KPIService:
             group_loans = int(len(idx))
 
             par30 = self._safe_pct(
-                float(df.loc[idx, "principal_balance"][dpd.loc[idx] > 30].sum()), group_balance
+                df.loc[idx, "principal_balance"][dpd.loc[idx] > 30].sum(), group_balance
             )
             par90 = self._safe_pct(
-                float(df.loc[idx, "principal_balance"][dpd.loc[idx] > 90].sum()), group_balance
+                df.loc[idx, "principal_balance"][dpd.loc[idx] > 90].sum(), group_balance
             )
             default_rate = self._safe_pct(float(default_mask.loc[idx].sum()), float(group_loans))
             collection_rate = self._safe_pct(
@@ -1666,7 +1655,7 @@ class KPIService:
 
         summary = CohortAnalyticsSummary(
             cohort_count=len(cohort_rows),
-            total_loans=int(len(df)),
+            total_loans=len(df),
             weighted_par30_pct=round(weighted_par30, 2),
             highest_risk_cohort=highest_risk,
             strongest_collection_cohort=strongest_collection,
@@ -1820,11 +1809,9 @@ class KPIService:
     ) -> SegmentAnalyticsResponse:
         """Compute segment-level KPI drill-down by the selected dimension."""
         try:
-            if loans is None:
-                loans = []
             return await run_in_threadpool(
                 self._calculate_segment_analytics_sync,
-                loans,
+                loans or [],
                 dimension,
                 top_n,
             )
@@ -1905,10 +1892,10 @@ class KPIService:
                 float(df.loc[idx, "principal_balance"][dpd.loc[idx] >= 30].sum()), outstanding
             )
             par60 = self._safe_pct(
-                float(df.loc[idx, "principal_balance"][dpd.loc[idx] >= 60].sum()), outstanding
+                df.loc[idx, "principal_balance"][dpd.loc[idx] >= 60].sum(), outstanding
             )
             par90 = self._safe_pct(
-                float(df.loc[idx, "principal_balance"][dpd.loc[idx] >= 90].sum()), outstanding
+                df.loc[idx, "principal_balance"][dpd.loc[idx] >= 90].sum(), outstanding
             )
             default_rate = self._safe_pct(float(default_mask.loc[idx].sum()), float(loan_count))
             collection_rate = self._safe_pct(
@@ -1931,7 +1918,7 @@ class KPIService:
             )
 
         segment_rows.sort(key=lambda row: row.outstanding_usd, reverse=True)
-        segment_rows = segment_rows[: int(top_n)]
+        segment_rows = segment_rows[:top_n]
 
         largest_segment = segment_rows[0].segment if segment_rows else None
         riskiest_segment = (
@@ -1941,7 +1928,7 @@ class KPIService:
         summary = SegmentAnalyticsSummary(
             dimension=dimension,
             segment_count=len(segment_rows),
-            total_loans=int(len(df)),
+            total_loans=len(df),
             largest_segment=largest_segment,
             riskiest_segment=riskiest_segment,
         )
@@ -2184,20 +2171,19 @@ class KPIService:
         cure_candidates = [
             row for row in bucket_summaries if row.from_bucket != "current" and row.loan_count > 0
         ]
-        if cure_candidates:
-            best_cure_row = max(
+        if cure_candidates and (
+            best_cure_row := max(
                 cure_candidates, key=lambda row: (row.cure_rate_pct, row.loan_count)
             )
-            best_cure_source = (
-                best_cure_row.from_bucket if best_cure_row.cure_rate_pct > 0 else None
-            )
+        ):
+            best_cure_source = best_cure_row.from_bucket if best_cure_row.cure_rate_pct > 0 else None
         else:
             best_cure_source = None
 
         return RollRateAnalyticsSummary(
-            total_loans=int(len(df)),
+            total_loans=len(df),
             historical_coverage_pct=round(
-                self._safe_pct(int(explicit_previous_signal.sum()), int(len(df))),
+                self._safe_pct(explicit_previous_signal.sum(), len(df)),
                 2,
             ),
             portfolio_cure_rate_pct=round(self._safe_pct(cured_portfolio, delinquent_total), 2),
@@ -2280,7 +2266,7 @@ class KPIService:
 
         stressed_par30 = self._clamp_pct(baseline.par30_pct * par_factor)
         stressed_par90 = self._clamp_pct(
-            baseline.par90_pct * (1.0 + ((float(par_deterioration_pct) * 1.2) / 100.0))
+            baseline.par90_pct * (1.0 + ((par_deterioration_pct * 1.2) / 100.0))
         )
         stressed_default = self._clamp_pct(
             baseline.default_rate_pct * (1.0 + ((float(par_deterioration_pct) * 0.8) / 100.0))
@@ -2391,7 +2377,7 @@ class KPIService:
         loans: list[LoanRecord] | None,
     ) -> RiskStratificationResponse:
         """Categorize portfolio by risk buckets and identify key decision flags."""
-        if loans is None or not loans:
+        if not loans:
             return RiskStratificationResponse(
                 buckets=[], decision_flags=[], summary="No loans provided for stratification."
             )
@@ -2664,6 +2650,7 @@ class KPIService:
         executive_metrics = self._calculate_realtime_executive_metrics(df)
         disbursement_volume_mtd, new_loans_count_mtd = self._calculate_mtd_metrics(df)
         enriched_metrics = self._calculate_realtime_enriched_metrics(df, total_outstanding)
+        gross_margin_pct = executive_metrics["gross_margin_pct"]
 
         return {
             "par30": par_metrics["par30"],
@@ -2688,7 +2675,7 @@ class KPIService:
             "new_loans_count_mtd": new_loans_count_mtd,
             "customer_lifetime_value": self._calculate_customer_lifetime_value(df),
             "cac": executive_metrics["cac"],
-            "gross_margin_pct": executive_metrics["gross_margin_pct"],
+            "gross_margin_pct": gross_margin_pct,
             "revenue_forecast_6m": executive_metrics["revenue_forecast_6m"],
             "churn_90d": executive_metrics["churn_90d"],
             "avg_ltv": df["ltv_ratio"].mean(),
@@ -2762,7 +2749,7 @@ class KPIService:
                 .isin({"Y", "YES", "SI", "S", "TRUE", "1"})
             )
             metrics["collections_eligible_rate"] = self._safe_pct(
-                float(balance[eligible_mask].sum()), denom
+                balance[eligible_mask].sum(), denom
             )
 
         govt_col = self._first_present_column(df, "government_sector", "goes")
@@ -2919,18 +2906,12 @@ class KPIService:
             else pd.Series([0.0] * len(df), index=df.index)
         )
         total_scheduled = float(scheduled.sum())
-        collection_rate = (
-            (float(collected.sum()) / total_scheduled * 100) if total_scheduled > 0 else 0.0
-        )
+        collection_rate = self._safe_pct(float(collected.sum()), total_scheduled)
         recovery_amount = float(collected[status_defaulted_mask].sum())
         defaulted_balance_for_recovery = float(
             df.loc[status_defaulted_mask, "principal_balance"].sum()
         )
-        recovery_rate = (
-            (recovery_amount / defaulted_balance_for_recovery * 100)
-            if defaulted_balance_for_recovery > 0
-            else 0.0
-        )
+        recovery_rate = self._safe_pct(recovery_amount, defaulted_balance_for_recovery)
         return collection_rate, recovery_rate
 
     def _calculate_borrower_metrics(self, df: pd.DataFrame) -> tuple[float, float]:
@@ -2942,11 +2923,7 @@ class KPIService:
         )
         active_borrowers = float(df.loc[active_mask, "borrower_id"].dropna().astype(str).nunique())
         borrower_counts = borrower_series.value_counts()
-        repeat_borrower_rate = (
-            (float((borrower_counts > 1).sum()) / float(len(borrower_counts)) * 100)
-            if len(borrower_counts) > 0
-            else 0.0
-        )
+        repeat_borrower_rate = self._safe_pct(float((borrower_counts > 1).sum()), len(borrower_counts))
         return active_borrowers, repeat_borrower_rate
 
     @staticmethod
@@ -2964,14 +2941,15 @@ class KPIService:
     @staticmethod
     def _last_realtime_metric(rows: list[dict], key: str) -> float | None:
         """Return the last non-null value for *key* from a list of metric dicts."""
-        for row in reversed(rows):
-            value = row.get(key)
-            if value is None:
-                continue
-            if pd.isna(value):
-                continue
-            return float(value)
-        return None
+        value = next(
+            (
+                row.get(key)
+                for row in reversed(rows)
+                if row.get(key) is not None and not pd.isna(row.get(key))
+            ),
+            None,
+        )
+        return float(value) if value is not None else None
 
     def _calculate_realtime_executive_metrics(self, df: pd.DataFrame) -> dict[str, float]:
         """
@@ -3047,7 +3025,8 @@ class KPIService:
         """Convert ratio-like values (0-1) to percent while preserving percent inputs."""
         if pd.isna(value):
             return 0.0
-        return float(value * 100.0) if -1.5 <= float(value) <= 1.5 else float(value)
+        numeric_value = float(value)
+        return numeric_value * 100.0 if -1.5 <= numeric_value <= 1.5 else numeric_value
 
     @staticmethod
     def _safe_float(value: float | int | None, default: float | None = 0.0) -> float:
@@ -3078,20 +3057,19 @@ class KPIService:
     @staticmethod
     def _safe_pct(numerator: float, denominator: float) -> float:
         """Safe percentage helper that guards against zero/negative denominators."""
-        if denominator <= 0:
-            return 0.0
-        return (float(numerator) / float(denominator)) * 100.0
+        return 0.0 if denominator <= 0 else (numerator / denominator) * 100.0
 
     @staticmethod
     def _series_from_aliases(
         df: pd.DataFrame, aliases: list[str], default: str = "unknown"
     ) -> pd.Series:
         lower_map = {col.lower(): col for col in df.columns}
-        for alias in aliases:
-            matched = lower_map.get(alias.lower())
-            if matched is not None:
-                return df[matched].fillna(default).astype(str)
-        return pd.Series([default] * len(df), index=df.index, dtype=object)
+        matched = next((lower_map.get(alias.lower()) for alias in aliases), None)
+        return (
+            df[matched].fillna(default).astype(str)
+            if matched is not None
+            else pd.Series([default] * len(df), index=df.index, dtype=object)
+        )
 
     @staticmethod
     def _build_risk_band_series(df: pd.DataFrame, dpd: pd.Series) -> pd.Series:
