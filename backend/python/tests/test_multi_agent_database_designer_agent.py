@@ -18,21 +18,28 @@ class TestDatabaseDesignerAgent(unittest.TestCase):
         self.assertEqual(self.agent.role, AgentRole.DATABASE_DESIGNER)
 
     def test_system_prompt_covers_key_topics(self):
-        prompt = self.agent.get_system_prompt()
-        key_topics = ['database', 'schema', 'data model', 'indexing', 'optimization', 'performance']
-        for topic in key_topics:
-            self.assertIn(topic.lower(), prompt.lower())
+        prompt = self.agent.get_system_prompt().lower()
+        self.assertIn('database', prompt)
+        self.assertIn('schema', prompt)
+        self.assertIn('data model', prompt)
+        self.assertIn('indexing', prompt)
+        self.assertIn('optimization', prompt)
+        self.assertIn('performance', prompt)
 
     def test_system_prompt_includes_design_approach(self):
-        prompt = self.agent.get_system_prompt()
-        methodology_keywords = ['domain model', 'requirements', 'normalized', 'denormalized', 'relationships']
-        for keyword in methodology_keywords:
-            self.assertIn(keyword.lower(), prompt.lower())
+        prompt = self.agent.get_system_prompt().lower()
+        self.assertIn('domain model', prompt)
+        self.assertIn('requirements', prompt)
+        self.assertIn('normalized', prompt)
+        self.assertIn('denormalized', prompt)
+        self.assertIn('relationships', prompt)
 
     def test_system_prompt_includes_deliverables(self):
-        prompt = self.agent.get_system_prompt()
-        deliverables = ['schema definitions', 'index recommendations', 'example queries', 'transaction management', 'migration strategies']
-        for deliverable in deliverables:
-            self.assertIn(deliverable.lower(), prompt.lower())
+        prompt = self.agent.get_system_prompt().lower()
+        self.assertIn('schema definitions', prompt)
+        self.assertIn('index recommendations', prompt)
+        self.assertIn('example queries', prompt)
+        self.assertIn('transaction management', prompt)
+        self.assertIn('migration strategies', prompt)
 if __name__ == '__main__':
     unittest.main()

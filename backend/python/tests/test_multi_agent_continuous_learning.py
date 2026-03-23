@@ -35,8 +35,9 @@ class TestContinuousLearningLoop(unittest.TestCase):
             def _process(request):
                 return self._response(role=role, trace_id=request.trace_id, content=f'{role.value} commentary generated.')
             return _process
-        for role, agent in self.orchestrator.agents.items():
-            agent.process = MagicMock(side_effect=make_process(role))
+        self.orchestrator.agents[AgentRole.RISK_ANALYST].process = MagicMock(side_effect=make_process(AgentRole.RISK_ANALYST))
+        self.orchestrator.agents[AgentRole.COMPLIANCE].process = MagicMock(side_effect=make_process(AgentRole.COMPLIANCE))
+        self.orchestrator.agents[AgentRole.OPS_OPTIMIZER].process = MagicMock(side_effect=make_process(AgentRole.OPS_OPTIMIZER))
         results = self.orchestrator.run_scenario('loan_risk_review', initial_context={'portfolio_data': 'sample portfolio'}, trace_id='trace_scenario')
         self.assertIn('_agent_comments', results)
         self.assertEqual(len(results['_agent_comments']), 3)

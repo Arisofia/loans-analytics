@@ -44,14 +44,14 @@ class TestHistoricalKpisSupabaseIntegration:
         end_dt = datetime.combine(end_date, datetime.min.time(), tzinfo=timezone.utc)
         history = provider._load_historical_data(kpi_id=kpi_id, start_date=start_dt, end_date=end_dt)
         assert isinstance(history, list)
-        if history:
-            first_record = history[0]
-            assert isinstance(first_record, dict)
-            assert first_record['kpi_id'] == kpi_id
-            assert 'date' in first_record
-            assert 'value' in first_record
-            assert isinstance(first_record['date'], (date, datetime))
-            assert isinstance(first_record['value'], (int, float, type(None)))
+        assert history
+        first_record = history[0]
+        assert isinstance(first_record, dict)
+        assert first_record['kpi_id'] == kpi_id
+        assert 'date' in first_record
+        assert 'value' in first_record
+        assert isinstance(first_record['date'], (date, datetime))
+        assert isinstance(first_record['value'], (int, float, type(None)))
 
     @pytest.mark.skipif(not REAL_SUPABASE_ENABLED, reason='Real Supabase tests disabled (set RUN_REAL_SUPABASE_TESTS=1)')
     def test_mode_switching_mock_vs_real(self):
@@ -68,5 +68,5 @@ class TestHistoricalKpisSupabaseIntegration:
         assert isinstance(history_mock, list)
         assert isinstance(history_real, list)
         assert len(history_mock) > 0, 'MOCK mode should generate synthetic data'
-        if history_real:
-            assert set(history_mock[0].keys()) == set(history_real[0].keys())
+        assert history_real
+        assert set(history_mock[0].keys()) == set(history_real[0].keys())

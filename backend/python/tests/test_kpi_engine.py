@@ -139,7 +139,7 @@ class TestDerivedRiskKPIAudit(unittest.TestCase):
         return pd.DataFrame({'dpd_30_60_usd': [500.0, 8000.0, 0.0, 0.0, 0.0], 'dpd_60_90_usd': [0.0, 0.0, 2000.0, 0.0, 0.0], 'dpd_90_plus_usd': [0.0, 0.0, 6000.0, 4000.0, 0.0], 'total_receivable_usd': [10000.0, 8000.0, 6000.0, 4000.0, 12000.0], 'dpd': [5, 35, 95, 120, 0], 'status': ['active', 'delinquent', 'defaulted', 'defaulted', 'active'], 'outstanding_balance': [10000.0, 8000.0, 6000.0, 4000.0, 12000.0], 'borrower_id': ['A', 'B', 'C', 'D', 'A'], 'loan_id': ['L1', 'L2', 'L3', 'L4', 'L5'], 'as_of_date': ['2026-01-31'] * 5, 'loan_amount': [10000.0, 8000.0, 6000.0, 4000.0, 12000.0], 'collateral_value': [12000.0, 10000.0, 8000.0, 5000.0, 15000.0]})
 
     def test_velocity_of_default_appears_in_calculate_all(self):
-        df = pd.DataFrame({'dpd_30_60_usd': [100.0], 'dpd_60_90_usd': [50.0], 'dpd_90_plus_usd': [25.0], 'total_receivable_usd': [5000.0], 'dpd': [35], 'status': ['delinquent'], 'outstanding_balance': [5000.0], 'as_of_date': pd.to_datetime(['2026-01-31']), 'loan_amount': [5000.0], 'collateral_value': [6000.0]})
+        df = pd.DataFrame({'dpd_30_60_usd': [100.0, 120.0], 'dpd_60_90_usd': [50.0, 60.0], 'dpd_90_plus_usd': [25.0, 30.0], 'total_receivable_usd': [5000.0, 5200.0], 'dpd': [35, 40], 'status': ['delinquent', 'defaulted'], 'outstanding_balance': [5000.0, 5200.0], 'as_of_date': pd.to_datetime(['2026-01-31', '2026-02-28']), 'loan_amount': [5000.0, 5200.0], 'collateral_value': [6000.0, 6300.0]})
         engine = KPIEngineV2(df, actor='audit_test')
         results = engine.calculate_all()
         self.assertIn('velocity_of_default', results)
