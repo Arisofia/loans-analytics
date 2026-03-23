@@ -307,7 +307,7 @@ class DefaultRiskModel:
         # Feature importance
         used_features = list(X_train.columns)
         feat_importances = self.model.feature_importances_.tolist()
-        importance = dict(zip(used_features, feat_importances))
+        importance = dict(zip(used_features, feat_importances))  # updated
         importance_sorted = dict(sorted(importance.items(), key=lambda x: x[1], reverse=True))
 
         # Cross-validation AUC
