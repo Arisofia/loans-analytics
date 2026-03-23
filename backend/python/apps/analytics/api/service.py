@@ -461,7 +461,7 @@ class KPIService:
 
     def _get_kpi_metadata(self, kpi_id: str, kpi_name: str | None = None) -> dict[str, Any]:
         normalized = _normalize_kpi_key(kpi_id)
-        catalog_key = KPI_API_TO_CATALOG_ID.get(normalized, str(kpi_id).lower())
+        catalog_key = KPI_API_TO_CATALOG_ID.get(normalized, kpi_id.lower())
         catalog_metadata = _load_catalog_kpi_metadata().get(catalog_key, {})
         default_metadata: dict[str, Any] = DEFAULT_KPI_METADATA.get(normalized, {})
         definition_fallback = kpi_name or str(kpi_id)
@@ -569,7 +569,7 @@ class KPIService:
         thresholds = thresholds if isinstance(thresholds, dict) else {}
         benchmark = metadata.get("benchmark")
         benchmark_value = float(benchmark) if isinstance(benchmark, (int, float)) else None
-        rounded_value = round(float(value), 2)
+        rounded_value = round(value, 2)
         status = self._evaluate_kpi_status(rounded_value, thresholds)
 
         return KpiSingleResponse(
@@ -3022,14 +3022,18 @@ class KPIService:
                 if isinstance(row, dict)
             )
         )
-        if forecast_sum <= 0 and isinstance(revenue_df, pd.DataFrame) and not revenue_df.empty:
-            if "recv_revenue_for_month" in revenue_df.columns:
-                revenue_series = pd.to_numeric(
-                    revenue_df["recv_revenue_for_month"],
-                    errors="coerce",
-                ).fillna(0)
-                if len(revenue_series) > 0:
-                    forecast_sum = max(0.0, float(revenue_series.iloc[-1]) * 6.0)
+        if (
+            forecast_sum <= 0
+            and isinstance(revenue_df, pd.DataFrame)
+            and not revenue_df.empty
+            and "recv_revenue_for_month" in revenue_df.columns
+        ):
+            revenue_series = pd.to_numeric(
+                revenue_df["recv_revenue_for_month"],
+                errors="coerce",
+            ).fillna(0)
+            if len(revenue_series) > 0:
+                forecast_sum = max(0.0, float(revenue_series.iloc[-1]) * 6.0)
 
         return {
             "cac": round(cac_value, 4),

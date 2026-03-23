@@ -161,8 +161,7 @@ class TokenBucketRateLimiter:
         with self._lock:
             bucket = self.buckets[identifier]
             time_elapsed = current_time - bucket["last_update"]
-            tokens = min(self.capacity, bucket["tokens"] + time_elapsed * self.rate)
-            return tokens
+            return min(self.capacity, bucket["tokens"] + time_elapsed * self.rate)
 
     def reset(self, identifier: Optional[str] = None) -> None:
         """Reset bucket for identifier or all.

@@ -149,6 +149,55 @@ def check_upload_script(root: Path) -> dict:
     return {'status': 'PASS', 'message': 'Upload script ready'}
 
 
+def status_symbol(status: str) -> str:
+    """Map a status code to a display symbol."""
+    if status == 'PASS':
+        return '✓'
+    if status == 'WARN':
+        return '⚠'
+    return '✗'
+
+
+def print_result(name: str, result: dict) -> None:
+    """Print a single validation result block."""
+    print(f'{status_symbol(result["status"])} {name}')
+    print(f'  {result["message"]}')
+    if 'secrets_used' in result:
+        print(f'  Secrets: {", ".join(result["secrets_used"])}')
+    if 'secrets' in result:
+        print(f'  Required: {", ".join(result["secrets"]["required"])}')
+        if result['secrets']['optional']:
+            print(f'  Optional: {", ".join(result["secrets"]["optional"])}')
+    print()
+
+
+def print_exception_result(name: str, exc: Exception) -> None:
+    """Print a failed validation caused by an exception."""
+    print(f'✗ {name}')
+    print(f'  ERROR: {str(exc)}')
+    print()
+
+
+def print_next_steps(failed: int) -> None:
+    """Print the appropriate follow-up guidance."""
+    if failed > 0:
+        print('NEXT STEPS:')
+        print('1. Fix any FAIL items above')
+        print('2. Re-run this validation')
+        print('3. Upload secrets: python scripts/setup_github_secrets_final.py --pat ghp_xxx')
+        sys.exit(1)
+
+    print('✓ All checks passed! Repository is ready for CI/CD')
+    print()
+    print('NEXT STEPS:')
+    print('1. Create new GitHub PAT with Actions:write, repo permissions')
+    print('2. Revoke old token in GitHub settings')
+    print('3. Run upload: python scripts/setup_github_secrets_final.py --pat <token>')
+    print('4. Verify in GitHub: Settings > Secrets and variables > Actions')
+    print('5. Push to main/develop to trigger workflows')
+    sys.exit(0)
+
+
 def main():
     """Run all validation checks."""
     root = Path('.').resolve()
@@ -170,23 +219,12 @@ def main():
         try:
             result = check_func(root)
             results.append((name, result))
-            
-            status = result['status']
-            symbol = '✓' if status == 'PASS' else ('⚠' if status == 'WARN' else '✗')
-            print(f'{symbol} {name}')
-            print(f'  {result["message"]}')
-            if 'secrets_used' in result:
-                print(f'  Secrets: {", ".join(result["secrets_used"])}')
-            if 'secrets' in result:
-                print(f'  Required: {", ".join(result["secrets"]["required"])}')
-                if result["secrets"]["optional"]:
-                    print(f'  Optional: {", ".join(result["secrets"]["optional"])}')
-            print()
+
+            print_result(name, result)
         except Exception as e:
             results.append((name, {'status': 'ERROR', 'message': str(e)}))
-            print(f'✗ {name}')
-            print(f'  ERROR: {str(e)}')
-            print()
+
+            print_exception_result(name, e)
     
     # Summary
     print('='*70)
@@ -198,23 +236,8 @@ def main():
     print(f'Results: {passed}/{total} passed, {warned} warnings, {failed} failed')
     print('='*70)
     print()
-    
-    if failed > 0:
-        print('NEXT STEPS:')
-        print('1. Fix any FAIL items above')
-        print('2. Re-run this validation')
-        print('3. Upload secrets: python scripts/setup_github_secrets_final.py --pat ghp_xxx')
-        sys.exit(1)
-    else:
-        print('✓ All checks passed! Repository is ready for CI/CD')
-        print()
-        print('NEXT STEPS:')
-        print('1. Create new GitHub PAT with Actions:write, repo permissions')
-        print('2. Revoke old token in GitHub settings')  
-        print('3. Run upload: python scripts/setup_github_secrets_final.py --pat <token>')
-        print('4. Verify in GitHub: Settings > Secrets and variables > Actions')
-        print('5. Push to main/develop to trigger workflows')
-        sys.exit(0)
+
+    print_next_steps(failed)
 
 
 if __name__ == '__main__':

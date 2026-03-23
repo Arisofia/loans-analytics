@@ -11,10 +11,7 @@ import pandas as pd
 
 def first_matching_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
     """Return the first column name from *candidates* that exists in *df*."""
-    for col in candidates:
-        if col in df.columns:
-            return col
-    return None
+    return next((col for col in candidates if col in df.columns), None)
 
 
 def to_numeric_safe(series: pd.Series) -> pd.Series:
@@ -31,8 +28,7 @@ def resolve_dpd_heuristic(df: pd.DataFrame) -> pd.Series:
        regex-based bucket mapping.
     3. Falls back to a zero series if no usable column is found.
     """
-    dpd_col = first_matching_column(df, ["days_past_due", "dpd", "dpd_days"])
-    if dpd_col:
+    if dpd_col := first_matching_column(df, ["days_past_due", "dpd", "dpd_days"]):
         return to_numeric_safe(df[dpd_col]).clip(lower=0)
 
     status_col = first_matching_column(df, ["loan_status", "status", "current_status"])

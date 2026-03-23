@@ -80,7 +80,7 @@ jobs:
       run_type: ${{ steps.resolve.outputs.run_type }}
       supabase_ready: ${{ steps.secret_gate.outputs.supabase_ready }}
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4
 
       - name: Check required secrets
         id: secret_gate
@@ -142,10 +142,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -175,10 +175,10 @@ jobs:
         needs.preflight.outputs.run_type == 'both'
       )
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -231,7 +231,7 @@ jobs:
 
       - name: Upload pipeline artifacts
         if: always()
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # actions/upload-artifact@v4.3.6
+        uses: actions/upload-artifact@v4
         with:
           name: pipeline-output-${{ github.run_number }}
           path: |
@@ -256,9 +256,9 @@ jobs:
         needs.preflight.outputs.run_type == 'both'
       )
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -280,7 +280,7 @@ jobs:
 
       - name: Upload snapshot artifacts
         if: always()
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # actions/upload-artifact@v4.3.6
+        uses: actions/upload-artifact@v4
         with:
           name: snapshot-${{ github.run_number }}
           path: |

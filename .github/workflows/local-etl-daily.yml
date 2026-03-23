@@ -28,7 +28,7 @@ jobs:
       snapshot_month: ${{ steps.date.outputs.snapshot_month }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4
 
       - name: Set snapshot month
         id: date
@@ -69,10 +69,10 @@ jobs:
       PYTHON_VERSION: "3.12"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -113,7 +113,7 @@ jobs:
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # actions/upload-artifact@v4.3.6
+        uses: actions/upload-artifact@v4
         with:
           name: local-etl-${{ github.run_number }}
           path: |

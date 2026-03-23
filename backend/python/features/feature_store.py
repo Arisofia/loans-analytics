@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -71,10 +72,8 @@ class FeatureStore:
         for col in features.columns:
             if features[col].dtype == object:
                 # Attempt to convert to numeric, if fail keep as is (could be categorical)
-                try:
+                with suppress(ValueError, TypeError):
                     features[col] = pd.to_numeric(features[col])
-                except (ValueError, TypeError):
-                    pass
 
         # Drop non-numeric columns that couldn't be converted
         features = features.select_dtypes(include=[np.number, "bool"])

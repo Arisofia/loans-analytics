@@ -91,7 +91,7 @@ class MYPEBusinessRules:
         if average_balance <= 0:
             return 0.0, False, "Average balance unavailable"
 
-        rotation = float(annual_disbursement) / float(average_balance)
+        rotation = annual_disbursement / average_balance
         meets = rotation >= cls.TARGET_ROTATION
         message = (
             f"Rotation meets target ({rotation:.2f}x >= {cls.TARGET_ROTATION:.2f}x)"
@@ -101,23 +101,15 @@ class MYPEBusinessRules:
         return rotation, meets, message
 
     @classmethod
-    def evaluate_facility_approval(
+    def calculate_pod(
         cls,
-        requested_amount: float,
-        metrics: dict[str, Any],
-        collateral_available: float = 0.0,
-    ) -> ApprovalDecision:
-        requested = float(requested_amount)
-        dpd = float(metrics.get("dpd", 0) or 0)
-        utilization = float(metrics.get("utilization", 0) or 0)
-        npl_ratio = float(metrics.get("npl_ratio", 0) or 0)
-        collection_rate = float(metrics.get("collection_rate", 1) or 0)
-        annual_revenue = float(metrics.get("revenue", 0) or 0)
-        avg_balance = float(metrics.get("avg_balance", 0) or 0)
-        industry = metrics.get("industry", IndustryType.OTHER)
-
-        # Probability of default proxy in [0,1].
-        pod = min(
+        dpd: float,
+        utilization: float,
+        npl_ratio: float,
+        collection_rate: float,
+    ) -> float:
+        """Calculate a simple probability-of-default proxy in the [0, 1] range."""
+        return min(
             1.0,
             max(
                 0.0,
@@ -128,8 +120,79 @@ class MYPEBusinessRules:
             ),
         )
 
+    @classmethod
+    def calculate_recommended_amount(
+        cls,
+        requested: float,
+        meets_rotation: bool,
+        industry: IndustryType | str | None,
+    ) -> float:
+        """Apply rotation and industry adjustments to the requested amount."""
+        if not meets_rotation:
+            return min(round(requested * 0.80, 2), requested)
+
+        industry_multiplier = cls.calculate_industry_adjustment(industry)
+        return min(round(requested * industry_multiplier, 2), requested)
+
+    @classmethod
+    def determine_risk_level(
+        cls,
+        is_npl: bool,
+        is_high_risk: bool,
+        pod: float,
+    ) -> RiskLevel:
+        """Map the risk indicators to a single risk level."""
+        if is_npl:
+            return RiskLevel.CRITICAL
+        elif is_high_risk:
+            return RiskLevel.HIGH
+        elif pod >= 0.35:
+            return RiskLevel.MEDIUM
+        else:
+            return RiskLevel.LOW
+
+    @classmethod
+    def collateral_requirements(
+        cls,
+        approved: bool,
+        risk_level: RiskLevel,
+        recommended_amount: float,
+    ) -> tuple[float, list[str]]:
+        """Calculate collateral requirements for non-approved facilities."""
+        if approved:
+            return 0.0, []
+
+        collateral_ratio = 0.0
+        if risk_level == RiskLevel.CRITICAL:
+            collateral_ratio = 0.50
+        elif risk_level == RiskLevel.HIGH:
+            collateral_ratio = 0.25
+
+        required_collateral = recommended_amount * collateral_ratio
+        if required_collateral <= 0:
+            return 0.0, []
+
+        return required_collateral, ["Additional collateral required"]
+
+    @classmethod
+    def evaluate_facility_approval(
+        cls,
+        requested_amount: float,
+        metrics: dict[str, Any],
+        collateral_available: float = 0.0,
+    ) -> ApprovalDecision:
+        requested = requested_amount
+        dpd = metrics.get("dpd", 0) or 0
+        utilization = metrics.get("utilization", 0) or 0
+        npl_ratio = metrics.get("npl_ratio", 0) or 0
+        collection_rate = metrics.get("collection_rate", 1) or 0
+        annual_revenue = metrics.get("revenue", 0) or 0
+        avg_balance = metrics.get("avg_balance", 0) or 0
+        industry = metrics.get("industry", IndustryType.OTHER)
+
+        pod = cls.calculate_pod(dpd, utilization, npl_ratio, collection_rate)
+
         reasons: list[str] = []
-        conditions: list[str] = []
 
         is_npl, npl_message = cls.classify_npl(dpd)
         if is_npl:
@@ -138,47 +201,21 @@ class MYPEBusinessRules:
         is_high_risk, high_risk_reasons = cls.classify_high_risk(metrics)
         reasons.extend(high_risk_reasons)
 
-        rotation, meets_rotation, rotation_message = cls.check_rotation_target(
+        _, meets_rotation, rotation_message = cls.check_rotation_target(
             annual_revenue, avg_balance
         )
         if not meets_rotation:
             reasons.append(rotation_message.replace("below", "below (Rotation)"))
 
-        base_recommendation = requested
-        if not meets_rotation:
-            # Rotation breach applies a hard reduction cap.
-            recommended_amount = round(base_recommendation * 0.80, 2)
-        else:
-            industry_multiplier = cls.calculate_industry_adjustment(industry)
-            recommended_amount = round(base_recommendation * industry_multiplier, 2)
-        recommended_amount = min(recommended_amount, requested)
-
-        if is_npl:
-            risk_level = RiskLevel.CRITICAL
-        elif is_high_risk:
-            risk_level = RiskLevel.HIGH
-        elif pod >= 0.35:
-            risk_level = RiskLevel.MEDIUM
-        else:
-            risk_level = RiskLevel.LOW
+        recommended_amount = cls.calculate_recommended_amount(
+            requested, meets_rotation, industry
+        )
+        risk_level = cls.determine_risk_level(is_npl, is_high_risk, pod)
 
         approved = risk_level in {RiskLevel.LOW, RiskLevel.MEDIUM} and meets_rotation
-
-        required_collateral = 0.0
-        if not approved:
-            collateral_ratio = 0.0
-            if risk_level == RiskLevel.CRITICAL:
-                collateral_ratio = 0.50
-            elif risk_level == RiskLevel.HIGH:
-                collateral_ratio = 0.25
-
-            required_collateral = recommended_amount * collateral_ratio
-            if required_collateral > 0:
-                conditions.append("Additional collateral required")
-
-        if approved:
-            conditions = []
-            required_collateral = 0.0
+        required_collateral, conditions = cls.collateral_requirements(
+            approved, risk_level, recommended_amount
+        )
 
         return ApprovalDecision(
             approved=approved,

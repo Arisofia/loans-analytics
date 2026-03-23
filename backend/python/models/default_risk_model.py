@@ -38,6 +38,13 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
+def _import_pandas() -> Any:
+    """Lazy import pandas, required for DataFrame operations."""
+    import pandas as pd
+    return pd
+
+
 # Features used for model training and inference
 NUMERIC_FEATURES: List[str] = [
     "principal_amount",
@@ -300,14 +307,14 @@ class DefaultRiskModel:
         # Feature importance
         used_features = list(X_train.columns)
         feat_importances = self.model.feature_importances_.tolist()
-        importance = dict(zip(used_features, feat_importances, strict=False))
+        importance = dict(zip(used_features, feat_importances))
         importance_sorted = dict(sorted(importance.items(), key=lambda x: x[1], reverse=True))
 
         # Cross-validation AUC
         cv_aucs: List[float] = []
         skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=random_state)
         for train_idx, val_idx in skf.split(X, y):
-            X_cv_train, X_cv_val = X.iloc[train_idx], X.iloc[val_idx]
+            x_cv_train, x_cv_val = X.iloc[train_idx], X.iloc[val_idx]
             y_cv_train, y_cv_val = y.iloc[train_idx], y.iloc[val_idx]
 
             cv_model = xgb.XGBClassifier(
@@ -327,12 +334,12 @@ class DefaultRiskModel:
                 tree_method="hist",
             )
             cv_model.fit(
-                X_cv_train,
+                x_cv_train,
                 y_cv_train,
-                eval_set=[(X_cv_val, y_cv_val)],
+                eval_set=[(x_cv_val, y_cv_val)],
                 verbose=False,
             )
-            cv_proba = cv_model.predict_proba(X_cv_val)[:, 1]
+            cv_proba = cv_model.predict_proba(x_cv_val)[:, 1]
             cv_aucs.append(roc_auc_score(y_cv_val, cv_proba))
 
         metrics: Dict[str, Any] = {
@@ -444,13 +451,35 @@ class DefaultRiskModel:
         ValueError
             If one or more required features are missing.
         """
-        missing = [f for f in self.feature_names if f not in loan_data]
-        if missing:
+        if missing := [f for f in self.feature_names if f not in loan_data]:
             raise ValueError(f"Missing required features for inference: {', '.join(missing)}")
 
     # ------------------------------------------------------------------
     # Inference
     # ------------------------------------------------------------------
+    def _engineer_features_dict(self, loan_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Simple feature engineering for a single dictionary (numpy fallback)."""
+        # Create a copy with base features
+        feat = {k: float(v) if v is not None else 0.0 for k, v in loan_data.items() if k in self.feature_names}
+        
+        # Engineer features (only if they are required by the model)
+        if "ltv_ratio" in self.feature_names and "ltv_ratio" not in feat:
+            collateral = float(loan_data.get("collateral_value", 0.0))
+            balance = float(loan_data.get("outstanding_balance", 0.0))
+            feat["ltv_ratio"] = (balance / collateral * 100) if collateral > 0 else 0.0
+
+        if "payment_ratio" in self.feature_names and "payment_ratio" not in feat:
+            scheduled = float(loan_data.get("total_scheduled", 0.0))
+            last_payment = float(loan_data.get("last_payment_amount", 0.0))
+            feat["payment_ratio"] = (last_payment / scheduled * 100) if scheduled > 0 else 0.0
+            
+        # Fill any remaining missing features from self.feature_names with 0.0
+        for col in self.feature_names:
+            if col not in feat:
+                feat[col] = 0.0
+                
+        return feat
+
     def predict_proba(
         self,
         loan_data: Dict[str, Any],
@@ -477,7 +506,7 @@ class DefaultRiskModel:
             raise RuntimeError("Model not trained or loaded")
 
         try:
-            import pandas as pd  # noqa: F811
+            pd = _import_pandas()
 
             df = pd.DataFrame([loan_data])
             X = self.prepare_features(df, payment_df, customer_df)
@@ -485,11 +514,7 @@ class DefaultRiskModel:
             # Drop IDs
             X = X.drop(columns=[c for c in ["loan_id", "customer_id"] if c in X.columns])
 
-            # Ensure all required features are present (might be 0.0 if missing)
-            for f in self.feature_names:
-                if f not in X.columns:
-                    X[f] = 0.0
-            
+            X = self._ensure_features_present(X)
             X = X[self.feature_names]
             proba = self.model.predict_proba(X)[:, 1]
             return float(proba[0])
@@ -497,16 +522,58 @@ class DefaultRiskModel:
             # Fallback: numpy-only path (no pandas available)
             import xgboost as xgb
 
-            # Validate features manually if pandas not available
-            self.validate_features(loan_data)
+            # Apply simple feature engineering
+            feat = self._engineer_features_dict(loan_data)
 
             features = np.array(
-                [[float(loan_data[col]) for col in self.feature_names]],
+                [[float(feat[col]) for col in self.feature_names]],
                 dtype=np.float32,
             )
-            dmatrix = xgb.DMatrix(features, feature_names=self.feature_names)
-            preds = self.model.get_booster().predict(dmatrix)
+            preds = self._predict_with_booster(features)
             return max(0.0, min(1.0, float(preds[0])))
+
+    def _predict_with_booster(self, features: np.ndarray) -> np.ndarray:
+        """Low-level prediction using the underlying XGBoost booster."""
+        import xgboost as xgb
+        dmatrix = xgb.DMatrix(features, feature_names=self.feature_names)
+        return self.model.get_booster().predict(dmatrix)
+
+    def _ensure_features_present(self, X: Any) -> Any:
+        """Ensure all required features are present in the feature matrix."""
+        for f in self.feature_names:
+            if f not in X.columns:
+                X[f] = 0.0
+        return X
+
+    def _prepare_batch_features(
+        self,
+        loans: Union[List[Dict[str, Any]], Any],
+        payment_df: Optional[Any] = None,
+        customer_df: Optional[Any] = None,
+    ) -> Any:
+        """Prepare and validate features for batch prediction."""
+        pd = _import_pandas()
+
+        df = pd.DataFrame(loans) if isinstance(loans, list) else loans
+        X = self.prepare_features(df, payment_df, customer_df)
+        X = self._ensure_features_present(X)
+        return X[self.feature_names], df
+
+    def _predict_batch_with_pandas(self, X: Any, df: Any) -> Any:
+        """Helper to return predictions as pandas Series."""
+        pd = _import_pandas()
+        return pd.Series(self.model.predict_proba(X)[:, 1], index=df.index)
+
+    def _predict_batch_fallback(self, loans: Union[List[Dict[str, Any]], Any]) -> Any:
+        """Fallback batch prediction without pandas (numpy + xgboost only)."""
+        rows = []
+        for loan in loans:
+            feat = self._engineer_features_dict(loan)
+            rows.append([float(feat[col]) for col in self.feature_names])
+
+        features = np.array(rows, dtype=np.float32)
+        preds = self._predict_with_booster(features)
+        return [max(0.0, min(1.0, float(p))) for p in preds]
 
     def predict_batch(
         self,
@@ -529,28 +596,7 @@ class DefaultRiskModel:
             raise RuntimeError("Model not trained or loaded")
 
         try:
-            import pandas as pd  # noqa: F811
-
-            df = pd.DataFrame(loans) if isinstance(loans, list) else loans
-            X = self.prepare_features(df, payment_df, customer_df)
-            
-            # Ensure all required features are present
-            for f in self.feature_names:
-                if f not in X.columns:
-                    X[f] = 0.0
-                    
-            X = X[self.feature_names]
-            return pd.Series(self.model.predict_proba(X)[:, 1], index=df.index)
+            X, df = self._prepare_batch_features(loans, payment_df, customer_df)
+            return self._predict_batch_with_pandas(X, df)
         except ImportError:
-            # Fallback: list-of-dicts only
-            import xgboost as xgb
-
-            if isinstance(loans, list):
-                for loan in loans:
-                    self.validate_features(loan)
-
-            rows = [[float(loan[col]) for col in self.feature_names] for loan in loans]
-            features = np.array(rows, dtype=np.float32)
-            dmatrix = xgb.DMatrix(features, feature_names=self.feature_names)
-            preds = self.model.get_booster().predict(dmatrix)
-            return [max(0.0, min(1.0, float(p))) for p in preds]
+            return self._predict_batch_fallback(loans)
