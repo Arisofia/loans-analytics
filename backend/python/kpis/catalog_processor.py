@@ -217,7 +217,7 @@ class KPICatalogProcessor:
 
         avg_apr = float(pricing_analytics.get("current", {}).get("weighted_apr", 0.0))
 
-        latest_forecast = revenue_forecast[0] if revenue_forecast else {}
+        latest_forecast = next(iter(revenue_forecast), {})
         unit_economics_rows = unit_economics if unit_economics else []
         latest_cac = self._latest_non_null_metric(unit_economics_rows, "cac_usd")
         latest_ltv = self._latest_non_null_metric(unit_economics_rows, "ltv_realized_usd")
@@ -1136,7 +1136,7 @@ class KPICatalogProcessor:
             errors="coerce",
         ).fillna(0)
 
-        portfolio_max = float(scored["Portfolio_Value"].max()) if not scored.empty else 1.0
+        portfolio_max = 1.0 if scored.empty else float(scored["Portfolio_Value"].max())
         if portfolio_max <= 0:
             portfolio_max = 1.0
 
@@ -1204,7 +1204,7 @@ class KPICatalogProcessor:
                 continue
             source_df = self.payments_df if key == "payment_date" else self.loans_df
             completeness_checks[key] = (
-                float(source_df[col_name].notna().mean()) if not source_df.empty else 0.0
+                0.0 if source_df.empty else float(source_df[col_name].notna().mean())
             )
         return completeness_checks
 

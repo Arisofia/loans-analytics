@@ -13,15 +13,17 @@ from backend.python.kpis._column_utils import (
 from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 
 
+def _series_sum_decimal(series: pd.Series) -> Decimal:
+    return Decimal(str(series.sum()))
+
+
 def _safe_pct(numerator: float | Decimal, denominator: float | Decimal) -> Decimal:
     """Calculate percentage using Decimal for precision. Return as Decimal."""
     num_dec = Decimal(str(numerator)) if isinstance(numerator, float) else Decimal(numerator)
     denom_dec = (
         Decimal(str(denominator)) if isinstance(denominator, float) else Decimal(denominator)
     )
-    if denom_dec <= 0:
-        return Decimal("0")
-    return (num_dec / denom_dec) * Decimal("100")
+    return (num_dec / denom_dec) * Decimal("100") if denom_dec > 0 else Decimal("0")
 
 
 def _normalize_interest_rate(series: pd.Series) -> pd.Series:
@@ -35,17 +37,13 @@ def _normalize_interest_rate(series: pd.Series) -> pd.Series:
     return clean
 
 
-def _extract_dpd(df: pd.DataFrame) -> pd.Series:
-    return resolve_dpd_heuristic(df)
-
-
 def _build_dpd_bucket(
     bucket_name: str,
     mask: pd.Series,
     balance: pd.Series,
     total_balance: Decimal,
 ) -> dict[str, float | int | str]:
-    bucket_balance = Decimal(str(balance[mask].sum()))
+    bucket_balance = _series_sum_decimal(balance[mask])
     balance_share = _safe_pct(bucket_balance, total_balance)
     return {
         "bucket": bucket_name,
@@ -56,8 +54,7 @@ def _build_dpd_bucket(
 
 
 def _build_default_mask(df: pd.DataFrame, dpd: pd.Series) -> pd.Series:
-    status_col = _first_existing_column(df, ["loan_status", "status", "current_status"])
-    if status_col:
+    if status_col := _first_existing_column(df, ["loan_status", "status", "current_status"]):
         status = df[status_col].astype(str).str.lower()
         return status.str.contains(r"default|charged", regex=True, na=False)
     return dpd > 90
@@ -153,7 +150,7 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
     interest_rate = _normalize_interest_rate(
         _resolve_series(df, ["interest_rate", "interest_rate_apr"])
     )
-    dpd = _extract_dpd(df)
+    dpd = resolve_dpd_heuristic(df)
     status = _status_series(df)
     default_mask = _build_default_mask(df, dpd)
     borrower_id = _resolve_identifier(
@@ -161,8 +158,8 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
         ["borrower_id", "customer_id", "Customer ID_cust", "borrower_name"],
     )
     # Use Decimal for all monetary aggregations
-    total_balance = Decimal(str(balance.sum()))
-    total_loans = int(len(df))
+    total_balance = _series_sum_decimal(balance)
+    total_loans = len(df)
 
     try:
         par_metrics = _calculate_ssot_par_metrics(balance, dpd, status)
@@ -171,41 +168,41 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
         par90 = par_metrics["par90"]
     except Exception:
         # Compatibility fallback during staged consolidation.
-        par30_pct = _safe_pct(Decimal(str(balance[dpd >= 30].sum())), total_balance)
-        par60_pct = _safe_pct(Decimal(str(balance[dpd >= 60].sum())), total_balance)
-        par90_pct = _safe_pct(Decimal(str(balance[dpd >= 90].sum())), total_balance)
+        par30_pct = _safe_pct(_series_sum_decimal(balance[dpd >= 30]), total_balance)
+        par60_pct = _safe_pct(_series_sum_decimal(balance[dpd >= 60]), total_balance)
+        par90_pct = _safe_pct(_series_sum_decimal(balance[dpd >= 90]), total_balance)
         par30 = round(float(par30_pct), 2)
         par60 = round(float(par60_pct), 2)
         par90 = round(float(par90_pct), 2)
 
-    default_count = Decimal(str(default_mask.sum()))
+    default_count = _series_sum_decimal(default_mask)
     default_rate_pct = _safe_pct(default_count, Decimal(str(total_loans)))
     default_rate = round(float(default_rate_pct), 2)
 
     collected = _resolve_series(df, ["last_payment_amount", "payment_amount", "payments_collected"])
     scheduled = _resolve_series(df, ["total_scheduled", "scheduled_amount", "payments_due"])
-    collected_sum = Decimal(str(collected.sum()))
-    scheduled_sum = Decimal(str(scheduled.sum()))
+    collected_sum = _series_sum_decimal(collected)
+    scheduled_sum = _series_sum_decimal(scheduled)
     collections_coverage_pct = _safe_pct(collected_sum, scheduled_sum)
     collections_coverage = round(float(collections_coverage_pct), 2)
 
     fee = _resolve_series(df, ["origination_fee", "fee_amount"])
     fee_taxes = _resolve_series(df, ["origination_fee_taxes", "fee_taxes"])
-    fee_sum = Decimal(str((fee + fee_taxes).sum()))
-    principal_sum = Decimal(str(principal.sum()))
+    fee_sum = _series_sum_decimal(fee + fee_taxes)
+    principal_sum = _series_sum_decimal(principal)
     fee_yield_pct = _safe_pct(fee_sum, principal_sum)
     fee_yield = round(float(fee_yield_pct), 2)
 
-    interest_yield_pct = _safe_pct(Decimal(str((interest_rate * balance).sum())), total_balance)
+    interest_yield_pct = _safe_pct(_series_sum_decimal(interest_rate * balance), total_balance)
     interest_yield = float(interest_yield_pct)  # Keep as Decimal for addition
     total_yield = round(float(Decimal(str(interest_yield)) + Decimal(str(fee_yield))), 2)
 
     recovery = _resolve_series(df, ["recovery_value", "Recovery Value", "recovery_amount"])
-    default_balance = Decimal(str(balance[default_mask].sum()))
+    default_balance = _series_sum_decimal(balance[default_mask])
     recovery_sum = (
-        Decimal(str(recovery[default_mask].sum()))
+        _series_sum_decimal(recovery[default_mask])
         if default_mask.any()
-        else Decimal(str(recovery.sum()))
+        else _series_sum_decimal(recovery)
     )
     recovery_rate_pct = _safe_pct(recovery_sum, default_balance)
     recovery_rate = round(float(recovery_rate_pct), 2)
@@ -216,7 +213,7 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
     ].sum()
     if total_balance > 0 and not exposure_by_borrower.empty:
         shares = exposure_by_borrower / float(total_balance)
-        concentration_hhi = round(float((Decimal(str(shares.pow(2).sum())) * Decimal("10000"))), 2)
+        concentration_hhi = round(float((_series_sum_decimal(shares.pow(2)) * Decimal("10000"))), 2)
     else:
         concentration_hhi = 0.0
 

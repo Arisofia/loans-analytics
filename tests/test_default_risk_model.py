@@ -34,7 +34,6 @@ class TestDefaultRiskModel:
         """Module is importable."""
         from backend.python.models.default_risk_model import FEATURE_COLUMNS, DefaultRiskModel
 
-        assert DefaultRiskModel is not None
         assert len(FEATURE_COLUMNS) > 0
 
     def test_load_file_not_found(self):
@@ -50,7 +49,7 @@ class TestDefaultRiskModel:
 
         mock_clf = _make_mock_classifier([0.42])
         model = DefaultRiskModel(model=mock_clf)
-        loan = {col: 1.0 for col in ALL_FEATURES}
+        loan = dict.fromkeys(ALL_FEATURES, 1.0)
 
         prob = model.predict_proba(loan)
 
@@ -63,7 +62,7 @@ class TestDefaultRiskModel:
 
         mock_clf = _make_mock_classifier([0.95])
         model = DefaultRiskModel(model=mock_clf)
-        loan = {col: 1.0 for col in ALL_FEATURES}
+        loan = dict.fromkeys(ALL_FEATURES, 1.0)
 
         prob = model.predict_proba(loan)
         assert isinstance(prob, float)
@@ -75,7 +74,7 @@ class TestDefaultRiskModel:
 
         mock_clf = _make_mock_classifier([0.01])
         model = DefaultRiskModel(model=mock_clf)
-        loan = {col: 1.0 for col in ALL_FEATURES}
+        loan = dict.fromkeys(ALL_FEATURES, 1.0)
 
         prob = model.predict_proba(loan)
         assert isinstance(prob, float)
@@ -86,7 +85,7 @@ class TestDefaultRiskModel:
         from backend.python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
         model = DefaultRiskModel(model=None)
-        loan = {col: 1.0 for col in ALL_FEATURES}
+        loan = dict.fromkeys(ALL_FEATURES, 1.0)
 
         with pytest.raises(RuntimeError, match="not trained or loaded"):
             model.predict_proba(loan)
@@ -97,7 +96,7 @@ class TestDefaultRiskModel:
 
         mock_clf = _make_mock_classifier([0.3, 0.7])
         model = DefaultRiskModel(model=mock_clf)
-        loans = [{col: 1.0 for col in ALL_FEATURES}, {col: 2.0 for col in ALL_FEATURES}]
+        loans = [dict.fromkeys(ALL_FEATURES, 1.0), dict.fromkeys(ALL_FEATURES, 2.0)]
 
         probs = model.predict_batch(loans)
         assert len(probs) == 2
@@ -140,8 +139,8 @@ class TestPredictionModels:
             interest_rate=12.5,
             term_months=24,
         )
-        assert req.loan_amount == 50000.0
-        assert req.ltv_ratio == 0.0  # default
+        assert req.loan_amount == pytest.approx(50000.0)
+        assert req.ltv_ratio == pytest.approx(0.0)  # default
 
     def test_response_model(self):
         from backend.python.apps.analytics.api.models import DefaultPredictionResponse
@@ -151,7 +150,7 @@ class TestPredictionModels:
             risk_level="medium",
             model_version="xgb_v1",
         )
-        assert resp.probability == 0.42
+        assert resp.probability == pytest.approx(0.42)
         assert resp.risk_level == "medium"
 
 
