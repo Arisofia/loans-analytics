@@ -1,10 +1,10 @@
-"""Tests for ScorecardModel — synthetic data matching Ábaco CSV schema.
+﻿"""Tests for ScorecardModel - synthetic data matching Abaco CSV schema.
 
 These tests validate the full pipeline without requiring real data:
   - Dataset construction from loan + payment + customer CSVs
   - WoE/IV computation and feature selection
   - Logistic regression training and cross-validation
-  - Score scaling (300–850)
+  - Score scaling (300-850)
   - Persistence (save/load roundtrip)
   - Single-loan inference
 
@@ -22,23 +22,21 @@ import numpy as np
 import pandas as pd
 import pytest
 
-# ── Synthetic data generators ────────────────────────────────────────────────
-
 INDUSTRIES = [
     "Comercio al por menor",
-    "Otras actividades especializadas de construcción",
+    "Otras actividades especializadas de construccion",
     "Transporte de carga",
-    "Servicios de alimentación",
+    "Servicios de alimentacion",
     "Manufactura textil",
-    "Agricultura y ganadería",
+    "Agricultura y ganaderia",
     "Servicios profesionales",
 ]
 
-LOAN_STATUSES = ["active", "closed", "defaulted", "active", "active", "closed"]  # weighted
+LOAN_STATUSES = ["active", "closed", "defaulted", "active", "active", "closed"]
 
 
 def make_loan_df(n: int = 800, n_defaults: int = 80, seed: int = 42) -> pd.DataFrame:
-    """Generate synthetic loan_data.csv with realistic Ábaco schema."""
+    """Generate synthetic loan_data.csv with realistic Abaco schema."""
     rng = random.Random(seed)
     np.random.seed(seed)
 
@@ -49,31 +47,35 @@ def make_loan_df(n: int = 800, n_defaults: int = 80, seed: int = 42) -> pd.DataF
         days_past_due = rng.randint(60, 365) if is_default else rng.randint(0, 15)
 
         principal = rng.uniform(5_000, 150_000)
-        outstanding = principal * rng.uniform(0.3, 0.95) if not is_default else principal * rng.uniform(0.6, 1.0)
+        if not is_default:
+            outstanding = principal * rng.uniform(0.3, 0.95)
+        else:
+            outstanding = principal * rng.uniform(0.6, 1.0)
         collateral = principal * rng.uniform(0.8, 2.5)
 
         disbursement_days_ago = rng.randint(90, 900)
         disbursement_date = pd.Timestamp.today() - pd.Timedelta(days=disbursement_days_ago)
 
-        records.append({
-            "loan_id": f"LN-{i+1:05d}",
-            "customer_id": f"CUST-{i+1:05d}",
-            "disbursement_date": disbursement_date.strftime("%Y-%m-%d"),
-            "principal_amount": round(principal, 2),
-            "outstanding_balance": round(outstanding, 2),
-            "collateral_value": round(collateral, 2),
-            "interest_rate": round(rng.uniform(0.12, 0.42), 4),
-            "term_months": rng.choice([6, 9, 12, 18, 24]),
-            "days_past_due": days_past_due,
-            "status": status,
-            "last_payment_amount": round(rng.uniform(500, 5_000), 2),
-            "total_scheduled": round(rng.uniform(1_000, 8_000), 2),
-            "tpv": round(rng.uniform(50_000, 2_000_000), 2),
-            "origination_fee": round(principal * rng.uniform(0.01, 0.03), 2),
-        })
+        records.append(
+            {
+                "loan_id": f"LN-{i + 1:05d}",
+                "customer_id": f"CUST-{i + 1:05d}",
+                "disbursement_date": disbursement_date.strftime("%Y-%m-%d"),
+                "principal_amount": round(principal, 2),
+                "outstanding_balance": round(outstanding, 2),
+                "collateral_value": round(collateral, 2),
+                "interest_rate": round(rng.uniform(0.12, 0.42), 4),
+                "term_months": rng.choice([6, 9, 12, 18, 24]),
+                "days_past_due": days_past_due,
+                "status": status,
+                "last_payment_amount": round(rng.uniform(500, 5_000), 2),
+                "total_scheduled": round(rng.uniform(1_000, 8_000), 2),
+                "tpv": round(rng.uniform(50_000, 2_000_000), 2),
+                "origination_fee": round(principal * rng.uniform(0.01, 0.03), 2),
+            }
+        )
 
     df = pd.DataFrame(records)
-    # Shuffle so defaults aren't all at top
     return df.sample(frac=1, random_state=seed).reset_index(drop=True)
 
 
@@ -89,7 +91,6 @@ def make_payment_df(loan_df: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
         disb_date = pd.Timestamp(loan["disbursement_date"])
 
         for p in range(n_payments):
-            # Defaulted loans have more late payments
             if is_defaulted:
                 is_late = rng.random() < 0.6
             else:
@@ -97,12 +98,14 @@ def make_payment_df(loan_df: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
 
             payment_date = disb_date + pd.Timedelta(days=30 * (p + 1) + rng.randint(-5, 30))
 
-            records.append({
-                "loan_id": loan["loan_id"],
-                "payment_date": payment_date.strftime("%Y-%m-%d"),
-                "amount": round(rng.uniform(500, 6_000), 2),
-                "status": "Late" if is_late else "On-time",
-            })
+            records.append(
+                {
+                    "loan_id": loan["loan_id"],
+                    "payment_date": payment_date.strftime("%Y-%m-%d"),
+                    "amount": round(rng.uniform(500, 6_000), 2),
+                    "status": "Late" if is_late else "On-time",
+                }
+            )
 
     return pd.DataFrame(records)
 
@@ -114,19 +117,18 @@ def make_customer_df(loan_df: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
 
     for _, loan in loan_df.iterrows():
         is_defaulted = loan["status"] == "defaulted"
-        # Defaulted customers tend to have lower Equifax scores
         equifax = rng.randint(300, 580) if is_defaulted else rng.randint(550, 820)
 
-        records.append({
-            "customer_id": loan["customer_id"],
-            "industry": rng.choice(INDUSTRIES),
-            "equifax_score": equifax,
-        })
+        records.append(
+            {
+                "customer_id": loan["customer_id"],
+                "industry": rng.choice(INDUSTRIES),
+                "equifax_score": equifax,
+            }
+        )
 
     return pd.DataFrame(records)
 
-
-# ── Fixtures ─────────────────────────────────────────────────────────────────
 
 @pytest.fixture(scope="module")
 def sample_data():
@@ -139,7 +141,7 @@ def sample_data():
 
 @pytest.fixture(scope="module")
 def trained_model(sample_data):
-    """Train a scorecard on synthetic data — shared across tests."""
+    """Train a scorecard on synthetic data - shared across tests."""
     from backend.python.models.scorecard_model import ScorecardModel
 
     loan_df, payment_df, customer_df = sample_data
@@ -148,35 +150,46 @@ def trained_model(sample_data):
     return model, metrics
 
 
-# ── Tests ─────────────────────────────────────────────────────────────────────
-
 class TestDatasetConstruction:
     def test_target_created(self, sample_data):
         from backend.python.models.scorecard_model import ScorecardModel
+
         loan_df, payment_df, customer_df = sample_data
-        df = ScorecardModel.build_model_dataset(loan_df.copy(), payment_df.copy(), customer_df.copy())
+        df = ScorecardModel.build_model_dataset(
+            loan_df.copy(), payment_df.copy(), customer_df.copy()
+        )
         assert "is_default" in df.columns
-        assert df["is_default"].sum() > 0, "No defaults found — check status mapping"
+        assert df["is_default"].sum() > 0, "No defaults found - check status mapping"
 
     def test_behavioral_features_created(self, sample_data):
         from backend.python.models.scorecard_model import ScorecardModel
+
         loan_df, payment_df, customer_df = sample_data
-        df = ScorecardModel.build_model_dataset(loan_df.copy(), payment_df.copy(), customer_df.copy())
+        df = ScorecardModel.build_model_dataset(
+            loan_df.copy(), payment_df.copy(), customer_df.copy()
+        )
         assert "n_late_payments" in df.columns, "Behavioral feature n_late_payments missing"
         assert "late_payment_rate" in df.columns
         assert "max_consecutive_late" in df.columns
 
     def test_customer_features_merged(self, sample_data):
         from backend.python.models.scorecard_model import ScorecardModel
+
         loan_df, payment_df, customer_df = sample_data
-        df = ScorecardModel.build_model_dataset(loan_df.copy(), payment_df.copy(), customer_df.copy())
-        assert "industry" in df.columns or "equifax_score" in df.columns, \
-            "Customer features not merged"
+        df = ScorecardModel.build_model_dataset(
+            loan_df.copy(), payment_df.copy(), customer_df.copy()
+        )
+        assert (
+            "industry" in df.columns or "equifax_score" in df.columns
+        ), "Customer features not merged"
 
     def test_ltv_ratio_computed(self, sample_data):
         from backend.python.models.scorecard_model import ScorecardModel
+
         loan_df, payment_df, customer_df = sample_data
-        df = ScorecardModel.build_model_dataset(loan_df.copy(), payment_df.copy(), customer_df.copy())
+        df = ScorecardModel.build_model_dataset(
+            loan_df.copy(), payment_df.copy(), customer_df.copy()
+        )
         if "ltv_ratio" in df.columns:
             assert df["ltv_ratio"].notna().sum() > 0
 
@@ -194,40 +207,36 @@ class TestIVComputation:
     def test_iv_sorted_descending(self, trained_model):
         model, _ = trained_model
         ivs = model.iv_table["iv"].values
-        assert all(ivs[i] >= ivs[i + 1] for i in range(len(ivs) - 1)), \
+        assert all(ivs[i] >= ivs[i + 1] for i in range(len(ivs) - 1)), (
             "IV table is not sorted descending"
+        )
 
     def test_behavioral_features_have_iv(self, trained_model):
         model, _ = trained_model
         feat_names = set(model.iv_table["feature"].tolist())
-        # At least one behavioral feature should appear in IV table
         behavioral = {"n_late_payments", "late_payment_rate", "max_consecutive_late"}
         overlap = feat_names & behavioral
-        assert len(overlap) > 0, \
-            f"No behavioral features in IV table. Found: {feat_names}"
+        assert len(overlap) > 0, f"No behavioral features in IV table. Found: {feat_names}"
 
 
 class TestModelTraining:
     def test_metrics_present(self, trained_model):
-        _, result = trained_model
-        metrics = result.get("metrics", {})
+        _, metrics = trained_model
         required = {"auc_roc", "gini_coefficient", "ks_statistic", "cv_auc_mean"}
         assert required.issubset(set(metrics.keys()))
 
     def test_auc_above_random(self, trained_model):
-        _, result = trained_model
-        metrics = result.get("metrics", {})
-        assert metrics["auc_roc"] > 0.5, \
+        _, metrics = trained_model
+        assert metrics["auc_roc"] > 0.5, (
             f"AUC {metrics['auc_roc']:.4f} is at or below random chance"
+        )
 
     def test_gini_positive(self, trained_model):
-        _, result = trained_model
-        metrics = result.get("metrics", {})
+        _, metrics = trained_model
         assert metrics["gini_coefficient"] > 0
 
     def test_ks_positive(self, trained_model):
-        _, result = trained_model
-        metrics = result.get("metrics", {})
+        _, metrics = trained_model
         assert metrics["ks_statistic"] > 0
 
     def test_features_selected(self, trained_model):
@@ -256,15 +265,18 @@ class TestScoreScaling:
         non_defaults_score = sd.get("non_defaults_mean_score", 0)
         assert defaults_score < non_defaults_score, (
             f"Defaults score ({defaults_score}) should be < non-defaults ({non_defaults_score}). "
-            "Score direction is inverted — check scaling logic."
+            "Score direction is inverted - check scaling logic."
         )
 
     def test_single_loan_score_in_range(self, trained_model, sample_data):
+        from backend.python.models.scorecard_model import ScorecardModel
+
         model, _ = trained_model
         loan_df, payment_df, customer_df = sample_data
 
-        # Build a sample loan feature dict from the first loan
-        df = ScorecardModel.build_model_dataset(loan_df.copy(), payment_df.copy(), customer_df.copy())
+        df = ScorecardModel.build_model_dataset(
+            loan_df.copy(), payment_df.copy(), customer_df.copy()
+        )
         first_loan = df.iloc[0].to_dict()
 
         score = model.predict_score(first_loan)
@@ -272,6 +284,7 @@ class TestScoreScaling:
 
     def test_single_loan_pd_in_range(self, trained_model, sample_data):
         from backend.python.models.scorecard_model import ScorecardModel as SC
+
         model, _ = trained_model
         loan_df, payment_df, customer_df = sample_data
         df = SC.build_model_dataset(loan_df.copy(), payment_df.copy(), customer_df.copy())
@@ -283,15 +296,20 @@ class TestScoreScaling:
 class TestPersistence:
     def test_save_and_load_roundtrip(self, trained_model, sample_data, tmp_path):
         from backend.python.models.scorecard_model import ScorecardModel as SC
+
         model, _ = trained_model
         loan_df, payment_df, customer_df = sample_data
 
         save_dir = str(tmp_path / "scorecard_test")
         model.save(save_dir)
 
-        # Verify all expected files exist
-        for fname in ["lr_model.pkl", "binning_map.pkl", "iv_table.csv",
-                      "scorecard_table.csv", "metadata.json"]:
+        for fname in [
+            "lr_model.pkl",
+            "binning_map.pkl",
+            "iv_table.csv",
+            "scorecard_table.csv",
+            "metadata.json",
+        ]:
             assert (Path(save_dir) / fname).exists(), f"{fname} not saved"
 
         loaded = SC.load(save_dir)
@@ -302,6 +320,7 @@ class TestPersistence:
 
     def test_loaded_model_produces_same_score(self, trained_model, sample_data, tmp_path):
         from backend.python.models.scorecard_model import ScorecardModel as SC
+
         model, _ = trained_model
         loan_df, payment_df, customer_df = sample_data
 
@@ -315,16 +334,17 @@ class TestPersistence:
         loaded = SC.load(save_dir)
         loaded_score = loaded.predict_score(test_loan)
 
-        assert original_score == loaded_score, \
+        assert original_score == loaded_score, (
             f"Score mismatch after load: {original_score} vs {loaded_score}"
+        )
 
     def test_metadata_json_valid(self, trained_model, tmp_path):
         model, _ = trained_model
         save_dir = str(tmp_path / "meta_test")
         model.save(save_dir)
 
-        with open(Path(save_dir) / "metadata.json") as f:
-            meta = json.load(f)
+        with open(Path(save_dir) / "metadata.json", encoding="utf-8") as handle:
+            meta = json.load(handle)
 
         assert "model_type" in meta
         assert "metrics" in meta
@@ -332,11 +352,10 @@ class TestPersistence:
         assert meta["metrics"]["auc_roc"] > 0
 
 
-# ── Import guard ──────────────────────────────────────────────────────────────
-# Needed for the fixture type hint in test_single_loan_pd_in_range
 from backend.python.models.scorecard_model import ScorecardModel  # noqa: E402
 
 
 if __name__ == "__main__":
     import pytest as pt
+
     pt.main([__file__, "-v"])
