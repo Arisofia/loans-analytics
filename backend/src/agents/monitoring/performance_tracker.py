@@ -1,10 +1,4 @@
-"""Performance tracking for multi-agent system.
-
-Tracks latency, success rates, and system health metrics.
-"""
-
 from __future__ import annotations
-
 import json
 import math
 import statistics
@@ -15,11 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-
 @dataclass
 class PerformanceMetric:
-    """Performance metric for a single operation."""
-
     operation_name: str
     duration_ms: float
     success: bool
@@ -28,22 +19,11 @@ class PerformanceMetric:
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary."""
-        return {
-            "operation_name": self.operation_name,
-            "duration_ms": self.duration_ms,
-            "success": self.success,
-            "agent_name": self.agent_name,
-            "scenario_name": self.scenario_name,
-            "timestamp": self.timestamp,
-        }
-
+        return {'operation_name': self.operation_name, 'duration_ms': self.duration_ms, 'success': self.success, 'agent_name': self.agent_name, 'scenario_name': self.scenario_name, 'timestamp': self.timestamp}
 
 class PerformanceTracker:
-    """Track performance metrics for multi-agent system."""
 
     def __init__(self):
-        """Initialize performance tracker."""
         self._lock = threading.RLock()
         self.metrics: List[PerformanceMetric] = []
         self.scenario_metrics: Dict[str, List[PerformanceMetric]] = defaultdict(list)
@@ -51,84 +31,38 @@ class PerformanceTracker:
 
     @staticmethod
     def _validate_name(name: str, field_name: str) -> None:
-        """Validate a name-like argument."""
         if not isinstance(name, str) or not name.strip():
-            raise ValueError(f"{field_name} must be a non-empty string")
+            raise ValueError(f'{field_name} must be a non-empty string')
 
     @staticmethod
     def _validate_duration(duration_ms: float) -> None:
-        """Validate duration value."""
         if not isinstance(duration_ms, (int, float)) or not math.isfinite(duration_ms):
-            raise ValueError("duration_ms must be a finite number")
+            raise ValueError('duration_ms must be a finite number')
         if duration_ms < 0:
-            raise ValueError("duration_ms must be non-negative")
+            raise ValueError('duration_ms must be non-negative')
 
     @staticmethod
     def _validate_count(name: str, value: int) -> None:
-        """Validate a non-negative count argument."""
         if not isinstance(value, int):
-            raise ValueError(f"{name} must be an integer")
+            raise ValueError(f'{name} must be an integer')
         if value < 0:
-            raise ValueError(f"{name} must be non-negative")
+            raise ValueError(f'{name} must be non-negative')
 
-    def track_scenario_latency(
-        self,
-        scenario_name: str,
-        duration_ms: float,
-        success: bool = True,
-    ) -> PerformanceMetric:
-        """Track latency for a scenario.
-
-        Args:
-            scenario_name: Name of the scenario
-            duration_ms: Duration in milliseconds
-            success: Whether the scenario succeeded
-
-        Returns:
-            PerformanceMetric object
-        """
-        self._validate_name(scenario_name, "scenario_name")
+    def track_scenario_latency(self, scenario_name: str, duration_ms: float, success: bool=True) -> PerformanceMetric:
+        self._validate_name(scenario_name, 'scenario_name')
         self._validate_duration(duration_ms)
-        metric = PerformanceMetric(
-            operation_name=scenario_name,
-            duration_ms=duration_ms,
-            success=success,
-            scenario_name=scenario_name,
-        )
+        metric = PerformanceMetric(operation_name=scenario_name, duration_ms=duration_ms, success=success, scenario_name=scenario_name)
         with self._lock:
             self.metrics.append(metric)
             self.scenario_metrics[scenario_name].append(metric)
         return metric
 
-    def track_agent_latency(
-        self,
-        agent_name: str,
-        duration_ms: float,
-        success: bool = True,
-        scenario_name: Optional[str] = None,
-    ) -> PerformanceMetric:
-        """Track latency for an agent.
-
-        Args:
-            agent_name: Name of the agent
-            duration_ms: Duration in milliseconds
-            success: Whether the operation succeeded
-            scenario_name: Optional scenario name
-
-        Returns:
-            PerformanceMetric object
-        """
-        self._validate_name(agent_name, "agent_name")
+    def track_agent_latency(self, agent_name: str, duration_ms: float, success: bool=True, scenario_name: Optional[str]=None) -> PerformanceMetric:
+        self._validate_name(agent_name, 'agent_name')
         self._validate_duration(duration_ms)
         if scenario_name is not None:
-            self._validate_name(scenario_name, "scenario_name")
-        metric = PerformanceMetric(
-            operation_name=f"{agent_name}_execution",
-            duration_ms=duration_ms,
-            success=success,
-            agent_name=agent_name,
-            scenario_name=scenario_name,
-        )
+            self._validate_name(scenario_name, 'scenario_name')
+        metric = PerformanceMetric(operation_name=f'{agent_name}_execution', duration_ms=duration_ms, success=success, agent_name=agent_name, scenario_name=scenario_name)
         with self._lock:
             self.metrics.append(metric)
             self.agent_metrics[agent_name].append(metric)
@@ -136,177 +70,60 @@ class PerformanceTracker:
                 self.scenario_metrics[scenario_name].append(metric)
         return metric
 
-    def track_success_rate(
-        self,
-        scenario_name: str,
-        successes: int,
-        failures: int,
-    ) -> Dict[str, Any]:
-        """Track success/failure ratio for a scenario.
-
-        Args:
-            scenario_name: Name of the scenario
-            successes: Number of successful executions
-            failures: Number of failed executions
-
-        Returns:
-            Dictionary with success rate metrics
-        """
-        self._validate_name(scenario_name, "scenario_name")
-        self._validate_count("successes", successes)
-        self._validate_count("failures", failures)
+    def track_success_rate(self, scenario_name: str, successes: int, failures: int) -> Dict[str, Any]:
+        self._validate_name(scenario_name, 'scenario_name')
+        self._validate_count('successes', successes)
+        self._validate_count('failures', failures)
         total = successes + failures
         success_rate = successes / total if total > 0 else 0.0
+        return {'scenario_name': scenario_name, 'successes': successes, 'failures': failures, 'total': total, 'success_rate': round(success_rate * 100, 2)}
 
-        return {
-            "scenario_name": scenario_name,
-            "successes": successes,
-            "failures": failures,
-            "total": total,
-            "success_rate": round(success_rate * 100, 2),
-        }
-
-    def get_latency_percentiles(
-        self,
-        metrics: List[PerformanceMetric],
-    ) -> Dict[str, float]:
-        """Calculate p50, p95, p99 latency from metrics.
-
-        Args:
-            metrics: List of performance metrics
-
-        Returns:
-            Dictionary with percentile values
-        """
+    def get_latency_percentiles(self, metrics: List[PerformanceMetric]) -> Dict[str, float]:
         if not metrics:
-            return {"p50": 0.0, "p95": 0.0, "p99": 0.0, "avg": 0.0, "min": 0.0, "max": 0.0}
-
+            return {'p50': 0.0, 'p95': 0.0, 'p99': 0.0, 'avg': 0.0, 'min': 0.0, 'max': 0.0}
         durations = [m.duration_ms for m in metrics]
         durations.sort()
+        return {'p50': round(statistics.median(durations), 2), 'p95': round(self._percentile(durations, 0.95), 2), 'p99': round(self._percentile(durations, 0.99), 2), 'avg': round(statistics.mean(durations), 2), 'min': round(min(durations), 2), 'max': round(max(durations), 2)}
 
-        return {
-            "p50": round(statistics.median(durations), 2),
-            "p95": round(self._percentile(durations, 0.95), 2),
-            "p99": round(self._percentile(durations, 0.99), 2),
-            "avg": round(statistics.mean(durations), 2),
-            "min": round(min(durations), 2),
-            "max": round(max(durations), 2),
-        }
-
-    def get_scenario_performance(
-        self,
-        scenario_name: str,
-    ) -> Dict[str, Any]:
-        """Get performance statistics for a scenario.
-
-        Args:
-            scenario_name: Name of the scenario
-
-        Returns:
-            Dictionary with performance statistics
-        """
-        self._validate_name(scenario_name, "scenario_name")
+    def get_scenario_performance(self, scenario_name: str) -> Dict[str, Any]:
+        self._validate_name(scenario_name, 'scenario_name')
         with self._lock:
             metrics = list(self.scenario_metrics.get(scenario_name, []))
         if not metrics:
-            return {
-                "scenario_name": scenario_name,
-                "total_executions": 0,
-                "success_rate": 0.0,
-                "latency": {},
-            }
-
-        successes = sum(m.success for m in metrics)
+            return {'scenario_name': scenario_name, 'total_executions': 0, 'success_rate': 0.0, 'latency': {}}
+        successes = sum((m.success for m in metrics))
         failures = len(metrics) - successes
         success_rate = successes / len(metrics) if metrics else 0.0
+        return {'scenario_name': scenario_name, 'total_executions': len(metrics), 'successes': successes, 'failures': failures, 'success_rate': round(success_rate * 100, 2), 'latency': self.get_latency_percentiles(metrics)}
 
-        return {
-            "scenario_name": scenario_name,
-            "total_executions": len(metrics),
-            "successes": successes,
-            "failures": failures,
-            "success_rate": round(success_rate * 100, 2),
-            "latency": self.get_latency_percentiles(metrics),
-        }
-
-    def get_agent_performance(
-        self,
-        agent_name: str,
-    ) -> Dict[str, Any]:
-        """Get performance statistics for an agent.
-
-        Args:
-            agent_name: Name of the agent
-
-        Returns:
-            Dictionary with performance statistics
-        """
-        self._validate_name(agent_name, "agent_name")
+    def get_agent_performance(self, agent_name: str) -> Dict[str, Any]:
+        self._validate_name(agent_name, 'agent_name')
         with self._lock:
             metrics = list(self.agent_metrics.get(agent_name, []))
         if not metrics:
-            return {
-                "agent_name": agent_name,
-                "total_executions": 0,
-                "success_rate": 0.0,
-                "latency": {},
-            }
-
-        successes = sum(m.success for m in metrics)
+            return {'agent_name': agent_name, 'total_executions': 0, 'success_rate': 0.0, 'latency': {}}
+        successes = sum((m.success for m in metrics))
         failures = len(metrics) - successes
         success_rate = successes / len(metrics) if metrics else 0.0
+        return {'agent_name': agent_name, 'total_executions': len(metrics), 'successes': successes, 'failures': failures, 'success_rate': round(success_rate * 100, 2), 'latency': self.get_latency_percentiles(metrics)}
 
-        return {
-            "agent_name": agent_name,
-            "total_executions": len(metrics),
-            "successes": successes,
-            "failures": failures,
-            "success_rate": round(success_rate * 100, 2),
-            "latency": self.get_latency_percentiles(metrics),
-        }
-
-    def get_performance_report(
-        self,
-        time_window: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """Generate comprehensive performance report.
-
-        Args:
-            time_window: Optional time window (not yet implemented)
-
-        Returns:
-            Dictionary with performance report
-        """
-        # Reserved for future filtering without breaking public API.
+    def get_performance_report(self, time_window: Optional[str]=None) -> Dict[str, Any]:
         _ = time_window
         with self._lock:
             scenario_names = list(self.scenario_metrics.keys())
             agent_names = list(self.agent_metrics.keys())
             total_operations = len(self.metrics)
-
         scenarios = {name: self.get_scenario_performance(name) for name in scenario_names}
         agents = {name: self.get_agent_performance(name) for name in agent_names}
-
-        return {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "total_operations": total_operations,
-            "scenarios": scenarios,
-            "agents": agents,
-        }
+        return {'timestamp': datetime.now(timezone.utc).isoformat(), 'total_operations': total_operations, 'scenarios': scenarios, 'agents': agents}
 
     def save_report(self, output_path: str) -> None:
-        """Save performance report to JSON file.
-
-        Args:
-            output_path: Path to save the report
-        """
         report = self.get_performance_report()
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as f:
+        with open(output_path, 'w') as f:
             json.dump(report, f, indent=2)
 
     def _percentile(self, data: List[float], percentile: float) -> float:
-        """Calculate percentile value from sorted data."""
         if not data:
             return 0.0
         k = (len(data) - 1) * percentile

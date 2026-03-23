@@ -4,66 +4,50 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
-
 from backend.python.kpis.ltv import calculate_ltv_sintetico
 from backend.python.kpis.engine import KPIEngineV2
 from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
-
-# Optional heavy ML dependencies — degrade gracefully when absent
 try:
     import umap
-
     _UMAP_AVAILABLE = True
-except ImportError:  # pragma: no cover
+except ImportError:
     _UMAP_AVAILABLE = False
-
 try:
     import hdbscan as hdbscan_module
-
     _HDBSCAN_AVAILABLE = True
-except ImportError:  # pragma: no cover
+except ImportError:
     _HDBSCAN_AVAILABLE = False
 
-
 def _quartile_fallback_labels(x_fallback: np.ndarray, metrics: Dict[str, Any]) -> np.ndarray:
-    """Assign cluster labels via PC1 quartile split when HDBSCAN is unavailable."""
-    logger.info("HDBSCAN not available — using quartile-based fallback labels.")
+    logger.info('HDBSCAN not available — using quartile-based fallback labels.')
     n = x_fallback.shape[0]
     labels = np.zeros(n, dtype=int)
     quartiles = np.percentile(x_fallback[:, 0], [25, 50, 75])
     for i, q in enumerate(quartiles, start=1):
         labels[x_fallback[:, 0] > q] = i
-    metrics["hdbscan_fallback"] = "pc1_quartile_split"
+    metrics['hdbscan_fallback'] = 'pc1_quartile_split'
     return labels
 
-
 def _compute_cluster_profile(cluster_rows: pd.DataFrame) -> tuple[Dict[str, Any], float]:
-    """Return centroid details and a composite risk score for one cohort cluster."""
     centroid: Dict[str, Any] = {}
     risk_dims: List[float] = []
     for feat in _COHORT_FEATURE_COLS:
         if feat not in cluster_rows.columns:
             continue
-        vals = pd.to_numeric(cluster_rows[feat], errors="coerce").dropna()
+        vals = pd.to_numeric(cluster_rows[feat], errors='coerce').dropna()
         if vals.empty:
             continue
         mean_val = float(vals.mean())
         centroid[feat] = round(mean_val, 6)
-        risk_dims.append(-mean_val if feat == "ratio_pago_real" else mean_val)
+        risk_dims.append(-mean_val if feat == 'ratio_pago_real' else mean_val)
     risk_score = float(np.mean(risk_dims)) if risk_dims else 0.0
-    return centroid, risk_score
+    return (centroid, risk_score)
 
-
-def _assign_cluster_cohorts(
-    risk_scores: Dict[int, float],
-    centroids: Dict[int, Dict[str, Any]],
-) -> Dict[int, str]:
-    """Assign ordered Alfa/Beta/Gamma/Delta cohort labels from cluster risk scores."""
+def _assign_cluster_cohorts(risk_scores: Dict[int, float], centroids: Dict[int, Dict[str, Any]]) -> Dict[int, str]:
     sorted_clusters = sorted(risk_scores.keys(), key=lambda cluster_id: risk_scores[cluster_id])
     cohort_map: Dict[int, str] = {}
     n_labels = len(_COHORT_LABELS)
@@ -71,868 +55,389 @@ def _assign_cluster_cohorts(
         label_idx = min(rank * n_labels // max(len(sorted_clusters), 1), n_labels - 1)
         cohort_name = _COHORT_LABELS[label_idx]
         cohort_map[cluster_id] = cohort_name
-        centroids[cluster_id]["cohort"] = cohort_name
-        centroids[cluster_id]["composite_risk_score"] = round(risk_scores[cluster_id], 6)
+        centroids[cluster_id]['cohort'] = cohort_name
+        centroids[cluster_id]['composite_risk_score'] = round(risk_scores[cluster_id], 6)
     return cohort_map
-
-
-__all__ = ["CalculationPhase"]
-
+__all__ = ['CalculationPhase']
 logger = logging.getLogger(__name__)
-
-# Cohort labels ordered from lowest-risk to highest-risk
-_COHORT_LABELS = ["Alfa", "Beta", "Gamma", "Delta"]
-
-# Feature columns used for multidimensional cohort assignment.
-# The ordering matters: features earlier in this list contribute to the
-# centroid comparison when later features are absent.
-_COHORT_FEATURE_COLS = [
-    "ltv_sintetico",
-    "dpd_adjusted",
-    "vd_bps_month",
-    "ratio_pago_real",
-]
-
+_COHORT_LABELS = ['Alfa', 'Beta', 'Gamma', 'Delta']
+_COHORT_FEATURE_COLS = ['ltv_sintetico', 'dpd_adjusted', 'vd_bps_month', 'ratio_pago_real']
 
 class CalculationPhase:
-    """Pipeline phase for computing KPIs, segments, and time-series data.
-
-    This phase serves as the primary orchestrator for the unified KPI engine (V2),
-    handling data preparation, multi-dimensional segmentation, anomaly detection,
-    and lineage manifest generation.
-    """
 
     def __init__(self, config: Dict[str, Any], kpi_definitions: Dict[str, Any]):
-        """Initialize with pipeline configuration and KPI formula definitions.
-
-        Args:
-            config: Calculation phase configuration from pipeline.yml
-            kpi_definitions: KPI formula definitions from kpi_definitions.yaml
-        """
         self.config = config
         self.kpi_definitions = kpi_definitions
-        # KPIEngineV2 is the Single Source of Truth for all metric logic
         self.engine = KPIEngineV2(kpi_definitions=kpi_definitions)
 
     @staticmethod
     def _log_and_raise_critical_error(error_msg: str) -> None:
-        """Log an error and raise ValueError for critical failures.
-
-        Args:
-            error_msg: The error message to log and include in the exception.
-
-        Raises:
-            ValueError: Always raised with the provided error message.
-        """
         logger.error(error_msg)
         raise ValueError(error_msg)
 
-    def execute(
-        self,
-        clean_data_path: Optional[Path] = None,
-        df: Optional[pd.DataFrame] = None,
-    ) -> Dict[str, Any]:
-        """Execute the calculation phase.
-
-        Loads cleaned data, runs the full calculation suite (KPIs, segments,
-        time-series, anomalies, clustering), and returns results.
-
-        Args:
-            clean_data_path: Path to clean_data.parquet from Phase 2
-            df: DataFrame (if already loaded; takes precedence over clean_data_path)
-
-        Returns:
-            Results dict with keys: status, kpis, kpi_engine, segment_kpis,
-            time_series, anomalies, clustering_metrics, manifest
-        """
+    def execute(self, clean_data_path: Optional[Path]=None, df: Optional[pd.DataFrame]=None) -> Dict[str, Any]:
         if df is None:
             if clean_data_path and Path(clean_data_path).exists():
                 df = pd.read_parquet(clean_data_path)
             else:
-                raise ValueError(
-                    "CRITICAL: CalculationPhase.execute requires either a DataFrame "
-                    "or a valid clean_data_path."
-                )
-
+                raise ValueError('CRITICAL: CalculationPhase.execute requires either a DataFrame or a valid clean_data_path.')
         results = self.process(df)
-        results["status"] = "success"
-        results["kpi_engine"] = self.engine
+        results['status'] = 'success'
+        results['kpi_engine'] = self.engine
         return results
 
     def process(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Orchestrate the full calculation suite.
-
-        Args:
-            df: Input dataframe (homologated and cleaned).
-
-        Returns:
-            Dictionary containing unified KPIs, segments, time-series,
-            anomalies, clustering_metrics, and manifest.
-
-        Raises:
-            ValueError: If critical calculation failures occur.
-        """
         if df.empty:
-            error_msg = "CRITICAL: EMPTY DATAFRAME PROVIDED TO CALCULATIONPHASE"
+            error_msg = 'CRITICAL: EMPTY DATAFRAME PROVIDED TO CALCULATIONPHASE'
             self._log_and_raise_critical_error(error_msg)
-
         try:
             kpi_results = self._run_unified_kpi_calculation(df)
             segments = self._calculate_segment_kpis(df)
-
-            # 3. Time-series rollups (Daily, Weekly, Monthly)
             time_series = self._calculate_time_series(df)
-
-            # 3.1. NSM recurrent TPV payload for downstream output/API consumers
             client_tpv_timeseries = self._build_client_tpv_timeseries(df)
             nsm_recurrent_tpv = self._calculate_recurrent_tpv(client_tpv_timeseries)
-
-            # 3.5. Advanced Clustering — PCA → UMAP → HDBSCAN
-            # Runs before Phase 4 (Output) so clustering_metrics are
-            # available for the structured audit_metadata.json export.
             clustering_metrics = self._run_advanced_clustering(df)
-
-            # 4. Anomaly Detection (Threshold-based monitoring)
             anomalies = self._detect_anomalies(kpi_results)
-
-            # 5. Manifest generation (Traceability and Metadata)
             manifest = self._generate_manifest(kpi_results, df)
-
-            return {
-                "kpis": kpi_results,
-                "segments": segments,
-                "segment_kpis": segments,
-                "time_series": time_series,
-                "nsm_recurrent_tpv": nsm_recurrent_tpv,
-                "anomalies": anomalies,
-                "clustering_metrics": clustering_metrics,
-                "manifest": manifest,
-            }
-
+            return {'kpis': kpi_results, 'segments': segments, 'segment_kpis': segments, 'time_series': time_series, 'nsm_recurrent_tpv': nsm_recurrent_tpv, 'anomalies': anomalies, 'clustering_metrics': clustering_metrics, 'manifest': manifest}
         except Exception as e:
-            logger.error("CalculationPhase failure: %s", e, exc_info=True)
-            # Fail-fast mandate: do not return partial/silent failures
-            raise ValueError(f"CRITICAL: KPI calculation pipeline failed: {e}") from e
+            logger.error('CalculationPhase failure: %s', e, exc_info=True)
+            raise ValueError(f'CRITICAL: KPI calculation pipeline failed: {e}') from e
 
     def _calculate_time_series(self, df: pd.DataFrame) -> Dict[str, List]:
-        """Calculate time-series rollups."""
-        logger.info("Calculating time-series rollups")
+        logger.info('Calculating time-series rollups')
         result = self._empty_time_series_result()
         date_columns = self._find_date_columns(df)
-
         if not date_columns:
-            logger.debug("No date columns found for time-series analysis")
+            logger.debug('No date columns found for time-series analysis')
             return result
-
         date_col = date_columns[0]
         df_ts = self._prepare_time_series_dataframe(df, date_col)
-
         if df_ts.empty:
             return result
-
         numeric_cols = self._get_time_series_numeric_columns(df_ts)
         if not numeric_cols:
             return result
-
-        result["daily"] = self._rollup_sum(df_ts, date_col, numeric_cols, "daily", 30)
-        result["weekly"] = self._rollup_sum(df_ts, date_col, numeric_cols, "weekly", 12)
-        result["monthly"] = self._rollup_sum(df_ts, date_col, numeric_cols, "monthly", 12)
-
-        logger.info(
-            "Time-series calculated: %d daily, %d weekly, %d monthly",
-            len(result["daily"]),
-            len(result["weekly"]),
-            len(result["monthly"]),
-        )
+        result['daily'] = self._rollup_sum(df_ts, date_col, numeric_cols, 'daily', 30)
+        result['weekly'] = self._rollup_sum(df_ts, date_col, numeric_cols, 'weekly', 12)
+        result['monthly'] = self._rollup_sum(df_ts, date_col, numeric_cols, 'monthly', 12)
+        logger.info('Time-series calculated: %d daily, %d weekly, %d monthly', len(result['daily']), len(result['weekly']), len(result['monthly']))
         return result
 
     @staticmethod
     def _empty_time_series_result() -> Dict[str, List[Dict[str, Any]]]:
-        """Return empty result structure for time-series rollups."""
-        return {"daily": [], "weekly": [], "monthly": []}
+        return {'daily': [], 'weekly': [], 'monthly': []}
 
     def _find_date_columns(self, df: pd.DataFrame) -> List[str]:
-        """Find columns that can be interpreted as dates.
-
-        Columns are first filtered by name heuristics (suffix ``_date``, ``_at``,
-        ``_ts``, ``date_``, ``fecha``) to avoid expensive datetime-parse attempts on
-        unrelated string columns such as borrower names or industry codes.
-        """
-        _KNOWN_DATE_COLS = frozenset(
-            {
-                "disbursement_date",
-                "origination_date",
-                "due_date",
-                "payment_date",
-                "measurement_date",
-                "approved_at",
-                "funded_at",
-                "created_at",
-                "updated_at",
-            }
-        )
-        date_name_pattern = re.compile(r"(^date|_date$|_at$|_ts$|^fecha|_fecha$)", re.IGNORECASE)
+        _KNOWN_DATE_COLS = frozenset({'disbursement_date', 'origination_date', 'due_date', 'payment_date', 'measurement_date', 'approved_at', 'funded_at', 'created_at', 'updated_at'})
+        date_name_pattern = re.compile('(^date|_date$|_at$|_ts$|^fecha|_fecha$)', re.IGNORECASE)
         date_columns: List[str] = []
         for col in df.columns:
             dtype = df[col].dtype
             dtype_str = str(dtype)
-            is_datetime = dtype_str.startswith("datetime64")
-            # Handle: "object" (pandas ≤2.x default), "str" (pandas 3.0 default StringDtype),
-            # "string" / "string[pyarrow]" (explicit pd.StringDtype variants).
-            is_string = dtype_str in {"object", "str"} or dtype_str.startswith("string")
-            if not is_datetime and not is_string:
+            is_datetime = dtype_str.startswith('datetime64')
+            is_string = dtype_str in {'object', 'str'} or dtype_str.startswith('string')
+            if not is_datetime and (not is_string):
                 continue
-            # Already typed as datetime — include directly
             if is_datetime:
                 date_columns.append(col)
                 continue
-            # For object/string columns, apply name heuristics before expensive parsing
-            if col not in _KNOWN_DATE_COLS and not date_name_pattern.search(col):
+            if col not in _KNOWN_DATE_COLS and (not date_name_pattern.search(col)):
                 continue
             try:
-                parsed = pd.to_datetime(df[col], errors="coerce", format="mixed")
+                parsed = pd.to_datetime(df[col], errors='coerce', format='mixed')
                 if parsed.notna().any():
                     date_columns.append(col)
             except Exception as exc:
-                logger.debug("Skipping non-date column %s: %s", col, exc)
+                logger.debug('Skipping non-date column %s: %s', col, exc)
         return date_columns
 
     @staticmethod
     def _prepare_time_series_dataframe(df: pd.DataFrame, date_col: str) -> pd.DataFrame:
-        """Create clean dataframe with a parsed non-null date column."""
         df_ts = df.copy()
-        df_ts[date_col] = pd.to_datetime(df_ts[date_col], errors="coerce", format="mixed")
+        df_ts[date_col] = pd.to_datetime(df_ts[date_col], errors='coerce', format='mixed')
         return df_ts.dropna(subset=[date_col])
 
     @staticmethod
     def _get_time_series_numeric_columns(df_ts: pd.DataFrame) -> List[str]:
-        """Get numeric columns for rollups with fallback to amount."""
-        if numeric_cols := df_ts.select_dtypes(include=[np.number]).columns.tolist():
+        if (numeric_cols := df_ts.select_dtypes(include=[np.number]).columns.tolist()):
             return numeric_cols
-        return ["amount"] if "amount" in df_ts.columns else []
+        return ['amount'] if 'amount' in df_ts.columns else []
 
     @staticmethod
     def _build_client_tpv_timeseries(df: pd.DataFrame) -> pd.DataFrame:
-        """Build monthly TPV per client for recurrent TPV analysis."""
-        empty = pd.DataFrame(columns=["period", "client_id", "tpv"])
+        empty = pd.DataFrame(columns=['period', 'client_id', 'tpv'])
         if df.empty:
             return empty
-
-        client_col = next((col for col in ("client_id", "borrower_id") if col in df.columns), None)
-        date_col = next(
-            (col for col in ("origination_date", "FechaDesembolso") if col in df.columns), None
-        )
-        amount_col = next(
-            (col for col in ("amount", "MontoDesembolsado") if col in df.columns), None
-        )
-
-        if not client_col or not date_col or not amount_col:
+        client_col = next((col for col in ('client_id', 'borrower_id') if col in df.columns), None)
+        date_col = next((col for col in ('origination_date', 'FechaDesembolso') if col in df.columns), None)
+        amount_col = next((col for col in ('amount', 'MontoDesembolsado') if col in df.columns), None)
+        if not client_col or not date_col or (not amount_col):
             return empty
-
         work = df[[client_col, date_col, amount_col]].copy()
-        work["_date"] = pd.to_datetime(work[date_col], errors="coerce")
-        work = work.dropna(subset=["_date"])
+        work['_date'] = pd.to_datetime(work[date_col], errors='coerce')
+        work = work.dropna(subset=['_date'])
         if work.empty:
             return empty
-
-        work["period"] = work["_date"].dt.to_period("M").astype(str)
-        work["tpv"] = pd.to_numeric(work[amount_col], errors="coerce").fillna(0.0)
-        work = work.rename(columns={client_col: "client_id"})
-
-        result = work.groupby(["period", "client_id"], as_index=False)["tpv"].sum()
-        return result[["period", "client_id", "tpv"]]
+        work['period'] = work['_date'].dt.to_period('M').astype(str)
+        work['tpv'] = pd.to_numeric(work[amount_col], errors='coerce').fillna(0.0)
+        work = work.rename(columns={client_col: 'client_id'})
+        result = work.groupby(['period', 'client_id'], as_index=False)['tpv'].sum()
+        return result[['period', 'client_id', 'tpv']]
 
     @staticmethod
     def _calculate_recurrent_tpv(timeseries: pd.DataFrame) -> Dict[str, Any]:
-        """Classify period TPV into new, recurrent and recovered cohorts."""
-        if timeseries.empty or "period" not in timeseries.columns:
+        if timeseries.empty or 'period' not in timeseries.columns:
             return {}
-
-        periods = sorted(timeseries["period"].dropna().unique().tolist())
+        periods = sorted(timeseries['period'].dropna().unique().tolist())
         if not periods:
             return {}
-
         by_period: Dict[str, Dict[str, Any]] = {}
         ever_seen: set[str] = set()
         prev_active: set[str] = set()
-
         for period in periods:
-            period_df = timeseries[timeseries["period"] == period].copy()
+            period_df = timeseries[timeseries['period'] == period].copy()
             if period_df.empty:
                 continue
-
-            period_df["tpv"] = pd.to_numeric(period_df["tpv"], errors="coerce").fillna(0.0)
-            current_clients = set(period_df["client_id"].dropna().astype(str).unique().tolist())
-
+            period_df['tpv'] = pd.to_numeric(period_df['tpv'], errors='coerce').fillna(0.0)
+            current_clients = set(period_df['client_id'].dropna().astype(str).unique().tolist())
             new_clients = current_clients - ever_seen
             recurrent_clients = current_clients & prev_active
-            recovered_clients = (current_clients - prev_active) - new_clients
-
-            tpv_by_client = period_df.groupby("client_id", dropna=False)["tpv"].sum().to_dict()
-            tpv_new = round(sum(float(tpv_by_client.get(client, 0.0)) for client in new_clients), 2)
-            tpv_recurrent = round(
-                sum(float(tpv_by_client.get(client, 0.0)) for client in recurrent_clients),
-                2,
-            )
-            tpv_recovered = round(
-                sum(float(tpv_by_client.get(client, 0.0)) for client in recovered_clients),
-                2,
-            )
-            tpv_total = round(float(period_df["tpv"].sum()), 2)
-
-            by_period[period] = {
-                "tpv_total": tpv_total,
-                "tpv_new": tpv_new,
-                "tpv_recurrent": tpv_recurrent,
-                "tpv_recovered": tpv_recovered,
-                "active_clients": len(current_clients),
-                "new_clients": len(new_clients),
-                "recurrent_clients": len(recurrent_clients),
-                "recovered_clients": len(recovered_clients),
-            }
-
+            recovered_clients = current_clients - prev_active - new_clients
+            tpv_by_client = period_df.groupby('client_id', dropna=False)['tpv'].sum().to_dict()
+            tpv_new = round(sum((float(tpv_by_client.get(client, 0.0)) for client in new_clients)), 2)
+            tpv_recurrent = round(sum((float(tpv_by_client.get(client, 0.0)) for client in recurrent_clients)), 2)
+            tpv_recovered = round(sum((float(tpv_by_client.get(client, 0.0)) for client in recovered_clients)), 2)
+            tpv_total = round(float(period_df['tpv'].sum()), 2)
+            by_period[period] = {'tpv_total': tpv_total, 'tpv_new': tpv_new, 'tpv_recurrent': tpv_recurrent, 'tpv_recovered': tpv_recovered, 'active_clients': len(current_clients), 'new_clients': len(new_clients), 'recurrent_clients': len(recurrent_clients), 'recovered_clients': len(recovered_clients)}
             ever_seen |= current_clients
             prev_active = current_clients
-
         if not by_period:
             return {}
-
         latest_period = sorted(by_period.keys())[-1]
-        return {
-            "by_period": by_period,
-            "latest_period": latest_period,
-            "latest": by_period[latest_period],
-        }
+        return {'by_period': by_period, 'latest_period': latest_period, 'latest': by_period[latest_period]}
 
-    def _rollup_sum(
-        self, df_ts: pd.DataFrame, date_col: str, numeric_cols: List[str], period: str, limit: int
-    ) -> List[Dict[str, Any]]:
-        """Aggregate numeric columns by period and return record dictionaries."""
+    def _rollup_sum(self, df_ts: pd.DataFrame, date_col: str, numeric_cols: List[str], period: str, limit: int) -> List[Dict[str, Any]]:
         try:
-            if period == "daily":
+            if period == 'daily':
                 grouped = df_ts.groupby(df_ts[date_col].dt.date)[numeric_cols].sum()
-            elif period == "weekly":
-                grouped = df_ts.groupby(df_ts[date_col].dt.to_period("W"))[numeric_cols].sum()
+            elif period == 'weekly':
+                grouped = df_ts.groupby(df_ts[date_col].dt.to_period('W'))[numeric_cols].sum()
             else:
-                grouped = df_ts.groupby(df_ts[date_col].dt.to_period("M"))[numeric_cols].sum()
-            return grouped.reset_index().to_dict("records")[:limit]
+                grouped = df_ts.groupby(df_ts[date_col].dt.to_period('M'))[numeric_cols].sum()
+            return grouped.reset_index().to_dict('records')[:limit]
         except Exception as exc:
-            raise ValueError(
-                f"CRITICAL: {period.capitalize()} rollup failed for column '{date_col}': {exc}"
-            ) from exc
+            raise ValueError(f"CRITICAL: {period.capitalize()} rollup failed for column '{date_col}': {exc}") from exc
 
     def _detect_anomalies(self, kpi_results: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Detect anomalies in KPI values."""
         anomalies: List[Dict[str, Any]] = []
-
         try:
             normal_ranges = self._default_anomaly_ranges()
-
             for kpi_name, kpi_value in kpi_results.items():
                 anomaly = self._build_anomaly_record(kpi_name, kpi_value, normal_ranges)
                 if anomaly is None:
                     continue
                 anomalies.append(anomaly)
-                min_val, max_val = anomaly["expected_range"]
-                logger.warning(
-                    "Anomaly detected in %s: %s (expected: %s-%s)",
-                    kpi_name,
-                    anomaly["value"],
-                    min_val,
-                    max_val,
-                )
-
+                min_val, max_val = anomaly['expected_range']
+                logger.warning('Anomaly detected in %s: %s (expected: %s-%s)', kpi_name, anomaly['value'], min_val, max_val)
             if anomalies:
-                logger.info("Detected %d KPI anomalies", len(anomalies))
-
+                logger.info('Detected %d KPI anomalies', len(anomalies))
         except Exception as e:
-            logger.error("Anomaly detection failed: %s", e, exc_info=True)
-            raise ValueError(f"CRITICAL: Anomaly pipeline failure: {e}") from e
-
+            logger.error('Anomaly detection failed: %s', e, exc_info=True)
+            raise ValueError(f'CRITICAL: Anomaly pipeline failure: {e}') from e
         return anomalies
 
     @staticmethod
     def _default_anomaly_ranges() -> Dict[str, tuple[float, float]]:
-        """Expected KPI ranges in percentage units (30 means 30%)."""
-        return {
-            "par_30": (0, 30),
-            "par_90": (0, 15),
-            "default_rate": (0, 4),
-            "portfolio_yield": (5, 15),
-        }
+        return {'par_30': (0, 30), 'par_90': (0, 15), 'default_rate': (0, 4), 'portfolio_yield': (5, 15)}
 
     @staticmethod
-    def _build_anomaly_record(
-        kpi_name: str,
-        kpi_value: Any,
-        normal_ranges: Dict[str, tuple[float, float]],
-    ) -> Optional[Dict[str, Any]]:
-        """Return anomaly metadata if KPI value is outside expected range."""
+    def _build_anomaly_record(kpi_name: str, kpi_value: Any, normal_ranges: Dict[str, tuple[float, float]]) -> Optional[Dict[str, Any]]:
         if kpi_value is None or not isinstance(kpi_value, (int, float)):
             return None
         if kpi_name not in normal_ranges:
-            logger.debug(
-                "KPI '%s' has no anomaly range registered — anomaly monitoring skipped for this metric",
-                kpi_name,
-            )
+            logger.debug("KPI '%s' has no anomaly range registered — anomaly monitoring skipped for this metric", kpi_name)
             return None
-
         min_val, max_val = normal_ranges[kpi_name]
         if min_val <= kpi_value <= max_val:
             return None
-
-        return {
-            "kpi_name": kpi_name,
-            "value": kpi_value,
-            "expected_range": (min_val, max_val),
-            "severity": "critical" if abs(kpi_value - max_val) > max_val * 0.5 else "warning",
-        }
+        return {'kpi_name': kpi_name, 'value': kpi_value, 'expected_range': (min_val, max_val), 'severity': 'critical' if abs(kpi_value - max_val) > max_val * 0.5 else 'warning'}
 
     def _calculate_segment_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Compute PAR30/60/90, default_rate, and outstanding_balance by segment dimension.
-
-        Segment dimensions: company, credit_line, kam_hunter, kam_farmer, gov, industry, doc_type.
-        Returns a nested dict: {dimension: {segment_value: {kpi: value}}}.
-        """
         segment_dims = self._available_segment_dimensions(df)
         if not segment_dims:
             return {}
-
-        balance_col = self._resolve_col(df, "outstanding_balance", "current_balance", "amount")
-        dpd_col = self._resolve_col(df, "dpd", "days_past_due")
-        status_col = "status" if "status" in df.columns else None
-
+        balance_col = self._resolve_col(df, 'outstanding_balance', 'current_balance', 'amount')
+        dpd_col = self._resolve_col(df, 'dpd', 'days_past_due')
+        status_col = 'status' if 'status' in df.columns else None
         if balance_col is None:
-            error_msg = "CRITICAL: MISSING BALANCE COLUMN FOR SEGMENT CALCULATION"
+            error_msg = 'CRITICAL: MISSING BALANCE COLUMN FOR SEGMENT CALCULATION'
             self._log_and_raise_critical_error(error_msg)
-
         work = self._prepare_segment_workframe(df, balance_col, dpd_col, status_col)
         if work.empty:
             return {}
-
-        return {
-            dim: self._calculate_dimension_segment_kpis(work, dim, balance_col, dpd_col, status_col)
-            for dim in segment_dims
-        }
+        return {dim: self._calculate_dimension_segment_kpis(work, dim, balance_col, dpd_col, status_col) for dim in segment_dims}
 
     @staticmethod
     def _available_segment_dimensions(df: pd.DataFrame) -> List[str]:
-        """Return supported segment dimensions present in the dataframe."""
         dimensions = []
-        if "company" in df.columns or "empresa" in df.columns:
-            dimensions.append("company")
-        if any(c in df.columns for c in ("credit_line", "lineacredito", "linea_credito")):
-            dimensions.append("credit_line")
-        if "kam_hunter" in df.columns or "cod_kam_hunter" in df.columns:
-            dimensions.append("kam_hunter")
-        if any(c in df.columns for c in ("kam_farmer", "cod_kam_farmer", "farmer")):
-            dimensions.append("kam_farmer")
-
-        if any(c in df.columns for c in ("gov", "ministry", "ministerio")):
-            dimensions.append("gov")
-        if any(c in df.columns for c in ("industry", "industria", "giro")):
-            dimensions.append("industry")
-        if "doc_type" in df.columns:
-            dimensions.append("doc_type")
+        if 'company' in df.columns or 'empresa' in df.columns:
+            dimensions.append('company')
+        if any((c in df.columns for c in ('credit_line', 'lineacredito', 'linea_credito'))):
+            dimensions.append('credit_line')
+        if 'kam_hunter' in df.columns or 'cod_kam_hunter' in df.columns:
+            dimensions.append('kam_hunter')
+        if any((c in df.columns for c in ('kam_farmer', 'cod_kam_farmer', 'farmer'))):
+            dimensions.append('kam_farmer')
+        if any((c in df.columns for c in ('gov', 'ministry', 'ministerio'))):
+            dimensions.append('gov')
+        if any((c in df.columns for c in ('industry', 'industria', 'giro'))):
+            dimensions.append('industry')
+        if 'doc_type' in df.columns:
+            dimensions.append('doc_type')
         return dimensions
 
     @staticmethod
-    def _prepare_segment_workframe(
-        df: pd.DataFrame, balance_col: str, dpd_col: Optional[str], status_col: Optional[str]
-    ) -> pd.DataFrame:
-        """Build normalized dataframe used for segment KPI aggregation."""
-        active_mask = (
-            df[status_col].isin(["active", "delinquent", "defaulted"])
-            if status_col
-            else pd.Series(True, index=df.index, dtype=bool)
-        )
+    def _prepare_segment_workframe(df: pd.DataFrame, balance_col: str, dpd_col: Optional[str], status_col: Optional[str]) -> pd.DataFrame:
+        active_mask = df[status_col].isin(['active', 'delinquent', 'defaulted']) if status_col else pd.Series(True, index=df.index, dtype=bool)
         work = df.loc[active_mask].copy()
         if work.empty:
             return work
-
-        work[balance_col] = pd.to_numeric(work[balance_col], errors="coerce").fillna(0.0)
+        work[balance_col] = pd.to_numeric(work[balance_col], errors='coerce').fillna(0.0)
         if dpd_col:
-            work[dpd_col] = pd.to_numeric(work[dpd_col], errors="coerce").fillna(0.0)
+            work[dpd_col] = pd.to_numeric(work[dpd_col], errors='coerce').fillna(0.0)
         return work
 
-    def _calculate_dimension_segment_kpis(
-        self,
-        work: pd.DataFrame,
-        dim: str,
-        balance_col: str,
-        dpd_col: Optional[str],
-        status_col: Optional[str],
-    ) -> Dict[str, Any]:
-        """Aggregate segment KPIs for a single dimension."""
+    def _calculate_dimension_segment_kpis(self, work: pd.DataFrame, dim: str, balance_col: str, dpd_col: Optional[str], status_col: Optional[str]) -> Dict[str, Any]:
         dim_result: Dict[str, Any] = {}
-
-        # Mapping dimension key to possible column names
-        dim_map = {
-            "company": ["company", "empresa", "compania"],
-            "credit_line": ["credit_line", "lineacredito", "linea_credito"],
-            "kam_hunter": ["kam_hunter", "cod_kam_hunter"],
-            "kam_farmer": ["kam_farmer", "cod_kam_farmer", "farmer"],
-            "gov": ["gov", "ministry", "ministerio"],
-            "industry": ["industry", "industria", "giro"],
-            "doc_type": ["doc_type"],
-        }
-
-        resolved_dim = self._resolve_col(work, *(dim_map.get(dim, [dim])))
+        dim_map = {'company': ['company', 'empresa', 'compania'], 'credit_line': ['credit_line', 'lineacredito', 'linea_credito'], 'kam_hunter': ['kam_hunter', 'cod_kam_hunter'], 'kam_farmer': ['kam_farmer', 'cod_kam_farmer', 'farmer'], 'gov': ['gov', 'ministry', 'ministerio'], 'industry': ['industry', 'industria', 'giro'], 'doc_type': ['doc_type']}
+        resolved_dim = self._resolve_col(work, *dim_map.get(dim, [dim]))
         if not resolved_dim:
             return {}
-
         for seg_val, grp in work.groupby(resolved_dim, sort=True):
-            if seg_kpis := self._calculate_segment_group_kpis(
-                grp, balance_col, dpd_col, status_col
-            ):
+            if (seg_kpis := self._calculate_segment_group_kpis(grp, balance_col, dpd_col, status_col)):
                 dim_result[str(seg_val)] = seg_kpis
         return dim_result
 
-    def _calculate_segment_group_kpis(
-        self,
-        grp: pd.DataFrame,
-        balance_col: str,
-        dpd_col: Optional[str],
-        status_col: Optional[str],
-    ) -> Optional[Dict[str, Any]]:
-        """Compute KPI bundle for one segment group."""
+    def _calculate_segment_group_kpis(self, grp: pd.DataFrame, balance_col: str, dpd_col: Optional[str], status_col: Optional[str]) -> Optional[Dict[str, Any]]:
         from decimal import Decimal, ROUND_HALF_UP
-
         total_bal_raw = grp[balance_col].sum()
         if total_bal_raw <= 0:
             return None
-
-        total_bal = Decimal(str(total_bal_raw)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-        seg_kpis: Dict[str, Any] = {
-            "outstanding_balance": float(total_bal),
-            "loan_count": len(grp),
-        }
+        total_bal = Decimal(str(total_bal_raw)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        seg_kpis: Dict[str, Any] = {'outstanding_balance': float(total_bal), 'loan_count': len(grp)}
         if dpd_col:
-            seg_kpis.update(
-                self._calculate_segment_par_metrics(
-                    grp,
-                    balance_col,
-                    dpd_col,
-                    float(total_bal),
-                    status_col,
-                )
-            )
+            seg_kpis.update(self._calculate_segment_par_metrics(grp, balance_col, dpd_col, float(total_bal), status_col))
         if status_col:
-            seg_kpis["default_rate"] = self._calculate_segment_default_rate(grp, status_col)
+            seg_kpis['default_rate'] = self._calculate_segment_default_rate(grp, status_col)
         return seg_kpis
 
     @staticmethod
-    def _calculate_segment_par_metrics(
-        grp: pd.DataFrame,
-        balance_col: str,
-        dpd_col: str,
-        total_bal: float,
-        status_col: Optional[str] = None,
-    ) -> Dict[str, float]:
-        """Compute PAR30/60/90 for a segment group via shared SSOT asset-quality formulas."""
-        raw_dpd = pd.to_numeric(grp[dpd_col], errors="coerce").fillna(0.0)
-        if "dpd_adjusted" in grp.columns:
-            adjusted_dpd = pd.to_numeric(grp["dpd_adjusted"], errors="coerce").fillna(raw_dpd)
+    def _calculate_segment_par_metrics(grp: pd.DataFrame, balance_col: str, dpd_col: str, total_bal: float, status_col: Optional[str]=None) -> Dict[str, float]:
+        raw_dpd = pd.to_numeric(grp[dpd_col], errors='coerce').fillna(0.0)
+        if 'dpd_adjusted' in grp.columns:
+            adjusted_dpd = pd.to_numeric(grp['dpd_adjusted'], errors='coerce').fillna(raw_dpd)
         else:
             adjusted_dpd = raw_dpd
         if total_bal == 0:
-            return {"par_30": 0.0, "par_60": 0.0, "par_90": 0.0}
+            return {'par_30': 0.0, 'par_60': 0.0, 'par_90': 0.0}
         status_series = grp[status_col] if status_col else None
-        ssot_metrics = calculate_asset_quality_metrics(
-            balance=grp[balance_col],
-            dpd=adjusted_dpd,
-            status=status_series,
-            actor="pipeline.segment_analytics",
-            metric_aliases=["par30", "par60", "par90"],
-        )
-        return {
-            "par_30": round(float(ssot_metrics["par30"]), 4),
-            "par_60": round(float(ssot_metrics["par60"]), 4),
-            "par_90": round(float(ssot_metrics["par90"]), 4),
-        }
+        ssot_metrics = calculate_asset_quality_metrics(balance=grp[balance_col], dpd=adjusted_dpd, status=status_series, actor='pipeline.segment_analytics', metric_aliases=['par30', 'par60', 'par90'])
+        return {'par_30': round(float(ssot_metrics['par30']), 4), 'par_60': round(float(ssot_metrics['par60']), 4), 'par_90': round(float(ssot_metrics['par90']), 4)}
 
     @staticmethod
     def _calculate_segment_default_rate(grp: pd.DataFrame, status_col: str) -> float:
-        """Compute default rate for a segment group."""
         n = len(grp)
-        return round(float((grp[status_col] == "defaulted").sum()) / n * 100, 4) if n > 0 else 0.0
+        return round(float((grp[status_col] == 'defaulted').sum()) / n * 100, 4) if n > 0 else 0.0
 
     @staticmethod
     def _calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
-        """Calculate strict synthetic LTV and persist opacity metadata on the dataframe.
-
-        Epistemic uncertainty rule:
-        - Denominator <= 0 or NaN -> opaque observation
-        - Opaque observations receive np.nan (never 0.0 fallback)
-        """
         return calculate_ltv_sintetico(df)
 
     @staticmethod
     def _resolve_col(df: pd.DataFrame, *candidates: str) -> Optional[str]:
-        """Return the first candidate column present in df, or None."""
         return next((c for c in candidates if c in df.columns), None)
 
     def _run_unified_kpi_calculation(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Run unified KPI calculation as the Single Source of Truth.
-
-        Delegates to KPIEngineV2, which consolidates all metric logic:
-        - Core KPIs (PAR30/60/90, default_rate, outstanding_balance)
-        - Derived risk metrics (LTV synthetic, velocity of default)
-        - Time-series aggregations (recurrent TPV by period)
-
-        Args:
-            df: Input dataframe for KPI calculation.
-
-        Returns:
-            Dictionary of calculated KPIs from the engine.
-        """
         return self._calculate_unified_kpis(df)
 
     def _calculate_unified_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Calculate unified KPIs using KPIEngineV2 (SSOT).
-
-        This replaces _calculate_kpis, _calculate_derived_risk_kpis,
-        _calculate_enriched_kpis, and _calculate_recurrent_tpv.
-
-        Args:
-            df: Input dataframe for KPI calculation.
-
-        Returns:
-            Dictionary of calculated KPIs from the engine.
-        """
         return self.engine.calculate(df)
 
-    def _generate_manifest(
-        self, kpi_results: Dict[str, Any], source_df: pd.DataFrame
-    ) -> Dict[str, Any]:
-        """Generate calculation manifest with lineage."""
-        return {
-            "run_timestamp": datetime.now().isoformat(),
-            "source_rows": len(source_df),
-            "kpis_calculated": list(kpi_results.keys()),
-            "formula_version": self.kpi_definitions.get("version", "unknown"),
-            "traceability": {
-                "source_columns": list(source_df.columns),
-                "calculation_engine": "kpi_engine_v2",
-            },
-        }
-
-    # ------------------------------------------------------------------
-    # Risk metric helpers (companion opacity flag + Vd)
-    # ------------------------------------------------------------------
+    def _generate_manifest(self, kpi_results: Dict[str, Any], source_df: pd.DataFrame) -> Dict[str, Any]:
+        return {'run_timestamp': datetime.now().isoformat(), 'source_rows': len(source_df), 'kpis_calculated': list(kpi_results.keys()), 'formula_version': self.kpi_definitions.get('version', 'unknown'), 'traceability': {'source_columns': list(source_df.columns), 'calculation_engine': 'kpi_engine_v2'}}
 
     @staticmethod
     def _ltv_sintetico_invalid_mask(df: pd.DataFrame) -> pd.Series:
-        """Return a boolean Series flagging loans with an invalid (zero) LTV denominator.
-
-        A loan is marked ``True`` (invalid / opaque) when
-        ``valor_nominal_factura * (1 - tasa_dilucion) == 0``, i.e. the
-        adjusted invoice value is fully diluted or the nominal value is zero.
-        These loans must not be used in portfolio LTV aggregations without
-        explicit acknowledgement.
-
-        Returns an all-False Series (no invalids) when required columns are
-        absent or the DataFrame is empty.
-        """
-        required = {"valor_nominal_factura", "tasa_dilucion"}
+        required = {'valor_nominal_factura', 'tasa_dilucion'}
         if not required.issubset(df.columns):
             return pd.Series(dtype=bool)
         if df.empty:
             return pd.Series(False, index=df.index, dtype=bool)
-
-        nominal = pd.to_numeric(df["valor_nominal_factura"], errors="coerce").fillna(0.0)
-        dilution = pd.to_numeric(df["tasa_dilucion"], errors="coerce").fillna(0.0)
+        nominal = pd.to_numeric(df['valor_nominal_factura'], errors='coerce').fillna(0.0)
+        dilution = pd.to_numeric(df['tasa_dilucion'], errors='coerce').fillna(0.0)
         adjusted = nominal * (1.0 - dilution)
-        return adjusted.abs() < 1e-9
+        return adjusted.abs() < 1e-09
 
     @staticmethod
-    def _calculate_velocity_of_default(
-        df_ts: pd.DataFrame,
-        default_rate_col: str = "default_rate",
-        period_col: Optional[str] = None,
-    ) -> pd.Series:
-        """Compute period-over-period first derivative of the default rate.
-
-        **Units**: The returned Series is expressed in the same units as
-        *default_rate_col*.  When *default_rate_col* holds values in percent
-        (e.g. 2.5 = 2.5 %), each element of the result is a percentage-point
-        (pp) change per period.  One percentage point equals 100 basis points.
-
-        **Chronology normalisation**: If *period_col* is provided the DataFrame
-        is sorted ascending by that column before differencing, ensuring the
-        result is monotonically aligned to the calendar timeline regardless of
-        the input row order.
-
-        Returns an empty Series when *default_rate_col* is absent.  With a
-        single row the result contains one NaN (no prior period to diff against).
-        """
+    def _calculate_velocity_of_default(df_ts: pd.DataFrame, default_rate_col: str='default_rate', period_col: Optional[str]=None) -> pd.Series:
         if default_rate_col not in df_ts.columns:
             return pd.Series(dtype=float)
-
         working = df_ts
         if period_col is not None and period_col in df_ts.columns:
             working = df_ts.sort_values(period_col)
-
-        rate = pd.to_numeric(working[default_rate_col], errors="coerce")
+        rate = pd.to_numeric(working[default_rate_col], errors='coerce')
         return rate.diff()
 
     def _compute_portfolio_velocity_of_default(self, df: pd.DataFrame) -> Optional[Decimal]:
-        """Compute portfolio-level Velocity of Default from the canonical date column.
-
-        Delegates to :class:`~backend.python.kpis.engine.KPIEngineV2` as the
-        Single Source of Truth for this metric.
-
-        **Units**: percentage points per month (pp/month); 1 pp = 100 basis
-        points.  Positive values indicate a worsening default trend.
-
-        Returns:
-            ``Decimal`` Vd value quantised to 6 decimal places, or ``None``
-            when no recognised date column exists or fewer than two distinct
-            month-periods are present.
-        """
         return KPIEngineV2._compute_portfolio_velocity_of_default(df)
 
-    # ------------------------------------------------------------------
-    # Phase 3.5: Advanced Clustering — PCA → UMAP → HDBSCAN
-    # ------------------------------------------------------------------
-
     def _run_advanced_clustering(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Execute the PCA → UMAP → HDBSCAN clustering pipeline.
-
-        Feature matrix
-        --------------
-        - All ``{col}_is_missing`` opacity flags present in *df* (integer 0/1)
-        - Robust-scaled versions of: ``ltv_sintetico``, ``dpd_adjusted``,
-          ``vd_bps_month``, ``ratio_pago_real``
-        - ``fillna`` is **not** used blindly; observations with NaN in any feature
-          column are marked opaque and assigned the sentinel cohort "Unknown".
-
-        Cohort assignment
-        -----------------
-        Each HDBSCAN cluster centroid is evaluated against the four canonical
-        risk dimensions (ltv_sintetico, dpd_adjusted, vd_bps_month, ratio_pago_real)
-        and assigned a label from ``[Alfa, Beta, Gamma, Delta]`` (low→high risk)
-        based on a composite risk score derived from the multidimensional centroid.
-
-        Returns
-        -------
-        dict with keys:
-            n_clusters, n_noise, cohort_distribution, cluster_centroids,
-            feature_columns, pca_explained_variance, umap_available,
-            hdbscan_available
-        """
-        metrics: Dict[str, Any] = {
-            "umap_available": _UMAP_AVAILABLE,
-            "hdbscan_available": _HDBSCAN_AVAILABLE,
-        }
-
+        metrics: Dict[str, Any] = {'umap_available': _UMAP_AVAILABLE, 'hdbscan_available': _HDBSCAN_AVAILABLE}
         try:
             X, feature_cols, opaque_mask = self._build_feature_matrix(df)
-            metrics["feature_columns"] = feature_cols
-            metrics["n_opaque_excluded"] = int(opaque_mask.sum())
-
+            metrics['feature_columns'] = feature_cols
+            metrics['n_opaque_excluded'] = int(opaque_mask.sum())
             if X.shape[0] < 10:
-                logger.warning(
-                    "Clustering skipped: insufficient non-opaque observations (%d < 10)",
-                    X.shape[0],
-                )
-                metrics["skipped"] = True
-                metrics["skip_reason"] = f"insufficient_observations ({X.shape[0]})"
+                logger.warning('Clustering skipped: insufficient non-opaque observations (%d < 10)', X.shape[0])
+                metrics['skipped'] = True
+                metrics['skip_reason'] = f'insufficient_observations ({X.shape[0]})'
                 return metrics
-
-            # 1. Robust scaling and PCA dimensionality reduction
             x_scaled, pca_explained = self._scale_and_reduce_pca(X)
-            metrics["pca_explained_variance"] = pca_explained
-
-            # 2. UMAP dimensionality reduction (optional)
+            metrics['pca_explained_variance'] = pca_explained
             x_embed = self._apply_umap(x_scaled, metrics)
-
-            # 3. HDBSCAN clustering (optional)
             labels = self._apply_hdbscan(x_embed, x_scaled, metrics)
-
-            # 4. Map HDBSCAN cluster ids → institutional cohort labels
             cohort_series, centroids = self._map_cohorts(df, labels, opaque_mask)
-            metrics["cohort_distribution"] = (
-                cohort_series.value_counts().to_dict() if cohort_series is not None else {}
-            )
-            metrics["cluster_centroids"] = centroids
-
+            metrics['cohort_distribution'] = cohort_series.value_counts().to_dict() if cohort_series is not None else {}
+            metrics['cluster_centroids'] = centroids
         except Exception as exc:
-            raise ValueError(f"CRITICAL: Advanced clustering pipeline failed: {exc}") from exc
-
+            raise ValueError(f'CRITICAL: Advanced clustering pipeline failed: {exc}') from exc
         return metrics
 
     def _build_feature_matrix(self, df: pd.DataFrame) -> tuple[np.ndarray, List[str], pd.Series]:
-        """Build the numeric feature matrix for clustering.
-
-        Includes:
-        - All ``{col}_is_missing`` opacity flags already in the dataframe.
-        - The four canonical risk features (winsorization applied below in the scaler).
-
-        NaN handling
-        ------------
-        Rows with NaN in ANY feature are excluded (opaque_mask=True).
-        This prevents the zero-fill bias that would corrupt cluster geometry.
-
-        Returns
-        -------
-        (X, feature_cols, opaque_mask)
-        """
         feature_cols: List[str] = []
-
-        # Add is_missing flags (they are already 0/1 integers).
-        # Sort them to ensure deterministic feature ordering regardless of df.columns order.
-        flag_cols = sorted(
-            [
-                c
-                for c in df.columns
-                if c.endswith("_is_missing") and pd.api.types.is_numeric_dtype(df[c])
-            ]
-        )
+        flag_cols = sorted([c for c in df.columns if c.endswith('_is_missing') and pd.api.types.is_numeric_dtype(df[c])])
         feature_cols.extend(flag_cols)
-
-        # Add canonical risk features if present
         for col in _COHORT_FEATURE_COLS:
-            if col in df.columns and pd.api.types.is_numeric_dtype(df[col]) and col not in feature_cols:
+            if col in df.columns and pd.api.types.is_numeric_dtype(df[col]) and (col not in feature_cols):
                 feature_cols.append(col)
-
         if not feature_cols:
-            raise ValueError(
-                "No numeric feature columns available for clustering "
-                f"(looked for: {_COHORT_FEATURE_COLS} + *_is_missing flags)"
-            )
-
+            raise ValueError(f'No numeric feature columns available for clustering (looked for: {_COHORT_FEATURE_COLS} + *_is_missing flags)')
         feat_df = df[feature_cols].copy()
         opaque_mask = feat_df.isna().any(axis=1)
         feat_df_clean = feat_df.loc[~opaque_mask]
-
         X = feat_df_clean.to_numpy(dtype=float)
-        return X, feature_cols, opaque_mask
+        return (X, feature_cols, opaque_mask)
 
     @staticmethod
     def _scale_and_reduce_pca(x_input: np.ndarray) -> tuple[np.ndarray, List[float]]:
-        """Apply RobustScaler then PCA retaining up to 95% cumulative variance.
-
-        Uses ``n_components=0.95`` so sklearn chooses the minimum number of
-        principal components that explain at least 95% of the total variance,
-        capped at 10 components.
-
-        Note: ``svd_solver='full'`` is required because it is the only solver
-        that accepts a fractional ``n_components`` value (variance threshold).
-        Using 'auto' or 'arpack' would raise a ValueError at fit time.
-        """
         scaler = RobustScaler()
         x_scaled = scaler.fit_transform(x_input)
-
         max_components = min(x_scaled.shape[1], x_scaled.shape[0] - 1, 10)
         if max_components >= 2:
-            # svd_solver='full' is mandatory for fractional n_components.
-            pca = PCA(n_components=0.95, svd_solver="full", random_state=42)
+            pca = PCA(n_components=0.95, svd_solver='full', random_state=42)
             x_pca = pca.fit_transform(x_scaled)
             explained = [round(float(v), 4) for v in pca.explained_variance_ratio_]
-            # Cap to max_components by slicing — avoids a second expensive fit.
-            # PCA output columns are already ordered by explained variance (descending).
             if x_pca.shape[1] > max_components:
                 x_pca = x_pca[:, :max_components]
                 explained = explained[:max_components]
@@ -940,90 +445,43 @@ class CalculationPhase:
             pca = PCA(n_components=max_components, random_state=42)
             x_pca = pca.fit_transform(x_scaled)
             explained = [round(float(v), 4) for v in pca.explained_variance_ratio_]
-
-        return x_pca, explained
+        return (x_pca, explained)
 
     @staticmethod
     def _apply_umap(x_pca: np.ndarray, metrics: Dict[str, Any]) -> np.ndarray:
-        """Apply UMAP if available; fall back to PCA output."""
         if not _UMAP_AVAILABLE:
-            logger.info("UMAP not available — using PCA output for clustering.")
+            logger.info('UMAP not available — using PCA output for clustering.')
             return x_pca
         try:
-            reducer = umap.UMAP(
-                n_components=2,
-                n_neighbors=min(15, max(2, x_pca.shape[0] // 5)),
-                min_dist=0.1,
-                random_state=42,
-            )
+            reducer = umap.UMAP(n_components=2, n_neighbors=min(15, max(2, x_pca.shape[0] // 5)), min_dist=0.1, random_state=42)
             x_embed = reducer.fit_transform(x_pca)
-            metrics["umap_n_components"] = 2
+            metrics['umap_n_components'] = 2
             return x_embed
         except Exception as exc:
-            raise ValueError(f"CRITICAL: UMAP dimensionality reduction failed: {exc}") from exc
+            raise ValueError(f'CRITICAL: UMAP dimensionality reduction failed: {exc}') from exc
 
     @staticmethod
-    def _apply_hdbscan(
-        x_embed: np.ndarray, x_fallback: np.ndarray, metrics: Dict[str, Any]
-    ) -> np.ndarray:
-        """Apply HDBSCAN if available; fall back to a simple PC1-quartile split.
-
-        Notes
-        -----
-        When HDBSCAN is unavailable, we assign fallback cluster labels by
-        splitting on quartiles of the first column of ``x_fallback``. In the
-        current pipeline this column corresponds to the first principal
-        component (PC1) of the scaled feature space, not a raw DPD feature.
-        """
+    def _apply_hdbscan(x_embed: np.ndarray, x_fallback: np.ndarray, metrics: Dict[str, Any]) -> np.ndarray:
         if not _HDBSCAN_AVAILABLE:
             return _quartile_fallback_labels(x_fallback, metrics)
         try:
-            clusterer = hdbscan_module.HDBSCAN(
-                min_cluster_size=max(5, x_embed.shape[0] // 20),
-                min_samples=2,
-                cluster_selection_method="eom",
-            )
+            clusterer = hdbscan_module.HDBSCAN(min_cluster_size=max(5, x_embed.shape[0] // 20), min_samples=2, cluster_selection_method='eom')
             labels = clusterer.fit_predict(x_embed)
-            metrics["n_clusters"] = int(len(set(labels)) - (1 if -1 in labels else 0))
-            metrics["n_noise"] = int((labels == -1).sum())
+            metrics['n_clusters'] = int(len(set(labels)) - (1 if -1 in labels else 0))
+            metrics['n_noise'] = int((labels == -1).sum())
             return labels
         except Exception as exc:
-            raise ValueError(f"CRITICAL: HDBSCAN clustering failed: {exc}") from exc
+            raise ValueError(f'CRITICAL: HDBSCAN clustering failed: {exc}') from exc
 
-    def _map_cohorts(
-        self,
-        df: pd.DataFrame,
-        labels: np.ndarray,
-        opaque_mask: pd.Series,
-    ) -> tuple[Optional[pd.Series], Dict[int, Dict[str, Any]]]:
-        """Assign institutional cohort labels (Alfa/Beta/Gamma/Delta) to each cluster.
-
-        Cohort assignment is based on a composite risk score computed from the
-        cluster centroid across four canonical dimensions:
-        - ``ltv_sintetico``   (higher → riskier)
-        - ``dpd_adjusted``    (higher → riskier)
-        - ``vd_bps_month``    (higher → riskier)
-        - ``ratio_pago_real`` (lower  → riskier — inverted)
-
-        Noise points (label == -1) and opaque observations receive "Unknown".
-        """
+    def _map_cohorts(self, df: pd.DataFrame, labels: np.ndarray, opaque_mask: pd.Series) -> tuple[Optional[pd.Series], Dict[int, Dict[str, Any]]]:
         non_opaque_idx = df.index[~opaque_mask]
-
         if len(non_opaque_idx) != len(labels):
-            logger.warning(
-                "Label count (%d) != non-opaque rows (%d); skipping cohort map.",
-                len(labels),
-                len(non_opaque_idx),
-            )
-            return None, {}
-
-        label_series = pd.Series(labels, index=non_opaque_idx, name="cluster_id")
-
-        # Build per-cluster centroids for canonical risk features
+            logger.warning('Label count (%d) != non-opaque rows (%d); skipping cohort map.', len(labels), len(non_opaque_idx))
+            return (None, {})
+        label_series = pd.Series(labels, index=non_opaque_idx, name='cluster_id')
         cluster_ids = sorted(set(labels))
         centroids: Dict[int, Dict[str, Any]] = {}
         risk_scores: Dict[int, float] = {}
-
         for cluster_id in cluster_ids:
             if cluster_id == -1:
                 continue
@@ -1032,18 +490,10 @@ class CalculationPhase:
             centroid, risk_score = _compute_cluster_profile(cluster_rows)
             centroids[cluster_id] = centroid
             risk_scores[cluster_id] = risk_score
-
-        # Rank clusters by composite risk score and assign labels
         cohort_map = _assign_cluster_cohorts(risk_scores, centroids)
-
-        # Build final cohort series over the full dataframe index
-        full_cohort = pd.Series("Unknown", index=df.index, name="cohort", dtype=object)
+        full_cohort = pd.Series('Unknown', index=df.index, name='cohort', dtype=object)
         for cluster_id, cohort_name in cohort_map.items():
             mask = label_series == cluster_id
             full_cohort.loc[non_opaque_idx[mask.values]] = cohort_name
-
-        logger.info(
-            "Cohort assignment: %s",
-            full_cohort.value_counts().to_dict(),
-        )
-        return full_cohort, centroids
+        logger.info('Cohort assignment: %s', full_cohort.value_counts().to_dict())
+        return (full_cohort, centroids)

@@ -2,87 +2,56 @@ import pandas as pd
 import streamlit as st
 from backend.python.utils.dashboard import format_kpi_value, kpi_label
 
-
 def get_threshold_badge_html(threshold_status: str) -> str:
-    """Generate HTML badge for threshold status with appropriate styling."""
-    status_config = {
-        "normal": ("✅ Normal", "#10B981"),  # Green
-        "warning": ("⚠️ Warning", "#FB923C"),  # Orange
-        "critical": ("🔴 Critical", "#DC2626"),  # Red
-        "not_configured": ("⊙ Not Set", "#6B7280"),  # Gray
-    }
-
-    label, color = status_config.get(threshold_status, ("Unknown", "#6B7280"))
+    status_config = {'normal': ('✅ Normal', '#10B981'), 'warning': ('⚠️ Warning', '#FB923C'), 'critical': ('🔴 Critical', '#DC2626'), 'not_configured': ('⊙ Not Set', '#6B7280')}
+    label, color = status_config.get(threshold_status, ('Unknown', '#6B7280'))
     return f'<span style="color: {color}; font-weight: bold; font-size: 0.8em;">{label}</span>'
 
-
 def render_kpi_snapshot(kpi_snapshot, snapshot_month=None):
-    """Render the top KPI snapshot tiles with threshold status badges."""
     if kpi_snapshot:
-        st.header("📌 KPI Snapshot")
-        if snapshot_month is not None and not pd.isna(snapshot_month):
+        st.header('📌 KPI Snapshot')
+        if snapshot_month is not None and (not pd.isna(snapshot_month)):
             st.caption(f"Snapshot month: {snapshot_month.strftime('%Y-%m')}")
-        st.caption(f"KPI count: {len(kpi_snapshot)}")
-
-        # Sort by KPI name
+        st.caption(f'KPI count: {len(kpi_snapshot)}')
         kpi_items = sorted(kpi_snapshot.items(), key=lambda item: item[0])
         kpi_cols = st.columns(4)
-
         for idx, (name, kpi_data) in enumerate(kpi_items):
             col = kpi_cols[idx % 4]
-
-            # Handle both old format (flat value) and new format (enriched dict)
             if isinstance(kpi_data, dict):
-                value = kpi_data.get("value")
-                threshold_status = kpi_data.get("threshold_status", "not_configured")
+                value = kpi_data.get('value')
+                threshold_status = kpi_data.get('threshold_status', 'not_configured')
             else:
-                # Backward compatibility with old flat format
                 value = kpi_data
-                threshold_status = "not_configured"
-
-            # Display metric with threshold badge
+                threshold_status = 'not_configured'
             formatted_value = format_kpi_value(name, value)
             badge_html = get_threshold_badge_html(threshold_status)
-
-            col.metric(
-                label=kpi_label(name),
-                value=formatted_value,
-                delta=badge_html,
-                delta_color="off",
-            )
+            col.metric(label=kpi_label(name), value=formatted_value, delta=badge_html, delta_color='off')
     else:
-        st.info("KPI snapshot not available. Export analytics to populate KPI tiles.")
-
+        st.info('KPI snapshot not available. Export analytics to populate KPI tiles.')
 
 def render_executive_summary(merged):
-    """Render the executive summary metrics."""
     st.markdown('<div data-testid="dashboard-board">', unsafe_allow_html=True)
-    st.header("📊 Executive Summary")
+    st.header('📊 Executive Summary')
     col1, col2, col3, col4 = st.columns(4)
-    total_loans = merged["loan_id"].nunique() if "loan_id" in merged else 0
-    total_outstanding = (
-        merged["outstanding_loan_value"].sum() if "outstanding_loan_value" in merged else 0
-    )
-    # Calculate weighted average APR
-    if "interest_rate_apr" in merged.columns and "outstanding_loan_value" in merged.columns:
-        total_balance = merged["outstanding_loan_value"].sum()
+    total_loans = merged['loan_id'].nunique() if 'loan_id' in merged else 0
+    total_outstanding = merged['outstanding_loan_value'].sum() if 'outstanding_loan_value' in merged else 0
+    if 'interest_rate_apr' in merged.columns and 'outstanding_loan_value' in merged.columns:
+        total_balance = merged['outstanding_loan_value'].sum()
         if total_balance > 0:
-            avg_apr = (
-                merged["interest_rate_apr"] * merged["outstanding_loan_value"]
-            ).sum() / total_balance
+            avg_apr = (merged['interest_rate_apr'] * merged['outstanding_loan_value']).sum() / total_balance
         else:
             avg_apr = 0
     else:
         avg_apr = 0
-    if "status" in merged:
-        default_rate = (merged["status"] == "defaulted").mean() * 100
+    if 'status' in merged:
+        default_rate = (merged['status'] == 'defaulted').mean() * 100
     else:
         default_rate = 0
-    col1.metric("Total Loans", f"{total_loans:,}")
+    col1.metric('Total Loans', f'{total_loans:,}')
     st.markdown('<div data-testid="kpi-total-loans">', unsafe_allow_html=True)
-    col2.metric("Total Outstanding", f"${total_outstanding:,.2f}")
-    st.markdown("</div>", unsafe_allow_html=True)
-    col3.metric("Average APR", f"{avg_apr:.2%}")
-    col4.metric("Default Rate", f"{default_rate:.2f}%")
-    st.markdown("</div>", unsafe_allow_html=True)
+    col2.metric('Total Outstanding', f'${total_outstanding:,.2f}')
+    st.markdown('</div>', unsafe_allow_html=True)
+    col3.metric('Average APR', f'{avg_apr:.2%}')
+    col4.metric('Default Rate', f'{default_rate:.2f}%')
+    st.markdown('</div>', unsafe_allow_html=True)
     return total_outstanding

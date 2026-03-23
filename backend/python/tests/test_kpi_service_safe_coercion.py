@@ -1,43 +1,27 @@
-"""Tests for KPIService safe numeric coercion helpers."""
-
 from typing import Any, cast
-
 import pytest
-
 from backend.python.apps.analytics.api.service import KPIService
 
-
 class _BadFloatRuntime:
-    """Object whose float conversion raises an unexpected runtime error."""
 
     def __float__(self) -> float:
-        raise RuntimeError("conversion bug")
-
+        raise RuntimeError('conversion bug')
 
 class _BadFloatValue:
-    """Object whose float conversion raises a value error."""
 
     def __float__(self) -> float:
-        raise ValueError("invalid number")
-
+        raise ValueError('invalid number')
 
 def test_safe_float_returns_default_on_value_error() -> None:
-    """Data conversion errors should map to the default fallback value."""
     assert KPIService._safe_float(cast(Any, _BadFloatValue()), default=7.5) == 0.0
 
-
 def test_safe_int_returns_default_on_value_error() -> None:
-    """Data conversion errors should map to the provided int default."""
     assert KPIService._safe_int(cast(Any, _BadFloatValue()), default=3) == 3
 
-
 def test_safe_float_propagates_unexpected_runtime_errors() -> None:
-    """Runtime/programming errors must not be swallowed silently."""
-    with pytest.raises(RuntimeError, match="conversion bug"):
+    with pytest.raises(RuntimeError, match='conversion bug'):
         KPIService._safe_float(cast(Any, _BadFloatRuntime()))
 
-
 def test_safe_int_propagates_unexpected_runtime_errors() -> None:
-    """Runtime/programming errors must not be swallowed silently."""
-    with pytest.raises(RuntimeError, match="conversion bug"):
+    with pytest.raises(RuntimeError, match='conversion bug'):
         KPIService._safe_int(cast(Any, _BadFloatRuntime()))

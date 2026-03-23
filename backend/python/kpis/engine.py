@@ -1,789 +1,376 @@
-"""
-KPIEngineV2: Standardized KPI calculation engine with built-in audit trails.
-
-This module provides a unified interface for KPI calculations across the Abaco
-loans analytics platform, replacing the v1 approach of individual function calls.
-
-Broad vs. strict NPL mask doctest
----------------------------------
-
-The core audit requirement is that `npl_ratio` (broad NPL) and `npl_90_ratio`
-(strict NPL) must not silently collapse to the same value. The masks differ:
-
-* strict: DPD >= 90 or status in ``_NPL_STRICT_STATUSES``
-* broad:  DPD >= 30 or status in ``_NPL_BROAD_STATUSES``
-
-The following doctest asserts that, on a mixed DPD/status dataset, the broad
-outstanding exceeds the strict outstanding while both remain below total:
-
->>> import pandas as pd
->>> from decimal import Decimal
->>> df = pd.DataFrame(
-...     [
-...         {"dpd": 0, "status": "active", "outstanding_principal": 100},
-...         {"dpd": 45, "status": "delinquent", "outstanding_principal": 100},
-...         {"dpd": 95, "status": "defaulted", "outstanding_principal": 100},
-...     ]
-... )
->>> total_out = Decimal(str(df["outstanding_principal"].sum()))
->>> npl_mask = (df["dpd"] >= 90) | df["status"].isin(_NPL_STRICT_STATUSES)
->>> broad_npl_mask = (df["dpd"] >= 30) | df["status"].isin(_NPL_BROAD_STATUSES)
->>> strict_out = Decimal(str(df.loc[npl_mask, "outstanding_principal"].sum()))
->>> broad_out = Decimal(str(df.loc[broad_npl_mask, "outstanding_principal"].sum()))
->>> strict_out < broad_out < total_out
-True
-"""
-
 from __future__ import annotations
-
 import json
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple
 import numpy as np
 import pandas as pd
-
 from backend.python.kpis.ltv import calculate_ltv_sintetico
 from backend.python.kpis.collection_rate import calculate_collection_rate
 from backend.python.kpis.formula_engine import KPIFormulaEngine
 from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 from backend.python.logging_config import get_logger
-
 logger = get_logger(__name__)
-
-# Log message format constants
-_LOG_KPI_CALCULATED = "Calculated %s: %s"
-_LOG_KPI_CALCULATION_ERROR = (
-    "Failed to calculate %s: %s"  # Error message template for KPI calculation failures
-)
-
-# Loan statuses considered non-performing for NPL calculations.
-# Used in both the broad (DPD≥30) and strict (DPD≥90) NPL definitions.
-_NPL_BROAD_STATUSES: tuple[str, ...] = ("delinquent", "defaulted")
-_NPL_STRICT_STATUSES: tuple[str, ...] = ("defaulted",)
-
+_LOG_KPI_CALCULATED = 'Calculated %s: %s'
+_LOG_KPI_CALCULATION_ERROR = 'Failed to calculate %s: %s'
+_NPL_BROAD_STATUSES: tuple[str, ...] = ('delinquent', 'defaulted')
+_NPL_STRICT_STATUSES: tuple[str, ...] = ('defaulted',)
 
 class KPIEngineV2:
-    """
-    Unified KPI calculation engine with audit trail support.
 
-    All KPI calculators return a consistent (value, context) tuple format,
-    and every calculation is logged in an audit trail with timestamps,
-    actor information, and run IDs for full traceability.
-    """
-
-    def __init__(
-        self,
-        df: Optional[pd.DataFrame] = None,
-        actor: str = "system",
-        run_id: Optional[str] = None,
-        kpi_definitions: Optional[Dict[str, Any]] = None,
-    ):
-        """
-        Initialize KPI engine.
-
-        Args:
-            df: Optional input DataFrame with loan/payment data
-            actor: Identity of the entity requesting calculations.
-            run_id: Optional unique identifier for this calculation run
-            kpi_definitions: Optional dictionary of KPI formulas
-        """
+    def __init__(self, df: Optional[pd.DataFrame]=None, actor: str='system', run_id: Optional[str]=None, kpi_definitions: Optional[Dict[str, Any]]=None):
         self.df = self._ensure_loan_count_column(df if df is not None else pd.DataFrame())
         self.actor = actor
         self.run_id = run_id or self._generate_run_id()
         self.kpi_definitions = kpi_definitions or {}
         self._audit_records: List[Dict[str, Any]] = []
-
-        logger.info("Initialized KPIEngineV2 with actor=%s, run_id=%s", actor, self.run_id)
+        logger.info('Initialized KPIEngineV2 with actor=%s, run_id=%s', actor, self.run_id)
 
     def _generate_run_id(self) -> str:
-        """Generate a unique run ID based on timestamp."""
-        return datetime.now().strftime("%Y%m%d_%H%M%S")
+        return datetime.now().strftime('%Y%m%d_%H%M%S')
 
-    def _record_calculation(
-        self,
-        kpi_name: str,
-        value: Any,
-        context: Optional[Dict[str, Any]] = None,
-        error: Optional[str] = None,
-    ) -> None:
-        """Record a KPI calculation in the audit trail."""
-        record = {
-            "timestamp": datetime.now().isoformat(),
-            "run_id": self.run_id,
-            "actor": self.actor,
-            "kpi_name": kpi_name,
-            "value": value,
-            "context": context or {},
-            "error": error,
-            "status": "success" if error is None else "failed",
-        }
+    def _record_calculation(self, kpi_name: str, value: Any, context: Optional[Dict[str, Any]]=None, error: Optional[str]=None) -> None:
+        record = {'timestamp': datetime.now().isoformat(), 'run_id': self.run_id, 'actor': self.actor, 'kpi_name': kpi_name, 'value': value, 'context': context or {}, 'error': error, 'status': 'success' if error is None else 'failed'}
         self._audit_records.append(record)
+        if error is None:
+            logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
 
     def calculate(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """
-        Evaluate only the dynamic formula KPIs defined in ``kpi_definitions``.
-
-        Intended for callers that supply their own formula catalog and do not
-        need the full legacy KPI suite (PAR30, LTV, etc.).  Returns a flat
-        ``{kpi_name: value}`` mapping so that downstream consumers can index
-        directly by name.
-        """
         self.df = self._ensure_loan_count_column(df)
         dynamic_kpis = self._calculate_dynamic_kpis()
-        return {
-            name: (float(value) if value is not None else None)
-            for name, value in dynamic_kpis.items()
-        }
-
-    # ── PAR legacy fallback ───────────────────────────────────────────────────
+        return {name: float(value) if value is not None else None for name, value in dynamic_kpis.items()}
 
     def _calc_par30_legacy(self) -> tuple[Decimal, str]:
-        required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
-        missing = [col for col in required if col not in self.df.columns]
-        if missing:
+        required = ['dpd_30_60_usd', 'dpd_60_90_usd', 'dpd_90_plus_usd', 'total_receivable_usd']
+        if (missing := [col for col in required if col not in self.df.columns]):
             raise ValueError(f"Missing required columns for PAR30: {', '.join(missing)}")
-        d30_60 = pd.to_numeric(self.df["dpd_30_60_usd"], errors="coerce").fillna(0.0).sum()
-        d60_90 = pd.to_numeric(self.df["dpd_60_90_usd"], errors="coerce").fillna(0.0).sum()
-        d90p = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
-        total = pd.to_numeric(self.df["total_receivable_usd"], errors="coerce").fillna(0.0).sum()
+        d30_60 = pd.to_numeric(self.df['dpd_30_60_usd'], errors='coerce').fillna(0.0).sum()
+        d60_90 = pd.to_numeric(self.df['dpd_60_90_usd'], errors='coerce').fillna(0.0).sum()
+        d90p = pd.to_numeric(self.df['dpd_90_plus_usd'], errors='coerce').fillna(0.0).sum()
+        total = pd.to_numeric(self.df['total_receivable_usd'], errors='coerce').fillna(0.0).sum()
         if total <= 0:
-            return Decimal("0.00"), "v1_legacy_buckets"
-        return (
-            Decimal(str(round(((d30_60 + d60_90 + d90p) / total) * 100, 2))).quantize(
-                Decimal("0.01")
-            ),
-            "v1_legacy_buckets",
-        )
+            return (Decimal('0.00'), 'v1_legacy_buckets')
+        return (Decimal(str(round((d30_60 + d60_90 + d90p) / total * 100, 2))).quantize(Decimal('0.01')), 'v1_legacy_buckets')
 
     def _calc_par90_legacy(self) -> tuple[Decimal, str]:
-        required = ["dpd_90_plus_usd", "total_receivable_usd"]
-        missing = [col for col in required if col not in self.df.columns]
-        if missing:
+        required = ['dpd_90_plus_usd', 'total_receivable_usd']
+        if (missing := [col for col in required if col not in self.df.columns]):
             raise ValueError(f"Missing required columns for PAR90: {', '.join(missing)}")
-        d90p = pd.to_numeric(self.df["dpd_90_plus_usd"], errors="coerce").fillna(0.0).sum()
-        total = pd.to_numeric(self.df["total_receivable_usd"], errors="coerce").fillna(0.0).sum()
+        d90p = pd.to_numeric(self.df['dpd_90_plus_usd'], errors='coerce').fillna(0.0).sum()
+        total = pd.to_numeric(self.df['total_receivable_usd'], errors='coerce').fillna(0.0).sum()
         if total <= 0:
-            return Decimal("0.00"), "v1_legacy_buckets"
-        return (
-            Decimal(str(round((d90p / total) * 100, 2))).quantize(Decimal("0.01")),
-            "v1_legacy_buckets",
-        )
+            return (Decimal('0.00'), 'v1_legacy_buckets')
+        return (Decimal(str(round(d90p / total * 100, 2))).quantize(Decimal('0.01')), 'v1_legacy_buckets')
 
-    # ─────────────────────────────────────────────────────────────────────────
+    def _resolve_par_columns(self) -> tuple[Optional[str], Optional[str]]:
+        balance_col = self._resolve_col(self.df, 'outstanding_balance', 'current_balance', 'amount', 'total_receivable_usd')
+        dpd_col = self._resolve_col(self.df, 'dpd', 'days_past_due')
+        return (balance_col, dpd_col)
+
+    def _calculate_par_value(self, metric_alias: str, legacy_column: str, legacy_calculator: Callable[[], tuple[Decimal, str]]) -> tuple[Decimal, str]:
+        balance_col, dpd_col = self._resolve_par_columns()
+        if not dpd_col and legacy_column in self.df.columns:
+            return legacy_calculator()
+        if balance_col and dpd_col:
+            results = calculate_asset_quality_metrics(balance=self.df[balance_col], dpd=self.df[dpd_col], status=self.df.get('status'), actor=self.actor, metric_aliases=[metric_alias])
+            value = Decimal(str(round(results[metric_alias], 2))).quantize(Decimal('0.01'))
+            return (value, 'ssot_asset_quality')
+        return legacy_calculator()
+
+    def _build_par_context(self, threshold_days: int, method: str) -> Dict[str, Any]:
+        return {'formula': f'SUM(balance WHERE DPD >= {threshold_days}) / SUM(total_balance) * 100', 'rows_processed': len(self.df), 'calculation_method': method}
+
+    def _finalize_kpi_success(self, kpi_name: str, value: Decimal, context: Dict[str, Any]) -> Tuple[Decimal, Dict[str, Any]]:
+        self._record_calculation(kpi_name, value, context)
+        return (value, context)
+
+    def _raise_kpi_calculation_error(self, kpi_name: str, error: Exception) -> NoReturn:
+        error_msg = str(error)
+        logger.error(_LOG_KPI_CALCULATION_ERROR, kpi_name, error_msg)
+        raise ValueError(f'CRITICAL: {kpi_name} calculation failed: {error}') from error
+
+    def _calculate_par(self, kpi_name: str, metric_alias: str, legacy_column: str, legacy_calculator: Callable[[], tuple[Decimal, str]], threshold_days: int) -> Tuple[Decimal, Dict[str, Any]]:
+        try:
+            value, method = self._calculate_par_value(metric_alias=metric_alias, legacy_column=legacy_column, legacy_calculator=legacy_calculator)
+            context = self._build_par_context(threshold_days=threshold_days, method=method)
+            return self._finalize_kpi_success(kpi_name, value, context)
+        except Exception as e:
+            self._raise_kpi_calculation_error(kpi_name, e)
 
     def calculate_par_30(self) -> Tuple[Decimal, Dict[str, Any]]:
-        """Calculate Portfolio at Risk (30+ days)."""
-        kpi_name = "PAR30"
-        try:
-            balance_col = self._resolve_col(
-                self.df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd"
-            )
-            dpd_col = self._resolve_col(self.df, "dpd", "days_past_due")
-
-            # Map legacy columns if needed for SSoT
-            if not dpd_col and "dpd_30_60_usd" in self.df.columns:
-                # If we only have legacy buckets, we can't use SSoT easily without reconstruction
-                # But the audit says: route all to ssot_asset_quality.py
-                value, method = self._calc_par30_legacy()
-            elif balance_col and dpd_col:
-                results = calculate_asset_quality_metrics(
-                    balance=self.df[balance_col],
-                    dpd=self.df[dpd_col],
-                    status=self.df.get("status"),
-                    actor=self.actor,
-                    metric_aliases=["par30"],
-                )
-                value = Decimal(str(round(results["par30"], 2))).quantize(Decimal("0.01"))
-                method = "ssot_asset_quality"
-            else:
-                value, method = self._calc_par30_legacy()
-
-            context = {
-                "formula": "SUM(balance WHERE DPD >= 30) / SUM(total_balance) * 100",
-                "rows_processed": len(self.df),
-                "calculation_method": method,
-            }
-            self._record_calculation(kpi_name, value, context)
-            logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
-            return value, context
-        except Exception as e:
-            error_msg = str(e)
-            logger.error(_LOG_KPI_CALCULATION_ERROR, kpi_name, error_msg)
-            raise ValueError(f"CRITICAL: {kpi_name} calculation failed: {e}") from e
+        return self._calculate_par(kpi_name='PAR30', metric_alias='par30', legacy_column='dpd_30_60_usd', legacy_calculator=self._calc_par30_legacy, threshold_days=30)
 
     def calculate_par_90(self) -> Tuple[Decimal, Dict[str, Any]]:
-        """Calculate Portfolio at Risk (90+ days)."""
-        kpi_name = "PAR90"
-        try:
-            balance_col = self._resolve_col(
-                self.df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd"
-            )
-            dpd_col = self._resolve_col(self.df, "dpd", "days_past_due")
-
-            if not dpd_col and "dpd_90_plus_usd" in self.df.columns:
-                value, method = self._calc_par90_legacy()
-            elif balance_col and dpd_col:
-                results = calculate_asset_quality_metrics(
-                    balance=self.df[balance_col],
-                    dpd=self.df[dpd_col],
-                    status=self.df.get("status"),
-                    actor=self.actor,
-                    metric_aliases=["par90"],
-                )
-                value = Decimal(str(round(results["par90"], 2))).quantize(Decimal("0.01"))
-                method = "ssot_asset_quality"
-            else:
-                value, method = self._calc_par90_legacy()
-
-            context = {
-                "formula": "SUM(balance WHERE DPD >= 90) / SUM(total_balance) * 100",
-                "rows_processed": len(self.df),
-                "calculation_method": method,
-            }
-            self._record_calculation(kpi_name, value, context)
-            logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
-            return value, context
-        except Exception as e:
-            error_msg = str(e)
-            logger.error(_LOG_KPI_CALCULATION_ERROR, kpi_name, error_msg)
-            raise ValueError(f"CRITICAL: {kpi_name} calculation failed: {e}") from e
+        return self._calculate_par(kpi_name='PAR90', metric_alias='par90', legacy_column='dpd_90_plus_usd', legacy_calculator=self._calc_par90_legacy, threshold_days=90)
 
     def calculate_collection_rate(self) -> Tuple[Decimal, Dict[str, Any]]:
-        """Calculate collection rate."""
-        kpi_name = "COLLECTION_RATE"
+        kpi_name = 'COLLECTION_RATE'
         try:
             value, _ = calculate_collection_rate(self.df)
-            context = {
-                "formula": "payments_collected / payments_due * 100",
-                "rows_processed": len(self.df),
-                "calculation_method": "v1_legacy",
-            }
-            self._record_calculation(kpi_name, value, context)
-            logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
-            return value, context
+            context = {'formula': 'payments_collected / payments_due * 100', 'rows_processed': len(self.df), 'calculation_method': 'v1_legacy'}
+            return self._finalize_kpi_success(kpi_name, value, context)
         except Exception as e:
-            error_msg = str(e)
-            logger.error(_LOG_KPI_CALCULATION_ERROR, kpi_name, error_msg)
-            # Fail-fast mandate: do not return partial/silent failures
-            raise ValueError(f"CRITICAL: {kpi_name} calculation failed: {e}") from e
+            self._raise_kpi_calculation_error(kpi_name, e)
 
     def calculate_ltv(self) -> Tuple[Decimal, Dict[str, Any]]:
-        """Calculate Portfolio-level Loan-to-Value ratio."""
-        kpi_name = "LTV"
-        required_columns = ["loan_amount", "collateral_value"]
+        kpi_name = 'LTV'
+        required_columns = ['loan_amount', 'collateral_value']
         missing_columns = [col for col in required_columns if col not in self.df.columns]
-
         if missing_columns:
-            raise ValueError(
-                f"CRITICAL: {kpi_name} missing required columns: {', '.join(missing_columns)}"
-            )
+            raise ValueError(f"CRITICAL: {kpi_name} missing required columns: {', '.join(missing_columns)}")
+        total_loans = self.df['loan_amount'].sum()
+        total_collateral = self.df['collateral_value'].sum()
+        raw_val = total_loans / total_collateral * 100 if total_collateral > 0 else 0.0
+        value = Decimal(str(round(raw_val, 2))).quantize(Decimal('0.01'))
+        context = {'formula': 'total_loan_amount / total_collateral_value * 100', 'rows_processed': len(self.df), 'calculation_method': 'v2_engine'}
+        return self._finalize_kpi_success(kpi_name, value, context)
 
-        total_loans = self.df["loan_amount"].sum()
-        total_collateral = self.df["collateral_value"].sum()
-        raw_val = (total_loans / total_collateral * 100) if total_collateral > 0 else 0.0
-        value = Decimal(str(round(raw_val, 2))).quantize(Decimal("0.01"))
-
-        context = {
-            "formula": "total_loan_amount / total_collateral_value * 100",
-            "rows_processed": len(self.df),
-            "calculation_method": "v2_engine",
-        }
-        self._record_calculation(kpi_name, value, context)
-        logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
-        return value, context
-
-    def _collect_standard_kpis(
-        self,
-        results: Dict[str, Dict[str, Any]],
-        failures: list[str],
-    ) -> None:
-        """Populate results with PAR30, PAR90, COLLECTION_RATE, and LTV."""
+    def _collect_standard_kpis(self, results: Dict[str, Dict[str, Any]], failures: list[str]) -> None:
         try:
             val, ctx = self.calculate_par_30()
-            results["PAR30"] = {"value": val, "context": ctx}
+            results['PAR30'] = {'value': val, 'context': ctx}
         except Exception as e:
-            logger.warning("Standard KPI PAR30 failed: %s", e)
-            failures.append(f"PAR30={e}")
-
+            logger.warning('Standard KPI PAR30 failed: %s', e)
+            failures.append(f'PAR30={e}')
         try:
             val, ctx = self.calculate_par_90()
-            results["PAR90"] = {"value": val, "context": ctx}
+            results['PAR90'] = {'value': val, 'context': ctx}
         except Exception as e:
-            logger.warning("Standard KPI PAR90 failed: %s", e)
-            failures.append(f"PAR90={e}")
-
+            logger.warning('Standard KPI PAR90 failed: %s', e)
+            failures.append(f'PAR90={e}')
         try:
             val, ctx = self.calculate_collection_rate()
-            results["COLLECTION_RATE"] = {"value": val, "context": ctx}
+            results['COLLECTION_RATE'] = {'value': val, 'context': ctx}
         except Exception as e:
-            logger.warning("Standard KPI COLLECTION_RATE failed: %s", e)
-            failures.append(f"COLLECTION_RATE={e}")
-
+            logger.warning('Standard KPI COLLECTION_RATE failed: %s', e)
+            failures.append(f'COLLECTION_RATE={e}')
         try:
             val, ctx = self.calculate_ltv()
-            results["LTV"] = {"value": val, "context": ctx}
+            results['LTV'] = {'value': val, 'context': ctx}
         except Exception as e:
-            logger.warning("Standard KPI LTV failed: %s", e)
-            failures.append(f"LTV={e}")
+            logger.warning('Standard KPI LTV failed: %s', e)
+            failures.append(f'LTV={e}')
 
-    def _collect_derived_kpis(
-        self,
-        results: Dict[str, Dict[str, Any]],
-        failures: list[str],
-    ) -> None:
-        """Populate results with dynamic, derived-risk, velocity, and enriched KPIs."""
+    def _collect_derived_kpis(self, results: Dict[str, Dict[str, Any]], failures: list[str]) -> None:
         try:
             dynamic_kpis = self._calculate_dynamic_kpis()
             for name, value in dynamic_kpis.items():
-                results[name] = {
-                    "value": float(value) if value is not None else None,
-                    "context": {"type": "dynamic_formula"},
-                }
+                results[name] = {'value': float(value) if value is not None else None, 'context': {'type': 'dynamic_formula'}}
         except Exception as e:
-            logger.warning("Dynamic KPIs calculation failed: %s", e)
-            failures.append(f"DYNAMIC={e}")
-
+            logger.warning('Dynamic KPIs calculation failed: %s', e)
+            failures.append(f'DYNAMIC={e}')
         try:
             derived_risk = self._calculate_derived_risk_kpis(self.df)
             for name, value in derived_risk.items():
-                results[name] = {"value": float(value), "context": {"type": "derived_risk"}}
+                results[name] = {'value': float(value), 'context': {'type': 'derived_risk'}}
         except Exception as e:
-            logger.warning("Derived risk KPIs failed: %s", e)
-            failures.append(f"DERIVED_RISK={e}")
-
+            logger.warning('Derived risk KPIs failed: %s', e)
+            failures.append(f'DERIVED_RISK={e}')
         try:
             vd_val = self._compute_portfolio_velocity_of_default(self.df)
             if vd_val is not None:
-                results["velocity_of_default"] = {
-                    "value": float(vd_val),
-                    "context": {"type": "risk_velocity"},
-                }
+                results['velocity_of_default'] = {'value': float(vd_val), 'context': {'type': 'risk_velocity'}}
         except Exception as e:
-            logger.warning("Velocity of default calculation failed: %s", e)
-            failures.append(f"VELOCITY_OF_DEFAULT={e}")
-
+            logger.warning('Velocity of default calculation failed: %s', e)
+            failures.append(f'VELOCITY_OF_DEFAULT={e}')
         try:
             enriched_kpis = self._calculate_enriched_kpis(self.df)
             for name, value in enriched_kpis.items():
-                results[name] = {
-                    "value": float(value) if value is not None else None,
-                    "context": {"type": "enriched"},
-                }
+                results[name] = {'value': float(value) if value is not None else None, 'context': {'type': 'enriched'}}
         except Exception as e:
-            logger.warning("Enriched KPIs calculation failed: %s", e)
-            failures.append(f"ENRICHED={e}")
+            logger.warning('Enriched KPIs calculation failed: %s', e)
+            failures.append(f'ENRICHED={e}')
 
-    def calculate_all(
-        self, kpi_definitions: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Dict[str, Any]]:
-        """
-        Calculate all standard and dynamic KPIs.
-
-        Returns:
-            Dict mapping KPI names to dicts with "value" and "context" keys.
-        """
-        logger.info("KPIEngineV2: Calculating all KPIs")
+    def calculate_all(self, kpi_definitions: Optional[Dict[str, Any]]=None) -> Dict[str, Dict[str, Any]]:
+        logger.info('KPIEngineV2: Calculating all KPIs')
         if kpi_definitions:
             self.kpi_definitions = kpi_definitions
-
         results: Dict[str, Dict[str, Any]] = {}
         failures: list[str] = []
-
         self._collect_standard_kpis(results, failures)
         self._collect_derived_kpis(results, failures)
-
         if failures:
-            raise ValueError(
-                "CRITICAL: KPI batch calculation failed with one or more errors: "
-                + " | ".join(failures)
-            )
-
-        logger.info("Calculated %d KPIs in total", len(results))
+            raise ValueError('CRITICAL: KPI batch calculation failed with one or more errors: ' + ' | '.join(failures))
+        logger.info('Calculated %d KPIs in total', len(results))
         return results
 
     def _calculate_dynamic_kpis(self) -> Dict[str, Optional[Decimal]]:
-        """Calculate all KPIs from YAML definitions using Formula Engine."""
         engine_full, engine_unique = self._build_kpi_engines(self.df)
         kpis: Dict[str, Optional[Decimal]] = {}
-        unique_grain_kpis = {"average_loan_size", "total_loans_count"}
-
+        unique_grain_kpis = {'average_loan_size', 'total_loans_count'}
         for category, kpi_name, formula in self._iter_kpi_formulas():
             engine = engine_unique if kpi_name in unique_grain_kpis else engine_full
             try:
                 if engine.has_kpi_definition(kpi_name):
-                    ssot_result = engine.calculate_kpi(
-                        kpi_name,
-                        strict_comparison_errors=True,
-                    )
-                    value = ssot_result["value"]
-                    context = {
-                        "category": category,
-                        "formula": formula,
-                        "type": "dynamic",
-                        "formula_version": ssot_result.get("formula_version", "unknown"),
-                        "execution_time_ms": ssot_result.get("execution_time_ms", 0),
-                    }
+                    ssot_result = engine.calculate_kpi(kpi_name, strict_comparison_errors=True)
+                    value = ssot_result['value']
+                    context = {'category': category, 'formula': formula, 'type': 'dynamic', 'formula_version': ssot_result.get('formula_version', 'unknown'), 'execution_time_ms': ssot_result.get('execution_time_ms', 0)}
                 else:
                     value = engine.calculate(formula, strict_comparison_errors=True)
-                    context = {
-                        "category": category,
-                        "formula": formula,
-                        "type": "dynamic",
-                    }
+                    context = {'category': category, 'formula': formula, 'type': 'dynamic'}
                 kpis[kpi_name] = value
-                self._record_calculation(
-                    kpi_name,
-                    float(value),
-                    context,
-                )
+                self._record_calculation(kpi_name, float(value), context)
             except Exception as e:
-                # Bypass division by zero for historically unavailable metrics. Inapplicable formulas shouldn't kill the dataset context.
-                if "Division by zero" in str(e):
-                    logger.warning(
-                        "Skipping dynamic KPI %s due to zero-division math (e.g., missing previous month data).",
-                        kpi_name,
-                    )
+                if 'Division by zero' in str(e):
+                    logger.warning('Skipping dynamic KPI %s due to zero-division math (e.g., missing previous month data).', kpi_name)
                     continue
-                logger.error("Dynamic KPI %s failed: %s", kpi_name, e)
-                # Fail-fast mandate: do not return partial/silent failures
-                raise ValueError(f"CRITICAL: Dynamic KPI {kpi_name} calculation failed: {e}") from e
-
+                logger.error('Dynamic KPI %s failed: %s', kpi_name, e)
+                raise ValueError(f'CRITICAL: Dynamic KPI {kpi_name} calculation failed: {e}') from e
         return kpis
 
     def _build_kpi_engines(self, df: pd.DataFrame) -> tuple[KPIFormulaEngine, KPIFormulaEngine]:
-        """Build full and grain-aware KPI engines."""
-        engine_full = KPIFormulaEngine(
-            df,
-            actor=self.actor,
-            run_id=self.run_id,
-            registry_data=self.kpi_definitions,
-        )
-        dedupe_col = "loan_uid" if "loan_uid" in df.columns else "loan_id"
+        engine_full = KPIFormulaEngine(df, actor=self.actor, run_id=self.run_id, registry_data=self.kpi_definitions)
+        dedupe_col = 'loan_uid' if 'loan_uid' in df.columns else 'loan_id'
         if dedupe_col not in df.columns:
-            return engine_full, engine_full
-
-        if "origination_date" in df.columns:
-            df_unique = df.sort_values("origination_date").drop_duplicates(dedupe_col)
+            return (engine_full, engine_full)
+        if 'origination_date' in df.columns:
+            df_unique = df.sort_values('origination_date').drop_duplicates(dedupe_col)
         else:
             df_unique = df.drop_duplicates(dedupe_col)
-        return engine_full, KPIFormulaEngine(
-            df_unique,
-            actor=self.actor,
-            run_id=self.run_id,
-            registry_data=self.kpi_definitions,
-        )
+        return (engine_full, KPIFormulaEngine(df_unique, actor=self.actor, run_id=self.run_id, registry_data=self.kpi_definitions))
 
     @staticmethod
     def _compute_portfolio_velocity_of_default(df: pd.DataFrame) -> Optional[Decimal]:
-        """Build a monthly default-rate series and return the latest Velocity of Default.
-
-        **Chronology**: Records are bucketed into calendar months (Period[M]).
-        ``groupby(..., sort=True)`` guarantees ascending period order so that
-        :py:meth:`pandas.Series.diff` produces the correct forward-looking delta.
-
-        **Units**: The returned value is the change in portfolio default rate
-        between the two most recent calendar months, expressed in percentage
-        points (pp).  1 pp = 100 basis points.
-
-        Excludes ``closed`` loans from the active-portfolio denominator.  When
-        no ``status`` column is present, all records are treated as
-        non-defaulted (default rate = 0 % in every period).
-
-        Returns:
-            ``Decimal`` Vd value quantised to 6 decimal places, or ``None``
-            when no recognised date column exists or fewer than two distinct
-            month-periods are present.
-        """
-        date_col = next(
-            (
-                c
-                for c in (
-                    "as_of_date",
-                    "measurement_date",
-                    "snapshot_date",
-                    "origination_date",
-                    "FechaDesembolso",
-                    "application_date",
-                    "disbursement_date",
-                    "reporting_date",
-                )
-                if c in df.columns
-            ),
-            None,
-        )
+        date_col = next((c for c in ('as_of_date', 'measurement_date', 'snapshot_date', 'origination_date', 'FechaDesembolso', 'application_date', 'disbursement_date', 'reporting_date') if c in df.columns), None)
         if date_col is None:
             return None
-
         work = df.copy()
-        work["_date"] = pd.to_datetime(work[date_col], errors="coerce", format="mixed")
-        work = work.dropna(subset=["_date"])
-
-        # Exclude closed loans from the active portfolio denominator
-        if "status" in work.columns:
-            work = work[work["status"] != "closed"]
-
+        work['_date'] = pd.to_datetime(work[date_col], errors='coerce', format='mixed')
+        work = work.dropna(subset=['_date'])
+        if 'status' in work.columns:
+            work = work[work['status'] != 'closed']
         if work.empty:
             return None
-
-        work["_period"] = work["_date"].dt.to_period("M")
-        if work["_period"].nunique() < 2:
+        work['_period'] = work['_date'].dt.to_period('M')
+        if work['_period'].nunique() < 2:
             return None
-
-        if "status" in work.columns:
-            work["_is_defaulted"] = (work["status"] == "defaulted").astype(int)
+        if 'status' in work.columns:
+            work['_is_defaulted'] = (work['status'] == 'defaulted').astype(int)
         else:
-            work["_is_defaulted"] = 0
-
-        period_agg = work.groupby("_period", sort=True).agg(
-            _total=("_is_defaulted", "count"),
-            _defaulted=("_is_defaulted", "sum"),
-        )
-        default_ratio = period_agg["_defaulted"] / period_agg["_total"].replace(0, np.nan)
+            work['_is_defaulted'] = 0
+        period_agg = work.groupby('_period', sort=True).agg(_total=('_is_defaulted', 'count'), _defaulted=('_is_defaulted', 'sum'))
+        default_ratio = period_agg['_defaulted'] / period_agg['_total'].replace(0, np.nan)
         rates = default_ratio.fillna(0.0) * 100.0
-
         vd = rates.diff()
         vd_clean = vd.dropna()
-        latest_vd = vd_clean.iloc[-1] if not vd_clean.empty else None
+        latest_vd = None if vd_clean.empty else vd_clean.iloc[-1]
         if latest_vd is None or not np.isfinite(latest_vd):
             return None
-
         return Decimal(str(round(float(latest_vd), 6)))
 
     def _calculate_derived_risk_kpis(self, df: pd.DataFrame) -> Dict[str, Decimal]:
-        """Compute derived risk KPIs not covered by the formula catalog."""
-        balance_col = self._resolve_col(
-            df, "outstanding_balance", "current_balance", "amount", "total_receivable_usd"
-        )
-        dpd_col = self._resolve_col(df, "dpd", "days_past_due")
-
+        balance_col = self._resolve_col(df, 'outstanding_balance', 'current_balance', 'amount', 'total_receivable_usd')
+        dpd_col = self._resolve_col(df, 'dpd', 'days_past_due')
         if not balance_col or not dpd_col:
             return {}
-
-        results = calculate_asset_quality_metrics(
-            balance=df[balance_col],
-            dpd=df[dpd_col],
-            status=df.get("status"),
-            actor=getattr(self, "actor", "system"),
-            metric_aliases=["par30", "par90", "npl", "npl90"],
-        )
-
-        active_df = (
-            df[df["status"].isin(["active", "delinquent", "defaulted"])]
-            if "status" in df.columns
-            else df
-        )
+        results = calculate_asset_quality_metrics(balance=df[balance_col], dpd=df[dpd_col], status=df.get('status'), actor=getattr(self, 'actor', 'system'), metric_aliases=['par30', 'par90', 'npl', 'npl90'])
+        active_df = df[df['status'].isin(['active', 'delinquent', 'defaulted'])] if 'status' in df.columns else df
         total_out = Decimal(str(active_df[balance_col].sum()))
-
         if total_out <= 0:
-            return {
-                "npl_ratio": Decimal("0.0"),
-                "npl_90_ratio": Decimal("0.0"),
-                "defaulted_outstanding_ratio": Decimal("0.0"),
-                "top_10_borrower_concentration": Decimal("0.0"),
-            }
-
-        npl_90_ratio = Decimal(str(round(results["npl90"], 6)))
-        npl_ratio = Decimal(str(round(results["npl"], 6)))
-
-        # defaulted_outstanding_ratio is strictly status-based defaults
-        defaulted_out = Decimal(
-            str(active_df.loc[active_df["status"].isin(_NPL_STRICT_STATUSES), balance_col].sum())
-            if "status" in active_df.columns
-            else 0.0
-        )
-
-        kpis: Dict[str, Decimal] = {
-            "npl_ratio": npl_ratio,
-            "npl_90_ratio": npl_90_ratio,
-            "defaulted_outstanding_ratio": (defaulted_out / total_out) * 100,
-            "top_10_borrower_concentration": self._top_10_borrower_concentration(
-                active_df, balance_col, total_out
-            ),
-        }
-
-        # LTV Sintético portfolio-level summary (exclude opaque/NaN observations)
+            return {'npl_ratio': Decimal('0.0'), 'npl_90_ratio': Decimal('0.0'), 'defaulted_outstanding_ratio': Decimal('0.0'), 'top_10_borrower_concentration': Decimal('0.0')}
+        npl_90_ratio = Decimal(str(round(results['npl90'], 6)))
+        npl_ratio = Decimal(str(round(results['npl'], 6)))
+        defaulted_out = Decimal(str(active_df.loc[active_df['status'].isin(_NPL_STRICT_STATUSES), balance_col].sum()) if 'status' in active_df.columns else 0.0)
+        kpis: Dict[str, Decimal] = {'npl_ratio': npl_ratio, 'npl_90_ratio': npl_90_ratio, 'defaulted_outstanding_ratio': defaulted_out / total_out * 100, 'top_10_borrower_concentration': self._top_10_borrower_concentration(active_df, balance_col, total_out)}
         ltv_series = self._calculate_ltv_sintetico(df)
         if not ltv_series.empty:
             ltv_valid = ltv_series[ltv_series.notna() & (ltv_series > 0)]
             if not ltv_valid.empty:
-                kpis["ltv_sintetico_mean"] = Decimal(str(round(float(ltv_valid.mean()), 6)))
+                kpis['ltv_sintetico_mean'] = Decimal(str(round(float(ltv_valid.mean()), 6)))
                 high_risk_pct = float((ltv_valid > 1.0).sum()) / float(len(ltv_valid)) * 100
-                kpis["ltv_sintetico_high_risk_pct"] = Decimal(str(round(high_risk_pct, 4)))
-
+                kpis['ltv_sintetico_high_risk_pct'] = Decimal(str(round(high_risk_pct, 4)))
         return kpis
 
     @staticmethod
     def _calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
-        """Calculate Synthetic Factoring LTV at the loan level.
-
-        LTV Sintético = capital_desembolsado / (valor_nominal_factura * (1 - tasa_dilucion))
-
-        Invalid-denominator semantics (fail-safe opacity):
-            When the adjusted invoice value is zero or NaN the LTV is
-            mathematically undefined.  Returning 0.0 would silently encode a
-            false low-risk value.  These rows therefore yield ``np.nan`` so
-            that callers can detect and handle them explicitly.
-        """
         return calculate_ltv_sintetico(df)
 
-    def _top_10_borrower_concentration(
-        self, active_df: pd.DataFrame, balance_col: str, total_out: Decimal
-    ) -> Decimal:
-        """Compute top-10 borrower concentration ratio."""
-        if "borrower_id" not in active_df.columns or total_out <= 0:
-            return Decimal("0.0")
-        concentration = (
-            active_df.groupby("borrower_id")[balance_col]
-            .sum()
-            .sort_values(ascending=False)
-            .head(10)
-            .sum()
-        )
-        return (Decimal(str(concentration)) / total_out) * 100
+    def _top_10_borrower_concentration(self, active_df: pd.DataFrame, balance_col: str, total_out: Decimal) -> Decimal:
+        if 'borrower_id' not in active_df.columns or total_out <= 0:
+            return Decimal('0.0')
+        concentration = active_df.groupby('borrower_id')[balance_col].sum().sort_values(ascending=False).head(10).sum()
+        return Decimal(str(concentration)) / total_out * 100
 
     def _ensure_loan_count_column(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Add loan_count when borrower_id and loan_id exist."""
-        if (
-            "borrower_id" in df.columns
-            and "loan_id" in df.columns
-            and "loan_count" not in df.columns
-        ):
+        if 'borrower_id' in df.columns and 'loan_id' in df.columns and ('loan_count' not in df.columns):
             df = df.copy()
-            df["loan_count"] = df.groupby("borrower_id")["loan_id"].transform("nunique")
+            df['loan_count'] = df.groupby('borrower_id')['loan_id'].transform('nunique')
         return df
 
     def _iter_kpi_formulas(self) -> List[tuple[str, str, str]]:
-        """Collect (category, KPI name, formula) from configured KPI definitions."""
-        category_order = [
-            "portfolio_kpis",
-            "asset_quality_kpis",
-            "cash_flow_kpis",
-            "growth_kpis",
-            "customer_kpis",
-            "operational_kpis",
-        ]
+        category_order = ['portfolio_kpis', 'asset_quality_kpis', 'cash_flow_kpis', 'growth_kpis', 'customer_kpis', 'operational_kpis']
         formulas: List[tuple[str, str, str]] = []
         for category in category_order:
             category_kpis = self.kpi_definitions.get(category, {})
             for kpi_name, kpi_config in category_kpis.items():
-                if formula := kpi_config.get("formula"):
+                if (formula := kpi_config.get('formula')):
                     formulas.append((category, kpi_name, formula))
         return formulas
 
     def _calculate_enriched_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Compute new KPIs available from the CONTROL DE MORA enriched format."""
         enriched: Dict[str, Any] = {}
-        balance_col = self._resolve_col(df, "outstanding_balance", "current_balance", "amount")
+        balance_col = self._resolve_col(df, 'outstanding_balance', 'current_balance', 'amount')
         total_bal = float(df[balance_col].sum()) if balance_col else 0.0
-
-        self._add_categorical_exposure_rate(
-            enriched,
-            "collections_eligible_rate",
-            df,
-            balance_col,
-            total_bal,
-            ("collections_eligible", "procede_a_cobrar"),
-            "Y",
-        )
-        self._add_categorical_exposure_rate(
-            enriched,
-            "government_sector_exposure_rate",
-            df,
-            balance_col,
-            total_bal,
-            ("government_sector", "goes"),
-            "GOES",
-        )
-
-        if util_col := self._resolve_col(df, "utilization_pct", "porcentaje_utilizado"):
+        self._add_categorical_exposure_rate(enriched, 'collections_eligible_rate', df, balance_col, total_bal, ('collections_eligible', 'procede_a_cobrar'), 'Y')
+        self._add_categorical_exposure_rate(enriched, 'government_sector_exposure_rate', df, balance_col, total_bal, ('government_sector', 'goes'), 'GOES')
+        if (util_col := self._resolve_col(df, 'utilization_pct', 'porcentaje_utilizado')):
             avg_utilization = self._calculate_avg_credit_line_utilization(df, util_col)
             if avg_utilization is not None:
-                enriched["avg_credit_line_utilization"] = avg_utilization
-
+                enriched['avg_credit_line_utilization'] = avg_utilization
         capital_rate = self._calculate_capital_collection_rate(df, balance_col, total_bal)
         if capital_rate is not None:
-            enriched["capital_collection_rate"] = capital_rate
-
+            enriched['capital_collection_rate'] = capital_rate
         mdsc_rate = self._calculate_mdsc_posted_rate(df)
         if mdsc_rate is not None:
-            enriched["mdsc_posted_rate"] = mdsc_rate
-
+            enriched['mdsc_posted_rate'] = mdsc_rate
         return enriched
 
-    def _add_categorical_exposure_rate(
-        self,
-        target: Dict[str, Any],
-        metric_name: str,
-        df: pd.DataFrame,
-        balance_col: Optional[str],
-        total_bal: float,
-        candidates: tuple[str, str],
-        match_value: str,
-    ) -> None:
-        """Add balance-weighted exposure for a categorical flag column."""
+    def _add_categorical_exposure_rate(self, target: Dict[str, Any], metric_name: str, df: pd.DataFrame, balance_col: Optional[str], total_bal: float, candidates: tuple[str, str], match_value: str) -> None:
         source_col = self._resolve_col(df, *candidates)
         if source_col is None or balance_col is None or total_bal <= 0:
             return
-
         flag_mask = df[source_col].astype(str).str.strip().str.upper() == match_value
         flagged_balance = float(df.loc[flag_mask, balance_col].sum())
         target[metric_name] = round(flagged_balance / total_bal * 100, 4)
 
     @staticmethod
     def _calculate_avg_credit_line_utilization(df: pd.DataFrame, util_col: str) -> Optional[float]:
-        """Compute average utilization, normalizing percent-like raw formats."""
-        raw_util = df[util_col].astype(str).str.replace(r"[$,%\s]", "", regex=True)
-        util_series = pd.to_numeric(raw_util, errors="coerce").dropna()
+        raw_util = df[util_col].astype(str).str.replace('[$,%\\s]', '', regex=True)
+        util_series = pd.to_numeric(raw_util, errors='coerce').dropna()
         if util_series.empty:
             return None
-
         if float(util_series.median()) < 2.0:
             util_series = util_series * 100
         return round(float(util_series.mean()), 4)
 
-    def _calculate_capital_collection_rate(
-        self, df: pd.DataFrame, balance_col: Optional[str], total_bal: float
-    ) -> Optional[float]:
-        """Compute capital collection ratio over outstanding balance."""
-        cap_col = self._resolve_col(df, "capital_collected", "capitalcobrado")
+    def _calculate_capital_collection_rate(self, df: pd.DataFrame, balance_col: Optional[str], total_bal: float) -> Optional[float]:
+        cap_col = self._resolve_col(df, 'capital_collected', 'capitalcobrado')
         if cap_col is None or balance_col is None or total_bal <= 0:
             return None
-
-        cap_collected = pd.to_numeric(df[cap_col], errors="coerce").fillna(0.0).sum()
+        cap_collected = pd.to_numeric(df[cap_col], errors='coerce').fillna(0.0).sum()
         return round(float(cap_collected) / total_bal * 100, 4)
 
     def _calculate_mdsc_posted_rate(self, df: pd.DataFrame) -> Optional[float]:
-        """Compute average posted MDSC rate in percentage points."""
-        mdsc_col = self._resolve_col(df, "mdsc_posted", "mdscposteado")
+        mdsc_col = self._resolve_col(df, 'mdsc_posted', 'mdscposteado')
         if mdsc_col is None:
             return None
-
-        mdsc = pd.to_numeric(df[mdsc_col], errors="coerce").fillna(0.0)
+        mdsc = pd.to_numeric(df[mdsc_col], errors='coerce').fillna(0.0)
         n = len(mdsc)
-        if n <= 0:
-            return 0.0
-        return round(float(mdsc.sum()) / n * 100, 4)
+        return 0.0 if n <= 0 else round(float(mdsc.sum()) / n * 100, 4)
 
     @staticmethod
     def _resolve_col(df: pd.DataFrame, *candidates: str) -> Optional[str]:
-        """Resolve a column from multiple candidates."""
         return next((c for c in candidates if c in df.columns), None)
 
     def calculate_nsm_metrics(self) -> Dict[str, Any]:
-        """Classify clients as new / recurrent / recovered per period and compute TPV."""
         ts = self._build_client_tpv_timeseries(self.df)
         if ts.empty:
             return {}
-
-        periods = sorted(ts["period"].unique())
-        pivot = ts.pivot_table(index="client_id", columns="period", values="tpv", fill_value=0.0)
-
+        periods = sorted(ts['period'].unique())
+        pivot = ts.pivot_table(index='client_id', columns='period', values='tpv', fill_value=0.0)
         by_period: Dict[str, Any] = {}
         for i, period in enumerate(periods):
             active_mask = pivot[period] > 0
-
             if i == 0:
                 new_mask = active_mask
                 recurrent_mask = pd.Series(False, index=pivot.index)
@@ -791,96 +378,42 @@ class KPIEngineV2:
             else:
                 prev_period = periods[i - 1]
                 prior_periods = periods[:i]
-
                 previously_active = pivot[prior_periods].sum(axis=1) > 0
                 recurrent_mask = active_mask & (pivot[prev_period] > 0)
-                recovered_mask = active_mask & (~(pivot[prev_period] > 0)) & previously_active
-                new_mask = active_mask & (~previously_active)
-
-            by_period[period] = {
-                "new_tpv": float(pivot.loc[new_mask, period].sum()),
-                "recurrent_tpv": float(pivot.loc[recurrent_mask, period].sum()),
-                "recovered_tpv": float(pivot.loc[recovered_mask, period].sum()),
-                "new_count": int(new_mask.sum()),
-                "recurrent_count": int(recurrent_mask.sum()),
-                "recovered_count": int(recovered_mask.sum()),
-            }
-
+                recovered_mask = active_mask & ~(pivot[prev_period] > 0) & previously_active
+                new_mask = active_mask & ~previously_active
+            by_period[period] = {'new_tpv': float(pivot.loc[new_mask, period].sum()), 'recurrent_tpv': float(pivot.loc[recurrent_mask, period].sum()), 'recovered_tpv': float(pivot.loc[recovered_mask, period].sum()), 'new_count': int(new_mask.sum()), 'recurrent_count': int(recurrent_mask.sum()), 'recovered_count': int(recovered_mask.sum())}
         latest_period = periods[-1]
-        return {
-            "by_period": by_period,
-            "latest_period": latest_period,
-            "latest": by_period[latest_period],
-        }
+        return {'by_period': by_period, 'latest_period': latest_period, 'latest': by_period[latest_period]}
 
     @staticmethod
     def _build_client_tpv_timeseries(df: pd.DataFrame) -> pd.DataFrame:
-        """Build per-(period, client) TPV timeseries from transaction data."""
         if df.empty:
-            return pd.DataFrame(columns=["period", "client_id", "tpv"])
-
-        client_col = next(
-            (c for c in ("client_id", "borrower_id", "CodCliente") if c in df.columns), None
-        )
-        date_col = next(
-            (
-                c
-                for c in (
-                    "origination_date",
-                    "FechaDesembolso",
-                    "application_date",
-                    "disbursement_date",
-                )
-                if c in df.columns
-            ),
-            None,
-        )
-        amount_col = next(
-            (
-                c
-                for c in ("amount", "MontoDesembolsado", "ValorAprobado", "loan_amount")
-                if c in df.columns
-            ),
-            None,
-        )
-
+            return pd.DataFrame(columns=['period', 'client_id', 'tpv'])
+        client_col = next((c for c in ('client_id', 'borrower_id', 'CodCliente') if c in df.columns), None)
+        date_col = next((c for c in ('origination_date', 'FechaDesembolso', 'application_date', 'disbursement_date') if c in df.columns), None)
+        amount_col = next((c for c in ('amount', 'MontoDesembolsado', 'ValorAprobado', 'loan_amount') if c in df.columns), None)
         if client_col is None or date_col is None or amount_col is None:
-            return pd.DataFrame(columns=["period", "client_id", "tpv"])
-
+            return pd.DataFrame(columns=['period', 'client_id', 'tpv'])
         work = df[[client_col, date_col, amount_col]].copy()
         try:
-            work["_date"] = pd.to_datetime(work[date_col], format="mixed", errors="coerce")
+            work['_date'] = pd.to_datetime(work[date_col], format='mixed', errors='coerce')
         except TypeError:
-            work["_date"] = pd.to_datetime(work[date_col], errors="coerce")
-        work = work.dropna(subset=["_date"])
-        work["period"] = work["_date"].dt.to_period("M").astype(str)
-        work["tpv"] = pd.to_numeric(work[amount_col], errors="coerce").fillna(0.0)
-        work = work.rename(columns={client_col: "client_id"})
-
-        result = work.groupby(["period", "client_id"], as_index=False)["tpv"].sum()
-        return result[["period", "client_id", "tpv"]]
+            work['_date'] = pd.to_datetime(work[date_col], errors='coerce')
+        work = work.dropna(subset=['_date'])
+        work['period'] = work['_date'].dt.to_period('M').astype(str)
+        work['tpv'] = pd.to_numeric(work[amount_col], errors='coerce').fillna(0.0)
+        work = work.rename(columns={client_col: 'client_id'})
+        result = work.groupby(['period', 'client_id'], as_index=False)['tpv'].sum()
+        return result[['period', 'client_id', 'tpv']]
 
     def get_audit_trail(self) -> pd.DataFrame:
-        """Export the calculation audit trail as a DataFrame."""
         if not self._audit_records:
-            return pd.DataFrame(
-                columns=[
-                    "timestamp",
-                    "run_id",
-                    "actor",
-                    "kpi_name",
-                    "value",
-                    "context",
-                    "error",
-                    "status",
-                ]
-            )
-
+            return pd.DataFrame(columns=['timestamp', 'run_id', 'actor', 'kpi_name', 'value', 'context', 'error', 'status'])
         records_for_df = []
         for record in self._audit_records:
             record_copy = record.copy()
-            context_value = record_copy.get("context", {})
-            record_copy["context"] = json.dumps(context_value if context_value is not None else {})
+            context_value = record_copy.get('context', {})
+            record_copy['context'] = json.dumps(context_value if context_value is not None else {})
             records_for_df.append(record_copy)
-
         return pd.DataFrame(records_for_df)

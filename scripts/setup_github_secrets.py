@@ -1,8 +1,4 @@
-#!/usr/bin/env python3
-"""Initialize local secrets and upload GitHub Actions secrets."""
-
 from __future__ import annotations
-
 import argparse
 import base64
 import json
@@ -14,290 +10,157 @@ import urllib.error
 import urllib.request
 from collections.abc import Iterable
 from pathlib import Path
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-ENV_LOCAL_PATH = PROJECT_ROOT / ".env.local"
-REPO = "Arisofia/abaco-loans-analytics"
-API_BASE = "https://api.github.com"
-PLACEHOLDER_MARKERS = ("<<PASTE", "xxxxxxxx", "CHANGE_ME", "your-")
-
-LOCAL_ENV_TEMPLATE: list[tuple[str, list[tuple[str, str, str]]]] = [
-    (
-        "Supabase",
-        [
-            ("NEXT_PUBLIC_SUPABASE_URL", "https://your-project.supabase.co", "Public project URL for frontend"),
-            ("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY", "<<PASTE_SUPABASE_PUBLISHABLE_KEY>>", "Supabase publishable key"),
-            ("SUPABASE_URL", "https://your-project.supabase.co", "Supabase project URL"),
-            ("SUPABASE_ANON_KEY", "<<PASTE_SUPABASE_ANON_KEY>>", "Supabase anon key"),
-            ("SUPABASE_SERVICE_ROLE_KEY", "<<PASTE_SUPABASE_SERVICE_ROLE_KEY>>", "Supabase service role key"),
-            ("SUPABASE_PROJECT_REF", "your-project-ref", "Supabase project ref"),
-            ("SUPABASE_JWT_SECRET", "<<PASTE_SUPABASE_JWT_SECRET>>", "Supabase JWT secret"),
-            ("SUPABASE_DATABASE_URL", "SET_FROM_SUPABASE_DATABASE_SETTINGS", "Direct PostgreSQL connection string"),
-        ],
-    ),
-    (
-        "LLM Providers",
-        [
-            ("OPENAI_API_KEY", "<<PASTE_OPENAI_API_KEY>>", "Required by CI and multi-agent flows"),
-            ("ANTHROPIC_API_KEY", "", "Optional Anthropic API key"),
-            ("GEMINI_API_KEY", "", "Optional Gemini API key"),
-            ("XAI_API_KEY", "", "Optional xAI API key"),
-        ],
-    ),
-    (
-        "GitHub and security tooling",
-        [
-            ("GITHUB_PAT", "<<PASTE_GITHUB_PAT>>", "PAT with repo scope for uploading Actions secrets"),
-            ("SNYK_TOKEN", "", "Optional Snyk token for security-scan workflow"),
-            ("SENTRY_DSN", "", "Optional Sentry DSN"),
-        ],
-    ),
-    (
-        "Google Sheets",
-        [
-            ("GOOGLE_SHEETS_CREDENTIALS_PATH", "credentials/google-service-account.json", "Path to Google service account JSON"),
-            ("GOOGLE_SHEETS_SPREADSHEET_ID", "", "Spreadsheet ID"),
-            ("GOOGLE_SHEETS_ENABLED", "false", "Feature toggle for Sheets ingestion"),
-        ],
-    ),
-    (
-        "Monitoring and SMTP",
-        [
-            ("SMTP_HOST", "smtp.gmail.com:587", "SMTP endpoint"),
-            ("SMTP_USER", "", "SMTP username"),
-            ("SMTP_PASSWORD", "", "SMTP password or app password"),
-            ("ALERT_EMAIL_FROM", "", "Alert sender"),
-            ("CRITICAL_EMAIL_TO", "", "Critical alert recipient"),
-            ("GRAFANA_ADMIN_PASSWORD", "", "Grafana admin password"),
-            ("LOG_LEVEL", "INFO", "Default log level"),
-        ],
-    ),
-    (
-        "Internal app secrets",
-        [
-            ("ABACO_API_KEY", "__GENERATE_TOKEN_32__", "Internal API key"),
-            ("API_JWT_SECRET", "__GENERATE_TOKEN_48__", "JWT signing secret"),
-        ],
-    ),
-]
-
-GITHUB_ACTIONS_SECRETS: dict[str, str] = {
-    "SUPABASE_URL": "SUPABASE_URL",
-    "SUPABASE_ANON_KEY": "SUPABASE_ANON_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY": "SUPABASE_SERVICE_ROLE_KEY",
-    "OPENAI_API_KEY": "OPENAI_API_KEY",
-    "SNYK_TOKEN": "SNYK_TOKEN",
-    "API_JWT_SECRET": "API_JWT_SECRET",
-    "ABACO_API_KEY": "ABACO_API_KEY",
-    "SMTP_HOST": "SMTP_HOST",
-    "SMTP_USER": "SMTP_USER",
-    "SMTP_PASSWORD": "SMTP_PASSWORD",
-    "ALERT_EMAIL_FROM": "ALERT_EMAIL_FROM",
-    "CRITICAL_EMAIL_TO": "CRITICAL_EMAIL_TO",
-    "GOOGLE_SHEETS_CREDENTIALS_PATH": "GOOGLE_SHEETS_CREDENTIALS_PATH",
-    "GOOGLE_SHEETS_SPREADSHEET_ID": "GOOGLE_SHEETS_SPREADSHEET_ID",
-    "SUPABASE_DATABASE_URL": "SUPABASE_DATABASE_URL",
-    "SUPABASE_JWT_SECRET": "SUPABASE_JWT_SECRET",
-    "ANTHROPIC_API_KEY": "ANTHROPIC_API_KEY",
-    "GEMINI_API_KEY": "GEMINI_API_KEY",
-    "XAI_API_KEY": "XAI_API_KEY",
-    "SENTRY_DSN": "SENTRY_DSN",
-}
-
+ENV_LOCAL_PATH = PROJECT_ROOT / '.env.local'
+REPO = 'Arisofia/abaco-loans-analytics'
+API_BASE = 'https://api.github.com'
+PLACEHOLDER_MARKERS = ('<<PASTE', 'xxxxxxxx', 'CHANGE_ME', 'your-')
+LOCAL_ENV_TEMPLATE: list[tuple[str, list[tuple[str, str, str]]]] = [('Supabase', [('NEXT_PUBLIC_SUPABASE_URL', 'https://your-project.supabase.co', 'Public project URL for frontend'), ('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY', '<<PASTE_SUPABASE_PUBLISHABLE_KEY>>', 'Supabase publishable key'), ('SUPABASE_URL', 'https://your-project.supabase.co', 'Supabase project URL'), ('SUPABASE_ANON_KEY', '<<PASTE_SUPABASE_ANON_KEY>>', 'Supabase anon key'), ('SUPABASE_SERVICE_ROLE_KEY', '<<PASTE_SUPABASE_SERVICE_ROLE_KEY>>', 'Supabase service role key'), ('SUPABASE_PROJECT_REF', 'your-project-ref', 'Supabase project ref'), ('SUPABASE_JWT_SECRET', '<<PASTE_SUPABASE_JWT_SECRET>>', 'Supabase JWT secret'), ('SUPABASE_DATABASE_URL', 'SET_FROM_SUPABASE_DATABASE_SETTINGS', 'Direct PostgreSQL connection string')]), ('LLM Providers', [('OPENAI_API_KEY', '<<PASTE_OPENAI_API_KEY>>', 'Required by CI and multi-agent flows'), ('ANTHROPIC_API_KEY', '', 'Optional Anthropic API key'), ('GEMINI_API_KEY', '', 'Optional Gemini API key'), ('XAI_API_KEY', '', 'Optional xAI API key')]), ('GitHub and security tooling', [('GITHUB_PAT', '<<PASTE_GITHUB_PAT>>', 'PAT with repo scope for uploading Actions secrets'), ('SNYK_TOKEN', '', 'Optional Snyk token for security-scan workflow'), ('SENTRY_DSN', '', 'Optional Sentry DSN')]), ('Google Sheets', [('GOOGLE_SHEETS_CREDENTIALS_PATH', 'credentials/google-service-account.json', 'Path to Google service account JSON'), ('GOOGLE_SHEETS_SPREADSHEET_ID', '', 'Spreadsheet ID'), ('GOOGLE_SHEETS_ENABLED', 'false', 'Feature toggle for Sheets ingestion')]), ('Monitoring and SMTP', [('SMTP_HOST', 'smtp.gmail.com:587', 'SMTP endpoint'), ('SMTP_USER', '', 'SMTP username'), ('SMTP_PASSWORD', '', 'SMTP password or app password'), ('ALERT_EMAIL_FROM', '', 'Alert sender'), ('CRITICAL_EMAIL_TO', '', 'Critical alert recipient'), ('GRAFANA_ADMIN_PASSWORD', '', 'Grafana admin password'), ('LOG_LEVEL', 'INFO', 'Default log level')]), ('Internal app secrets', [('ABACO_API_KEY', '__GENERATE_TOKEN_32__', 'Internal API key'), ('API_JWT_SECRET', '__GENERATE_TOKEN_48__', 'JWT signing secret')])]
+GITHUB_ACTIONS_SECRETS: dict[str, str] = {'SUPABASE_URL': 'SUPABASE_URL', 'SUPABASE_ANON_KEY': 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY': 'SUPABASE_SERVICE_ROLE_KEY', 'OPENAI_API_KEY': 'OPENAI_API_KEY', 'SNYK_TOKEN': 'SNYK_TOKEN', 'API_JWT_SECRET': 'API_JWT_SECRET', 'ABACO_API_KEY': 'ABACO_API_KEY', 'SMTP_HOST': 'SMTP_HOST', 'SMTP_USER': 'SMTP_USER', 'SMTP_PASSWORD': 'SMTP_PASSWORD', 'ALERT_EMAIL_FROM': 'ALERT_EMAIL_FROM', 'CRITICAL_EMAIL_TO': 'CRITICAL_EMAIL_TO', 'GOOGLE_SHEETS_CREDENTIALS_PATH': 'GOOGLE_SHEETS_CREDENTIALS_PATH', 'GOOGLE_SHEETS_SPREADSHEET_ID': 'GOOGLE_SHEETS_SPREADSHEET_ID', 'SUPABASE_DATABASE_URL': 'SUPABASE_DATABASE_URL', 'SUPABASE_JWT_SECRET': 'SUPABASE_JWT_SECRET', 'ANTHROPIC_API_KEY': 'ANTHROPIC_API_KEY', 'GEMINI_API_KEY': 'GEMINI_API_KEY', 'XAI_API_KEY': 'XAI_API_KEY', 'SENTRY_DSN': 'SENTRY_DSN'}
 
 def maybe_load_dotenv() -> None:
     try:
         from dotenv import load_dotenv
     except ImportError:
         return
-
     if ENV_LOCAL_PATH.exists():
         load_dotenv(ENV_LOCAL_PATH, override=False)
 
-
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Initialize local secrets and upload GitHub Actions secrets")
-    parser.add_argument("--token", default=os.environ.get("GITHUB_PAT", ""), help="GitHub PAT with repo scope")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be uploaded without calling GitHub")
-    parser.add_argument("--init-local", action="store_true", help="Create or update .env.local with missing keys")
+    parser = argparse.ArgumentParser(description='Initialize local secrets and upload GitHub Actions secrets')
+    parser.add_argument('--token', default=os.environ.get('GITHUB_PAT', ''), help='GitHub PAT with repo scope')
+    parser.add_argument('--dry-run', action='store_true', help='Show what would be uploaded without calling GitHub')
+    parser.add_argument('--init-local', action='store_true', help='Create or update .env.local with missing keys')
     return parser.parse_args()
-
 
 def read_existing_env(path: Path) -> dict[str, str]:
     if not path.exists():
         return {}
-
     existing: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+    for line in path.read_text(encoding='utf-8', errors='ignore').splitlines():
         stripped = line.strip()
-        if not stripped or stripped.startswith("#") or "=" not in stripped:
+        if not stripped or stripped.startswith('#') or '=' not in stripped:
             continue
-        key, value = stripped.split("=", 1)
+        key, value = stripped.split('=', 1)
         existing[key.strip()] = value
     return existing
 
-
 def build_generated_value(template: str) -> str:
-    if template == "__GENERATE_TOKEN_32__":
+    if template == '__GENERATE_TOKEN_32__':
         return secrets.token_urlsafe(32)
-    if template == "__GENERATE_TOKEN_48__":
+    if template == '__GENERATE_TOKEN_48__':
         return secrets.token_urlsafe(48)
     return template
 
-
 def render_env_content(existing: dict[str, str]) -> str:
-    lines = [
-        "# ============================================",
-        "# ABACO LOANS ANALYTICS - LOCAL SECRETS",
-        "# Generated by scripts/setup_github_secrets.py --init-local",
-        "# Existing values are preserved; missing keys are appended.",
-        "# ============================================",
-        "",
-    ]
-
+    lines = ['# ============================================', '# ABACO LOANS ANALYTICS - LOCAL SECRETS', '# Generated by scripts/setup_github_secrets.py --init-local', '# Existing values are preserved; missing keys are appended.', '# ============================================', '']
     for section_name, entries in LOCAL_ENV_TEMPLATE:
-        lines.append(f"# -- {section_name} --")
+        lines.append(f'# -- {section_name} --')
         for key, template, comment in entries:
             value = existing.get(key) or build_generated_value(template)
-            lines.append(f"# {comment}")
-            lines.append(f"{key}={value}")
-        lines.append("")
-
-    return "\n".join(lines).rstrip() + "\n"
-
+            lines.append(f'# {comment}')
+            lines.append(f'{key}={value}')
+        lines.append('')
+    return '\n'.join(lines).rstrip() + '\n'
 
 def init_local_env() -> None:
     existing = read_existing_env(ENV_LOCAL_PATH)
-    ENV_LOCAL_PATH.write_text(render_env_content(existing), encoding="utf-8")
-    print(f"Initialized local env file: {ENV_LOCAL_PATH}")
+    ENV_LOCAL_PATH.write_text(render_env_content(existing), encoding='utf-8')
+    print(f'Initialized local env file: {ENV_LOCAL_PATH}')
 
-
-def api_request(url: str, *, method: str = "GET", data: dict | None = None, token: str) -> dict:
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "Content-Type": "application/json",
-    }
-    payload = json.dumps(data).encode("utf-8") if data else None
+def api_request(url: str, *, method: str='GET', data: dict | None=None, token: str) -> dict:
+    headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json'}
+    payload = json.dumps(data).encode('utf-8') if data else None
     request = urllib.request.Request(url, data=payload, headers=headers, method=method)
     try:
         with urllib.request.urlopen(request) as response:
             content = response.read()
     except urllib.error.HTTPError as error:
-        body = error.read().decode("utf-8", errors="ignore")
-        raise RuntimeError(f"HTTP {error.code} - {body}") from error
-
+        body = error.read().decode('utf-8', errors='ignore')
+        raise RuntimeError(f'HTTP {error.code} - {body}') from error
     return json.loads(content) if content else {}
-
 
 def ensure_pynacl() -> None:
     try:
-        import nacl  # noqa: F401
+        import nacl
     except ImportError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "PyNaCl", "-q"])
-
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'PyNaCl', '-q'])
 
 def get_repo_public_key(token: str) -> tuple[str, str]:
-    response = api_request(f"{API_BASE}/repos/{REPO}/actions/secrets/public-key", token=token)
-    return response["key_id"], response["key"]
-
+    response = api_request(f'{API_BASE}/repos/{REPO}/actions/secrets/public-key', token=token)
+    return (response['key_id'], response['key'])
 
 def encrypt_secret(public_key_b64: str, secret_value: str) -> str:
     ensure_pynacl()
     from nacl import encoding, public
-
-    public_key = public.PublicKey(public_key_b64.encode("utf-8"), encoding.Base64Encoder())
+    public_key = public.PublicKey(public_key_b64.encode('utf-8'), encoding.Base64Encoder())
     sealed_box = public.SealedBox(public_key)
-    encrypted = sealed_box.encrypt(secret_value.encode("utf-8"))
-    return base64.b64encode(encrypted).decode("utf-8")
-
+    encrypted = sealed_box.encrypt(secret_value.encode('utf-8'))
+    return base64.b64encode(encrypted).decode('utf-8')
 
 def push_secret(token: str, key_id: str, public_key: str, secret_name: str, secret_value: str) -> None:
     encrypted_value = encrypt_secret(public_key, secret_value)
-    api_request(
-        f"{API_BASE}/repos/{REPO}/actions/secrets/{secret_name}",
-        method="PUT",
-        data={"encrypted_value": encrypted_value, "key_id": key_id},
-        token=token,
-    )
-
+    api_request(f'{API_BASE}/repos/{REPO}/actions/secrets/{secret_name}', method='PUT', data={'encrypted_value': encrypted_value, 'key_id': key_id}, token=token)
 
 def is_configured(value: str) -> bool:
-    return bool(value) and not any(marker in value for marker in PLACEHOLDER_MARKERS)
-
+    return bool(value) and (not any((marker in value for marker in PLACEHOLDER_MARKERS)))
 
 def collect_uploadable_secrets(secret_map: dict[str, str]) -> tuple[dict[str, str], list[str]]:
     uploadable: dict[str, str] = {}
     skipped: list[str] = []
     for secret_name, env_name in secret_map.items():
-        value = os.environ.get(env_name, "")
+        value = os.environ.get(env_name, '')
         if is_configured(value):
             uploadable[secret_name] = value
         else:
             skipped.append(secret_name)
-    return uploadable, skipped
-
+    return (uploadable, skipped)
 
 def print_secret_list(label: str, values: Iterable[str]) -> None:
     items = list(values)
     if not items:
         return
-
     print(label)
     for value in items:
-        print(f"  - {value}")
-
+        print(f'  - {value}')
 
 def upload_actions_secrets(token: str, dry_run: bool) -> None:
     uploadable, skipped = collect_uploadable_secrets(GITHUB_ACTIONS_SECRETS)
-    print_secret_list("Secrets ready for upload:", uploadable.keys())
-    print_secret_list("Secrets skipped because they are empty or placeholders:", skipped)
-
+    print_secret_list('Secrets ready for upload:', uploadable.keys())
+    print_secret_list('Secrets skipped because they are empty or placeholders:', skipped)
     if not uploadable:
-        print("No configured secrets are available for upload.")
+        print('No configured secrets are available for upload.')
         raise SystemExit(1)
-
     if dry_run:
-        print("Dry run only; no GitHub Actions secrets were changed.")
+        print('Dry run only; no GitHub Actions secrets were changed.')
         return
-
     if not token:
-        print("GitHub PAT is required to upload Actions secrets.")
-        print("Provide --token <PAT> or set GITHUB_PAT in .env.local.")
+        print('GitHub PAT is required to upload Actions secrets.')
+        print('Provide --token <PAT> or set GITHUB_PAT in .env.local.')
         raise SystemExit(1)
-
     key_id, public_key = get_repo_public_key(token)
-    print(f"Fetched repository public key: {key_id[:8]}...")
-
+    print(f'Fetched repository public key: {key_id[:8]}...')
     failures: list[str] = []
     for secret_name, secret_value in uploadable.items():
         try:
             push_secret(token, key_id, public_key, secret_name, secret_value)
-            print(f"Uploaded: {secret_name}")
+            print(f'Uploaded: {secret_name}')
         except RuntimeError as error:
             failures.append(secret_name)
-            print(f"Failed: {secret_name} -> {error}")
-
+            print(f'Failed: {secret_name} -> {error}')
     if failures:
         raise SystemExit(1)
-
 
 def main() -> None:
     maybe_load_dotenv()
     args = parse_args()
-
     if args.init_local:
         init_local_env()
-
     if args.token or args.dry_run:
         upload_actions_secrets(args.token, args.dry_run)
         return
-
     if not args.init_local:
-        print("Nothing to do.")
-        print("Use --init-local to create/update .env.local or --token to upload Actions secrets.")
-
-
-if __name__ == "__main__":
+        print('Nothing to do.')
+        print('Use --init-local to create/update .env.local or --token to upload Actions secrets.')
+if __name__ == '__main__':
     main()

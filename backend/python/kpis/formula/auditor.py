@@ -1,12 +1,7 @@
-"""Audit support for KPI formula executions."""
-
 from __future__ import annotations
-
 from typing import Any
 
-
 class KPIFormulaAuditor:
-    """In-memory audit sink used by formula engine execution paths."""
 
     def __init__(self) -> None:
         self._records: list[dict[str, Any]] = []

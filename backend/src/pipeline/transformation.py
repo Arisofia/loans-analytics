@@ -1,388 +1,112 @@
-"""
-PHASE 2: DATA TRANSFORMATION
-
-Responsibilities:
-- Data cleaning and normalization
-- Null/outlier handling
-- Type conversion
-- Business rules application
-- Referential integrity checks
-
-NOTE: This module is not designed to be run directly as a script.
-      Use: python scripts/data/run_data_pipeline.py
-"""
-
 import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
-
 import numpy as np
 import pandas as pd
-
 from backend.python.logging_config import get_logger
-
 logger = get_logger(__name__)
-
-DATETIME64_NS_DTYPE = "datetime64[ns]"
-
+DATETIME64_NS_DTYPE = 'datetime64[ns]'
 
 class TransformationPhase:
-    """Phase 2: Data Transformation"""
+    _PII_COLUMN_RE = re.compile('\\b(name|nombre|apellido|surname|email|phone|telefono|celular|ssn|cedula|dni|passport|pasaporte|address|direccion|rfc|curp|nss|cuenta|account)\\b', re.IGNORECASE)
+    NUMERIC_COLUMNS: Set[str] = {'amount', 'current_balance', 'original_amount', 'interest_rate', 'dpd', 'payment_amount'}
+    NUMERIC_NAME_PATTERN = re.compile('(^|[_\\s])(amount|balance|rate|count|dpd)([_\\s]|$)', re.IGNORECASE)
+    DATE_COLUMNS: Set[str] = {'disbursement_date', 'origination_date', 'due_date', 'payment_date', 'measurement_date'}
+    STATUS_MAPPINGS: Dict[str, str] = {'active': 'active', 'current': 'active', 'activo': 'active', 'vigente': 'active', 'al_dia': 'active', 'al dia': 'active', 'delinquent': 'delinquent', 'moroso': 'delinquent', 'en_mora': 'delinquent', 'en mora': 'delinquent', 'complete': 'closed', 'closed': 'closed', 'paid': 'closed', 'paid_off': 'closed', 'paid off': 'closed', 'cancelled': 'closed', 'canceled': 'closed', 'liquidated': 'closed', 'cerrado': 'closed', 'liquidado': 'closed', 'cancelado': 'closed', 'default': 'defaulted', 'defaulted': 'defaulted', 'charged_off': 'defaulted', 'charge_off': 'defaulted', 'written_off': 'defaulted', 'incumplimiento': 'defaulted', 'en_incumplimiento': 'defaulted', 'en incumplimiento': 'defaulted', 'vencido': 'defaulted', 'castigado': 'defaulted'}
+    LOW_NULL_THRESHOLD_PCT: float = 5.0
+    HIGH_NULL_THRESHOLD_PCT: float = 30.0
+    MISSING_NUMERIC_INDICATOR: int = -999
+    FORCE_ZERO_NUMERIC_COLUMNS: Set[str] = {'last_payment_amount', 'payment_amount', 'recovery_value'}
+    HIGH_NULL_WARNING_NUMERIC_COLUMNS: Set[str] = {'amount', 'principal_amount', 'current_balance', 'outstanding_balance', 'interest_rate', 'dpd', 'days_past_due', 'last_payment_amount', 'total_scheduled', 'recovery_value'}
 
-    # Column names matching these patterns are treated as PII and blocked from
-    # df.eval expressions.
-    _PII_COLUMN_RE = re.compile(
-        r"\b(name|nombre|apellido|surname|email|phone|telefono|celular|ssn|cedula|dni|"
-        r"passport|pasaporte|address|direccion|rfc|curp|nss|cuenta|account)\b",
-        re.IGNORECASE,
-    )
-
-    # Default numeric columns for financial data
-    NUMERIC_COLUMNS: Set[str] = {
-        "amount",
-        "current_balance",
-        "original_amount",
-        "interest_rate",
-        "dpd",
-        "payment_amount",
-    }
-    NUMERIC_NAME_PATTERN = re.compile(
-        r"(^|[_\s])(amount|balance|rate|count|dpd)([_\s]|$)",
-        re.IGNORECASE,
-    )
-
-    # Default date columns
-    DATE_COLUMNS: Set[str] = {
-        "disbursement_date",
-        "origination_date",
-        "due_date",
-        "payment_date",
-        "measurement_date",
-    }
-
-    # Status mappings for normalization.
-    # Keys are lowercase-normalized (strip + lower) source values so that any
-    # casing variant (e.g. "ACTIVO", "Activo", "activo") resolves correctly via
-    # _normalize_status_column, which lower-cases the raw value before lookup.
-    STATUS_MAPPINGS: Dict[str, str] = {
-        # English: active
-        "active": "active",
-        "current": "active",
-        # Spanish: active
-        "activo": "active",
-        "vigente": "active",
-        "al_dia": "active",
-        "al dia": "active",
-        # English: delinquent
-        "delinquent": "delinquent",
-        # Spanish: delinquent
-        "moroso": "delinquent",
-        "en_mora": "delinquent",
-        "en mora": "delinquent",
-        # English: closed
-        "complete": "closed",
-        "closed": "closed",
-        "paid": "closed",
-        "paid_off": "closed",
-        "paid off": "closed",
-        "cancelled": "closed",
-        "canceled": "closed",
-        "liquidated": "closed",
-        # Spanish: closed
-        "cerrado": "closed",
-        "liquidado": "closed",
-        "cancelado": "closed",
-        # English: defaulted
-        "default": "defaulted",
-        "defaulted": "defaulted",
-        "charged_off": "defaulted",
-        "charge_off": "defaulted",
-        "written_off": "defaulted",
-        # Spanish: defaulted
-        "incumplimiento": "defaulted",
-        "en_incumplimiento": "defaulted",
-        "en incumplimiento": "defaulted",
-        "vencido": "defaulted",
-        "castigado": "defaulted",
-    }
-
-    # Null handling thresholds and constants
-    LOW_NULL_THRESHOLD_PCT: float = 5.0  # Below this: use structural zero + opacity flag
-    HIGH_NULL_THRESHOLD_PCT: float = 30.0  # Above this: use default fill
-    MISSING_NUMERIC_INDICATOR: int = -999  # Indicator for missing numeric values
-    # Cash-flow transaction fields where null should mean "no movement" (0),
-    # never statistical imputation.
-    FORCE_ZERO_NUMERIC_COLUMNS: Set[str] = {
-        "last_payment_amount",
-        "payment_amount",
-        "recovery_value",
-    }
-    # Emit high-null warnings only for KPI-critical numeric fields.
-    HIGH_NULL_WARNING_NUMERIC_COLUMNS: Set[str] = {
-        "amount",
-        "principal_amount",
-        "current_balance",
-        "outstanding_balance",
-        "interest_rate",
-        "dpd",
-        "days_past_due",
-        "last_payment_amount",
-        "total_scheduled",
-        "recovery_value",
-    }
-
-    def __init__(self, config: Dict[str, Any], business_rules: Optional[Dict[str, Any]] = None):
-        """
-        Initialize transformation phase.
-
-        Args:
-            config: Transformation configuration from pipeline.yml
-            business_rules: Business rules from business_rules.yaml
-        """
+    def __init__(self, config: Dict[str, Any], business_rules: Optional[Dict[str, Any]]=None):
         self.config = config
         self.business_rules = business_rules or {}
+        null_config = config.get('null_handling', {})
+        self.null_strategy = null_config.get('strategy', 'smart')
+        self.fill_values = null_config.get('fill_values', {'numeric': 0, 'categorical': 'unknown'})
+        outlier_config = config.get('outlier_detection', {})
+        self.outlier_enabled = outlier_config.get('enabled', True)
+        self.outlier_method = outlier_config.get('method', 'iqr')
+        self.outlier_threshold = outlier_config.get('threshold', 3.0)
+        type_config = config.get('type_normalization', {})
+        self.type_normalization_enabled = type_config.get('enabled', True)
+        self.date_format = type_config.get('date_format', '%Y-%m-%d')
+        logger.info('Initialized transformation phase')
 
-        # Extract configuration settings with defaults
-        null_config = config.get("null_handling", {})
-        self.null_strategy = null_config.get("strategy", "smart")
-        self.fill_values = null_config.get("fill_values", {"numeric": 0, "categorical": "unknown"})
-
-        outlier_config = config.get("outlier_detection", {})
-        self.outlier_enabled = outlier_config.get("enabled", True)
-        self.outlier_method = outlier_config.get("method", "iqr")
-        self.outlier_threshold = outlier_config.get("threshold", 3.0)
-
-        type_config = config.get("type_normalization", {})
-        self.type_normalization_enabled = type_config.get("enabled", True)
-        self.date_format = type_config.get("date_format", "%Y-%m-%d")
-
-        logger.info("Initialized transformation phase")
-
-    def execute(
-        self,
-        raw_data_path: Optional[Path] = None,
-        df: Optional[pd.DataFrame] = None,
-        run_dir: Optional[Path] = None,
-    ) -> Dict[str, Any]:
-        """
-        Execute transformation phase.
-
-        Args:
-            raw_data_path: Path to raw data from Phase 1
-            df: DataFrame (if already loaded)
-            run_dir: Directory for this pipeline run
-
-        Returns:
-            Transformation results including cleaned data path
-        """
-        logger.info("Starting Phase 2: Transformation")
-
+    def execute(self, raw_data_path: Optional[Path]=None, df: Optional[pd.DataFrame]=None, run_dir: Optional[Path]=None) -> Dict[str, Any]:
+        logger.info('Starting Phase 2: Transformation')
         try:
-            # Load data
             if df is None and raw_data_path and raw_data_path.exists():
                 df = pd.read_parquet(raw_data_path)
             elif df is None:
-                raise ValueError("No data provided for transformation")
-
+                raise ValueError('No data provided for transformation')
             initial_rows = len(df)
             transformation_metrics: Dict[str, Any] = {}
-
-            # Apply transformations with metrics tracking
             df = self._normalize_column_names(df)
             df = self._map_canonical_semantic_layer(df)
             df, control_metrics = self._derive_control_mora_fields(df)
-            transformation_metrics["control_derivations"] = control_metrics
+            transformation_metrics['control_derivations'] = control_metrics
             df = self._collapse_duplicate_columns(df)
             df, null_metrics = self._handle_nulls(df)
-            transformation_metrics["null_handling"] = null_metrics
-
+            transformation_metrics['null_handling'] = null_metrics
             df, type_metrics = self._normalize_types(df)
-            transformation_metrics["type_normalization"] = type_metrics
-
+            transformation_metrics['type_normalization'] = type_metrics
             df, rule_metrics = self._apply_business_rules(df)
-            transformation_metrics["business_rules"] = rule_metrics
-
+            transformation_metrics['business_rules'] = rule_metrics
             df, risk_state_metrics = self._derive_canonical_risk_state(df)
-            transformation_metrics["canonical_risk_state"] = risk_state_metrics
-
+            transformation_metrics['canonical_risk_state'] = risk_state_metrics
             df, outlier_metrics = self._detect_outliers(df)
-            transformation_metrics["outlier_detection"] = outlier_metrics
-
+            transformation_metrics['outlier_detection'] = outlier_metrics
             df, integrity_metrics = self._check_referential_integrity(df)
-            transformation_metrics["referential_integrity"] = integrity_metrics
-
-            # Store clean data
+            transformation_metrics['referential_integrity'] = integrity_metrics
             if run_dir:
-                output_path = run_dir / "clean_data.parquet"
+                output_path = run_dir / 'clean_data.parquet'
                 df.to_parquet(output_path, index=False)
-                logger.info("Saved clean data to %s", output_path)
+                logger.info('Saved clean data to %s', output_path)
             else:
                 output_path = None
-
-            results = {
-                "status": "success",
-                "initial_rows": initial_rows,
-                "final_rows": len(df),
-                "rows_removed": initial_rows - len(df),
-                "columns": len(df.columns),
-                "output_path": str(output_path) if output_path else None,
-                "transformation_metrics": transformation_metrics,
-                "timestamp": datetime.now().isoformat(),
-            }
-
-            logger.info("Transformation completed: %d → %d rows", initial_rows, len(df))
+            results = {'status': 'success', 'initial_rows': initial_rows, 'final_rows': len(df), 'rows_removed': initial_rows - len(df), 'columns': len(df.columns), 'output_path': str(output_path) if output_path else None, 'transformation_metrics': transformation_metrics, 'timestamp': datetime.now().isoformat()}
+            logger.info('Transformation completed: %d → %d rows', initial_rows, len(df))
             return results
-
         except Exception as e:
-            logger.error("Transformation failed: %s", str(e), exc_info=True)
-            # Fail-fast mandate: raise instead of returning failure payload dict
-            raise ValueError(f"CRITICAL: Transformation phase failed: {e}") from e
+            logger.error('Transformation failed: %s', str(e), exc_info=True)
+            raise ValueError(f'CRITICAL: Transformation phase failed: {e}') from e
 
     def _normalize_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Normalize column names to standard schema.
-        Maps source-specific names to canonical pipeline names.
-        """
-        # Mapping: Source Name -> Canonical Name
-        column_mapping = {
-            "days_past_due": "dpd",
-            "dias_vencido": "dpd",
-            "mora_en_dias": "dpd",
-            "principal_amount": "amount",
-            "current_status": "status",
-            "loan_status": "status",
-            "principal_balance": "current_balance",
-            "loan_amount": "amount",
-            "fechadesembolso": "origination_date",
-            "fecha_de_desembolso": "origination_date",
-            "fechapagoprogramado": "due_date",
-            "fecha_vencimiento": "due_date",
-            "fecha_de_vencimiento": "due_date",
-            "fecha_de_pago": "last_payment_date",
-            "fechacobro": "last_payment_date",
-            "_pagado": "last_payment_amount",
-            "lineacredito": "credit_line",
-            "cod_kam_hunter": "kam_hunter",
-            "cod_kam_farmer": "kam_farmer",
-            "asesoriadigital": "advisory_channel",
-            "fechasolicitado": "application_date",
-            "porcentaje_utilizado": "utilization_pct",
-            "procede_a_cobrar": "collections_eligible",
-            "definicion_m": "delinquency_definition",
-            "rango_m": "delinquency_bucket_raw",
-            "rango_de_la_linea": "credit_line_range",
-            "ministerio": "gov",
-            "ministry": "gov",
-            "goes": "government_sector",
-            "capitalcobrado": "capital_collected",
-            "montototalabonado": "total_payment_received",
-            "mdscposteado": "mdsc_posted",
-            "diasnegociacion": "negotiation_days",
-            "dias_en_pagar": "days_to_pay",
-            "numerodesembolsos": "disbursement_count",
-            "valoraprobado": "approved_value",
-            "fecha_actual": "as_of_date",
-            "term_max": "term_months",
-            "term_ponderado": "term_months",
-            "apr__term__ponderado": "term_months",
-            "ingreso_total_por_desembolso": "tpv",
-            "ingreso_pagadopendiente": "tpv",
-        }
-
-        # Apply mapping for columns that exist in df
-        rename_dict = {
-            source: target
-            for source, target in column_mapping.items()
-            if source in df.columns and target not in df.columns
-        }
-
+        column_mapping = {'days_past_due': 'dpd', 'dias_vencido': 'dpd', 'mora_en_dias': 'dpd', 'principal_amount': 'amount', 'current_status': 'status', 'loan_status': 'status', 'principal_balance': 'current_balance', 'loan_amount': 'amount', 'fechadesembolso': 'origination_date', 'fecha_de_desembolso': 'origination_date', 'fechapagoprogramado': 'due_date', 'fecha_vencimiento': 'due_date', 'fecha_de_vencimiento': 'due_date', 'fecha_de_pago': 'last_payment_date', 'fechacobro': 'last_payment_date', '_pagado': 'last_payment_amount', 'lineacredito': 'credit_line', 'cod_kam_hunter': 'kam_hunter', 'cod_kam_farmer': 'kam_farmer', 'asesoriadigital': 'advisory_channel', 'fechasolicitado': 'application_date', 'porcentaje_utilizado': 'utilization_pct', 'procede_a_cobrar': 'collections_eligible', 'definicion_m': 'delinquency_definition', 'rango_m': 'delinquency_bucket_raw', 'rango_de_la_linea': 'credit_line_range', 'ministerio': 'gov', 'ministry': 'gov', 'goes': 'government_sector', 'capitalcobrado': 'capital_collected', 'montototalabonado': 'total_payment_received', 'mdscposteado': 'mdsc_posted', 'diasnegociacion': 'negotiation_days', 'dias_en_pagar': 'days_to_pay', 'numerodesembolsos': 'disbursement_count', 'valoraprobado': 'approved_value', 'fecha_actual': 'as_of_date', 'term_max': 'term_months', 'term_ponderado': 'term_months', 'apr__term__ponderado': 'term_months', 'ingreso_total_por_desembolso': 'tpv', 'ingreso_pagadopendiente': 'tpv'}
+        rename_dict = {source: target for source, target in column_mapping.items() if source in df.columns and target not in df.columns}
         if rename_dict:
             df = df.rename(columns=rename_dict)
-            logger.info("Renamed columns: %s", rename_dict)
-
-        # Generate loan_uid: Composite key to handle reused loan_ids
-        if "loan_id" in df.columns and "origination_date" in df.columns:
-            # Convert origination_date to string for concat if it's not already
-            dates = pd.to_datetime(df["origination_date"], errors="coerce").dt.strftime("%Y%m%d")
-            df["loan_uid"] = df["loan_id"].astype(str) + "_" + dates.fillna("00000000")
-            logger.info("Generated composite loan_uid for %d records", len(df))
-
-        # Special case for outstanding_balance -> current_balance
-        if "outstanding_balance" in df.columns:
-            if "current_balance" not in df.columns:
-                df = df.rename(columns={"outstanding_balance": "current_balance"})
-                logger.info("Renamed outstanding_balance to current_balance")
+            logger.info('Renamed columns: %s', rename_dict)
+        if 'loan_id' in df.columns and 'origination_date' in df.columns:
+            dates = pd.to_datetime(df['origination_date'], errors='coerce').dt.strftime('%Y%m%d')
+            df['loan_uid'] = df['loan_id'].astype(str) + '_' + dates.fillna('00000000')
+            logger.info('Generated composite loan_uid for %d records', len(df))
+        if 'outstanding_balance' in df.columns:
+            if 'current_balance' not in df.columns:
+                df = df.rename(columns={'outstanding_balance': 'current_balance'})
+                logger.info('Renamed outstanding_balance to current_balance')
             else:
-                # If both exist, use outstanding_balance if current_balance is mostly zero/null
-                null_or_zero = df["current_balance"].isna() | (df["current_balance"] == 0)
-                if null_or_zero.mean() > 0.8:  # If more than 80% are zero/null
-                    df["current_balance"] = df["outstanding_balance"]
-                    logger.info(
-                        "Overwrote current_balance with outstanding_balance "
-                        "(due to high null/zero rate)"
-                    )
-
+                null_or_zero = df['current_balance'].isna() | (df['current_balance'] == 0)
+                if null_or_zero.mean() > 0.8:
+                    df['current_balance'] = df['outstanding_balance']
+                    logger.info('Overwrote current_balance with outstanding_balance (due to high null/zero rate)')
         return df
 
     def _map_canonical_semantic_layer(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Normalize column names to the institutional canonical semantic standard.
-
-        Applies a second-pass mapping after ``_normalize_column_names`` to
-        unify the vocabulary used by downstream calculation and output phases.
-
-        Canonical targets (currently handled)
-        -------------------------------------
-        approved_at          : timestamp when the loan was approved / application accepted
-        funded_at            : timestamp when capital was actually disbursed to the client
-        scheduled_amount     : the contractually agreed instalment or periodic payment
-        actual_payment_amount: the amount the client actually paid in the period
-        """
-        # Note: this mapping fires *after* _normalize_column_names(), so only
-        # post-normalization column names will be present in ``df.columns``.
-        # Raw aliases that _normalize_column_names() already renames (e.g.
-        # ``montototalabonado`` → ``total_payment_received``) must NOT appear
-        # here — they will never match and will silently be skipped.
-        # ``tpv`` is intentionally absent: it is the post-normalization form of
-        # ``ingreso_total_por_desembolso`` and is consumed directly by
-        # ``_derive_control_mora_fields``; renaming it here would make it
-        # unavailable to downstream KPI/NSM calculations.
-        semantic_mapping: Dict[str, str] = {
-            # approved_at
-            "application_date": "approved_at",
-            "fecha_aprobacion": "approved_at",
-            "approval_date": "approved_at",
-            # funded_at
-            "origination_date": "funded_at",
-            "disbursement_date": "funded_at",
-            "fecha_desembolso": "funded_at",
-            # scheduled_amount
-            "total_scheduled": "scheduled_amount",
-            "monto_programado": "scheduled_amount",
-            "total_due": "scheduled_amount",
-            # actual_payment_amount — map from post-normalization name only
-            "last_payment_amount": "actual_payment_amount",
-            "total_payment_received": "actual_payment_amount",
-        }
-
-        rename_dict = {
-            source: target
-            for source, target in semantic_mapping.items()
-            if source in df.columns and target not in df.columns
-        }
-
+        semantic_mapping: Dict[str, str] = {'application_date': 'approved_at', 'fecha_aprobacion': 'approved_at', 'approval_date': 'approved_at', 'origination_date': 'funded_at', 'disbursement_date': 'funded_at', 'fecha_desembolso': 'funded_at', 'total_scheduled': 'scheduled_amount', 'monto_programado': 'scheduled_amount', 'total_due': 'scheduled_amount', 'last_payment_amount': 'actual_payment_amount', 'total_payment_received': 'actual_payment_amount'}
+        rename_dict = {source: target for source, target in semantic_mapping.items() if source in df.columns and target not in df.columns}
         if rename_dict:
             df = df.rename(columns=rename_dict)
-            logger.info("Canonical semantic layer applied: %s", rename_dict)
-
+            logger.info('Canonical semantic layer applied: %s', rename_dict)
         return df
 
     @staticmethod
     def _collapse_duplicate_columns(df: pd.DataFrame) -> pd.DataFrame:
-        """Coalesce duplicate-named columns by first non-null value per row."""
         if not df.columns.duplicated().any():
             return df
-
         collapsed: Dict[str, pd.Series] = {}
         ordered_names = list(dict.fromkeys(df.columns))
         for col in ordered_names:
@@ -390,18 +114,15 @@ class TransformationPhase:
             if isinstance(col_block, pd.Series):
                 collapsed[col] = col_block
                 continue
-
             merged = col_block.iloc[:, 0]
             for idx in range(1, col_block.shape[1]):
                 candidate = col_block.iloc[:, idx]
                 merged = merged.where(merged.notna(), candidate)
             collapsed[col] = merged
-
         return pd.DataFrame(collapsed, index=df.index)
 
     @staticmethod
     def _to_datetime_mixed(series: pd.Series) -> pd.Series:
-        """Parse mixed-format date values with backward compatibility."""
         if isinstance(series, pd.DataFrame):
             base = series.iloc[:, 0]
             for idx in range(1, series.shape[1]):
@@ -409,62 +130,46 @@ class TransformationPhase:
                 base = base.where(base.notna(), candidate)
             series = base
         try:
-            return pd.to_datetime(series, errors="coerce", dayfirst=True, format="mixed")
+            return pd.to_datetime(series, errors='coerce', dayfirst=True, format='mixed')
         except TypeError:
-            return pd.to_datetime(series, errors="coerce", dayfirst=True)
+            return pd.to_datetime(series, errors='coerce', dayfirst=True)
 
     @staticmethod
     def _coerce_numeric_loose(series: pd.Series) -> pd.Series:
-        """Coerce numeric-like values while tolerating currency/percent strings."""
         if isinstance(series, pd.DataFrame):
             base = series.iloc[:, 0]
             for idx in range(1, series.shape[1]):
                 candidate = series.iloc[:, idx]
                 base = base.where(base.notna(), candidate)
             series = base
-        text = series.astype("string").str.strip()
-        text = text.mask(text.isin({"", "nan", "none", "null", "missing"}), pd.NA)
-        cleaned = text.str.replace(r"[^0-9,.\-]", "", regex=True)
-
-        comma_only_mask = cleaned.str.contains(",", na=False) & ~cleaned.str.contains(
-            r"\.", na=False
-        )
-        thousands_mask = comma_only_mask & cleaned.str.contains(r",\d{3}$", regex=True, na=False)
+        text = series.astype('string').str.strip()
+        text = text.mask(text.isin({'', 'nan', 'none', 'null', 'missing'}), pd.NA)
+        cleaned = text.str.replace('[^0-9,.\\-]', '', regex=True)
+        comma_only_mask = cleaned.str.contains(',', na=False) & ~cleaned.str.contains('\\.', na=False)
+        thousands_mask = comma_only_mask & cleaned.str.contains(',\\d{3}$', regex=True, na=False)
         decimal_comma_mask = comma_only_mask & ~thousands_mask
-
         if thousands_mask.any():
-            cleaned.loc[thousands_mask] = cleaned.loc[thousands_mask].str.replace(
-                ",", "", regex=False
-            )
+            cleaned.loc[thousands_mask] = cleaned.loc[thousands_mask].str.replace(',', '', regex=False)
         if decimal_comma_mask.any():
-            cleaned.loc[decimal_comma_mask] = cleaned.loc[decimal_comma_mask].str.replace(
-                ",", ".", regex=False
-            )
+            cleaned.loc[decimal_comma_mask] = cleaned.loc[decimal_comma_mask].str.replace(',', '.', regex=False)
         other_mask = ~comma_only_mask
         if other_mask.any():
-            cleaned.loc[other_mask] = cleaned.loc[other_mask].str.replace(",", "", regex=False)
-
-        return pd.to_numeric(cleaned, errors="coerce")
+            cleaned.loc[other_mask] = cleaned.loc[other_mask].str.replace(',', '', regex=False)
+        return pd.to_numeric(cleaned, errors='coerce')
 
     def _coalesce_datetime_columns(self, df: pd.DataFrame, candidates: List[str]) -> pd.Series:
-        """Return first non-null datetime value across candidate columns."""
         series_list = [self._to_datetime_mixed(df[col]) for col in candidates if col in df.columns]
         if not series_list:
             return pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
-
         merged = series_list[0]
         for candidate in series_list[1:]:
             merged = merged.where(merged.notna(), candidate)
         return merged
 
     def _coalesce_numeric_columns(self, df: pd.DataFrame, candidates: List[str]) -> pd.Series:
-        """Return first non-null numeric value across candidate columns."""
-        series_list = [
-            self._coerce_numeric_loose(df[col]) for col in candidates if col in df.columns
-        ]
+        series_list = [self._coerce_numeric_loose(df[col]) for col in candidates if col in df.columns]
         if not series_list:
             return pd.Series(np.nan, index=df.index, dtype=float)
-
         merged = series_list[0]
         for candidate in series_list[1:]:
             merged = merged.where(merged.notna(), candidate)
@@ -472,7 +177,6 @@ class TransformationPhase:
 
     @staticmethod
     def _normalize_yes_no_flag(series: pd.Series) -> pd.Series:
-        """Normalize mixed Y/N markers to strict {'Y','N', <NA>}."""
         if isinstance(series, pd.DataFrame):
             base = series.iloc[:, 0]
             for idx in range(1, series.shape[1]):
@@ -480,131 +184,51 @@ class TransformationPhase:
                 base = base.where(base.notna(), candidate)
             series = base
         normalized = series.astype(str).str.strip().str.upper()
-        yes_values = {"Y", "YES", "SI", "S", "TRUE", "1"}
-        no_values = {"N", "NO", "FALSE", "0"}
-        out = pd.Series(pd.NA, index=series.index, dtype="object")
-        out.loc[normalized.isin(yes_values)] = "Y"
-        out.loc[normalized.isin(no_values)] = "N"
+        yes_values = {'Y', 'YES', 'SI', 'S', 'TRUE', '1'}
+        no_values = {'N', 'NO', 'FALSE', '0'}
+        out = pd.Series(pd.NA, index=series.index, dtype='object')
+        out.loc[normalized.isin(yes_values)] = 'Y'
+        out.loc[normalized.isin(no_values)] = 'N'
         return out
 
     @staticmethod
     def _track_derived_field(metrics: Dict[str, Any], field_name: str, mask: pd.Series) -> None:
-        """Record how many rows were populated for one derived field."""
-        metrics["fields_derived"][field_name] = int(mask.fillna(False).sum())
+        metrics['fields_derived'][field_name] = int(mask.fillna(False).sum())
 
-    def _derive_control_mora_dates_and_terms(
-        self, df: pd.DataFrame, metrics: Dict[str, Any]
-    ) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
-        """Derive origination, term, due date, maturity date, and payment frequency."""
-        inferred_origination = self._coalesce_datetime_columns(
-            df,
-            ["origination_date", "disbursement_date", "fecha_de_desembolso", "fechadesembolso"],
-        )
-        existing_origination = (
-            self._to_datetime_mixed(df["origination_date"])
-            if "origination_date" in df.columns
-            else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
-        )
-        final_origination = existing_origination.where(
-            existing_origination.notna(), inferred_origination
-        )
-        df["origination_date"] = final_origination
-        self._track_derived_field(
-            metrics, "origination_date", existing_origination.isna() & final_origination.notna()
-        )
-
-        inferred_due = self._coalesce_datetime_columns(
-            df,
-            [
-                "due_date",
-                "fechapagoprogramado",
-                "fecha_vencimiento",
-                "fecha_de_vencimiento",
-                "maturity_date",
-            ],
-        )
-        existing_due = (
-            self._to_datetime_mixed(df["due_date"])
-            if "due_date" in df.columns
-            else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
-        )
+    def _derive_control_mora_dates_and_terms(self, df: pd.DataFrame, metrics: Dict[str, Any]) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
+        inferred_origination = self._coalesce_datetime_columns(df, ['origination_date', 'disbursement_date', 'fecha_de_desembolso', 'fechadesembolso'])
+        existing_origination = self._to_datetime_mixed(df['origination_date']) if 'origination_date' in df.columns else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
+        final_origination = existing_origination.where(existing_origination.notna(), inferred_origination)
+        df['origination_date'] = final_origination
+        self._track_derived_field(metrics, 'origination_date', existing_origination.isna() & final_origination.notna())
+        inferred_due = self._coalesce_datetime_columns(df, ['due_date', 'fechapagoprogramado', 'fecha_vencimiento', 'fecha_de_vencimiento', 'maturity_date'])
+        existing_due = self._to_datetime_mixed(df['due_date']) if 'due_date' in df.columns else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
         due_base = existing_due.where(existing_due.notna(), inferred_due)
-
-        term_days = self._coalesce_numeric_columns(
-            df,
-            [
-                "days_to_pay",
-                "dias_en_pagar",
-                "negotiation_days",
-                "diasnegociacion",
-                "dias_negociados_manual",
-                "term_max",
-                "term_ponderado",
-                "apr__term__ponderado",
-            ],
-        ).where(lambda series: (series > 0) & (series <= 720))
-
-        raw_term_months = self._coalesce_numeric_columns(
-            df, ["term_months", "plazo", "plazo_meses"]
-        )
+        term_days = self._coalesce_numeric_columns(df, ['days_to_pay', 'dias_en_pagar', 'negotiation_days', 'diasnegociacion', 'dias_negociados_manual', 'term_max', 'term_ponderado', 'apr__term__ponderado']).where(lambda series: (series > 0) & (series <= 720))
+        raw_term_months = self._coalesce_numeric_columns(df, ['term_months', 'plazo', 'plazo_meses'])
         raw_term_months = raw_term_months.where((raw_term_months > 0) & (raw_term_months <= 240))
-
-        existing_term_months = (
-            self._coerce_numeric_loose(df["term_months"])
-            if "term_months" in df.columns
-            else pd.Series(np.nan, index=df.index, dtype=float)
-        )
+        existing_term_months = self._coerce_numeric_loose(df['term_months']) if 'term_months' in df.columns else pd.Series(np.nan, index=df.index, dtype=float)
         term_months_from_days = (term_days / 30.0).round(2)
-        final_term_months = existing_term_months.where(
-            existing_term_months.notna(), raw_term_months
-        )
-        final_term_months = final_term_months.where(
-            (final_term_months > 0) & (final_term_months <= 240)
-        )
-        final_term_months = final_term_months.where(
-            final_term_months.notna(), term_months_from_days
-        )
-        df["term_months"] = final_term_months
-        self._track_derived_field(
-            metrics, "term_months", existing_term_months.isna() & final_term_months.notna()
-        )
-
-        existing_freq_col = next(
-            (c for c in ("payment_frequency", "frecuencia_pago", "tipo_pago") if c in df.columns),
-            None,
-        )
+        final_term_months = existing_term_months.where(existing_term_months.notna(), raw_term_months)
+        final_term_months = final_term_months.where((final_term_months > 0) & (final_term_months <= 240))
+        final_term_months = final_term_months.where(final_term_months.notna(), term_months_from_days)
+        df['term_months'] = final_term_months
+        self._track_derived_field(metrics, 'term_months', existing_term_months.isna() & final_term_months.notna())
+        existing_freq_col = next((c for c in ('payment_frequency', 'frecuencia_pago', 'tipo_pago') if c in df.columns), None)
         if existing_freq_col is not None:
-            existing_payment_frequency = (
-                df[existing_freq_col]
-                .astype(str)
-                .str.strip()
-                .str.lower()
-                .replace({"": pd.NA, "nan": pd.NA, "none": pd.NA, "missing": pd.NA})
-            )
+            existing_payment_frequency = df[existing_freq_col].astype(str).str.strip().str.lower().replace({'': pd.NA, 'nan': pd.NA, 'none': pd.NA, 'missing': pd.NA})
         else:
-            existing_payment_frequency = pd.Series(pd.NA, index=df.index, dtype="object")
-
-        derived_payment_frequency = pd.Series("bullet", index=df.index, dtype="object")
-        derived_payment_frequency.loc[term_days > 90] = "installment"
-        disbursement_count = self._coalesce_numeric_columns(
-            df, ["disbursement_count", "numerodesembolsos"]
-        )
-        derived_payment_frequency.loc[disbursement_count > 1] = "installment"
-        payment_frequency_final = existing_payment_frequency.where(
-            existing_payment_frequency.notna(), derived_payment_frequency
-        )
-        df["payment_frequency"] = payment_frequency_final
-        self._track_derived_field(
-            metrics,
-            "payment_frequency",
-            existing_payment_frequency.isna() & payment_frequency_final.notna(),
-        )
-
-        due_from_days = final_origination + pd.to_timedelta(
-            term_days.round().astype("Int64"), unit="D"
-        )
+            existing_payment_frequency = pd.Series(pd.NA, index=df.index, dtype='object')
+        derived_payment_frequency = pd.Series('bullet', index=df.index, dtype='object')
+        derived_payment_frequency.loc[term_days > 90] = 'installment'
+        disbursement_count = self._coalesce_numeric_columns(df, ['disbursement_count', 'numerodesembolsos'])
+        derived_payment_frequency.loc[disbursement_count > 1] = 'installment'
+        payment_frequency_final = existing_payment_frequency.where(existing_payment_frequency.notna(), derived_payment_frequency)
+        df['payment_frequency'] = payment_frequency_final
+        self._track_derived_field(metrics, 'payment_frequency', existing_payment_frequency.isna() & payment_frequency_final.notna())
+        due_from_days = final_origination + pd.to_timedelta(term_days.round().astype('Int64'), unit='D')
         due_from_months = pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
-        month_offsets = raw_term_months.round().astype("Int64")
+        month_offsets = raw_term_months.round().astype('Int64')
         valid_month_mask = month_offsets.notna() & final_origination.notna()
         if valid_month_mask.any():
             orig = pd.to_datetime(final_origination[valid_month_mask])
@@ -614,355 +238,150 @@ class TransformationPhase:
             dim_common = np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
             dim_leap = np.array([31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
             is_leap = (new_year % 4 == 0) & ((new_year % 100 != 0) | (new_year % 400 == 0))
-            days_in_new_month = pd.Series(
-                np.where(
-                    is_leap.values, dim_leap[new_month.values - 1], dim_common[new_month.values - 1]
-                ),
-                index=orig.index,
-            )
+            days_in_new_month = pd.Series(np.where(is_leap.values, dim_leap[new_month.values - 1], dim_common[new_month.values - 1]), index=orig.index)
             new_day = orig.dt.day.clip(upper=days_in_new_month)
-            due_from_months.loc[valid_month_mask] = pd.to_datetime(
-                {"year": new_year, "month": new_month, "day": new_day}
-            )
-
+            due_from_months.loc[valid_month_mask] = pd.to_datetime({'year': new_year, 'month': new_month, 'day': new_day})
         inferred_due_from_term = due_from_days.where(due_from_days.notna(), due_from_months)
         final_due = due_base.where(due_base.notna(), inferred_due_from_term)
-        df["due_date"] = final_due
-        self._track_derived_field(metrics, "due_date", due_base.isna() & final_due.notna())
-
-        existing_maturity = (
-            self._to_datetime_mixed(df["maturity_date"])
-            if "maturity_date" in df.columns
-            else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
-        )
+        df['due_date'] = final_due
+        self._track_derived_field(metrics, 'due_date', due_base.isna() & final_due.notna())
+        existing_maturity = self._to_datetime_mixed(df['maturity_date']) if 'maturity_date' in df.columns else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
         final_maturity = existing_maturity.where(existing_maturity.notna(), final_due)
-        df["maturity_date"] = final_maturity
-        self._track_derived_field(
-            metrics, "maturity_date", existing_maturity.isna() & final_maturity.notna()
-        )
-        return df, final_due, term_days
+        df['maturity_date'] = final_maturity
+        self._track_derived_field(metrics, 'maturity_date', existing_maturity.isna() & final_maturity.notna())
+        return (df, final_due, term_days)
 
-    def _derive_control_mora_as_of_and_dpd(
-        self, df: pd.DataFrame, final_due: pd.Series, metrics: Dict[str, Any]
-    ) -> tuple[pd.DataFrame, pd.Series]:
-        """Derive as-of date, dpd, and days_past_due fields."""
-        as_of_candidates = self._coalesce_datetime_columns(
-            df,
-            [
-                "as_of_date",
-                "snapshot_date",
-                "measurement_date",
-                "reporting_date",
-                "fecha_actual",
-                "fecha_corte",
-                "fecha_de_corte",
-                "data_ingest_ts",
-            ],
-        )
-        existing_as_of = (
-            self._to_datetime_mixed(df["as_of_date"])
-            if "as_of_date" in df.columns
-            else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
-        )
+    def _derive_control_mora_as_of_and_dpd(self, df: pd.DataFrame, final_due: pd.Series, metrics: Dict[str, Any]) -> tuple[pd.DataFrame, pd.Series]:
+        as_of_candidates = self._coalesce_datetime_columns(df, ['as_of_date', 'snapshot_date', 'measurement_date', 'reporting_date', 'fecha_actual', 'fecha_corte', 'fecha_de_corte', 'data_ingest_ts'])
+        existing_as_of = self._to_datetime_mixed(df['as_of_date']) if 'as_of_date' in df.columns else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
         has_any_as_of = bool(existing_as_of.notna().any() or as_of_candidates.notna().any())
-
-        dpd_source = self._coalesce_numeric_columns(
-            df,
-            [
-                "dpd",
-                "days_past_due",
-                "dias_vencido",
-                "mora_en_dias",
-                "dias_mora",
-                "dias_de_mora",
-                "dias_en_mora",
-                "diias_mora_m",
-                "dias_mora_m",
-            ],
-        ).where(lambda series: series >= 0)
-
+        dpd_source = self._coalesce_numeric_columns(df, ['dpd', 'days_past_due', 'dias_vencido', 'mora_en_dias', 'dias_mora', 'dias_de_mora', 'dias_en_mora', 'diias_mora_m', 'dias_mora_m']).where(lambda series: series >= 0)
         if not has_any_as_of and dpd_source.isna().all():
-            raise ValueError(
-                "CRITICAL: CONTROL DE MORA derivation requires either as_of_date-like columns "
-                "or a non-null DPD source; neither was found."
-            )
-
+            raise ValueError('CRITICAL: CONTROL DE MORA derivation requires either as_of_date-like columns or a non-null DPD source; neither was found.')
         final_as_of = existing_as_of.where(existing_as_of.notna(), as_of_candidates)
-        df["as_of_date"] = final_as_of
-        self._track_derived_field(
-            metrics, "as_of_date", existing_as_of.isna() & final_as_of.notna()
-        )
-
+        df['as_of_date'] = final_as_of
+        self._track_derived_field(metrics, 'as_of_date', existing_as_of.isna() & final_as_of.notna())
         derived_dpd = (final_as_of - final_due).dt.days.astype(float).clip(lower=0)
         dpd_final = dpd_source.where(dpd_source.notna(), derived_dpd).fillna(0.0)
-        df["dpd"] = dpd_final
-        self._track_derived_field(metrics, "dpd", dpd_source.isna() & dpd_final.notna())
-
-        if "days_past_due" in df.columns:
-            existing_days_past_due = self._coerce_numeric_loose(df["days_past_due"])
+        df['dpd'] = dpd_final
+        self._track_derived_field(metrics, 'dpd', dpd_source.isna() & dpd_final.notna())
+        if 'days_past_due' in df.columns:
+            existing_days_past_due = self._coerce_numeric_loose(df['days_past_due'])
             days_past_due = existing_days_past_due.where(existing_days_past_due.notna(), dpd_final)
         else:
             existing_days_past_due = pd.Series(np.nan, index=df.index, dtype=float)
             days_past_due = dpd_final
-        df["days_past_due"] = days_past_due
-        self._track_derived_field(
-            metrics, "days_past_due", existing_days_past_due.isna() & days_past_due.notna()
-        )
-        return df, dpd_final
+        df['days_past_due'] = days_past_due
+        self._track_derived_field(metrics, 'days_past_due', existing_days_past_due.isna() & days_past_due.notna())
+        return (df, dpd_final)
 
-    def _derive_control_mora_collections(
-        self, df: pd.DataFrame, dpd_final: pd.Series, metrics: Dict[str, Any]
-    ) -> tuple[pd.DataFrame, pd.Series]:
-        """Derive collections_eligible and return the exposure base used downstream."""
-        raw_collections_col = next(
-            (c for c in ("collections_eligible", "procede_a_cobrar") if c in df.columns), None
-        )
+    def _derive_control_mora_collections(self, df: pd.DataFrame, dpd_final: pd.Series, metrics: Dict[str, Any]) -> tuple[pd.DataFrame, pd.Series]:
+        raw_collections_col = next((c for c in ('collections_eligible', 'procede_a_cobrar') if c in df.columns), None)
         if raw_collections_col is not None:
             existing_collections = self._normalize_yes_no_flag(df[raw_collections_col])
         else:
-            existing_collections = pd.Series(pd.NA, index=df.index, dtype="object")
-
-        exposure = self._coalesce_numeric_columns(
-            df,
-            [
-                "outstanding_balance",
-                "current_balance",
-                "amount",
-                "principal_amount",
-                "totalsaldovigente",
-            ],
-        ).fillna(0.0)
-        status = df["status"].astype(str).str.strip().str.lower() if "status" in df.columns else ""
-        derived_collections = pd.Series("N", index=df.index, dtype="object")
+            existing_collections = pd.Series(pd.NA, index=df.index, dtype='object')
+        exposure = self._coalesce_numeric_columns(df, ['outstanding_balance', 'current_balance', 'amount', 'principal_amount', 'totalsaldovigente']).fillna(0.0)
+        status = df['status'].astype(str).str.strip().str.lower() if 'status' in df.columns else ''
+        derived_collections = pd.Series('N', index=df.index, dtype='object')
         delinquent_exposed = (dpd_final > 0) & (exposure > 0)
         if isinstance(status, pd.Series):
-            delinquent_exposed = delinquent_exposed & (status != "closed")
-        derived_collections.loc[delinquent_exposed] = "Y"
+            delinquent_exposed = delinquent_exposed & (status != 'closed')
+        derived_collections.loc[delinquent_exposed] = 'Y'
+        collections_final = existing_collections.where(existing_collections.notna(), derived_collections)
+        df['collections_eligible'] = collections_final
+        self._track_derived_field(metrics, 'collections_eligible', existing_collections.isna() & collections_final.notna())
+        return (df, exposure)
 
-        collections_final = existing_collections.where(
-            existing_collections.notna(), derived_collections
-        )
-        df["collections_eligible"] = collections_final
-        self._track_derived_field(
-            metrics,
-            "collections_eligible",
-            existing_collections.isna() & collections_final.notna(),
-        )
-        return df, exposure
-
-    def _derive_control_mora_utilization(
-        self, df: pd.DataFrame, exposure: pd.Series, metrics: Dict[str, Any]
-    ) -> pd.DataFrame:
-        """Derive utilization_pct from exposure over credit line."""
-        existing_util = self._coalesce_numeric_columns(
-            df, ["utilization_pct", "porcentaje_utilizado"]
-        )
+    def _derive_control_mora_utilization(self, df: pd.DataFrame, exposure: pd.Series, metrics: Dict[str, Any]) -> pd.DataFrame:
+        existing_util = self._coalesce_numeric_columns(df, ['utilization_pct', 'porcentaje_utilizado'])
         valid_existing_util = existing_util.where(existing_util >= 0)
         if valid_existing_util.dropna().median() < 2.0:
             valid_existing_util = valid_existing_util * 100
-
-        credit_limit = self._coalesce_numeric_columns(
-            df, ["credit_line", "lineacredito", "approved_value", "valoraprobado"]
-        )
+        credit_limit = self._coalesce_numeric_columns(df, ['credit_line', 'lineacredito', 'approved_value', 'valoraprobado'])
         derived_util = pd.Series(np.nan, index=df.index, dtype=float)
         valid_limit_mask = credit_limit > 0
-        derived_util.loc[valid_limit_mask] = (
-            exposure.loc[valid_limit_mask] / credit_limit.loc[valid_limit_mask] * 100
-        )
-
-        util_final = valid_existing_util.where(valid_existing_util.notna(), derived_util).clip(
-            lower=0
-        )
-        df["utilization_pct"] = util_final
-        self._track_derived_field(
-            metrics, "utilization_pct", valid_existing_util.isna() & util_final.notna()
-        )
+        derived_util.loc[valid_limit_mask] = exposure.loc[valid_limit_mask] / credit_limit.loc[valid_limit_mask] * 100
+        util_final = valid_existing_util.where(valid_existing_util.notna(), derived_util).clip(lower=0)
+        df['utilization_pct'] = util_final
+        self._track_derived_field(metrics, 'utilization_pct', valid_existing_util.isna() & util_final.notna())
         return df
 
-    def _derive_control_mora_government(
-        self, df: pd.DataFrame, metrics: Dict[str, Any]
-    ) -> pd.DataFrame:
-        """Infer government-sector tagging and populate gov labels where possible."""
-        existing_sector_col = next(
-            (c for c in ("government_sector", "goes") if c in df.columns), None
-        )
+    def _derive_control_mora_government(self, df: pd.DataFrame, metrics: Dict[str, Any]) -> pd.DataFrame:
+        existing_sector_col = next((c for c in ('government_sector', 'goes') if c in df.columns), None)
         if existing_sector_col is not None:
             existing_sector = df[existing_sector_col].astype(str).str.strip().str.upper()
-            existing_sector = existing_sector.mask(
-                existing_sector.isin({"", "NAN", "NONE", "NULL", "MISSING"}), pd.NA
-            )
+            existing_sector = existing_sector.mask(existing_sector.isin({'', 'NAN', 'NONE', 'NULL', 'MISSING'}), pd.NA)
         else:
-            existing_sector = pd.Series(pd.NA, index=df.index, dtype="object")
-
-        gov_hint_col = next((c for c in ("gov", "ministry", "ministerio") if c in df.columns), None)
+            existing_sector = pd.Series(pd.NA, index=df.index, dtype='object')
+        gov_hint_col = next((c for c in ('gov', 'ministry', 'ministerio') if c in df.columns), None)
         if gov_hint_col is not None:
             gov_hint_upper = df[gov_hint_col].astype(str).str.strip().str.upper()
-            hint_is_gov = ~gov_hint_upper.isin(
-                {"", "NO", "NAN", "NONE", "NULL", "MISSING", "PRIVATE"}
-            )
+            hint_is_gov = ~gov_hint_upper.isin({'', 'NO', 'NAN', 'NONE', 'NULL', 'MISSING', 'PRIVATE'})
         else:
             hint_is_gov = pd.Series(False, index=df.index, dtype=bool)
-
-        issuer_col = next((c for c in ("issuer_name", "emisor", "issuer") if c in df.columns), None)
+        issuer_col = next((c for c in ('issuer_name', 'emisor', 'issuer') if c in df.columns), None)
         if issuer_col is not None:
             issuer_upper = df[issuer_col].astype(str).str.upper()
-            keyword_pattern = (
-                r"GOES|MINISTERIO|INSTITUTO|ALCALDIA|MUNICIPALIDAD|GOBIERNO|"
-                r"ASAMBLEA|CORTE|AUTORIDAD|SUPERINTENDENCIA|PRESIDENCIA|PUBLIC"
-            )
+            keyword_pattern = 'GOES|MINISTERIO|INSTITUTO|ALCALDIA|MUNICIPALIDAD|GOBIERNO|ASAMBLEA|CORTE|AUTORIDAD|SUPERINTENDENCIA|PRESIDENCIA|PUBLIC'
             issuer_is_gov = issuer_upper.str.contains(keyword_pattern, regex=True, na=False)
         else:
             issuer_is_gov = pd.Series(False, index=df.index, dtype=bool)
-
-        sector_is_gov = existing_sector.fillna("").str.contains("GOES|GOV|PUBLIC", regex=True)
-        derived_sector = pd.Series("PRIVATE", index=df.index, dtype="object")
-        derived_sector.loc[hint_is_gov | issuer_is_gov | sector_is_gov] = "GOES"
+        sector_is_gov = existing_sector.fillna('').str.contains('GOES|GOV|PUBLIC', regex=True)
+        derived_sector = pd.Series('PRIVATE', index=df.index, dtype='object')
+        derived_sector.loc[hint_is_gov | issuer_is_gov | sector_is_gov] = 'GOES'
         sector_final = existing_sector.where(existing_sector.notna(), derived_sector)
-        df["government_sector"] = sector_final
-        self._track_derived_field(
-            metrics, "government_sector", existing_sector.isna() & sector_final.notna()
-        )
-
-        if "gov" not in df.columns:
-            df["gov"] = pd.NA
-        gov_existing = df["gov"].astype(str).str.strip()
-        gov_missing = gov_existing.isin({"", "nan", "None", "none", "missing", "NO", "No"})
+        df['government_sector'] = sector_final
+        self._track_derived_field(metrics, 'government_sector', existing_sector.isna() & sector_final.notna())
+        if 'gov' not in df.columns:
+            df['gov'] = pd.NA
+        gov_existing = df['gov'].astype(str).str.strip()
+        gov_missing = gov_existing.isin({'', 'nan', 'None', 'none', 'missing', 'NO', 'No'})
         if gov_hint_col is not None:
             gov_fill = df[gov_hint_col].astype(str).str.strip()
-            gov_fill_mask = (
-                gov_missing & (gov_fill != "") & (~gov_fill.str.upper().isin({"NAN", "NONE"}))
-            )
-            df.loc[gov_fill_mask, "gov"] = gov_fill.loc[gov_fill_mask]
-            self._track_derived_field(metrics, "gov", gov_fill_mask)
+            gov_fill_mask = gov_missing & (gov_fill != '') & ~gov_fill.str.upper().isin({'NAN', 'NONE'})
+            df.loc[gov_fill_mask, 'gov'] = gov_fill.loc[gov_fill_mask]
+            self._track_derived_field(metrics, 'gov', gov_fill_mask)
         else:
-            self._track_derived_field(metrics, "gov", pd.Series(False, index=df.index, dtype=bool))
+            self._track_derived_field(metrics, 'gov', pd.Series(False, index=df.index, dtype=bool))
         return df
 
-    def _derive_control_mora_payment_fields(
-        self, df: pd.DataFrame, term_days: pd.Series, metrics: Dict[str, Any]
-    ) -> tuple[pd.DataFrame, pd.Series]:
-        """Derive last payment, scheduled amount, and return the payment amount series."""
-        existing_last_payment_date = (
-            self._to_datetime_mixed(df["last_payment_date"])
-            if "last_payment_date" in df.columns
-            else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
-        )
-        inferred_last_payment_date = self._coalesce_datetime_columns(
-            df, ["payment_date", "fecha_de_pago", "fechacobro", "fecha_pago"]
-        )
-        final_last_payment_date = existing_last_payment_date.where(
-            existing_last_payment_date.notna(), inferred_last_payment_date
-        )
-        df["last_payment_date"] = final_last_payment_date
-        self._track_derived_field(
-            metrics,
-            "last_payment_date",
-            existing_last_payment_date.isna() & final_last_payment_date.notna(),
-        )
-
-        existing_last_payment_amount = (
-            self._coerce_numeric_loose(df["last_payment_amount"])
-            if "last_payment_amount" in df.columns
-            else pd.Series(np.nan, index=df.index, dtype=float)
-        )
-        inferred_last_payment_amount = self._coalesce_numeric_columns(
-            df,
-            [
-                "payment_amount",
-                "_pagado",
-                "monto_pagado",
-                "total_payment_received",
-                "montototalabonado",
-                "capital_collected",
-                "capitalcobrado",
-            ],
-        )
-        final_last_payment_amount = existing_last_payment_amount.where(
-            existing_last_payment_amount.notna(), inferred_last_payment_amount
-        ).fillna(0.0)
-        df["last_payment_amount"] = final_last_payment_amount
-        self._track_derived_field(
-            metrics,
-            "last_payment_amount",
-            existing_last_payment_amount.isna() & final_last_payment_amount.notna(),
-        )
-
-        existing_total_scheduled = (
-            self._coerce_numeric_loose(df["total_scheduled"])
-            if "total_scheduled" in df.columns
-            else pd.Series(np.nan, index=df.index, dtype=float)
-        )
-        inferred_total_scheduled = self._coalesce_numeric_columns(
-            df, ["scheduled_amount", "total_due", "monto_programado"]
-        )
-        principal_base = self._coalesce_numeric_columns(
-            df, ["principal_amount", "amount", "monto_del_desembolso", "montodesembolsado"]
-        )
+    def _derive_control_mora_payment_fields(self, df: pd.DataFrame, term_days: pd.Series, metrics: Dict[str, Any]) -> tuple[pd.DataFrame, pd.Series]:
+        existing_last_payment_date = self._to_datetime_mixed(df['last_payment_date']) if 'last_payment_date' in df.columns else pd.Series(pd.NaT, index=df.index, dtype=DATETIME64_NS_DTYPE)
+        inferred_last_payment_date = self._coalesce_datetime_columns(df, ['payment_date', 'fecha_de_pago', 'fechacobro', 'fecha_pago'])
+        final_last_payment_date = existing_last_payment_date.where(existing_last_payment_date.notna(), inferred_last_payment_date)
+        df['last_payment_date'] = final_last_payment_date
+        self._track_derived_field(metrics, 'last_payment_date', existing_last_payment_date.isna() & final_last_payment_date.notna())
+        existing_last_payment_amount = self._coerce_numeric_loose(df['last_payment_amount']) if 'last_payment_amount' in df.columns else pd.Series(np.nan, index=df.index, dtype=float)
+        inferred_last_payment_amount = self._coalesce_numeric_columns(df, ['payment_amount', '_pagado', 'monto_pagado', 'total_payment_received', 'montototalabonado', 'capital_collected', 'capitalcobrado'])
+        final_last_payment_amount = existing_last_payment_amount.where(existing_last_payment_amount.notna(), inferred_last_payment_amount).fillna(0.0)
+        df['last_payment_amount'] = final_last_payment_amount
+        self._track_derived_field(metrics, 'last_payment_amount', existing_last_payment_amount.isna() & final_last_payment_amount.notna())
+        existing_total_scheduled = self._coerce_numeric_loose(df['total_scheduled']) if 'total_scheduled' in df.columns else pd.Series(np.nan, index=df.index, dtype=float)
+        inferred_total_scheduled = self._coalesce_numeric_columns(df, ['scheduled_amount', 'total_due', 'monto_programado'])
+        principal_base = self._coalesce_numeric_columns(df, ['principal_amount', 'amount', 'monto_del_desembolso', 'montodesembolsado'])
         monthly_from_term = pd.Series(np.nan, index=df.index, dtype=float)
         valid_term_days = term_days > 0
-        monthly_from_term.loc[valid_term_days] = (
-            principal_base.loc[valid_term_days] / term_days.loc[valid_term_days] * 30
-        )
-        inferred_total_scheduled = inferred_total_scheduled.where(
-            inferred_total_scheduled.notna(), monthly_from_term
-        )
-        inferred_total_scheduled = inferred_total_scheduled.where(
-            inferred_total_scheduled.notna(), final_last_payment_amount
-        )
-        final_total_scheduled = existing_total_scheduled.where(
-            existing_total_scheduled.notna(), inferred_total_scheduled
-        ).fillna(0.0)
-        df["total_scheduled"] = final_total_scheduled
-        self._track_derived_field(
-            metrics,
-            "total_scheduled",
-            existing_total_scheduled.isna() & final_total_scheduled.notna(),
-        )
-        return df, final_last_payment_amount
+        monthly_from_term.loc[valid_term_days] = principal_base.loc[valid_term_days] / term_days.loc[valid_term_days] * 30
+        inferred_total_scheduled = inferred_total_scheduled.where(inferred_total_scheduled.notna(), monthly_from_term)
+        inferred_total_scheduled = inferred_total_scheduled.where(inferred_total_scheduled.notna(), final_last_payment_amount)
+        final_total_scheduled = existing_total_scheduled.where(existing_total_scheduled.notna(), inferred_total_scheduled).fillna(0.0)
+        df['total_scheduled'] = final_total_scheduled
+        self._track_derived_field(metrics, 'total_scheduled', existing_total_scheduled.isna() & final_total_scheduled.notna())
+        return (df, final_last_payment_amount)
 
     def _derive_control_mora_tpv(self, df: pd.DataFrame, metrics: Dict[str, Any]) -> pd.DataFrame:
-        """Derive TPV from payments when the field is missing."""
-        existing_tpv = pd.to_numeric(
-            (
-                self._coerce_numeric_loose(df["tpv"])
-                if "tpv" in df.columns
-                else pd.Series(np.nan, index=df.index, dtype=float)
-            ),
-            errors="coerce",
-        ).astype(float)
-        inferred_tpv = pd.to_numeric(
-            self._coalesce_numeric_columns(
-                df,
-                [
-                    "total_payment_received",
-                    "montototalabonado",
-                    "capital_collected",
-                    "capitalcobrado",
-                ],
-            ),
-            errors="coerce",
-        ).astype(float)
+        existing_tpv = pd.to_numeric(self._coerce_numeric_loose(df['tpv']) if 'tpv' in df.columns else pd.Series(np.nan, index=df.index, dtype=float), errors='coerce').astype(float)
+        inferred_tpv = pd.to_numeric(self._coalesce_numeric_columns(df, ['total_payment_received', 'montototalabonado', 'capital_collected', 'capitalcobrado']), errors='coerce').astype(float)
         final_tpv = existing_tpv.copy()
         fill_tpv_mask = existing_tpv.isna() & inferred_tpv.notna()
         final_tpv.loc[fill_tpv_mask] = inferred_tpv.loc[fill_tpv_mask]
-        df["tpv"] = final_tpv.fillna(0.0)
-        self._track_derived_field(metrics, "tpv", existing_tpv.isna() & final_tpv.notna())
+        df['tpv'] = final_tpv.fillna(0.0)
+        self._track_derived_field(metrics, 'tpv', existing_tpv.isna() & final_tpv.notna())
         return df
 
     def _derive_control_mora_fields(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """
-        Derive computed fields from CONTROL DE MORA data so KPI inputs are complete.
-
-        Key derivations:
-        - due_date from disbursement + term when due date is missing
-        - dpd / days_past_due from as_of_date - due_date
-        - collections_eligible from delinquency + exposure when source flag missing
-        - utilization_pct from exposure / credit_line
-        - government_sector from gov/ministry/issuer inference
-        - last_payment_date / last_payment_amount / total_scheduled fallbacks
-        """
-        metrics: Dict[str, Any] = {"enabled": True, "fields_derived": {}}
-
+        metrics: Dict[str, Any] = {'enabled': True, 'fields_derived': {}}
         df, final_due, term_days = self._derive_control_mora_dates_and_terms(df, metrics)
         df, dpd_final = self._derive_control_mora_as_of_and_dpd(df, final_due, metrics)
         df, exposure = self._derive_control_mora_collections(df, dpd_final, metrics)
@@ -970,218 +389,91 @@ class TransformationPhase:
         df = self._derive_control_mora_government(df, metrics)
         df, _ = self._derive_control_mora_payment_fields(df, term_days, metrics)
         df = self._derive_control_mora_tpv(df, metrics)
-
-        return df, metrics
+        return (df, metrics)
 
     def _derive_canonical_risk_state(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """Derive canonical risk-state fields that must travel downstream.
-
-        Canonical outputs:
-        - ratio_pago_real: pagado / programado, strict NaN when programado <= 0
-        - is_kiting_suspected: 1 when ratio_pago_real < 1.0 and dpd < 30
-        - dpd_adjusted: max(dpd, 90) for kiting rows, otherwise original dpd
-        """
-        metrics: Dict[str, Any] = {"enabled": True}
-
-        paid_amount = self._coalesce_numeric_columns(
-            df,
-            [
-                "last_payment_amount",
-                "payment_amount",
-                "total_payment_received",
-                "montototalabonado",
-                "capital_collected",
-                "capitalcobrado",
-            ],
-        )
-        scheduled_amount = self._coalesce_numeric_columns(
-            df,
-            [
-                "total_scheduled",
-                "scheduled_amount",
-                "total_due",
-                "monto_programado",
-            ],
-        )
-        dpd_source = df["dpd"] if "dpd" in df.columns else pd.Series(np.nan, index=df.index)
-        dpd = pd.to_numeric(dpd_source, errors="coerce").fillna(0.0)
-
-        with np.errstate(divide="ignore", invalid="ignore"):
+        metrics: Dict[str, Any] = {'enabled': True}
+        paid_amount = self._coalesce_numeric_columns(df, ['last_payment_amount', 'payment_amount', 'total_payment_received', 'montototalabonado', 'capital_collected', 'capitalcobrado'])
+        scheduled_amount = self._coalesce_numeric_columns(df, ['total_scheduled', 'scheduled_amount', 'total_due', 'monto_programado'])
+        dpd_source = df['dpd'] if 'dpd' in df.columns else pd.Series(np.nan, index=df.index)
+        dpd = pd.to_numeric(dpd_source, errors='coerce').fillna(0.0)
+        with np.errstate(divide='ignore', invalid='ignore'):
             ratio_pago_real = np.where(scheduled_amount > 0, paid_amount / scheduled_amount, np.nan)
-
-        is_kiting_suspected = (
-            pd.Series(ratio_pago_real, index=df.index).gt(0.0)
-            & pd.Series(ratio_pago_real, index=df.index).lt(1.0)
-            & pd.Series(ratio_pago_real, index=df.index).notna()
-            & dpd.lt(30)
-        )
-
-        dpd_adjusted = np.where(
-            is_kiting_suspected, np.maximum(dpd.to_numpy(), 90.0), dpd.to_numpy()
-        )
-
-        df["ratio_pago_real"] = pd.Series(ratio_pago_real, index=df.index, dtype=float)
-        df["is_kiting_suspected"] = is_kiting_suspected.astype(int)
-        df["dpd_adjusted"] = pd.Series(dpd_adjusted, index=df.index, dtype=float)
-
-        metrics["kiting_rows"] = int(is_kiting_suspected.sum())
-        metrics["opaque_ratio_rows"] = int(pd.Series(ratio_pago_real, index=df.index).isna().sum())
-        return df, metrics
+        is_kiting_suspected = pd.Series(ratio_pago_real, index=df.index).gt(0.0) & pd.Series(ratio_pago_real, index=df.index).lt(1.0) & pd.Series(ratio_pago_real, index=df.index).notna() & dpd.lt(30)
+        dpd_adjusted = np.where(is_kiting_suspected, np.maximum(dpd.to_numpy(), 90.0), dpd.to_numpy())
+        df['ratio_pago_real'] = pd.Series(ratio_pago_real, index=df.index, dtype=float)
+        df['is_kiting_suspected'] = is_kiting_suspected.astype(int)
+        df['dpd_adjusted'] = pd.Series(dpd_adjusted, index=df.index, dtype=float)
+        metrics['kiting_rows'] = int(is_kiting_suspected.sum())
+        metrics['opaque_ratio_rows'] = int(pd.Series(ratio_pago_real, index=df.index).isna().sum())
+        return (df, metrics)
 
     def _handle_nulls(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """
-        Handle missing values based on configured strategy.
-
-        Strategies:
-        - 'drop': Remove rows with any null values
-        - 'fill': Fill nulls with configured default values
-        - 'smart': Intelligent handling based on column type and null percentage
-
-        Args:
-            df: Input DataFrame
-
-        Returns:
-            Tuple of (processed DataFrame, metrics dict)
-        """
-        logger.info("Handling null values (strategy: %s)", self.null_strategy)
-
+        logger.info('Handling null values (strategy: %s)', self.null_strategy)
         initial_nulls = df.isnull().sum()
         total_nulls = initial_nulls.sum()
         null_columns = initial_nulls[initial_nulls > 0].to_dict()
-
         if total_nulls == 0:
-            logger.info("No null values found")
-            return df, {"total_nulls": 0, "strategy_applied": "none", "columns_affected": []}
-
+            logger.info('No null values found')
+            return (df, {'total_nulls': 0, 'strategy_applied': 'none', 'columns_affected': []})
         metrics = self._create_null_metrics(total_nulls, null_columns)
         df, strategy_metrics = self._apply_null_strategy(df, null_columns)
         metrics.update(strategy_metrics)
-
         final_nulls = df.isnull().sum().sum()
-        metrics["final_total_nulls"] = int(final_nulls)
+        metrics['final_total_nulls'] = int(final_nulls)
+        return (df, metrics)
 
-        return df, metrics
+    def _create_null_metrics(self, total_nulls: int, null_columns: Dict[str, int]) -> Dict[str, Any]:
+        return {'initial_total_nulls': int(total_nulls), 'null_columns': null_columns, 'strategy_applied': self.null_strategy, 'columns_affected': list(null_columns.keys())}
 
-    def _create_null_metrics(
-        self, total_nulls: int, null_columns: Dict[str, int]
-    ) -> Dict[str, Any]:
-        """Create initial metrics for null handling."""
-        return {
-            "initial_total_nulls": int(total_nulls),
-            "null_columns": null_columns,
-            "strategy_applied": self.null_strategy,
-            "columns_affected": list(null_columns.keys()),
-        }
-
-    def _apply_null_strategy(
-        self, df: pd.DataFrame, null_columns: Dict[str, int]
-    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """Apply the configured null handling strategy using strategy dispatch."""
-        strategy_handlers = {
-            "drop": lambda: self._apply_drop_strategy(df),
-            "fill": lambda: self._apply_fill_strategy(df),
-            "smart": lambda: self._smart_null_handling(df, null_columns),
-        }
+    def _apply_null_strategy(self, df: pd.DataFrame, null_columns: Dict[str, int]) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        strategy_handlers = {'drop': lambda: self._apply_drop_strategy(df), 'fill': lambda: self._apply_fill_strategy(df), 'smart': lambda: self._smart_null_handling(df, null_columns)}
         handler = strategy_handlers.get(self.null_strategy)
         if handler:
             return handler()
-        return df, {}
+        return (df, {})
 
     def _apply_drop_strategy(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """Apply drop strategy for null handling."""
         rows_before = len(df)
         df = df.dropna()
         rows_dropped = rows_before - len(df)
-        logger.info("Dropped %d rows with null values", rows_dropped)
-        return df, {"rows_dropped": rows_dropped}
+        logger.info('Dropped %d rows with null values', rows_dropped)
+        return (df, {'rows_dropped': rows_dropped})
 
     def _apply_fill_strategy(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """Apply fill strategy for null handling."""
         df = self._fill_nulls_by_type(df)
-        logger.info("Filled null values with configured defaults")
-        return df, {"fill_values_used": self.fill_values}
+        logger.info('Filled null values with configured defaults')
+        return (df, {'fill_values_used': self.fill_values})
 
     def _fill_nulls_by_type(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Fill nulls based on column data type."""
         for col in df.columns:
             if df[col].isnull().any() and pd.api.types.is_numeric_dtype(df[col]):
-                df[col] = df[col].fillna(self.fill_values.get("numeric", 0))
+                df[col] = df[col].fillna(self.fill_values.get('numeric', 0))
             elif df[col].isnull().any():
-                df[col] = df[col].fillna(self.fill_values.get("categorical", "unknown"))
+                df[col] = df[col].fillna(self.fill_values.get('categorical', 'unknown'))
         return df
 
-    def _smart_null_handling(
-        self, df: pd.DataFrame, null_columns: Dict[str, int]
-    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """
-        Null handling dispatched by column dtype and null percentage.
-
-        **Numeric columns** — three tiers keyed on ``null_pct``:
-
-        - ``< LOW_NULL_THRESHOLD_PCT``: structural zero fill + integer opacity
-          flag (``{col}_is_missing`` column added; 1 = was null, 0 = present).
-        - ``LOW ≤ null_pct < HIGH_NULL_THRESHOLD_PCT``: filled with the
-          ``MISSING_NUMERIC_INDICATOR`` sentinel value.  No opacity-flag column
-          is added for this tier.
-        - ``≥ HIGH_NULL_THRESHOLD_PCT``: filled with zero; warning logged for
-          columns in ``HIGH_NULL_WARNING_NUMERIC_COLUMNS``; columns that are
-          effectively all-null (> 99.5%) are left as-is (NaN preserved).
-
-        **Categorical columns** — threshold tiers do **not** apply:
-
-        All categorical nulls unconditionally receive the strict opacity
-        treatment: filled with sentinel string ``"missing_data"`` and an
-        integer flag ``{col}_is_missing``, regardless of ``null_pct``.
-
-        No mean/median/mode imputation is ever applied. Opacity flags let
-        downstream ML models learn from the absence of data rather than being
-        misled by statistical substitutes.
-
-        Returns a structured ``opacity_counts`` dict (``{flag_col: null_count}``)
-        alongside the human-readable ``smart_actions`` so that downstream phases
-        (e.g. audit_metadata export) can consume it without parsing strings.
-        """
+    def _smart_null_handling(self, df: pd.DataFrame, null_columns: Dict[str, int]) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         total_rows = len(df)
         actions, opacity_counts = self._process_null_columns(df, null_columns, total_rows)
-        return df, {"smart_actions": actions, "opacity_counts": opacity_counts}
+        return (df, {'smart_actions': actions, 'opacity_counts': opacity_counts})
 
-    def _process_null_columns(
-        self, df: pd.DataFrame, null_columns: Dict[str, int], total_rows: int
-    ) -> Tuple[Dict[str, str], Dict[str, int]]:
-        """Process null values for each column based on column type.
-
-        Returns
-        -------
-        actions : dict
-            Human-readable action string per column.
-        opacity_counts : dict
-            Structured mapping ``{flag_col: null_count}`` for every column
-            where a ``{col}_is_missing`` opacity flag was created.  Consumers
-            (e.g. ``_build_audit_metadata_payload``) should read from this dict
-            rather than parsing the action strings.
-        """
+    def _process_null_columns(self, df: pd.DataFrame, null_columns: Dict[str, int], total_rows: int) -> Tuple[Dict[str, str], Dict[str, int]]:
         actions: Dict[str, str] = {}
         opacity_counts: Dict[str, int] = {}
         for col, null_count in null_columns.items():
             null_pct = null_count / total_rows * 100
-            action = (
-                self._handle_numeric_nulls(df, col, null_pct)
-                if pd.api.types.is_numeric_dtype(df[col])
-                else self._handle_categorical_nulls(df, col)
-            )
+            action = self._handle_numeric_nulls(df, col, null_pct) if pd.api.types.is_numeric_dtype(df[col]) else self._handle_categorical_nulls(df, col)
             actions[col] = action
-            # Record structured count for every column that received an opacity flag
-            flag_col = f"{col}_is_missing"
+            flag_col = f'{col}_is_missing'
             if flag_col in df.columns:
                 opacity_counts[flag_col] = null_count
-        return actions, opacity_counts
+        return (actions, opacity_counts)
 
     def _handle_numeric_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
-        """Apply numeric null handling strategy for a column."""
         if col in self.FORCE_ZERO_NUMERIC_COLUMNS:
             df[col] = df[col].fillna(0)
-            return "filled_zero (cashflow_semantics)"
-
+            return 'filled_zero (cashflow_semantics)'
         if null_pct < self.LOW_NULL_THRESHOLD_PCT:
             return self._fill_numeric_with_structural_zero(df, col)
         if null_pct < self.HIGH_NULL_THRESHOLD_PCT:
@@ -1189,187 +481,84 @@ class TransformationPhase:
         return self._fill_numeric_with_zero(df, col, null_pct)
 
     def _fill_numeric_with_structural_zero(self, df: pd.DataFrame, col: str) -> str:
-        """Fill numeric nulls with structural zero and add an integer opacity flag.
-
-        Implements the "structural zeros + opacity flag" pattern:
-        - Null values are filled with 0 (structural zero, not a statistical estimate).
-        - An integer indicator column ``{col}_is_missing`` (1=missing, 0=present) is added
-          so that ML models can distinguish genuine zeros from imputed ones.
-
-        No mean/median/mode imputation is ever applied — those substitute statistical
-        artefacts for genuine business knowledge, corrupting credit-risk models.
-        """
         null_mask = df[col].isna()
-        flag_col = f"{col}_is_missing"
+        flag_col = f'{col}_is_missing'
         df[flag_col] = null_mask.astype(int)
         df[col] = df[col].fillna(0)
-        return f"filled_structural_zero+flag ({null_mask.sum()} nulls → {flag_col})"
+        return f'filled_structural_zero+flag ({null_mask.sum()} nulls → {flag_col})'
 
     def _fill_numeric_with_indicator(self, df: pd.DataFrame, col: str) -> str:
-        """Fill numeric nulls with missing indicator."""
         df[col] = df[col].fillna(self.MISSING_NUMERIC_INDICATOR)
-        return f"filled_missing_indicator ({self.MISSING_NUMERIC_INDICATOR})"
+        return f'filled_missing_indicator ({self.MISSING_NUMERIC_INDICATOR})'
 
     def _fill_numeric_with_zero(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
-        """Fill numeric nulls with zero for high null percentage columns."""
         if null_pct > 99.5:
-            # For columns that are effectively all-null (like Pledge Date in some feeds),
-            # do not fill with 0 as it corrupts downstream logic. Keep as NaN.
-            return f"skipped_zero_fill (null_pct={null_pct:.1f}% > 99.5%)"
-
+            return f'skipped_zero_fill (null_pct={null_pct:.1f}% > 99.5%)'
         df[col] = df[col].fillna(0)
         if col in self.HIGH_NULL_WARNING_NUMERIC_COLUMNS:
-            logger.error(
-                "Column '%s' exceeds missing threshold (%.1f%% nulls). Fail-fast requires structural integrity for critical KPIs.",
-                col,
-                null_pct,
-            )
-            raise ValueError(f"Critical column {col} exceeds missing threshold ({null_pct:.1f}%)")
-        return f"filled_zero (high_null: {null_pct:.1f}%)"
+            logger.error("Column '%s' exceeds missing threshold (%.1f%% nulls). Fail-fast requires structural integrity for critical KPIs.", col, null_pct)
+            raise ValueError(f'Critical column {col} exceeds missing threshold ({null_pct:.1f}%)')
+        return f'filled_zero (high_null: {null_pct:.1f}%)'
 
     def _handle_categorical_nulls(self, df: pd.DataFrame, col: str) -> str:
-        """Apply categorical null handling strategy for a column.
-
-        Strict opacity rule: mode/moda imputation is never used.
-        All categorical nulls receive a ``{col}_is_missing`` integer flag and
-        are filled with the sentinel string ``"missing_data"``.
-        """
         return self._fill_categorical_with_missing_data(df, col)
 
     def _fill_categorical_with_missing_data(self, df: pd.DataFrame, col: str) -> str:
-        """Fill categorical nulls with the sentinel 'missing_data' and add an opacity flag.
-
-        Creates ``{col}_is_missing`` (int 1/0) so downstream models can distinguish
-        genuine 'missing_data' values from values that were present in the source.
-        Mode imputation is explicitly forbidden here to avoid injecting distributional
-        bias into categorical features used for credit-risk segmentation.
-        """
         null_mask = df[col].isna()
-        flag_col = f"{col}_is_missing"
+        flag_col = f'{col}_is_missing'
         df[flag_col] = null_mask.astype(int)
-        df[col] = df[col].fillna("missing_data")
-        return f"filled_missing_data+flag ({null_mask.sum()} nulls → {flag_col})"
+        df[col] = df[col].fillna('missing_data')
+        return f'filled_missing_data+flag ({null_mask.sum()} nulls → {flag_col})'
 
     def _normalize_types(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """
-        Normalize data types for consistency.
-
-        - Convert date strings to datetime
-        - Ensure numeric columns are proper numeric types
-        - Standardize string formats (lowercase status, etc.)
-
-        Args:
-            df: Input DataFrame
-
-        Returns:
-            Tuple of (processed DataFrame, metrics dict)
-        """
-        logger.info("Normalizing data types")
-
+        logger.info('Normalizing data types')
         if not self.type_normalization_enabled:
-            return df, {"enabled": False}
-
+            return (df, {'enabled': False})
         conversions: Dict[str, Dict[str, str]] = {}
-
         self._normalize_date_columns(df, conversions)
         self._normalize_numeric_columns(df, conversions)
         self._normalize_status_column(df, conversions)
+        metrics = {'enabled': True, 'conversions_applied': len(conversions), 'conversion_details': conversions}
+        logger.info('Applied %d type conversions', len(conversions))
+        return (df, metrics)
 
-        metrics = {
-            "enabled": True,
-            "conversions_applied": len(conversions),
-            "conversion_details": conversions,
-        }
-
-        logger.info("Applied %d type conversions", len(conversions))
-        return df, metrics
-
-    def _normalize_date_columns(
-        self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]
-    ) -> None:
-        """Normalize date columns to datetime."""
+    def _normalize_date_columns(self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]) -> None:
         for col in df.columns:
-            if (col in self.DATE_COLUMNS or col.endswith("_date")) and (
-                pd.api.types.is_string_dtype(df[col]) or df[col].dtype == "object"
-            ):
+            if (col in self.DATE_COLUMNS or col.endswith('_date')) and (pd.api.types.is_string_dtype(df[col]) or df[col].dtype == 'object'):
                 try:
-                    df[col] = pd.to_datetime(df[col], format=self.date_format, errors="coerce")
-                    conversions[col] = {"from": "string", "to": "datetime64"}
+                    df[col] = pd.to_datetime(df[col], format=self.date_format, errors='coerce')
+                    conversions[col] = {'from': 'string', 'to': 'datetime64'}
                 except Exception as e:
-                    logger.warning("Could not convert %s to datetime: %s", col, e)
+                    logger.warning('Could not convert %s to datetime: %s', col, e)
 
-    def _normalize_numeric_columns(
-        self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]
-    ) -> None:
-        """Normalize numeric columns to numeric dtype."""
+    def _normalize_numeric_columns(self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]) -> None:
         for col in df.columns:
             is_numeric_name = col in self.NUMERIC_COLUMNS or self.NUMERIC_NAME_PATTERN.search(col)
-            is_string_obj = pd.api.types.is_string_dtype(df[col]) or df[col].dtype == "object"
-
-            # Explicitly exclude 'country' which contains 'count' but is categorical
-            if is_numeric_name and "country" not in col.lower() and is_string_obj:
+            is_string_obj = pd.api.types.is_string_dtype(df[col]) or df[col].dtype == 'object'
+            if is_numeric_name and 'country' not in col.lower() and is_string_obj:
                 try:
-                    df[col] = pd.to_numeric(df[col], errors="coerce")
-                    conversions[col] = {"from": "string", "to": "numeric"}
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+                    conversions[col] = {'from': 'string', 'to': 'numeric'}
                 except Exception as e:
-                    logger.warning("Could not convert %s to numeric: %s", col, e)
+                    logger.warning('Could not convert %s to numeric: %s', col, e)
 
-    def _normalize_status_column(
-        self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]
-    ) -> None:
-        """Normalize status values to standardized labels.
-
-        Incoming values are stripped and lower-cased before looking up in
-        STATUS_MAPPINGS so that any casing variant (e.g. "ACTIVO", "Activo")
-        resolves to the canonical label without requiring separate map entries.
-        """
-        if "status" not in df.columns:
+    def _normalize_status_column(self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]) -> None:
+        if 'status' not in df.columns:
             return
-        original_values = df["status"].unique().tolist()
-
-        # Use a vectorized approach that is safe for nullable string dtypes (pd.NA).
-        original_status = df["status"]
-
-        # Normalize non-missing values to stripped, lower-cased strings.
-        normalized_status = original_status.astype("string").str.strip().str.lower()
-
-        # Map normalized values to canonical labels where available.
+        original_values = df['status'].unique().tolist()
+        original_status = df['status']
+        normalized_status = original_status.astype('string').str.strip().str.lower()
         mapped_status = normalized_status.map(self.STATUS_MAPPINGS)
-
-        # Build final column:
-        # - Unmapped non-missing values fall back to the normalized string.
-        # - Missing values propagate as-is (pd.NA / NaN).
         mask_missing = original_status.isna()
-        mask_unmapped = (~mask_missing) & mapped_status.isna()
-        final_status = mapped_status.where(~mask_unmapped, normalized_status).where(
-            ~mask_missing, original_status
-        )
-
-        df["status"] = final_status
-        conversions["status"] = {"normalized_values": original_values}
+        mask_unmapped = ~mask_missing & mapped_status.isna()
+        final_status = mapped_status.where(~mask_unmapped, normalized_status).where(~mask_missing, original_status)
+        df['status'] = final_status
+        conversions['status'] = {'normalized_values': original_values}
 
     def _apply_business_rules(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """
-        Apply business rules from configuration.
-
-        Applies:
-        - Status mappings and validations
-        - DPD bucket assignments
-        - Risk categorization
-        - Custom field derivations
-        - Automated Government Entity Identification
-
-        Args:
-            df: Input DataFrame
-
-        Returns:
-            Tuple of (processed DataFrame, metrics dict)
-        """
-        logger.info("Applying business rules")
-
+        logger.info('Applying business rules')
         rules_applied: List[str] = []
         fields_created: List[str] = []
-
         self._automate_gov_identification(df, rules_applied, fields_created)
         self._automate_doc_type_identification(df, rules_applied, fields_created)
         self._normalize_interest_rate(df, rules_applied)
@@ -1379,586 +568,293 @@ class TransformationPhase:
         self._apply_risk_category_rule(df, rules_applied, fields_created)
         self._apply_amount_tier_rule(df, rules_applied, fields_created)
         self._apply_custom_rules(df, rules_applied)
+        metrics = {'rules_applied': len(rules_applied), 'rule_names': rules_applied, 'fields_created': fields_created}
+        logger.info('Applied %d business rules', len(rules_applied))
+        return (df, metrics)
 
-        metrics = {
-            "rules_applied": len(rules_applied),
-            "rule_names": rules_applied,
-            "fields_created": fields_created,
-        }
-
-        logger.info("Applied %d business rules", len(rules_applied))
-        return df, metrics
-
-    def _automate_gov_identification(
-        self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]
-    ) -> None:
-        """
-        Identify government and industry segments from 'emisor' (Pagador).
-        Synchronizes 'gov', 'industry', and 'government_sector' (GOES flag).
-        """
-        # Determine source columns
-        pagador_col = next(
-            (c for c in ("emisor", "issuer_name", "issuer") if c in df.columns), None
-        )
-        goes_source = next((c for c in ("government_sector", "goes") if c in df.columns), None)
-
+    def _automate_gov_identification(self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]) -> None:
+        pagador_col = next((c for c in ('emisor', 'issuer_name', 'issuer') if c in df.columns), None)
+        goes_source = next((c for c in ('government_sector', 'goes') if c in df.columns), None)
         if not pagador_col:
             return
-
-        # Ensure columns exist
-        for col in ["gov", "industry"]:
+        for col in ['gov', 'industry']:
             if col not in df.columns:
-                df[col] = "No" if col == "gov" else "Other"
+                df[col] = 'No' if col == 'gov' else 'Other'
                 fields_created.append(col)
-
-        if "government_sector" not in df.columns:
-            df["government_sector"] = "PRIVATE"
-            fields_created.append("government_sector")
-
-        # --- 1. Government Identification ---
-        gov_keywords = [
-            "MINISTERIO",
-            "INSTITUTO",
-            "COMISION",
-            "PROCURADURIA",
-            "ALCALDIA",
-            "MUNICIPALIDAD",
-            "GOBIERNO",
-            "ASAMBLEA",
-            "CORTE",
-            "ORGANO",
-            "CONSEJO",
-            "FONDO",
-            "BANCO CENTRAL",
-            "FISCALIA",
-            "DEFENSORIA",
-            "UNIVERSIDAD",
-            "LOTERIA",
-            "VICEPRESIDENCIA",
-            "PRESIDENCIA",
-            "AUTORIDAD",
-            "SUPERINTENDENCIA",
-            "CENTRO NACIONAL",
-            "INSAFOR",
-            "INCAF",
-            "ANDA",
-            "SIGET",
-            "GOES",
-        ]
-        gov_pattern = "|".join(gov_keywords)
-
-        # Identify by keywords or existing flag
-        keyword_gov_mask = (
-            df[pagador_col].astype(str).str.upper().str.contains(gov_pattern, na=False)
-        )
-        existing_goes_mask = (
-            (df[goes_source].astype(str).str.upper().str.strip() == "GOES")
-            if goes_source
-            else pd.Series(False, index=df.index)
-        )
+        if 'government_sector' not in df.columns:
+            df['government_sector'] = 'PRIVATE'
+            fields_created.append('government_sector')
+        gov_keywords = ['MINISTERIO', 'INSTITUTO', 'COMISION', 'PROCURADURIA', 'ALCALDIA', 'MUNICIPALIDAD', 'GOBIERNO', 'ASAMBLEA', 'CORTE', 'ORGANO', 'CONSEJO', 'FONDO', 'BANCO CENTRAL', 'FISCALIA', 'DEFENSORIA', 'UNIVERSIDAD', 'LOTERIA', 'VICEPRESIDENCIA', 'PRESIDENCIA', 'AUTORIDAD', 'SUPERINTENDENCIA', 'CENTRO NACIONAL', 'INSAFOR', 'INCAF', 'ANDA', 'SIGET', 'GOES']
+        gov_pattern = '|'.join(gov_keywords)
+        keyword_gov_mask = df[pagador_col].astype(str).str.upper().str.contains(gov_pattern, na=False)
+        existing_goes_mask = df[goes_source].astype(str).str.upper().str.strip() == 'GOES' if goes_source else pd.Series(False, index=df.index)
         is_gov_mask = keyword_gov_mask | existing_goes_mask
-
-        # --- 2. Industry Identification (Heuristic) ---
-        industry_map = {
-            "Retail": "TIENDA|SUPERMERCADO|BOUTIQUE|COMERCIAL|ALMACEN|DISTRIBUIDORA|RETAIL|VENTA|ABARROTES",
-            "Services": "SERVICIOS|CONSULTOR|SOLUCION|ASESORIA|LIMPIEZA|MANTENIMIENTO|SEGURIDAD|HOTEL|RESTAURANTE|GASTRONOMIA",
-            "Manufacturing": "INDUSTRIA|FABRICA|MANUFACTURA|TEXTIL|ALIMENTO|PLASTICO|QUIMICA|METAL|PRODUCCION",
-            "Logistics": "TRANSPORTE|LOGISTICA|CARGA|ADUANA|MUDANZA|ENVIO|COURIER|PUERTO",
-            "Tech": "TECNOLOGIA|SOFTWARE|SISTEMA|DIGITAL|IT|INFORMATICA|DESARROLLO",
-            "Financial": "BANCO|FINANCIER|SEGURO|CREDITO|COOPERATIVA|AHORRO|BOLSA",
-            "Construction": "CONSTRUCCION|INGENIERIA|EDIFIC|OBRA|PROYECTO|ARQUITECT",
-            "Healthcare": "HOSPITAL|CLINICA|MEDIC|SALUD|FARMACIA|DIAGNOSTICO|LABORATORIO",
-        }
-
-        # Determine which rows need automated tagging
-        needs_gov_name = is_gov_mask & df["gov"].astype(str).str.lower().isin(
-            ["", "no", "nan", "none", "missing"]
-        )
-        needs_industry = (
-            df["industry"]
-            .astype(str)
-            .str.lower()
-            .isin(["", "other", "nan", "none", "missing", "unknown"])
-        )
-
-        # Apply Gov tagging
-        df.loc[needs_gov_name, "gov"] = df.loc[needs_gov_name, pagador_col]
-        df.loc[is_gov_mask, "government_sector"] = "GOES"
-        df.loc[is_gov_mask, "industry"] = "Government"  # Gov is also an industry segment
-
-        # Apply Industry tagging for non-government entities
+        industry_map = {'Retail': 'TIENDA|SUPERMERCADO|BOUTIQUE|COMERCIAL|ALMACEN|DISTRIBUIDORA|RETAIL|VENTA|ABARROTES', 'Services': 'SERVICIOS|CONSULTOR|SOLUCION|ASESORIA|LIMPIEZA|MANTENIMIENTO|SEGURIDAD|HOTEL|RESTAURANTE|GASTRONOMIA', 'Manufacturing': 'INDUSTRIA|FABRICA|MANUFACTURA|TEXTIL|ALIMENTO|PLASTICO|QUIMICA|METAL|PRODUCCION', 'Logistics': 'TRANSPORTE|LOGISTICA|CARGA|ADUANA|MUDANZA|ENVIO|COURIER|PUERTO', 'Tech': 'TECNOLOGIA|SOFTWARE|SISTEMA|DIGITAL|IT|INFORMATICA|DESARROLLO', 'Financial': 'BANCO|FINANCIER|SEGURO|CREDITO|COOPERATIVA|AHORRO|BOLSA', 'Construction': 'CONSTRUCCION|INGENIERIA|EDIFIC|OBRA|PROYECTO|ARQUITECT', 'Healthcare': 'HOSPITAL|CLINICA|MEDIC|SALUD|FARMACIA|DIAGNOSTICO|LABORATORIO'}
+        needs_gov_name = is_gov_mask & df['gov'].astype(str).str.lower().isin(['', 'no', 'nan', 'none', 'missing'])
+        needs_industry = df['industry'].astype(str).str.lower().isin(['', 'other', 'nan', 'none', 'missing', 'unknown'])
+        df.loc[needs_gov_name, 'gov'] = df.loc[needs_gov_name, pagador_col]
+        df.loc[is_gov_mask, 'government_sector'] = 'GOES'
+        df.loc[is_gov_mask, 'industry'] = 'Government'
         if not is_gov_mask.all():
             for industry, pattern in industry_map.items():
-                match_mask = (
-                    ~is_gov_mask
-                    & needs_industry
-                    & df[pagador_col].astype(str).str.upper().str.contains(pattern, na=False)
-                )
-                df.loc[match_mask, "industry"] = industry
+                match_mask = ~is_gov_mask & needs_industry & df[pagador_col].astype(str).str.upper().str.contains(pattern, na=False)
+                df.loc[match_mask, 'industry'] = industry
+        df.loc[~is_gov_mask & df['gov'].astype(str).str.lower().isin(['', 'nan', 'none', 'missing']), 'gov'] = 'No'
+        df.loc[~is_gov_mask, 'government_sector'] = 'PRIVATE'
+        rules_applied.append('automated_gov_and_industry_identification')
+        logger.info('Automated Gov and Industry identification applied based on column: %s', pagador_col)
 
-        # Final Fallbacks
-        df.loc[
-            ~is_gov_mask & df["gov"].astype(str).str.lower().isin(["", "nan", "none", "missing"]),
-            "gov",
-        ] = "No"
-        df.loc[~is_gov_mask, "government_sector"] = "PRIVATE"
-
-        rules_applied.append("automated_gov_and_industry_identification")
-        logger.info(
-            "Automated Gov and Industry identification applied based on column: %s", pagador_col
-        )
-
-    def _automate_doc_type_identification(
-        self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]
-    ) -> None:
-        """
-        Identify document types (Factura, Quedan, CCF, DTE, etc.) from multiple metadata columns.
-        """
-        if "doc_type" not in df.columns:
-            df["doc_type"] = "Other"
-            fields_created.append("doc_type")
-
-        # Candidate columns for identifying document types
-        # 1. numeroquedan (highly descriptive)
-        # 2. oc (Purchase Order indicators)
-        # 3. numerointerno (Prefixes)
-        candidates = ["numeroquedan", "oc", "numerointerno"]
-
-        doc_map = {
-            "Quedan": r"QUEDAN|^Q/|^QF/|^Q\d",
-            "CCF": r"CCF|CREDITO FISCAL",
-            "DTE": r"DTE|ELECTRONIC",
-            "Factura": r"FACTURA|^FAC|^F\d|COMPROBANTE",
-            "Factura Export": r"EXPORT|EXP\d",
-            "Purchase Order": r"PO|OC|PURCHASE|ORDEN",
-        }
-
-        # Apply heuristics across all candidate columns
+    def _automate_doc_type_identification(self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]) -> None:
+        if 'doc_type' not in df.columns:
+            df['doc_type'] = 'Other'
+            fields_created.append('doc_type')
+        candidates = ['numeroquedan', 'oc', 'numerointerno']
+        doc_map = {'Quedan': 'QUEDAN|^Q/|^QF/|^Q\\d', 'CCF': 'CCF|CREDITO FISCAL', 'DTE': 'DTE|ELECTRONIC', 'Factura': 'FACTURA|^FAC|^F\\d|COMPROBANTE', 'Factura Export': 'EXPORT|EXP\\d', 'Purchase Order': 'PO|OC|PURCHASE|ORDEN'}
         for doc_label, pattern in doc_map.items():
             for col in candidates:
                 if col in df.columns:
-                    mask = (
-                        df[col].astype(str).str.upper().str.contains(pattern, na=False, regex=True)
-                    )
-                    # Only update if current doc_type is 'Other' or blank
-                    # This gives precedence to early matches in doc_map order
-                    needs_update = (
-                        df["doc_type"]
-                        .astype(str)
-                        .str.lower()
-                        .isin(["", "other", "unknown", "nan", "none"])
-                    )
-                    df.loc[mask & needs_update, "doc_type"] = doc_label
-
-        rules_applied.append("automated_doc_type_identification")
-        logger.info("Automated Document Type identification applied.")
+                    mask = df[col].astype(str).str.upper().str.contains(pattern, na=False, regex=True)
+                    needs_update = df['doc_type'].astype(str).str.lower().isin(['', 'other', 'unknown', 'nan', 'none'])
+                    df.loc[mask & needs_update, 'doc_type'] = doc_label
+        rules_applied.append('automated_doc_type_identification')
+        logger.info('Automated Document Type identification applied.')
 
     def _enforce_non_negative_balances(self, df: pd.DataFrame, rules_applied: List[str]) -> None:
-        """Clip negative balances to zero to keep exposure semantics consistent."""
         affected = 0
-        for col in ("outstanding_balance", "current_balance"):
+        for col in ('outstanding_balance', 'current_balance'):
             if col not in df.columns:
                 continue
-            series = pd.to_numeric(df[col], errors="coerce")
+            series = pd.to_numeric(df[col], errors='coerce')
             negative_mask = series < 0
             negative_count = int(negative_mask.sum())
             if negative_count > 0:
                 df[col] = series.clip(lower=0)
                 affected += negative_count
         if affected > 0:
-            logger.info("Clipped %d negative balance values to zero", affected)
-            rules_applied.append("non_negative_balance_enforcement")
+            logger.info('Clipped %d negative balance values to zero', affected)
+            rules_applied.append('non_negative_balance_enforcement')
 
     def _normalize_interest_rate(self, df: pd.DataFrame, rules_applied: List[str]) -> None:
-        """Normalize interest_rate to annual decimal based on data semantics.
-
-        Abaco factoring data stores interest_rate as a monthly percentage
-        (e.g. 0.65 means 0.65 %/month).  The KPI formula ``AVG(interest_rate)
-        * 100`` expects an annual decimal (e.g. 0.0775 → 7.75 %).
-
-        Detection heuristic:
-        - If median rate < 5 **and** median term < 6 months, the rates are
-          monthly percentages → annualize (× 12) then divide by 100.
-        - If median rate > 1, rates look like whole-number percentages
-          → divide by 100.
-        - Otherwise, assume already annual decimal — no conversion.
-        """
-        if "interest_rate" not in df.columns:
+        if 'interest_rate' not in df.columns:
             return
-
-        rates = pd.to_numeric(df["interest_rate"], errors="coerce")
+        rates = pd.to_numeric(df['interest_rate'], errors='coerce')
         valid = rates.dropna()
         if valid.empty:
             return
-
         median_rate = valid.median()
-
-        # Determine median term length (months)
         median_term = None
-        if "term_months" in df.columns:
-            terms = pd.to_numeric(df["term_months"], errors="coerce").dropna()
+        if 'term_months' in df.columns:
+            terms = pd.to_numeric(df['term_months'], errors='coerce').dropna()
             if not terms.empty:
                 median_term = terms.median()
-
-        if 0.2 <= median_rate < 5 and median_term is not None and median_term < 6:
-            # Monthly percentage rates (factoring): annualize and
-            # convert to decimal so AVG * 100 gives correct annual %.
-            df["interest_rate"] = rates * 12 / 100
-            logger.info(
-                "Normalized interest_rate: monthly %% → annual decimal "
-                "(median %.4f%%/mo → %.4f annual)",
-                median_rate,
-                median_rate * 12 / 100,
-            )
-            rules_applied.append("interest_rate_monthly_pct_to_annual")
+        if 0.2 <= median_rate < 5 and median_term is not None and (median_term < 6):
+            df['interest_rate'] = rates * 12 / 100
+            logger.info('Normalized interest_rate: monthly %% → annual decimal (median %.4f%%/mo → %.4f annual)', median_rate, median_rate * 12 / 100)
+            rules_applied.append('interest_rate_monthly_pct_to_annual')
         elif median_rate > 1:
-            # Whole-number percentage (e.g. 24.5 meaning 24.5% annual)
-            df["interest_rate"] = rates / 100
-            logger.info(
-                "Normalized interest_rate: whole %% → annual decimal (median %.2f%% → %.4f)",
-                median_rate,
-                median_rate / 100,
-            )
-            rules_applied.append("interest_rate_pct_to_decimal")
+            df['interest_rate'] = rates / 100
+            logger.info('Normalized interest_rate: whole %% → annual decimal (median %.2f%% → %.4f)', median_rate, median_rate / 100)
+            rules_applied.append('interest_rate_pct_to_decimal')
         else:
-            logger.info(
-                "interest_rate appears to be annual decimal already "
-                "(median=%.4f); no conversion applied",
-                median_rate,
-            )
+            logger.info('interest_rate appears to be annual decimal already (median=%.4f); no conversion applied', median_rate)
 
-    def _apply_dpd_bucket_rule(
-        self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]
-    ) -> None:
-        """Apply DPD bucket assignment."""
-        if "dpd" not in df.columns:
+    def _apply_dpd_bucket_rule(self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]) -> None:
+        if 'dpd' not in df.columns:
             return
+        if not pd.api.types.is_numeric_dtype(df['dpd']):
+            df['dpd'] = pd.to_numeric(df['dpd'], errors='coerce')
+        df['dpd_bucket'] = pd.cut(df['dpd'], bins=[-np.inf, -0.001, 0.001, 30, 60, 90, 180, np.inf], labels=['unknown', 'current', '1-29', '30-59', '60-89', '90-179', '180+'], include_lowest=True).astype(str)
+        df.loc[df['dpd'].isna(), 'dpd_bucket'] = 'unknown'
+        fields_created.append('dpd_bucket')
+        rules_applied.append('dpd_bucket_assignment')
 
-        # Ensure dpd column is numeric (handle both float and Decimal types)
-        if not pd.api.types.is_numeric_dtype(df["dpd"]):
-            df["dpd"] = pd.to_numeric(df["dpd"], errors="coerce")
+    def _apply_risk_category_rule(self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]) -> None:
+        if 'status' in df.columns and 'dpd' in df.columns:
+            status = df['status'].fillna('').astype(str)
+            dpd = pd.to_numeric(df['dpd'], errors='coerce').fillna(0)
+            conditions = [status.str.contains('default', case=False, na=False) | (dpd >= 90), (dpd >= 30) & (dpd < 90), (dpd > 0) & (dpd < 30), dpd <= 0]
+            choices = ['critical', 'high', 'medium', 'low']
+            df['risk_category'] = np.select(conditions, choices, default='low')
+            fields_created.append('risk_category')
+            rules_applied.append('risk_categorization')
 
-        df["dpd_bucket"] = pd.cut(
-            df["dpd"],
-            bins=[-np.inf, -0.001, 0.001, 30, 60, 90, 180, np.inf],
-            labels=["unknown", "current", "1-29", "30-59", "60-89", "90-179", "180+"],
-            include_lowest=True,
-        ).astype(str)
-        df.loc[df["dpd"].isna(), "dpd_bucket"] = "unknown"
-        fields_created.append("dpd_bucket")
-        rules_applied.append("dpd_bucket_assignment")
-
-    def _apply_risk_category_rule(
-        self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]
-    ) -> None:
-        """Apply risk categorization rule using vectorized operations."""
-        if "status" in df.columns and "dpd" in df.columns:
-            status = df["status"].fillna("").astype(str)
-            dpd = pd.to_numeric(df["dpd"], errors="coerce").fillna(0)
-
-            conditions = [
-                (status.str.contains("default", case=False, na=False)) | (dpd >= 90),
-                (dpd >= 30) & (dpd < 90),
-                (dpd > 0) & (dpd < 30),
-                (dpd <= 0),
-            ]
-            choices = ["critical", "high", "medium", "low"]
-
-            df["risk_category"] = np.select(conditions, choices, default="low")
-
-            fields_created.append("risk_category")
-            rules_applied.append("risk_categorization")
-
-    def _apply_amount_tier_rule(
-        self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]
-    ) -> None:
-        """Apply amount tier classification rule."""
-        if "amount" not in df.columns:
+    def _apply_amount_tier_rule(self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]) -> None:
+        if 'amount' not in df.columns:
             return
         self._categorize_amount_tiers(df)
         self._record_applied_rule(rules_applied, fields_created)
 
     def _record_applied_rule(self, rules_applied: List[str], fields_created: List[str]) -> None:
-        """Record that amount tier rule was applied."""
-        fields_created.append("amount_tier")
-        rules_applied.append("amount_tier_classification")
+        fields_created.append('amount_tier')
+        rules_applied.append('amount_tier_classification')
 
     def _categorize_amount_tiers(self, df: pd.DataFrame) -> None:
-        """Categorize amounts into tiers using binning."""
-        # Ensure amount column is numeric (handle both float and Decimal types)
-        if not pd.api.types.is_numeric_dtype(df["amount"]):
-            df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
-
-        df["amount_tier"] = pd.cut(
-            df["amount"],
-            bins=[-np.inf, 0, 5000, 25000, 100000, 500000, np.inf],
-            labels=["invalid", "micro", "small", "medium", "large", "jumbo"],
-            right=False,
-        ).astype(str)
-        df.loc[df["amount"].isna(), "amount_tier"] = "invalid"
+        if not pd.api.types.is_numeric_dtype(df['amount']):
+            df['amount'] = pd.to_numeric(df['amount'], errors='coerce')
+        df['amount_tier'] = pd.cut(df['amount'], bins=[-np.inf, 0, 5000, 25000, 100000, 500000, np.inf], labels=['invalid', 'micro', 'small', 'medium', 'large', 'jumbo'], right=False).astype(str)
+        df.loc[df['amount'].isna(), 'amount_tier'] = 'invalid'
 
     def _apply_custom_rules(self, df: pd.DataFrame, rules_applied: List[str]) -> None:
-        """Apply custom business rules from configuration."""
-        custom_rules = self.business_rules.get("transformations", [])
+        custom_rules = self.business_rules.get('transformations', [])
         for rule in custom_rules:
             try:
                 df, success = self._apply_custom_rule(df, rule)
                 if success:
-                    rules_applied.append(rule.get("name", "unnamed_rule"))
+                    rules_applied.append(rule.get('name', 'unnamed_rule'))
             except Exception as e:
-                logger.warning("Failed to apply custom rule: %s", e)
+                logger.warning('Failed to apply custom rule: %s', e)
 
     def _normalize_equifax_score(self, df: pd.DataFrame, rules_applied: List[str]) -> None:
-        """Treat Equifax sentinel values as missing data for downstream analytics."""
-        col = "Equifax Score"
+        col = 'Equifax Score'
         if col not in df.columns:
             return
-
-        numeric_score = pd.to_numeric(df[col], errors="coerce")
+        numeric_score = pd.to_numeric(df[col], errors='coerce')
         has_sentinel = bool((numeric_score == self.MISSING_NUMERIC_INDICATOR).any())
-        if has_sentinel and f"{col}_raw" not in df.columns:
-            df[f"{col}_raw"] = numeric_score
+        if has_sentinel and f'{col}_raw' not in df.columns:
+            df[f'{col}_raw'] = numeric_score
         if has_sentinel:
             df[col] = numeric_score.replace(self.MISSING_NUMERIC_INDICATOR, np.nan)
-            rules_applied.append("equifax_missing_indicator_to_nan")
+            rules_applied.append('equifax_missing_indicator_to_nan')
 
     def _assign_dpd_bucket(self, dpd: float) -> str:
-        """Assign DPD (Days Past Due) bucket."""
         if pd.isna(dpd) or dpd < 0:
-            bucket = "unknown"
+            bucket = 'unknown'
         elif dpd == 0:
-            bucket = "current"
+            bucket = 'current'
         elif dpd < 30:
-            bucket = "1-29"
+            bucket = '1-29'
         elif dpd < 60:
-            bucket = "30-59"
+            bucket = '30-59'
         elif dpd < 90:
-            bucket = "60-89"
+            bucket = '60-89'
         elif dpd < 180:
-            bucket = "90-179"
+            bucket = '90-179'
         else:
-            bucket = "180+"
+            bucket = '180+'
         return bucket
 
     def _calculate_risk_category(self, row: pd.Series) -> str:
-        """Calculate risk category based on status and DPD."""
-        status = row.get("status", "")
-        dpd = row.get("dpd", 0)
-
-        if status == "defaulted":
-            category = "critical"
-        elif status == "delinquent" or (pd.notna(dpd) and dpd >= 90):
-            category = "high"
+        status = row.get('status', '')
+        dpd = row.get('dpd', 0)
+        if status == 'defaulted':
+            category = 'critical'
+        elif status == 'delinquent' or (pd.notna(dpd) and dpd >= 90):
+            category = 'high'
         elif pd.notna(dpd) and dpd >= 30:
-            category = "medium"
-        elif status == "active" and (pd.isna(dpd) or dpd < 30):
-            category = "low"
+            category = 'medium'
+        elif status == 'active' and (pd.isna(dpd) or dpd < 30):
+            category = 'low'
         else:
-            category = "unknown"
+            category = 'unknown'
         return category
 
     def _assign_amount_tier(self, amount: float) -> str:
-        """Assign loan amount tier."""
         if pd.isna(amount) or amount <= 0:
-            tier = "invalid"
+            tier = 'invalid'
         elif amount < 5000:
-            tier = "micro"
+            tier = 'micro'
         elif amount < 25000:
-            tier = "small"
+            tier = 'small'
         elif amount < 100000:
-            tier = "medium"
+            tier = 'medium'
         elif amount < 500000:
-            tier = "large"
+            tier = 'large'
         else:
-            tier = "jumbo"
+            tier = 'jumbo'
         return tier
 
-    def _apply_custom_rule(
-        self, df: pd.DataFrame, rule: Dict[str, Any]
-    ) -> Tuple[pd.DataFrame, bool]:
-        """
-        Apply a custom business rule from configuration.
-
-        Note: Only safe operations (column_mapping) are fully supported.
-        Derived field expressions are restricted to simple arithmetic operations.
-
-        Returns:
-            Tuple of (DataFrame, success_flag) where success_flag indicates if rule was applied.
-        """
-        rule_type = rule.get("type")
-
-        if rule_type == "column_mapping":
+    def _apply_custom_rule(self, df: pd.DataFrame, rule: Dict[str, Any]) -> Tuple[pd.DataFrame, bool]:
+        rule_type = rule.get('type')
+        if rule_type == 'column_mapping':
             return self._apply_column_mapping_rule(df, rule)
-        if rule_type == "derived_field":
+        if rule_type == 'derived_field':
             return self._apply_derived_field_rule(df, rule)
+        return (df, False)
 
-        return df, False
-
-    def _apply_column_mapping_rule(
-        self, df: pd.DataFrame, rule: Dict[str, Any]
-    ) -> Tuple[pd.DataFrame, bool]:
-        """Apply a column mapping custom rule."""
-        source_col = rule.get("source_column")
-        target_col = rule.get("target_column")
-        mapping = rule.get("mapping", {})
-        if source_col and target_col and source_col in df.columns:
+    def _apply_column_mapping_rule(self, df: pd.DataFrame, rule: Dict[str, Any]) -> Tuple[pd.DataFrame, bool]:
+        source_col = rule.get('source_column')
+        target_col = rule.get('target_column')
+        mapping = rule.get('mapping', {})
+        if source_col and target_col and (source_col in df.columns):
             df[target_col] = df[source_col].map(mapping).fillna(df[source_col])
-            return df, True
+            return (df, True)
+        logger.warning(f'Invalid column_mapping rule configuration or missing source column: source_column={source_col!r}, target_column={target_col!r}')
+        return (df, False)
 
-        logger.warning(
-            "Invalid column_mapping rule configuration or missing source column: "
-            f"source_column={source_col!r}, target_column={target_col!r}"
-        )
-        return df, False
-
-    def _apply_derived_field_rule(
-        self, df: pd.DataFrame, rule: Dict[str, Any]
-    ) -> Tuple[pd.DataFrame, bool]:
-        """Apply a derived field custom rule with safety checks."""
-        target_col = rule.get("target_column")
-        expression = rule.get("expression", "")
+    def _apply_derived_field_rule(self, df: pd.DataFrame, rule: Dict[str, Any]) -> Tuple[pd.DataFrame, bool]:
+        target_col = rule.get('target_column')
+        expression = rule.get('expression', '')
         if not expression or not target_col:
-            return df, False
-
+            return (df, False)
         if not self._is_safe_expression(expression):
-            return df, False
-
-        # Block expressions that reference PII columns by name
-        tokens = re.findall(r"[A-Za-z_]\w*", expression)
+            return (df, False)
+        tokens = re.findall('[A-Za-z_]\\w*', expression)
         pii_cols = [t for t in tokens if t in df.columns and self._PII_COLUMN_RE.search(t)]
         if pii_cols:
-            logger.warning(
-                "Derived field expression '%s' references potential PII column(s) %s — skipping",
-                expression,
-                pii_cols,
-            )
-            return df, False
-
+            logger.warning("Derived field expression '%s' references potential PII column(s) %s — skipping", expression, pii_cols)
+            return (df, False)
         try:
             df[target_col] = df.eval(expression)
-            return df, True
+            return (df, True)
         except Exception as e:
             logger.warning("Failed to evaluate expression '%s': %s", expression, e)
-            return df, False
+            return (df, False)
 
     def _is_safe_expression(self, expression: str) -> bool:
-        """Validate that an expression is safe for pandas eval."""
         if not self._check_allowed_chars(expression):
             return False
         return not self._check_dangerous_patterns(expression)
 
     def _check_allowed_chars(self, expression: str) -> bool:
-        """Verify expression contains only allowed characters."""
-        allowed_chars = set(
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). "
-        )
-        if not all(c in allowed_chars for c in expression):
+        allowed_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). ')
+        if not all((c in allowed_chars for c in expression)):
             logger.warning("Unsafe characters in expression '%s', skipping rule", expression)
             return False
         return True
 
     def _check_dangerous_patterns(self, expression: str) -> bool:
-        """Check for dangerous patterns in expression."""
-        dangerous_patterns = [
-            "import",
-            "exec",
-            "eval",
-            "compile",
-            "__import__",
-            "__builtins__",
-            "__class__",
-            "__getattr__",
-            "__setattr__",
-            "open",
-            "file",
-        ]
+        dangerous_patterns = ['import', 'exec', 'eval', 'compile', '__import__', '__builtins__', '__class__', '__getattr__', '__setattr__', 'open', 'file']
         expression_lower = expression.lower()
-        if any(pattern in expression_lower for pattern in dangerous_patterns):
-            logger.warning(
-                "Dangerous pattern detected in expression '%s', skipping rule", expression
-            )
+        if any((pattern in expression_lower for pattern in dangerous_patterns)):
+            logger.warning("Dangerous pattern detected in expression '%s', skipping rule", expression)
             return True
         return False
 
     def _detect_outliers(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """
-        Detect and flag outliers in numeric columns.
-
-        Methods:
-        - 'iqr': Interquartile Range method
-        - 'zscore': Z-score method
-
-        Args:
-            df: Input DataFrame
-
-        Returns:
-            Tuple of (processed DataFrame with outlier flags, metrics dict)
-        """
-        logger.info("Detecting outliers (method: %s)", self.outlier_method)
-
+        logger.info('Detecting outliers (method: %s)', self.outlier_method)
         if not self.outlier_enabled:
-            return df, {"enabled": False}
-
+            return (df, {'enabled': False})
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-        skip_cols = {"loan_id", "id", "dpd"}
+        skip_cols = {'loan_id', 'id', 'dpd'}
         check_cols = [col for col in numeric_cols if col not in skip_cols]
-
         df, outlier_counts, total_outlier_rows = self._flag_outliers(df, check_cols)
         metrics = self._create_outlier_metrics(check_cols, outlier_counts, total_outlier_rows)
+        return (df, metrics)
 
-        return df, metrics
-
-    def _flag_outliers(
-        self, df: pd.DataFrame, check_cols: List[str]
-    ) -> Tuple[pd.DataFrame, Dict[str, int], int]:
-        """Detect and flag outliers in specified columns."""
+    def _flag_outliers(self, df: pd.DataFrame, check_cols: List[str]) -> Tuple[pd.DataFrame, Dict[str, int], int]:
         outlier_counts: Dict[str, int] = {}
         outlier_flags: Dict[str, pd.Series] = {}
         any_outlier_mask = pd.Series(False, index=df.index, dtype=bool)
-
         for col in check_cols:
-            outliers = (
-                self._detect_outliers_iqr(df[col])
-                if self.outlier_method == "iqr"
-                else self._detect_outliers_zscore(df[col])
-            )
+            outliers = self._detect_outliers_iqr(df[col]) if self.outlier_method == 'iqr' else self._detect_outliers_zscore(df[col])
             outlier_count = outliers.sum()
             if outlier_count > 0:
                 outlier_counts[col] = int(outlier_count)
-                outlier_flags[f"{col}_outlier"] = outliers.fillna(False).astype(bool)
-                any_outlier_mask = any_outlier_mask | outlier_flags[f"{col}_outlier"]
+                outlier_flags[f'{col}_outlier'] = outliers.fillna(False).astype(bool)
+                any_outlier_mask = any_outlier_mask | outlier_flags[f'{col}_outlier']
                 logger.info("Found %d outliers in column '%s'", int(outlier_count), col)
-
         if outlier_flags:
-            # Add all outlier flag columns in one shot to avoid DataFrame fragmentation.
             flags_df = pd.DataFrame(outlier_flags, index=df.index)
             df = pd.concat([df, flags_df], axis=1)
+        return (df, outlier_counts, int(any_outlier_mask.sum()))
 
-        return df, outlier_counts, int(any_outlier_mask.sum())
-
-    def _create_outlier_metrics(
-        self,
-        check_cols: List[str],
-        outlier_counts: Dict[str, int],
-        total_outlier_rows: int,
-    ) -> Dict[str, Any]:
-        """Create metrics dictionary for outlier detection results."""
-        return {
-            "enabled": True,
-            "method": self.outlier_method,
-            "threshold": self.outlier_threshold,
-            "columns_checked": len(check_cols),
-            "outliers_detected": outlier_counts,
-            "total_outlier_rows": total_outlier_rows,
-        }
+    def _create_outlier_metrics(self, check_cols: List[str], outlier_counts: Dict[str, int], total_outlier_rows: int) -> Dict[str, Any]:
+        return {'enabled': True, 'method': self.outlier_method, 'threshold': self.outlier_threshold, 'columns_checked': len(check_cols), 'outliers_detected': outlier_counts, 'total_outlier_rows': total_outlier_rows}
 
     def _detect_outliers_iqr(self, series: pd.Series) -> pd.Series:
-        """Detect outliers using IQR method."""
         Q1 = series.quantile(0.25)
         Q3 = series.quantile(0.75)
         IQR = Q3 - Q1
-        # Handle edge case where there is no spread in the data; avoid flagging
-        # any tiny deviation as an outlier when Q1 == Q3.
         if IQR == 0 or np.isclose(IQR, 0):
             return pd.Series([False] * len(series), index=series.index)
         lower_bound = Q1 - self.outlier_threshold * IQR
@@ -1966,144 +862,63 @@ class TransformationPhase:
         return ((series < lower_bound) | (series > upper_bound)).fillna(False)
 
     def _detect_outliers_zscore(self, series: pd.Series) -> pd.Series:
-        """Detect outliers using Z-score method."""
-        # Work on non-null values to avoid NaN propagation in statistics and flags
         non_null = series.dropna()
-
-        # If there are no non-null values or no variation, there can be no outliers
         if non_null.empty or non_null.std() == 0:
             return pd.Series(False, index=series.index)
-
         mean = non_null.mean()
         std = non_null.std()
-
         z_scores = np.abs((non_null - mean) / std)
         outliers_non_null = z_scores > self.outlier_threshold
-
-        # Initialize all values as non-outliers and set only non-null outliers to True
         outliers = pd.Series(False, index=series.index)
         outliers.loc[non_null.index] = outliers_non_null.fillna(False)
         return outliers
 
     def _check_referential_integrity(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """
-        Check referential integrity across entities.
-
-        Validates:
-        - Unique identifiers are actually unique
-        - Foreign key relationships are valid
-        - Required relationships exist
-
-        Args:
-            df: Input DataFrame
-
-        Returns:
-            Tuple of (DataFrame, integrity metrics)
-        """
-        logger.info("Checking referential integrity")
-
+        logger.info('Checking referential integrity')
         integrity_issues: List[Dict[str, Any]] = []
         self._check_primary_key_integrity(df, integrity_issues)
         self._check_foreign_key_integrity(df, integrity_issues)
         self._check_date_consistency(df, integrity_issues)
         self._check_positive_amounts(df, integrity_issues)
-
-        metrics = {
-            "checks_performed": 4,
-            "issues_found": len(integrity_issues),
-            "issues": integrity_issues,
-            "integrity_status": "pass" if len(integrity_issues) == 0 else "warning",
-        }
-
+        metrics = {'checks_performed': 4, 'issues_found': len(integrity_issues), 'issues': integrity_issues, 'integrity_status': 'pass' if len(integrity_issues) == 0 else 'warning'}
         if integrity_issues:
-            logger.warning("Found %d referential integrity issues", len(integrity_issues))
+            logger.warning('Found %d referential integrity issues', len(integrity_issues))
         else:
-            logger.info("Referential integrity checks passed")
+            logger.info('Referential integrity checks passed')
+        return (df, metrics)
 
-        return df, metrics
-
-    def _check_primary_key_integrity(
-        self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]
-    ) -> None:
-        """Check for duplicate primary keys (loan_uid)."""
-        # Use loan_uid if available, fallback to loan_id
-        pk_col = "loan_uid" if "loan_uid" in df.columns else "loan_id"
-
+    def _check_primary_key_integrity(self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]) -> None:
+        pk_col = 'loan_uid' if 'loan_uid' in df.columns else 'loan_id'
         if pk_col not in df.columns:
             return
-
         duplicates = df[pk_col].duplicated().sum()
         if duplicates > 0:
-            integrity_issues.append(
-                {
-                    "type": "duplicate_primary_key",
-                    "column": pk_col,
-                    "count": int(duplicates),
-                }
-            )
-            logger.warning("Found %d duplicate %s values", duplicates, pk_col)
+            integrity_issues.append({'type': 'duplicate_primary_key', 'column': pk_col, 'count': int(duplicates)})
+            logger.warning('Found %d duplicate %s values', duplicates, pk_col)
 
-    def _check_foreign_key_integrity(
-        self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]
-    ) -> None:
-        """Check for orphan records with null foreign keys."""
-        if "borrower_id" not in df.columns:
+    def _check_foreign_key_integrity(self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]) -> None:
+        if 'borrower_id' not in df.columns:
             return
-
-        null_borrowers = df["borrower_id"].isnull().sum()
+        null_borrowers = df['borrower_id'].isnull().sum()
         if null_borrowers > 0:
-            integrity_issues.append(
-                {
-                    "type": "null_foreign_key",
-                    "column": "borrower_id",
-                    "count": int(null_borrowers),
-                }
-            )
+            integrity_issues.append({'type': 'null_foreign_key', 'column': 'borrower_id', 'count': int(null_borrowers)})
 
-    def _check_date_consistency(
-        self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]
-    ) -> None:
-        """Check date consistency (due_date should not be before origination_date)."""
-        date_cols = [col for col in df.columns if col.endswith("_date")]
-        has_both_dates = (
-            "origination_date" in date_cols
-            and "due_date" in date_cols
-            and df["origination_date"].dtype == DATETIME64_NS_DTYPE
-            and df["due_date"].dtype == DATETIME64_NS_DTYPE
-        )
-
+    def _check_date_consistency(self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]) -> None:
+        date_cols = [col for col in df.columns if col.endswith('_date')]
+        has_both_dates = 'origination_date' in date_cols and 'due_date' in date_cols and (df['origination_date'].dtype == DATETIME64_NS_DTYPE) and (df['due_date'].dtype == DATETIME64_NS_DTYPE)
         if not has_both_dates:
             return
-
-        valid_mask = df["due_date"].notna() & df["origination_date"].notna()
-        invalid_dates = (
-            df.loc[valid_mask, "due_date"] < df.loc[valid_mask, "origination_date"]
-        ).sum()
+        valid_mask = df['due_date'].notna() & df['origination_date'].notna()
+        invalid_dates = (df.loc[valid_mask, 'due_date'] < df.loc[valid_mask, 'origination_date']).sum()
         if invalid_dates > 0:
-            integrity_issues.append(
-                {
-                    "type": "invalid_date_sequence",
-                    "description": "due_date before origination_date",
-                    "count": int(invalid_dates),
-                }
-            )
+            integrity_issues.append({'type': 'invalid_date_sequence', 'description': 'due_date before origination_date', 'count': int(invalid_dates)})
 
-    def _check_positive_amounts(
-        self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]
-    ) -> None:
-        """Check for negative amounts in columns that should be positive."""
-        positive_cols = ["amount", "current_balance", "original_amount"]
+    def _check_positive_amounts(self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]) -> None:
+        positive_cols = ['amount', 'current_balance', 'original_amount']
         for col in positive_cols:
             if col not in df.columns:
                 continue
-
             valid_values = df[col].dropna()
             negative_count = (valid_values < 0).sum()
             if negative_count > 0:
-                integrity_issues.append(
-                    {
-                        "type": "negative_value",
-                        "column": col,
-                        "count": int(negative_count),
-                    }
-                )
+                integrity_issues.append({'type': 'negative_value', 'column': col, 'count': int(negative_count)})
