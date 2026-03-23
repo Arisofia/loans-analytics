@@ -43,8 +43,8 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
     delinquency_rate = delinquent_principal / principal_sum if principal_sum > 0 else 0.0
     weighted_interest = (enriched['principal_balance'] * enriched['interest_rate']).dropna()
     portfolio_yield = float(weighted_interest.sum()) / principal_sum if principal_sum > 0 else 0.0
-    average_ltv = float(enriched['ltv_ratio'].mean(skipna=True)) if not enriched['ltv_ratio'].dropna().empty else 0.0
-    average_dti = float(enriched['dti_ratio'].mean(skipna=True)) if not enriched['dti_ratio'].dropna().empty else 0.0
+    average_ltv = 0.0 if enriched['ltv_ratio'].dropna().empty else float(enriched['ltv_ratio'].mean(skipna=True))
+    average_dti = 0.0 if enriched['dti_ratio'].dropna().empty else float(enriched['dti_ratio'].mean(skipna=True))
     metrics = {'delinquency_rate': delinquency_rate, 'portfolio_yield': portfolio_yield, 'average_ltv': average_ltv, 'average_dti': average_dti}
     return (metrics, enriched)
 

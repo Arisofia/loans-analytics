@@ -5,26 +5,23 @@ import yaml
 
 def _extract_kpi_thresholds_from_section(section_value: dict, thresholds_map: dict[str, dict]) -> None:
     for kpi_name, kpi_def in section_value.items():
-        if isinstance(kpi_def, dict) and 'thresholds' in kpi_def:
+        if not isinstance(kpi_def, dict):
+            continue
+        if 'thresholds' in kpi_def:
             thresholds_map[kpi_name] = kpi_def['thresholds']
-        if isinstance(kpi_def, dict) and 'id' in kpi_def:
+        if 'id' in kpi_def and 'thresholds' in kpi_def:
             kpi_id = kpi_def['id']
-            if 'thresholds' in kpi_def:
-                thresholds_map[kpi_id] = kpi_def['thresholds']
+            thresholds_map[kpi_id] = kpi_def['thresholds']
 
 def _eval_high_is_good(value: float, critical_thresh: float, warning_thresh: float) -> str:
     if value >= critical_thresh:
         return 'normal'
-    if value >= warning_thresh:
-        return 'warning'
-    return 'critical'
+    return 'warning' if value >= warning_thresh else 'critical'
 
 def _eval_low_is_good(value: float, critical_thresh: float, warning_thresh: float) -> str:
     if value <= critical_thresh:
         return 'normal'
-    if value <= warning_thresh:
-        return 'warning'
-    return 'critical'
+    return 'warning' if value <= warning_thresh else 'critical'
 
 def _eval_only_critical(value: float, critical_thresh: float) -> str:
     return 'warning' if value >= critical_thresh else 'critical'

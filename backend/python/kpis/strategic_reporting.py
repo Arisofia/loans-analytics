@@ -49,12 +49,13 @@ def render_strategic_markdown(summary: dict[str, Any], links: dict[str, str]) ->
     metrics = summary['metrics']
     governance = summary['governance']
     lines = ['# Strategic Executive Report', '', f"Generated at (UTC): `{summary['generated_at']}`", '', '## Dashboard Links', f"- Streamlit (Local): {links['streamlit_local']}", f"- Grafana (Local): {links['grafana_local']}", f"- Streamlit (Deployed): {links['streamlit_prod']}", f"- Dashboard Documentation: {links['dashboard_docs']}", '', '## Requirement Confirmation', f"- CAC: {_status_marker(confirmations['cac_confirmed'])}", f"- LTV: {_status_marker(confirmations['ltv_confirmed'])}", f"- Margins: {_status_marker(confirmations['margin_confirmed'])}", f"- Revenue forecasting: {_status_marker(confirmations['revenue_forecast_confirmed'])}", '', '## Strategic Metrics', f"- CAC (USD): `{metrics['cac_usd']}`", f"- LTV Realized (USD): `{metrics['ltv_usd']}`", f"- Gross Margin (%): `{metrics['gross_margin_pct']}`", f"- Revenue forecast next month (USD): `{metrics['next_month_revenue_forecast_usd']}`", f"- Revenue forecast 6M total (USD): `{metrics['forecast_6m_total_usd']}`", '', '## Data Governance', f"- Quality score: `{governance['quality_score']}`", f"- Duplicate rate: `{governance['duplicate_rate']}`", f"- Freshness (days): `{governance['freshness_days']}`", f"- Status: `{governance['status']}`", '', '## Top Opportunities']
-    opportunities = summary.get('top_opportunities', [])
-    if not opportunities:
-        lines.append('- No prioritized opportunities available.')
+    if opportunities := summary.get('top_opportunities', []):
+        lines.extend(
+            f"- {opportunity.get('client_segment', 'N/A')}: priority `{opportunity.get('priority_score')}` | portfolio `{opportunity.get('Portfolio_Value')}` | delinquency `{opportunity.get('Delinquency_Rate')}`"
+            for opportunity in opportunities
+        )
     else:
-        for opportunity in opportunities:
-            lines.append(f"- {opportunity.get('client_segment', 'N/A')}: priority `{opportunity.get('priority_score')}` | portfolio `{opportunity.get('Portfolio_Value')}` | delinquency `{opportunity.get('Delinquency_Rate')}`")
+        lines.append('- No prioritized opportunities available.')
     return '\n'.join(lines) + '\n'
 
 def write_strategic_report(summary: dict[str, Any], links: dict[str, str], output_dir: Path) -> tuple[Path, Path]:

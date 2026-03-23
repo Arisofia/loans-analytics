@@ -1,4 +1,3 @@
-from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 import pandas as pd
@@ -12,6 +11,10 @@ def _safe_pct(numerator: float | Decimal, denominator: float | Decimal) -> Decim
     num_dec = Decimal(str(numerator)) if isinstance(numerator, float) else Decimal(numerator)
     denom_dec = Decimal(str(denominator)) if isinstance(denominator, float) else Decimal(denominator)
     return num_dec / denom_dec * Decimal('100') if denom_dec > 0 else Decimal('0')
+
+def _rounded_pct_from_sums(numerator_sum: Decimal, denominator_series: pd.Series) -> float:
+    denominator_sum = _series_sum_decimal(denominator_series)
+    return round(float(_safe_pct(numerator_sum, denominator_sum)), 2)
 
 def _normalize_interest_rate(series: pd.Series) -> pd.Series:
     if series.empty:
@@ -100,15 +103,11 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
     collected = _resolve_series(df, ['last_payment_amount', 'payment_amount', 'payments_collected'])
     scheduled = _resolve_series(df, ['total_scheduled', 'scheduled_amount', 'payments_due'])
     collected_sum = _series_sum_decimal(collected)
-    scheduled_sum = _series_sum_decimal(scheduled)
-    collections_coverage_pct = _safe_pct(collected_sum, scheduled_sum)
-    collections_coverage = round(float(collections_coverage_pct), 2)
+    collections_coverage = _rounded_pct_from_sums(collected_sum, scheduled)
     fee = _resolve_series(df, ['origination_fee', 'fee_amount'])
     fee_taxes = _resolve_series(df, ['origination_fee_taxes', 'fee_taxes'])
     fee_sum = _series_sum_decimal(fee + fee_taxes)
-    principal_sum = _series_sum_decimal(principal)
-    fee_yield_pct = _safe_pct(fee_sum, principal_sum)
-    fee_yield = round(float(fee_yield_pct), 2)
+    fee_yield = _rounded_pct_from_sums(fee_sum, principal)
     interest_yield_pct = _safe_pct(_series_sum_decimal(interest_rate * balance), total_balance)
     interest_yield = float(interest_yield_pct)
     total_yield = round(float(Decimal(str(interest_yield)) + Decimal(str(fee_yield))), 2)

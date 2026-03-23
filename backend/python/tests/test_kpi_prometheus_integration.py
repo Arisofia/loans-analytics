@@ -1,4 +1,3 @@
-from __future__ import annotations
 from fastapi.testclient import TestClient
 from backend.python.apps.analytics.api.main import app
 
@@ -38,6 +37,6 @@ def test_metrics_kpis_smoke_contains_emitted_kpi_names():
     metrics_response = client.get('/metrics/kpis')
     assert metrics_response.status_code == 200
     body = metrics_response.text
-    expected_kpi_names = ['COLLECTION_RATE', 'DEFAULT_RATE', 'TOTAL_LOANS_COUNT']
-    for kpi_name in expected_kpi_names:
-        assert f'kpi_name="{kpi_name}"' in body
+    assert 'kpi_name="COLLECTION_RATE"' in body
+    assert 'kpi_name="DEFAULT_RATE"' in body
+    assert 'kpi_name="TOTAL_LOANS_COUNT"' in body

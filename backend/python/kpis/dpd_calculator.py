@@ -11,10 +11,7 @@ def dpd_to_bucket(dpd: Optional[int]) -> str:
     if dpd is None or pd.isna(dpd):
         return 'unknown'
     dpd = int(dpd)
-    for lo, hi, label in DPD_BUCKETS:
-        if lo <= dpd <= hi:
-            return label
-    return '360+'
+    return next((label for lo, hi, label in DPD_BUCKETS if lo <= dpd <= hi), '360+')
 
 class DPDCalculator:
 

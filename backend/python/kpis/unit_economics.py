@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Any
 import pandas as pd
 from backend.python.kpis._column_utils import first_matching_column as _first_col, resolve_dpd_heuristic, to_numeric_safe as _to_num
@@ -9,9 +8,7 @@ _CURE_RATE_FORMULA = 'delinquent_with_recent_payment / total_delinquent * 100'
 _CURE_RATE_NOTE = 'Proxy metric: requires T/T-1 snapshots for precise cure rate'
 
 def _safe_pct(numerator: float, denominator: float) -> float:
-    if denominator <= 0:
-        return 0.0
-    return round(numerator / denominator * 100.0, 4)
+    return 0.0 if denominator <= 0 else round(numerator / denominator * 100.0, 4)
 
 def _resolve_balance(df: pd.DataFrame) -> pd.Series:
     col = _first_col(df, ['principal_balance', 'outstanding_balance', 'outstanding_loan_value', 'amount', 'principal_amount', 'loan_amount'])
@@ -36,8 +33,7 @@ def calculate_npl_ratio(df: pd.DataFrame) -> dict[str, Any]:
     balance = _resolve_balance(df)
     dpd = _resolve_dpd(df)
     npl_mask = dpd >= 30
-    status_col = _first_col(df, ['loan_status', 'status', 'current_status'])
-    if status_col:
+    if status_col := _first_col(df, ['loan_status', 'status', 'current_status']):
         status = df[status_col].astype(str).str.lower().str.strip()
         npl_mask = npl_mask | status.isin({'delinquent', 'defaulted'})
     from decimal import Decimal
@@ -60,8 +56,7 @@ def calculate_lgd(df: pd.DataFrame) -> dict[str, Any]:
     defaulted_balance = float(balance[default_mask].sum())
     if defaulted_balance <= 0:
         return empty_result
-    recovery_col = _first_col(df, ['recovery_value', 'Recovery Value', 'recovery_amount'])
-    if recovery_col:
+    if recovery_col := _first_col(df, ['recovery_value', 'Recovery Value', 'recovery_amount']):
         recovery = _to_num(df[recovery_col])
         recovered = float(recovery[default_mask].sum())
     else:
@@ -91,8 +86,7 @@ def calculate_nim(df: pd.DataFrame, funding_cost_rate: float=0.08) -> dict[str, 
     total_balance = float(balance.sum())
     if total_balance <= 0:
         return {'nim_pct': 0.0, 'gross_yield_pct': 0.0, 'funding_cost_pct': funding_cost_pct, 'interest_income': 0.0, 'total_balance': 0.0, 'formula': _NIM_FORMULA}
-    rate_col = _first_col(df, ['interest_rate', 'interest_rate_apr'])
-    if rate_col:
+    if rate_col := _first_col(df, ['interest_rate', 'interest_rate_apr']):
         rates = _to_num(df[rate_col])
         median_rate = float(rates[rates > 0].median()) if (rates > 0).any() else 0.0
         if median_rate > 1.0:
@@ -120,8 +114,7 @@ def calculate_cure_rate(df: pd.DataFrame) -> dict[str, Any]:
     delinquent_count = int(delinquent_mask.sum())
     if delinquent_count == 0:
         return {'cure_rate_pct': 0.0, 'delinquent_count': 0, 'curing_count': 0, 'formula': _CURE_RATE_FORMULA, 'note': _CURE_RATE_NOTE}
-    collected_col = _first_col(df, ['last_payment_amount', 'payment_amount'])
-    if collected_col:
+    if collected_col := _first_col(df, ['last_payment_amount', 'payment_amount']):
         collected = _to_num(df[collected_col])
         curing_mask = delinquent_mask & (collected > 0)
     else:

@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 torch: Any
 try:
-    import torch as _torch
+    import torch as _torch  # pyright: ignore[reportMissingImports]
     torch = _torch
 except ImportError:
     torch = None
@@ -33,8 +33,6 @@ class TorchDefaultRiskModel:
             payload = torch.load(path, map_location='cpu', weights_only=True)
         except TypeError:
             payload = torch.load(path, map_location='cpu')
-        except Exception:
-            payload = torch.load(path, map_location='cpu')
         if 'state_dict' not in payload:
             raise ValueError('Invalid checkpoint: missing state_dict')
         input_dim = int(payload.get('input_dim', len(FEATURE_ORDER)))
@@ -57,8 +55,7 @@ class TorchDefaultRiskModel:
         return cls(network=model, mean=mean, std=std)
 
     def validate_features(self, loan_data: dict[str, Any]) -> None:
-        missing = [f for f in FEATURE_ORDER if f not in loan_data]
-        if missing:
+        if missing := [f for f in FEATURE_ORDER if f not in loan_data]:
             raise ValueError(f"Missing required features for inference: {', '.join(missing)}")
 
     def predict_proba(self, loan_data: dict[str, Any]) -> float:

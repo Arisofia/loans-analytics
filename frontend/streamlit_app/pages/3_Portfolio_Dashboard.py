@@ -486,7 +486,7 @@ def _build_local_agent_fallback(df: pd.DataFrame, metrics: dict[str, Any]) -> di
     recovery_rate = float(metrics.get('recovery_rate', 0.0))
     exposure = _get_exposure_series(df)
     top_regions_series = df.assign(exposure_amount=exposure).groupby('region')['exposure_amount'].sum().sort_values(ascending=False).head(3) if 'region' in df.columns and (not df.empty) else pd.Series(dtype=float)
-    top_regions_text = ', '.join((f'{idx}: €{val:,.0f}' for idx, val in top_regions_series.items())) if not top_regions_series.empty else 'No regional breakdown available'
+    top_regions_text = 'No regional breakdown available' if top_regions_series.empty else ', '.join((f'{idx}: €{val:,.0f}' for idx, val in top_regions_series.items()))
     status_distribution = metrics.get('status_distribution', {})
     if isinstance(status_distribution, dict):
         status_distribution_text = ', '.join((f'{status}: {count}' for status, count in status_distribution.items()))
@@ -971,9 +971,8 @@ def main():
     st.markdown('<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True)
     with st.sidebar:
         uploaded_files = render_sidebar()
-    if uploaded_files:
-        if not handle_file_upload(uploaded_files):
-            return
+    if uploaded_files and not handle_file_upload(uploaded_files):
+        return
     if 'data_loaded' not in st.session_state or not st.session_state['data_loaded']:
         render_data_format_guide()
         return

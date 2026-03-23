@@ -55,11 +55,10 @@ def safe_decimal_sum(values) -> Decimal:
 def safe_decimal_divide(numerator: Union[int, Decimal], denominator: Union[int, Decimal], precision: int=4) -> Decimal:
     if denominator == 0:
         raise ValueError('Cannot divide by zero')
-    numerator_dec = Decimal(numerator) if not isinstance(numerator, Decimal) else numerator
-    denominator_dec = Decimal(denominator) if not isinstance(denominator, Decimal) else denominator
+    numerator_dec = numerator if isinstance(numerator, Decimal) else Decimal(numerator)
+    denominator_dec = denominator if isinstance(denominator, Decimal) else denominator
     quantize_exp = Decimal(10) ** (-precision)
-    result = (numerator_dec / denominator_dec).quantize(quantize_exp, rounding=ROUNDING_MODE)
-    return result
+    return (numerator_dec / denominator_dec).quantize(quantize_exp, rounding=ROUNDING_MODE)
 
 def validate_monetary_field(field_name: str, value: Union[float, int, str, Decimal]) -> int:
     try:

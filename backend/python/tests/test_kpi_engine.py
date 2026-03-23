@@ -63,11 +63,14 @@ class TestKPIEngineV2(unittest.TestCase):
         results = engine.calculate_all()
         self.assertIsInstance(results, dict)
         self.assertIn('PAR30', results)
+        self.assertIn('value', results['PAR30'])
+        self.assertIn('context', results['PAR30'])
         self.assertIn('COLLECTION_RATE', results)
+        self.assertIn('value', results['COLLECTION_RATE'])
+        self.assertIn('context', results['COLLECTION_RATE'])
         self.assertIn('LTV', results)
-        for _kpi_name, kpi_data in results.items():
-            self.assertIn('value', kpi_data)
-            self.assertIn('context', kpi_data)
+        self.assertIn('value', results['LTV'])
+        self.assertIn('context', results['LTV'])
         self.assertGreaterEqual(len(engine._audit_records), 3)
 
     def test_get_audit_trail(self):
@@ -76,9 +79,14 @@ class TestKPIEngineV2(unittest.TestCase):
         audit_df = engine.get_audit_trail()
         self.assertIsInstance(audit_df, pd.DataFrame)
         self.assertGreater(len(audit_df), 0)
-        required_columns = ['timestamp', 'run_id', 'actor', 'kpi_name', 'value', 'context', 'error', 'status']
-        for col in required_columns:
-            self.assertIn(col, audit_df.columns)
+        self.assertIn('timestamp', audit_df.columns)
+        self.assertIn('run_id', audit_df.columns)
+        self.assertIn('actor', audit_df.columns)
+        self.assertIn('kpi_name', audit_df.columns)
+        self.assertIn('value', audit_df.columns)
+        self.assertIn('context', audit_df.columns)
+        self.assertIn('error', audit_df.columns)
+        self.assertIn('status', audit_df.columns)
         self.assertTrue(all(audit_df['run_id'] == 'test_run_001'))
         self.assertTrue(all(audit_df['actor'] == 'test_user'))
 
@@ -87,9 +95,14 @@ class TestKPIEngineV2(unittest.TestCase):
         audit_df = engine.get_audit_trail()
         self.assertIsInstance(audit_df, pd.DataFrame)
         self.assertEqual(len(audit_df), 0)
-        required_columns = ['timestamp', 'run_id', 'actor', 'kpi_name', 'value', 'context', 'error', 'status']
-        for col in required_columns:
-            self.assertIn(col, audit_df.columns)
+        self.assertIn('timestamp', audit_df.columns)
+        self.assertIn('run_id', audit_df.columns)
+        self.assertIn('actor', audit_df.columns)
+        self.assertIn('kpi_name', audit_df.columns)
+        self.assertIn('value', audit_df.columns)
+        self.assertIn('context', audit_df.columns)
+        self.assertIn('error', audit_df.columns)
+        self.assertIn('status', audit_df.columns)
 
     def test_error_handling_in_calculations(self):
         invalid_df = pd.DataFrame({'some_column': [1, 2, 3]})
@@ -129,10 +142,10 @@ class TestDerivedRiskKPIAudit(unittest.TestCase):
         df = pd.DataFrame({'dpd_30_60_usd': [100.0], 'dpd_60_90_usd': [50.0], 'dpd_90_plus_usd': [25.0], 'total_receivable_usd': [5000.0], 'dpd': [35], 'status': ['delinquent'], 'outstanding_balance': [5000.0], 'as_of_date': pd.to_datetime(['2026-01-31']), 'loan_amount': [5000.0], 'collateral_value': [6000.0]})
         engine = KPIEngineV2(df, actor='audit_test')
         results = engine.calculate_all()
-        if 'velocity_of_default' in results:
-            vd = results['velocity_of_default']['value']
-            self.assertIsNotNone(vd)
-            self.assertIsInstance(vd, float)
+        self.assertIn('velocity_of_default', results)
+        vd = results['velocity_of_default']['value']
+        self.assertIsNotNone(vd)
+        self.assertIsInstance(vd, float)
 
     def test_avg_credit_line_utilization_computed_from_utilization_pct(self):
         df = pd.DataFrame({'utilization_pct': [0.6, 0.75, 0.5], 'outstanding_balance': [10000.0, 8000.0, 6000.0], 'dpd_30_60_usd': [0.0, 0.0, 0.0], 'dpd_60_90_usd': [0.0, 0.0, 0.0], 'dpd_90_plus_usd': [0.0, 0.0, 0.0], 'total_receivable_usd': [5000.0, 6000.0, 7000.0], 'loan_amount': [4000.0, 5000.0, 6000.0], 'collateral_value': [5000.0, 6500.0, 7500.0]})

@@ -4,7 +4,7 @@ import pandas as pd
 
 def calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
     required = ('capital_desembolsado', 'valor_nominal_factura', 'tasa_dilucion')
-    if not all((col in df.columns for col in required)):
+    if any((col not in df.columns for col in required)):
         return pd.Series(dtype=float)
     valor_nominal = pd.to_numeric(df['valor_nominal_factura'], errors='coerce')
     tasa_dilucion = pd.to_numeric(df['tasa_dilucion'], errors='coerce')

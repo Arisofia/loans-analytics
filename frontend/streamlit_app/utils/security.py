@@ -18,17 +18,15 @@ def sanitize_api_base(base: str) -> Optional[str]:
             return None
         try:
             ip = ipaddress.ip_address(host)
-            if not ip.is_global:
-                if os.environ.get('ALLOW_PRIVATE_API_BASE') != '1':
-                    return None
+            if not ip.is_global and os.environ.get('ALLOW_PRIVATE_API_BASE') != '1':
+                return None
         except ValueError:
             try:
                 for res in socket.getaddrinfo(host, None):
                     addr = res[4][0]
                     ip = ipaddress.ip_address(addr)
-                    if not ip.is_global:
-                        if os.environ.get('ALLOW_PRIVATE_API_BASE') != '1':
-                            return None
+                    if not ip.is_global and os.environ.get('ALLOW_PRIVATE_API_BASE') != '1':
+                        return None
             except socket.gaierror:
                 pass
         return safe
