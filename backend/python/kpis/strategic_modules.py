@@ -306,8 +306,18 @@ def _compute_dscr(loans_df: pd.DataFrame, noi_col: str | None, debt_service_col:
     return noi_sum / debt_service_sum if debt_service_sum > 0 else None
 
 def _evaluate_metric_status(actual: float, target: float, lower_is_better: bool, warn_band: float) -> str:
-    index = (int(actual <= target + warn_band) + int(actual <= target)) if lower_is_better else (int(actual >= target - warn_band) + int(actual >= target))
-    return ('breach', 'warning', 'ok')[index]
+    if lower_is_better:
+        if actual <= target:
+            return 'ok'
+        if actual <= target + warn_band:
+            return 'warning'
+        return 'breach'
+
+    if actual >= target:
+        return 'ok'
+    if actual >= target - warn_band:
+        return 'warning'
+    return 'breach'
 
 def _build_core_metric_rows(actuals: dict[str, Any], guardrails: dict[str, Any], owners: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, int]]:
     metric_defs = {'rotation_x': ('rotation_x', 4.5, False, 0.3), 'top1_concentration_pct': ('top1_concentration_pct', 4.0, True, 1.0), 'top10_concentration_pct': ('top10_concentration_pct', 30.0, True, 3.0), 'par30_pct': ('par30_pct', 5.0, True, 1.0), 'par90_pct': ('par90_pct', 2.0, True, 0.5), 'npl_180_pct': ('npl_180_pct', 4.0, True, 0.5), 'utilization_pct': ('utilization_pct', 75.0, False, 5.0), 'dscr': ('dscr', float(guardrails.get('dscr', 1.2)), False, 0.1), 'ce_6m_pct': ('ce_6m_pct', 96.0, False, 2.0)}
@@ -452,14 +462,18 @@ def _plan_policy_lookup(metric: Any, policy_map: dict[str, Any]) -> Any:
     if canonical in policy_map:
         return policy_map[canonical]
     fallback = {'par30': 'par30_pct', 'par90': 'par90_pct', 'revenue': 'revenue_usd', 'apr': 'apr_pct_ann'}.get(canonical)
-    return policy_map.get(fallback) if fallback else None
+    if fallback:
+        return policy_map.get(fallback)
+    return None
 
 def _compose_contextual_action(base_action: str, variance_details: dict[str, Any]) -> str:
     driver = variance_details.get('driver') if isinstance(variance_details, dict) else None
     explanation = variance_details.get('explanation') if isinstance(variance_details, dict) else None
     if driver:
         return f'{base_action} Driver: {driver}.'
-    return f'{base_action} Context: {explanation}' if explanation else base_action
+    if explanation:
+        return f'{base_action} Context: {explanation}'
+    return base_action
 
 def _resolve_compliance_meta(status: str, metric_name: Any) -> tuple[Any, Any, Any]:
     if status in {'breach', 'warning'}:
