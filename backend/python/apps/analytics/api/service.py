@@ -788,7 +788,9 @@ class KPIService:
 
     def _convert_dict_records_to_dataframe(self, rows: list[dict] | None) -> pd.DataFrame:
         """Converts optional list-of-dict rows into a DataFrame."""
-        return pd.DataFrame() if not rows else pd.DataFrame(rows)
+        if rows:
+            return pd.DataFrame(rows)
+        return pd.DataFrame()
 
     async def get_executive_analytics(
         self,
@@ -923,9 +925,7 @@ class KPIService:
     ) -> PortfolioHealthScore:
         """Map numeric KPI metrics into the composite portfolio health object."""
         required_metrics = ("par30", "collection_rate", "npl", "cor", "default_rate")
-        missing_metrics = [name for name in required_metrics if name not in metrics]
-        if missing_metrics:
-            missing = ", ".join(missing_metrics)
+        if missing := ", ".join(name for name in required_metrics if name not in metrics):
             raise ValueError(f"Missing required portfolio health metrics: {missing}")
 
         payload = calculate_portfolio_health_score(
@@ -1609,7 +1609,7 @@ class KPIService:
             idx = list(group_idx)
             group_balance = float(df.loc[idx, "principal_balance"].sum())
             group_originated = float(df.loc[idx, "loan_amount"].sum())
-            group_loans = int(len(idx))
+            group_loans = len(idx)
 
             par30 = self._safe_pct(
                 df.loc[idx, "principal_balance"][dpd.loc[idx] > 30].sum(), group_balance
@@ -1617,7 +1617,7 @@ class KPIService:
             par90 = self._safe_pct(
                 df.loc[idx, "principal_balance"][dpd.loc[idx] > 90].sum(), group_balance
             )
-            default_rate = self._safe_pct(float(default_mask.loc[idx].sum()), float(group_loans))
+            default_rate = self._safe_pct(float(default_mask.loc[idx].sum()), group_loans)
             collection_rate = self._safe_pct(
                 float(collected.loc[idx].sum()), float(scheduled.loc[idx].sum())
             )
@@ -1887,9 +1887,9 @@ class KPIService:
         for segment_value, group_idx in df.groupby("segment_value").groups.items():
             idx = list(group_idx)
             outstanding = float(df.loc[idx, "principal_balance"].sum())
-            loan_count = int(len(idx))
+            loan_count = len(idx)
             par30 = self._safe_pct(
-                float(df.loc[idx, "principal_balance"][dpd.loc[idx] >= 30].sum()), outstanding
+                df.loc[idx, "principal_balance"][dpd.loc[idx] >= 30].sum(), outstanding
             )
             par60 = self._safe_pct(
                 df.loc[idx, "principal_balance"][dpd.loc[idx] >= 60].sum(), outstanding
@@ -1897,7 +1897,7 @@ class KPIService:
             par90 = self._safe_pct(
                 df.loc[idx, "principal_balance"][dpd.loc[idx] >= 90].sum(), outstanding
             )
-            default_rate = self._safe_pct(float(default_mask.loc[idx].sum()), float(loan_count))
+            default_rate = self._safe_pct(float(default_mask.loc[idx].sum()), loan_count)
             collection_rate = self._safe_pct(
                 float(collected.loc[idx].sum()), float(scheduled.loc[idx].sum())
             )
@@ -2260,19 +2260,19 @@ class KPIService:
             ),
         )
 
-        par_factor = 1.0 + (float(par_deterioration_pct) / 100.0)
-        collection_factor = 1.0 + (float(collection_efficiency_pct) / 100.0)
-        recovery_factor = 1.0 + (float(recovery_efficiency_pct) / 100.0)
+        par_factor = 1.0 + par_deterioration_pct / 100.0
+        collection_factor = 1.0 + collection_efficiency_pct / 100.0
+        recovery_factor = 1.0 + recovery_efficiency_pct / 100.0
 
         stressed_par30 = self._clamp_pct(baseline.par30_pct * par_factor)
         stressed_par90 = self._clamp_pct(
             baseline.par90_pct * (1.0 + ((par_deterioration_pct * 1.2) / 100.0))
         )
         stressed_default = self._clamp_pct(
-            baseline.default_rate_pct * (1.0 + ((float(par_deterioration_pct) * 0.8) / 100.0))
+            baseline.default_rate_pct * (1.0 + ((par_deterioration_pct * 0.8) / 100.0))
         )
         stressed_loss = self._clamp_pct(
-            baseline.loss_rate_pct * (1.0 + ((float(par_deterioration_pct) * 1.1) / 100.0))
+            baseline.loss_rate_pct * (1.0 + ((par_deterioration_pct * 1.1) / 100.0))
         )
         stressed_collection = self._clamp_pct(baseline.collection_rate_pct * collection_factor)
         stressed_recovery = self._clamp_pct(baseline.recovery_rate_pct * recovery_factor)
@@ -2384,8 +2384,6 @@ class KPIService:
 
         advanced_risk = await self.calculate_advanced_risk(loans)
 
-        decision_flags = []
-
         # 1. Concentration Flag
         hhi = advanced_risk.concentration_hhi
         if hhi > 2500:
@@ -2397,7 +2395,7 @@ class KPIService:
         else:
             status = "green"
             reason = f"HHI of {hhi:.0f} indicates healthy portfolio diversification."
-        decision_flags.append(DecisionFlag(flag="Concentration", status=status, reason=reason))
+        decision_flags = [DecisionFlag(flag="Concentration", status=status, reason=reason)]
 
         # 2. Asset Quality Flag
         par30 = advanced_risk.par30
@@ -2574,11 +2572,7 @@ class KPIService:
 
     @staticmethod
     def _bucket_risk_intensity(value: float, threshold: float) -> str:
-        if value > threshold * 2:
-            return "high"
-        if value > threshold:
-            return "medium"
-        return "low"
+        return "high" if value > threshold * 2 else "medium" if value > threshold else "low"
 
     def _build_heatmap_rows(
         self, buckets: list[dict[str, Any]]
@@ -3025,8 +3019,7 @@ class KPIService:
         """Convert ratio-like values (0-1) to percent while preserving percent inputs."""
         if pd.isna(value):
             return 0.0
-        numeric_value = float(value)
-        return numeric_value * 100.0 if -1.5 <= numeric_value <= 1.5 else numeric_value
+        return value * 100.0 if -1.5 <= value <= 1.5 else value
 
     @staticmethod
     def _safe_float(value: float | int | None, default: float | None = 0.0) -> float:
@@ -3052,7 +3045,7 @@ class KPIService:
     @staticmethod
     def _clamp_pct(value: float) -> float:
         """Clamp percentage-like values into [0, 100] range."""
-        return max(0.0, min(100.0, float(value)))
+        return max(0.0, min(100.0, value))
 
     @staticmethod
     def _safe_pct(numerator: float, denominator: float) -> float:
@@ -3196,14 +3189,13 @@ class KPIService:
 
     @staticmethod
     def _map_dpd_to_bucket(dpd_value: float) -> str:
-        value = float(dpd_value)
-        if value <= 0:
+        if dpd_value <= 0:
             return "current"
-        if value <= 30:
+        if dpd_value <= 30:
             return "1_30"
-        if value <= 60:
+        if dpd_value <= 60:
             return "31_60"
-        if value <= 90:
+        if dpd_value <= 90:
             return "61_90"
         return "90_plus"
 

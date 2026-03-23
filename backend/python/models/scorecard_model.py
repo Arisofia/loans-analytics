@@ -80,9 +80,12 @@ class ScorecardModel:
         customer_df: pd.DataFrame,
     ) -> pd.DataFrame:
         """Merge loan, payment history, and customer data into a flat model table."""
-        loan_df.columns = loan_df.columns.str.strip().str.lower().str.replace(" ", "_")
-        payment_df.columns = payment_df.columns.str.strip().str.lower().str.replace(" ", "_")
-        customer_df.columns = customer_df.columns.str.strip().str.lower().str.replace(" ", "_")
+        def _normalize_columns(df: pd.DataFrame) -> None:
+            df.columns = [str(col).strip().lower().replace(" ", "_") for col in df.columns]
+
+        _normalize_columns(loan_df)
+        _normalize_columns(payment_df)
+        _normalize_columns(customer_df)
 
         def _find(df: pd.DataFrame, *patterns: str) -> Optional[str]:
             for col in df.columns:

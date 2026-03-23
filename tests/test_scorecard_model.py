@@ -151,6 +151,19 @@ def trained_model(sample_data):
 
 
 class TestDatasetConstruction:
+    def test_build_dataset_with_empty_auxiliary_dataframes(self, sample_data):
+        from backend.python.models.scorecard_model import ScorecardModel
+
+        loan_df, _, _ = sample_data
+        df = ScorecardModel.build_model_dataset(
+            loan_df.copy(),
+            pd.DataFrame(),
+            pd.DataFrame(),
+        )
+
+        assert "is_default" in df.columns
+        assert len(df) == len(loan_df)
+
     def test_target_created(self, sample_data):
         from backend.python.models.scorecard_model import ScorecardModel
 
