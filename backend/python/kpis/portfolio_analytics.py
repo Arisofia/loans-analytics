@@ -51,10 +51,7 @@ logger = logging.getLogger(__name__)
 
 
 def _col(df: pd.DataFrame, candidates: list[str]) -> str | None:
-    for c in candidates:
-        if c in df.columns:
-            return c
-    return None
+    return next((candidate for candidate in candidates if candidate in df.columns), None)
 
 
 def _num(df: pd.DataFrame, col: str) -> pd.Series:
@@ -226,6 +223,94 @@ def cohort_pancake_analysis(
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def _payment_rates(grp: pd.DataFrame, stat_col: str, dev_col: str | None) -> pd.Series:
+    n = len(grp)
+    return pd.Series(
+        {
+            "op_count": n,
+            "late_rate": (grp[stat_col] == "Late").sum() / n,
+            "prepay_rate": (grp[stat_col] == "Prepayment").sum() / n,
+            "ontime_rate": (grp[stat_col] == "On Time").sum() / n,
+            "dev_rate": (grp["_dev"] > 0).sum() / n if dev_col in grp.columns else 0.0,
+        }
+    )
+
+
+def _build_persona_stats(
+    payments_df: pd.DataFrame,
+    cust_col: str,
+    stat_col: str,
+    dev_col: str | None,
+) -> pd.DataFrame:
+    pay = payments_df.copy()
+    pay[stat_col] = pay[stat_col].astype(str).str.strip()
+    if dev_col:
+        pay["_dev"] = _num(pay, dev_col)
+
+    stats = (
+        pay.groupby(cust_col)
+        .apply(lambda grp: _payment_rates(grp, stat_col, dev_col))
+        .reset_index()
+    )
+    stats.columns = [cust_col, "op_count", "late_rate", "prepay_rate", "ontime_rate", "dev_rate"]
+    return stats
+
+
+def _merge_avg_dpd(
+    stats: pd.DataFrame,
+    loans_df: pd.DataFrame,
+    cust_col: str,
+    loan_cust: str | None,
+    dpd_col: str | None,
+) -> pd.DataFrame:
+    if not (loan_cust and dpd_col):
+        stats["avg_dpd"] = 0.0
+        return stats
+
+    avg_dpd = (
+        loans_df.groupby(loan_cust)[dpd_col]
+        .apply(lambda series: pd.to_numeric(series, errors="coerce").mean())
+        .rename("avg_dpd")
+        .reset_index()
+    )
+    avg_dpd.columns = [cust_col, "avg_dpd"]
+    merged = stats.merge(avg_dpd, on=cust_col, how="left")
+    merged["avg_dpd"] = merged["avg_dpd"].fillna(0)
+    return merged
+
+
+def _build_collections_priority(stats: pd.DataFrame, cust_col: str) -> pd.DataFrame:
+    sort_col = "_bal" if "_bal" in stats.columns else "late_rate"
+    selected_cols = (
+        [cust_col, "persona", "_bal", "late_rate", "avg_dpd", "op_count"]
+        if "_bal" in stats.columns
+        else [cust_col, "persona", "late_rate", "avg_dpd", "op_count"]
+    )
+    priority = (
+        stats[stats["persona"].isin(["AT_RISK", "ERRATIC"])]
+        .sort_values(sort_col, ascending=False)[selected_cols]
+        .head(50)
+    )
+    if "_bal" in priority.columns:
+        priority = priority.rename(columns={"_bal": "balance_usd"})
+    return priority
+
+
+def _build_persona_output(stats: pd.DataFrame, cust_col: str) -> list[dict[str, Any]]:
+    return [
+        {
+            "customer_id": str(row[cust_col]),
+            "persona": row["persona"],
+            "late_rate": round(float(row["late_rate"]), 3),
+            "prepay_rate": round(float(row["prepay_rate"]), 3),
+            "ontime_rate": round(float(row["ontime_rate"]), 3),
+            "avg_dpd": round(float(row["avg_dpd"]), 1),
+            "op_count": int(row["op_count"]),
+        }
+        for _, row in stats.iterrows()
+    ]
+
+
 def payment_behavior_clustering(
     payments_df: pd.DataFrame,
     loans_df: pd.DataFrame,
@@ -265,40 +350,8 @@ def payment_behavior_clustering(
     if not cust_col or not stat_col:
         return {"status": "missing_columns", "required": ["customer_id", "true_payment_status"]}
 
-    pay = payments_df.copy()
-    pay[stat_col] = pay[stat_col].astype(str).str.strip()
-    if dev_col:
-        pay["_dev"] = _num(pay, dev_col)
-
-    # Per-client payment stats
-    def _rates(grp: pd.DataFrame) -> pd.Series:
-        n = len(grp)
-        return pd.Series(
-            {
-                "op_count": n,
-                "late_rate": (grp[stat_col] == "Late").sum() / n,
-                "prepay_rate": (grp[stat_col] == "Prepayment").sum() / n,
-                "ontime_rate": (grp[stat_col] == "On Time").sum() / n,
-                "dev_rate": (grp["_dev"] > 0).sum() / n if dev_col in grp.columns else 0.0,
-            }
-        )
-
-    stats = pay.groupby(cust_col).apply(_rates).reset_index()
-    stats.columns = [cust_col, "op_count", "late_rate", "prepay_rate", "ontime_rate", "dev_rate"]
-
-    # Merge DPD from loan tape
-    if loan_cust and dpd_col:
-        avg_dpd = (
-            loans_df.groupby(loan_cust)[dpd_col]
-            .apply(lambda s: pd.to_numeric(s, errors="coerce").mean())
-            .rename("avg_dpd")
-            .reset_index()
-        )
-        avg_dpd.columns = [cust_col, "avg_dpd"]
-        stats = stats.merge(avg_dpd, on=cust_col, how="left")
-        stats["avg_dpd"] = stats["avg_dpd"].fillna(0)
-    else:
-        stats["avg_dpd"] = 0.0
+    stats = _build_persona_stats(payments_df, cust_col, stat_col, dev_col)
+    stats = _merge_avg_dpd(stats, loans_df, cust_col, loan_cust, dpd_col)
 
     # Persona assignment
     def _persona(row: pd.Series) -> str:
@@ -325,34 +378,8 @@ def payment_behavior_clustering(
 
     persona_summary = stats["persona"].value_counts().to_dict()
 
-    # Collections priority: AT_RISK + ERRATIC sorted by balance
-    priority = (
-        stats[stats["persona"].isin(["AT_RISK", "ERRATIC"])]
-        .sort_values("_bal" if "_bal" in stats.columns else "late_rate", ascending=False)[
-            (
-                [cust_col, "persona", "_bal", "late_rate", "avg_dpd", "op_count"]
-                if "_bal" in stats.columns
-                else [cust_col, "persona", "late_rate", "avg_dpd", "op_count"]
-            )
-        ]
-        .head(50)
-    )
-    if "_bal" in priority.columns:
-        priority = priority.rename(columns={"_bal": "balance_usd"})
-
-    personas_out = []
-    for _, row in stats.iterrows():
-        personas_out.append(
-            {
-                "customer_id": str(row[cust_col]),
-                "persona": row["persona"],
-                "late_rate": round(float(row["late_rate"]), 3),
-                "prepay_rate": round(float(row["prepay_rate"]), 3),
-                "ontime_rate": round(float(row["ontime_rate"]), 3),
-                "avg_dpd": round(float(row["avg_dpd"]), 1),
-                "op_count": int(row["op_count"]),
-            }
-        )
+    priority = _build_collections_priority(stats, cust_col)
+    personas_out = _build_persona_output(stats, cust_col)
 
     return {
         "status": "ok",
@@ -372,6 +399,100 @@ def payment_behavior_clustering(
 # ─────────────────────────────────────────────────────────────────────────────
 # C. Collection Efficiency by Segment
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+def _aggregate_numeric_sum(df: pd.DataFrame, key_col: str, value_col: str, output_col: str) -> pd.Series:
+    return (
+        df.groupby(key_col)[value_col]
+        .apply(lambda series: pd.to_numeric(series, errors="coerce").fillna(0).sum())
+        .rename(output_col)
+    )
+
+
+def _build_loans_meta(
+    loans_df: pd.DataFrame,
+    customer_df: pd.DataFrame | None,
+    loan_id: str,
+    cat_col: str | None,
+    agent_col: str | None,
+) -> pd.DataFrame:
+    meta_cols = [loan_id] + [column for column in [cat_col] if column]
+    if agent_col and agent_col in loans_df.columns:
+        meta_cols.append(agent_col)
+
+    loans_meta = loans_df[meta_cols].copy()
+    has_customer_agent = (
+        customer_df is not None
+        and agent_col
+        and loan_id in customer_df.columns
+        and agent_col in customer_df.columns
+    )
+    if has_customer_agent and agent_col not in loans_meta.columns:
+        agent_lookup = customer_df[[loan_id, agent_col]].drop_duplicates(loan_id)
+        loans_meta = loans_meta.merge(agent_lookup, on=loan_id, how="left")
+    return loans_meta
+
+
+def _build_ce_overall(ce: pd.DataFrame) -> dict[str, float | int]:
+    return {
+        "loans_with_ce_data": int(ce["ce_ratio"].notna().sum()),
+        "ce_median": round(float(ce["ce_ratio"].median()), 3),
+        "ce_mean": round(float(ce["ce_ratio"].mean()), 3),
+        "ce_gte_1_pct": round(float((ce["ce_ratio"] >= 1.0).mean() * 100), 1),
+        "ce_lt_80_pct": round(float((ce["ce_ratio"] < 0.80).mean() * 100), 1),
+        "ce_lt_80_balance_usd": 0.0,
+    }
+
+
+def _build_ce_category_summary(ce: pd.DataFrame, cat_col: str | None) -> list[dict[str, Any]]:
+    if not (cat_col and cat_col in ce.columns):
+        return []
+    summary = [
+        {
+            "category": category,
+            "ce_median": round(group["ce_ratio"].median(), 3),
+            "ce_mean": round(group["ce_ratio"].mean(), 3),
+            "loan_count": len(group),
+            "ce_lt_80_n": (group["ce_ratio"] < 0.80).sum(),
+        }
+        for category, group in ce.groupby(cat_col, dropna=False)
+    ]
+    summary.sort(key=lambda item: item["ce_median"])
+    return summary
+
+
+def _build_ce_kam_summary(ce: pd.DataFrame, agent_col: str | None) -> list[dict[str, Any]]:
+    if not (agent_col and agent_col in ce.columns):
+        return []
+    summary = [
+        {
+            "agent": agent,
+            "ce_median": round(group["ce_ratio"].median(), 3),
+            "loan_count": len(group),
+        }
+        for agent, group in ce.groupby(agent_col, dropna=False)
+    ]
+    summary.sort(key=lambda item: item["ce_median"])
+    return summary
+
+
+def _build_ce_early_warning(
+    ce: pd.DataFrame,
+    loan_id: str,
+    cat_col: str | None,
+) -> list[dict[str, Any]]:
+    return (
+        ce[ce["ce_ratio"] < 0.80]
+        .sort_values("ce_ratio")[
+            [loan_id, "sched", "real", "ce_ratio"]
+            + ([cat_col] if cat_col and cat_col in ce.columns else [])
+            + (["_bal"] if "_bal" in ce.columns else [])
+        ]
+        .head(50)
+        .rename(columns={"_bal": "outstanding_usd"})
+        .round(3)
+        .to_dict("records")
+    )
 
 
 def collection_efficiency_by_segment(
@@ -397,40 +518,17 @@ def collection_efficiency_by_segment(
     if not all([loan_id, sched_amt, real_amt]):
         return {"status": "missing_columns"}
 
-    sched_agg = (
-        schedule_df.groupby(loan_id)[sched_amt]
-        .apply(lambda s: pd.to_numeric(s, errors="coerce").fillna(0).sum())
-        .rename("sched")
-    )
-    real_agg = (
-        payments_df.groupby(loan_id)[real_amt]
-        .apply(lambda s: pd.to_numeric(s, errors="coerce").fillna(0).sum())
-        .rename("real")
-    )
+    sched_agg = _aggregate_numeric_sum(schedule_df, loan_id, sched_amt, "sched")
+    real_agg = _aggregate_numeric_sum(payments_df, loan_id, real_amt, "real")
 
     ce = sched_agg.to_frame().join(real_agg, how="outer").fillna(0)
     ce["ce_ratio"] = ce["real"] / ce["sched"].replace(0, np.nan)
 
-    meta_cols = [loan_id] + [c for c in [cat_col] if c]
-    # only add agent_col if it exists in loans_df
-    if agent_col and agent_col in loans_df.columns:
-        meta_cols.append(agent_col)
-    loans_meta = loans_df[meta_cols].copy()
-    if customer_df is not None and agent_col and agent_col not in loans_meta.columns:
-        if loan_id in customer_df.columns and agent_col in customer_df.columns:
-            ag = customer_df[[loan_id, agent_col]].drop_duplicates(loan_id)
-            loans_meta = loans_meta.merge(ag, on=loan_id, how="left")
+    loans_meta = _build_loans_meta(loans_df, customer_df, loan_id, cat_col, agent_col)
 
     ce = ce.reset_index().merge(loans_meta, on=loan_id, how="left")
 
-    overall = {
-        "loans_with_ce_data": int(ce["ce_ratio"].notna().sum()),
-        "ce_median": round(float(ce["ce_ratio"].median()), 3),
-        "ce_mean": round(float(ce["ce_ratio"].mean()), 3),
-        "ce_gte_1_pct": round(float((ce["ce_ratio"] >= 1.0).mean() * 100), 1),
-        "ce_lt_80_pct": round(float((ce["ce_ratio"] < 0.80).mean() * 100), 1),
-        "ce_lt_80_balance_usd": 0.0,
-    }
+    overall = _build_ce_overall(ce)
 
     # Add balance to CE <0.80 flag
     if "outstanding_loan_value" in loans_df.columns:
@@ -440,47 +538,9 @@ def collection_efficiency_by_segment(
             float(ce.loc[ce["ce_ratio"] < 0.80, "_bal"].sum()), 2
         )
 
-    # By category
-    by_category: list[dict] = []
-    if cat_col and cat_col in ce.columns:
-        for cat, grp in ce.groupby(cat_col, dropna=False):
-            by_category.append(
-                {
-                    "category": str(cat),
-                    "ce_median": round(float(grp["ce_ratio"].median()), 3),
-                    "ce_mean": round(float(grp["ce_ratio"].mean()), 3),
-                    "loan_count": int(len(grp)),
-                    "ce_lt_80_n": int((grp["ce_ratio"] < 0.80).sum()),
-                }
-            )
-        by_category.sort(key=lambda x: x["ce_median"])
-
-    # By KAM
-    by_kam: list[dict] = []
-    if agent_col and agent_col in ce.columns:
-        for agent, grp in ce.groupby(agent_col, dropna=False):
-            by_kam.append(
-                {
-                    "agent": str(agent),
-                    "ce_median": round(float(grp["ce_ratio"].median()), 3),
-                    "loan_count": int(len(grp)),
-                }
-            )
-        by_kam.sort(key=lambda x: x["ce_median"])
-
-    # Early warning list
-    early_warning = (
-        ce[ce["ce_ratio"] < 0.80]
-        .sort_values("ce_ratio")[
-            [loan_id, "sched", "real", "ce_ratio"]
-            + ([cat_col] if cat_col and cat_col in ce.columns else [])
-            + (["_bal"] if "_bal" in ce.columns else [])
-        ]
-        .head(50)
-        .rename(columns={"_bal": "outstanding_usd"})
-        .round(3)
-        .to_dict("records")
-    )
+    by_category = _build_ce_category_summary(ce, cat_col)
+    by_kam = _build_ce_kam_summary(ce, agent_col)
+    early_warning = _build_ce_early_warning(ce, loan_id, cat_col)
 
     return {
         "status": "ok",
@@ -550,21 +610,21 @@ def collateral_coverage(
         "collateral_type": "account_receivable (invoice factoring)",
     }
 
-    # By category
-    by_cat: list[dict] = []
-    if cat_col and cat_col in df.columns:
-        cat_col_s = str(cat_col)
-        for cat, grp in df.groupby(cat_col_s, dropna=False):
-            by_cat.append(
-                {
-                    "category": str(cat),
-                    "median_ltc_ratio": round(float(grp["ltc_ratio"].median()), 3),
-                    "undercollat_n": int((grp["ltc_ratio"] > 1.0).sum()),
-                    "loan_count": int(len(grp)),
-                    "total_balance_usd": round(float(grp["_bal"].sum()), 2),
-                }
-            )
-        by_cat.sort(key=lambda x: float(x["median_ltc_ratio"]), reverse=True)
+    by_cat = (
+        [
+            {
+                "category": cat,
+                "median_ltc_ratio": round(grp["ltc_ratio"].median(), 3),
+                "undercollat_n": (grp["ltc_ratio"] > 1.0).sum(),
+                "loan_count": len(grp),
+                "total_balance_usd": round(grp["_bal"].sum(), 2),
+            }
+            for cat, grp in df.groupby(str(cat_col), dropna=False)
+        ]
+        if cat_col and cat_col in df.columns
+        else []
+    )
+    by_cat.sort(key=lambda item: item["median_ltc_ratio"], reverse=True)
 
     return {
         "status": "ok",
@@ -657,25 +717,24 @@ def equifax_vs_dpd_scatter(
     df["_alpha_flag"] = df["_residual"] < -1.5 * residual_std
     df["_risk_flag"] = df["_residual"] > 1.5 * residual_std
 
-    scatter_data = []
-    for _, row in df.iterrows():
-        scatter_data.append(
-            {
-                "customer_id": str(row[cust_col]),
-                "equifax_score": round(float(row["_eq"]), 1),
-                "actual_dpd": round(float(row["_dpd"]), 1),
-                "expected_dpd": round(float(row["_expected_dpd"]), 1),
-                "residual": round(float(row["_residual"]), 1),
-                "alpha_flag": bool(row["_alpha_flag"]),
-                "risk_flag": bool(row["_risk_flag"]),
-                "total_balance_usd": round(float(row.get("total_bal", 0)), 2),
-            }
-        )
+    scatter_data = [
+        {
+            "customer_id": str(row[cust_col]),
+            "equifax_score": round(float(row["_eq"]), 1),
+            "actual_dpd": round(float(row["_dpd"]), 1),
+            "expected_dpd": round(float(row["_expected_dpd"]), 1),
+            "residual": round(float(row["_residual"]), 1),
+            "alpha_flag": bool(row["_alpha_flag"]),
+            "risk_flag": bool(row["_risk_flag"]),
+            "total_balance_usd": round(float(row.get("total_bal", 0)), 2),
+        }
+        for _, row in df.iterrows()
+    ]
 
     alpha_clients = [s for s in scatter_data if s["alpha_flag"]]
     risk_clients = [s for s in scatter_data if s["risk_flag"]]
 
-    alpha_balance = sum(float(cast(float, s["total_balance_usd"])) for s in alpha_clients)
+    alpha_balance = sum(float(s["total_balance_usd"]) for s in alpha_clients)
 
     if r_sq < 0.1:
         power = "weak"
@@ -696,11 +755,9 @@ def equifax_vs_dpd_scatter(
                 f"{slope:+.3f} days. R²={r_sq:.3f} — {power} predictive power."
             ),
         },
-        "alpha_clients": sorted(alpha_clients, key=lambda x: float(cast(float, x["residual"])))[
-            :30
-        ],
+        "alpha_clients": sorted(alpha_clients, key=lambda item: float(item["residual"]))[:30],
         "risk_clients": sorted(
-            risk_clients, key=lambda x: float(cast(float, x["residual"])), reverse=True
+            risk_clients, key=lambda item: float(item["residual"]), reverse=True
         )[:30],
         "summary": {
             "n_total": len(scatter_data),
@@ -760,26 +817,26 @@ def _category_kpi_row(
     apr = _num(grp, apr_col) if apr_col else pd.Series([0.0])
     term = _num(grp, term_col) if term_col else pd.Series([0.0])
     dpd = _num(grp, dpd_col) if dpd_col else pd.Series([0.0])
-    total = float(bal.sum())
+    total = bal.sum()
     try:
         par30_pct, par90_pct = _calculate_ssot_par_percentages(bal, dpd)
     except Exception:
-        par30_pct = round(float(bal[dpd >= 30].sum() / total * 100), 1) if total > 0 else 0.0
-        par90_pct = round(float(bal[dpd >= 90].sum() / total * 100), 1) if total > 0 else 0.0
+        par30_pct = round(bal[dpd >= 30].sum() / total * 100, 1) if total > 0 else 0.0
+        par90_pct = round(bal[dpd >= 90].sum() / total * 100, 1) if total > 0 else 0.0
     return {
-        "category": str(cat),
-        "loan_count": int(len(grp)),
-        "aum_usd": round(float(bal.sum()), 2),
-        "avg_ticket_usd": round(float(disb.mean()), 2),
-        "median_ticket_usd": round(float(disb.median()), 2),
-        "apr_weighted": round(float((apr * disb).sum() / max(disb.sum(), 1)), 4),
-        "avg_term_days": round(float(term.mean()), 1),
+        "category": cat,
+        "loan_count": len(grp),
+        "aum_usd": round(bal.sum(), 2),
+        "avg_ticket_usd": round(disb.mean(), 2),
+        "median_ticket_usd": round(disb.median(), 2),
+        "apr_weighted": round((apr * disb).sum() / max(disb.sum(), 1), 4),
+        "avg_term_days": round(term.mean(), 1),
         "rotation_x": round(365 / term.mean(), 1) if term.mean() > 0 else None,
-        "default_rate_pct": round(float(grp["_default"].mean() * 100), 2),
+        "default_rate_pct": round(grp["_default"].mean() * 100, 2),
         "par30_pct": par30_pct,
         "par90_pct": par90_pct,
-        "revenue_usd": round(float(grp["_rev"].sum()), 2),
-        "revenue_per_loan": round(float(grp["_rev"].mean()), 2),
+        "revenue_usd": round(grp["_rev"].sum(), 2),
+        "revenue_per_loan": round(grp["_rev"].mean(), 2),
     }
 
 
