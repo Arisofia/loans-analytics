@@ -423,7 +423,22 @@ def build_compliance_dashboard(loans_df: pd.DataFrame, payments_df: pd.DataFrame
     util_actual = _compute_utilization(loans_df, util_col, line_col, bal_col, bal)
     ce_actual = _compute_ce_6m(loans_df, payments_df, disb_col)
     dscr_actual = _compute_dscr(loans_df, noi_col, debt_service_col)
-    actuals = {'rotation_x': round(rotation_actual, 2), 'top1_concentration_pct': round(top1_pct, 1), 'top10_concentration_pct': round(top10_pct, 1), 'par30_pct': round(par30, 1), 'par90_pct': round(par90, 1), 'npl_180_pct': round(npl180, 1), 'utilization_pct': round(util_actual, 1) if util_actual is not None else None, 'apr_pct_ann': round(apr_ann, 1) if apr_ann is not None else None, 'ce_6m_pct': round(ce_actual, 1) if ce_actual is not None else None, 'dscr': round(dscr_actual, 2) if dscr_actual is not None else None}
+    util_actual_val = round(util_actual, 1) if util_actual is not None else None
+    apr_ann_val = round(apr_ann, 1) if apr_ann is not None else None
+    ce_actual_val = round(ce_actual, 1) if ce_actual is not None else None
+    dscr_actual_val = round(dscr_actual, 2) if dscr_actual is not None else None
+    actuals = {
+        'rotation_x': round(rotation_actual, 2),
+        'top1_concentration_pct': round(top1_pct, 1),
+        'top10_concentration_pct': round(top10_pct, 1),
+        'par30_pct': round(par30, 1),
+        'par90_pct': round(par90, 1),
+        'npl_180_pct': round(npl180, 1),
+        'utilization_pct': util_actual_val,
+        'apr_pct_ann': apr_ann_val,
+        'ce_6m_pct': ce_actual_val,
+        'dscr': dscr_actual_val
+    }
     data_sources = _build_compliance_data_sources(loans_df, dpd_col, deb_col, util_col, line_col, apr_col, noi_col, debt_service_col)
     apr_min = float(guardrails.get('apr_pct_min', 36.0))
     apr_max = float(guardrails.get('apr_pct_max', 99.0))
