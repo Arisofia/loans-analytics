@@ -462,7 +462,11 @@ def _compose_contextual_action(base_action: str, variance_details: dict[str, Any
     return f'{base_action} Context: {explanation}' if explanation else base_action
 
 def _resolve_compliance_meta(status: str, metric_name: Any) -> tuple[Any, Any, Any]:
-    return (_plan_policy_lookup(metric_name, _IMPACT_MAP), 'compliance', 'variance') if status in {'breach', 'warning'} else (_plan_policy_lookup(metric_name, _NO_DATA_ACTION_MAP), 'compliance', None) if status == 'no_data' else (None, None, None)
+    if status in {'breach', 'warning'}:
+        return (_plan_policy_lookup(metric_name, _IMPACT_MAP), 'compliance', 'variance')
+    if status == 'no_data':
+        return (_plan_policy_lookup(metric_name, _NO_DATA_ACTION_MAP), 'compliance', None)
+    return (None, None, None)
 
 def _build_compliance_action(row: dict[str, Any], variance_details: dict[str, Any]) -> dict[str, Any] | None:
     meta, source, variance_key = _resolve_compliance_meta(str(row.get('status', '')), row.get('metric'))
