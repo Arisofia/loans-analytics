@@ -443,6 +443,23 @@ class DefaultRiskModel:
     # ------------------------------------------------------------------
     # Validation
     # ------------------------------------------------------------------
+    @staticmethod
+    def _can_derive_feature(feature_name: str, loan_data: Dict[str, Any]) -> bool:
+        """Return whether a required feature can be derived from raw inputs."""
+        if feature_name == "ltv_ratio":
+            return (
+                feature_name in loan_data
+                or "collateral_value" in loan_data
+                and "outstanding_balance" in loan_data
+            )
+        if feature_name == "payment_ratio":
+            return (
+                feature_name in loan_data
+                or "total_scheduled" in loan_data
+                and "last_payment_amount" in loan_data
+            )
+        return feature_name in loan_data
+
     def validate_features(self, loan_data: Dict[str, Any]) -> None:
         """Verify all required features are present in the input dictionary.
 
@@ -451,7 +468,11 @@ class DefaultRiskModel:
         ValueError
             If one or more required features are missing.
         """
-        if missing := [f for f in self.feature_names if f not in loan_data]:
+        if missing := [
+            feature_name
+            for feature_name in self.feature_names
+            if not self._can_derive_feature(feature_name, loan_data)
+        ]:
             raise ValueError(f"Missing required features for inference: {', '.join(missing)}")
 
     # ------------------------------------------------------------------
@@ -460,7 +481,11 @@ class DefaultRiskModel:
     def _engineer_features_dict(self, loan_data: Dict[str, Any]) -> Dict[str, Any]:
         """Simple feature engineering for a single dictionary (numpy fallback)."""
         # Create a copy with base features
-        feat = {k: float(v) if v is not None else 0.0 for k, v in loan_data.items() if k in self.feature_names}
+        feat = {
+            key: float(value) if value is not None else 0.0
+            for key, value in loan_data.items()
+            if key in self.feature_names
+        }
         
         # Engineer features (only if they are required by the model)
         if "ltv_ratio" in self.feature_names and "ltv_ratio" not in feat:
@@ -479,6 +504,15 @@ class DefaultRiskModel:
                 feat[col] = 0.0
                 
         return feat
+
+    def _build_inference_array(self, loan_data: Dict[str, Any]) -> np.ndarray:
+        """Build a numeric 2D array for a single-loan inference request."""
+        self.validate_features(loan_data)
+        feat = self._engineer_features_dict(loan_data)
+        return np.array(
+            [[float(feat[col]) for col in self.feature_names]],
+            dtype=np.float32,
+        )
 
     def predict_proba(
         self,
@@ -505,32 +539,14 @@ class DefaultRiskModel:
         if self.model is None:
             raise RuntimeError("Model not trained or loaded")
 
-        try:
-            pd = _import_pandas()
-
-            df = pd.DataFrame([loan_data])
-            X = self.prepare_features(df, payment_df, customer_df)
-            
-            # Drop IDs
-            X = X.drop(columns=[c for c in ["loan_id", "customer_id"] if c in X.columns])
-
-            X = self._ensure_features_present(X)
-            X = X[self.feature_names]
-            proba = self.model.predict_proba(X)[:, 1]
+        _ = (payment_df, customer_df)
+        features = self._build_inference_array(loan_data)
+        if hasattr(self.model, "predict_proba"):
+            proba = self.model.predict_proba(features)[:, 1]
             return float(proba[0])
-        except ImportError:
-            # Fallback: numpy-only path (no pandas available)
-            import xgboost as xgb
 
-            # Apply simple feature engineering
-            feat = self._engineer_features_dict(loan_data)
-
-            features = np.array(
-                [[float(feat[col]) for col in self.feature_names]],
-                dtype=np.float32,
-            )
-            preds = self._predict_with_booster(features)
-            return max(0.0, min(1.0, float(preds[0])))
+        preds = self._predict_with_booster(features)
+        return max(0.0, min(1.0, float(preds[0])))
 
     def _predict_with_booster(self, features: np.ndarray) -> np.ndarray:
         """Low-level prediction using the underlying XGBoost booster."""
@@ -553,6 +569,17 @@ class DefaultRiskModel:
     ) -> Any:
         """Prepare and validate features for batch prediction."""
         pd = _import_pandas()
+
+        if isinstance(loans, list):
+            rows = []
+            for loan_data in loans:
+                self.validate_features(loan_data)
+                feat = self._engineer_features_dict(loan_data)
+                rows.append([float(feat[col]) for col in self.feature_names])
+
+            X = pd.DataFrame(rows, columns=self.feature_names)
+            df = pd.DataFrame(loans)
+            return X, df
 
         df = pd.DataFrame(loans) if isinstance(loans, list) else loans
         X = self.prepare_features(df, payment_df, customer_df)
