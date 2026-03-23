@@ -114,6 +114,19 @@ class CalculationPhase:
         # KPIEngineV2 is the Single Source of Truth for all metric logic
         self.engine = KPIEngineV2(kpi_definitions=kpi_definitions)
 
+    @staticmethod
+    def _log_and_raise_critical_error(error_msg: str) -> None:
+        """Log an error and raise ValueError for critical failures.
+
+        Args:
+            error_msg: The error message to log and include in the exception.
+
+        Raises:
+            ValueError: Always raised with the provided error message.
+        """
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+
     def execute(
         self,
         clean_data_path: Optional[Path] = None,
@@ -161,16 +174,10 @@ class CalculationPhase:
         """
         if df.empty:
             error_msg = "CRITICAL: EMPTY DATAFRAME PROVIDED TO CALCULATIONPHASE"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
+            self._log_and_raise_critical_error(error_msg)
 
         try:
-            # 1. Unified KPI Calculation (SSOT)
-            # This replaces _calculate_kpis, _calculate_derived_risk_kpis,
-            # _calculate_enriched_kpis, and _calculate_recurrent_tpv
-            kpi_results = self.engine.calculate(df)
-
-            # 2. Segment-based KPIs (Dimension-specific rollups)
+            kpi_results = self._run_unified_kpi_calculation(df)
             segments = self._calculate_segment_kpis(df)
 
             # 3. Time-series rollups (Daily, Weekly, Monthly)
@@ -272,7 +279,7 @@ class CalculationPhase:
             is_datetime = dtype_str.startswith("datetime64")
             # Handle: "object" (pandas ≤2.x default), "str" (pandas 3.0 default StringDtype),
             # "string" / "string[pyarrow]" (explicit pd.StringDtype variants).
-            is_string = dtype_str in ("object", "str") or dtype_str.startswith("string")
+            is_string = dtype_str in {"object", "str"} or dtype_str.startswith("string")
             if not is_datetime and not is_string:
                 continue
             # Already typed as datetime — include directly
@@ -497,8 +504,7 @@ class CalculationPhase:
 
         if balance_col is None:
             error_msg = "CRITICAL: MISSING BALANCE COLUMN FOR SEGMENT CALCULATION"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
+            self._log_and_raise_critical_error(error_msg)
 
         work = self._prepare_segment_workframe(df, balance_col, dpd_col, status_col)
         if work.empty:
@@ -666,6 +672,36 @@ class CalculationPhase:
     def _resolve_col(df: pd.DataFrame, *candidates: str) -> Optional[str]:
         """Return the first candidate column present in df, or None."""
         return next((c for c in candidates if c in df.columns), None)
+
+    def _run_unified_kpi_calculation(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Run unified KPI calculation as the Single Source of Truth.
+
+        Delegates to KPIEngineV2, which consolidates all metric logic:
+        - Core KPIs (PAR30/60/90, default_rate, outstanding_balance)
+        - Derived risk metrics (LTV synthetic, velocity of default)
+        - Time-series aggregations (recurrent TPV by period)
+
+        Args:
+            df: Input dataframe for KPI calculation.
+
+        Returns:
+            Dictionary of calculated KPIs from the engine.
+        """
+        return self._calculate_unified_kpis(df)
+
+    def _calculate_unified_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Calculate unified KPIs using KPIEngineV2 (SSOT).
+
+        This replaces _calculate_kpis, _calculate_derived_risk_kpis,
+        _calculate_enriched_kpis, and _calculate_recurrent_tpv.
+
+        Args:
+            df: Input dataframe for KPI calculation.
+
+        Returns:
+            Dictionary of calculated KPIs from the engine.
+        """
+        return self.engine.calculate(df)
 
     def _generate_manifest(
         self, kpi_results: Dict[str, Any], source_df: pd.DataFrame
@@ -858,9 +894,8 @@ class CalculationPhase:
 
         # Add canonical risk features if present
         for col in _COHORT_FEATURE_COLS:
-            if col in df.columns and pd.api.types.is_numeric_dtype(df[col]):
-                if col not in feature_cols:
-                    feature_cols.append(col)
+            if col in df.columns and pd.api.types.is_numeric_dtype(df[col]) and col not in feature_cols:
+                feature_cols.append(col)
 
         if not feature_cols:
             raise ValueError(

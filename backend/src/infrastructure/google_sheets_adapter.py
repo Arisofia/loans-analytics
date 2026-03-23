@@ -72,7 +72,7 @@ class ControlMoraSheetsAdapter:
                 f"CRITICAL: Could not open spreadsheet '{self._spreadsheet_id}': {exc}"
             ) from exc
 
-        normalized_tab = str(tab_name).strip()
+        normalized_tab = tab_name.strip()
         if not normalized_tab:
             raise ValueError("CRITICAL: Google Sheets tab name is empty")
 
@@ -97,8 +97,7 @@ class ControlMoraSheetsAdapter:
 
         if required_columns:
             present = set(records[0].keys())
-            missing = sorted(required_columns - present)
-            if missing:
+            if missing := sorted(required_columns - present):
                 raise ValueError(
                     f"CRITICAL: Tab '{normalized_tab}' missing required columns "
                     f"{missing}; present={sorted(present)}"
@@ -116,7 +115,7 @@ class ControlMoraSheetsAdapter:
         counts: Dict[str, int] = {}
         headers: List[str] = []
         for idx, header in enumerate(raw_headers):
-            base = header if header else f"column_{idx + 1}"
+            base = header or f"column_{idx + 1}"
             seen = counts.get(base, 0)
             counts[base] = seen + 1
             headers.append(base if seen == 0 else f"{base}_{seen + 1}")
