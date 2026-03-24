@@ -208,9 +208,7 @@ jobs:
 
       - name: Install Gitleaks CLI
         run: |
-          go install github.com/gitleaks/gitleaks/v8@v8.24.2
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-          export PATH="$(go env GOPATH)/bin:$PATH"
+          GOBIN=/usr/local/bin go install github.com/gitleaks/gitleaks/v8@v8.24.2
           gitleaks version
 
       - name: Run Gitleaks scan

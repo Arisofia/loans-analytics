@@ -61,7 +61,46 @@ jobs:
         run: python scripts/maintenance/validate_migration_index.py
 
       - name: Run unit tests
-        run: pytest tests/ -v --tb=short -m "not integration and not e2e"
+        id: pytest
+        continue-on-error: true
+        run: |
+          pytest tests/ -v --tb=short -m "not integration and not e2e" \
+            --junit-xml=test-results.xml
+
+      - name: Publish test failure summary
+        if: always() && steps.pytest.outcome == 'failure'
+        run: |
+          echo "## Failed Tests" >> "$GITHUB_STEP_SUMMARY"
+          python -c "
+          import xml.etree.ElementTree as ET, sys
+          tree = ET.parse('test-results.xml')
+          failed = []
+          for tc in tree.iter('testcase'):
+              if tc.find('failure') is not None:
+                  name = tc.get('classname','') + '::' + tc.get('name','')
+                  msg = tc.find('failure').get('message','')[:200]
+                  failed.append((name, msg))
+          if not failed:
+              print('No individual test failures found in XML.')
+              sys.exit(0)
+          for name, msg in failed:
+              print(f'- **{name}**')
+              print(f'  \`{msg}\`')
+              print()
+          " >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.xml
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Fail if tests failed
+        if: steps.pytest.outcome == 'failure'
+        run: exit 1
 
   integration-tests:
     runs-on: ubuntu-latest
