@@ -1,3 +1,16 @@
+"""ACTIVE_CANONICAL — Zero-cost migration & Control-de-Mora loan-tape path.
+
+This package implements the loan-tape ingestion, monthly snapshot ETL, XIRR
+calculations, and star-schema export used by the zero-cost migration workflow.
+
+Ownership: Data Engineering (pipeline team)
+Routing:   PipelineRouter selects loan_tape vs control_mora source at runtime.
+Tests:     tests/zero_cost/
+
+This is NOT a duplicate of the main pipeline in backend.src.pipeline.*.
+The main pipeline handles CSV/Supabase general ingest; this package handles
+the specialized Control-de-Mora and historical loan-tape reconciliation path.
+"""
 from .control_mora_adapter import ControlMoraAdapter
 from .crosswalk import Crosswalk
 from backend.python.kpis.dpd_calculator import DPDCalculator
