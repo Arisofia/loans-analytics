@@ -22,9 +22,9 @@ if [ ! -f "$MONITORING_ENV" ]; then
 GRAFANA_ADMIN_PASSWORD=admin123
 
 # Supabase Credentials
-# Project: goxdevkqozomyhsyxhte (PRODUCTION)
-# Get these from: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/settings/api
-SUPABASE_URL=https://goxdevkqozomyhsyxhte.supabase.co
+# Project: sddviizcgheusvwqpthm (PRODUCTION)
+# Get these from: https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/settings/api
+SUPABASE_URL=https://sddviizcgheusvwqpthm.supabase.co
 SUPABASE_ANON_KEY=your-supabase-anon-key-here
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 
@@ -61,7 +61,7 @@ echo -e "${BLUE}🔍 Testing Supabase connection...${NC}"
 if command -v curl &> /dev/null; then
     response=$(curl -s -m 5 -o /dev/null -w "%{http_code}" \
         -H "apikey: $SUPABASE_ANON_KEY" \
-        "https://goxdevkqozomyhsyxhte.supabase.co/rest/v1/monitoring.kpi_definitions?select=count" 2>/dev/null || echo "000")
+        "https://sddviizcgheusvwqpthm.supabase.co/rest/v1/monitoring.kpi_definitions?select=count" 2>/dev/null || echo "000")
     
     if [ "$response" = "200" ]; then
         echo -e "${GREEN}✅ Supabase REST API connection successful${NC}"
@@ -113,18 +113,18 @@ fi
 echo -e "${GREEN}✅ Grafana setup complete!${NC}"
 echo ""
 echo -e "${BLUE}📊 Access Grafana:${NC}"
-echo "   URL: http://localhost:3001"
+echo "   URL: https://jenineferderas.grafana.net"
 echo "   Username: admin"
 echo "   Password: ${GRAFANA_ADMIN_PASSWORD}"
 echo ""
 echo -e "${BLUE}📈 Configured Data Sources:${NC}"
-echo "   - Supabase PostgreSQL (db.goxdevkqozomyhsyxhte.supabase.co:5432)"
+echo "   - Supabase PostgreSQL (db.sddviizcgheusvwqpthm.supabase.co:5432)"
 echo "   - Supabase REST API"
 echo "   - Prometheus Local (http://prometheus:9090)"
 echo "   - Azure Monitor (optional)"
 echo ""
 echo -e "${BLUE}📚 Next steps:${NC}"
-echo "   1. Open http://localhost:3001 in your browser"
+echo "   1. Open https://jenineferderas.grafana.net in your browser"
 echo "   2. Log in with admin / ${GRAFANA_ADMIN_PASSWORD}"
 echo "   3. Go to Configuration → Data Sources"
 echo "   4. Click 'Test' on Supabase PostgreSQL to verify connection"

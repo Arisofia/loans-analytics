@@ -1,6 +1,6 @@
-# Supabase RLS Hardening (2026-02-04)
+﻿# Supabase RLS Hardening (2026-02-04)
 
-**Status**: ✅ Implemented  
+**Status**: âœ… Implemented  
 **Date**: 2026-02-04  
 **Severity**: HIGH - Addresses 8 Supabase security alerts
 
@@ -16,24 +16,24 @@ This document describes the Row Level Security (RLS) implementation for Abaco Lo
 
 | Table                  | RLS Status | Policies | Purpose                                             |
 | ---------------------- | ---------- | -------- | --------------------------------------------------- |
-| `financial_statements` | ✅ Enabled | 2        | Financial data (internal only)                      |
-| `payment_schedule`     | ✅ Enabled | 2        | Scheduled payments (customer view + service manage) |
-| `real_payment`         | ✅ Enabled | 2        | Actual payments (customer view + service manage)    |
-| `loan_data`            | ✅ Enabled | 2        | Loan records (customer view + service manage)       |
-| `customer_data`        | ✅ Enabled | 4        | Customer PII (customer owns + service full)         |
-| `historical_kpis`      | ✅ Enabled | 2        | Historical metrics (auth read + service manage)     |
-| `kpi_timeseries_daily` | ✅ Enabled | 2        | Daily KPIs (auth read + service manage)             |
-| `analytics_facts`      | ✅ Enabled | 2        | Analytics data (auth read + service manage)         |
-| `data_lineage`         | ✅ Enabled | 2        | Data lineage (auth read + service manage)           |
-| `lineage_columns`      | ✅ Enabled | 2        | Column lineage (auth read + service manage)         |
-| `lineage_dependencies` | ✅ Enabled | 2        | Dependency tracking (auth read + service manage)    |
-| `lineage_audit_log`    | ✅ Enabled | 2        | Audit logs (auth read + service manage)             |
+| `financial_statements` | âœ… Enabled | 2        | Financial data (internal only)                      |
+| `payment_schedule`     | âœ… Enabled | 2        | Scheduled payments (customer view + service manage) |
+| `real_payment`         | âœ… Enabled | 2        | Actual payments (customer view + service manage)    |
+| `loan_data`            | âœ… Enabled | 2        | Loan records (customer view + service manage)       |
+| `customer_data`        | âœ… Enabled | 4        | Customer PII (customer owns + service full)         |
+| `historical_kpis`      | âœ… Enabled | 2        | Historical metrics (auth read + service manage)     |
+| `kpi_timeseries_daily` | âœ… Enabled | 2        | Daily KPIs (auth read + service manage)             |
+| `analytics_facts`      | âœ… Enabled | 2        | Analytics data (auth read + service manage)         |
+| `data_lineage`         | âœ… Enabled | 2        | Data lineage (auth read + service manage)           |
+| `lineage_columns`      | âœ… Enabled | 2        | Column lineage (auth read + service manage)         |
+| `lineage_dependencies` | âœ… Enabled | 2        | Dependency tracking (auth read + service manage)    |
+| `lineage_audit_log`    | âœ… Enabled | 2        | Audit logs (auth read + service manage)             |
 
 ### Monitoring Schema
 
 | Table        | RLS Status | Policies | Purpose                                            |
 | ------------ | ---------- | -------- | -------------------------------------------------- |
-| `kpi_values` | ✅ Enabled | 3        | KPI metrics (service + internal insert, auth read) |
+| `kpi_values` | âœ… Enabled | 3        | KPI metrics (service + internal insert, auth read) |
 
 **Total**: 13 tables with RLS enabled, 31 policies defined
 
@@ -159,7 +159,7 @@ ALTER FUNCTION public.loan_data_broadcast_trigger()
 ### Prerequisites
 
 1. Supabase CLI installed: `npm install -g supabase`
-2. Linked to project: `supabase link --project-ref goxdevkqozomyhsyxhte`
+2. Linked to project: `supabase link --project-ref sddviizcgheusvwqpthm`
 3. Service role key available in `.env`
 
 ### Apply Migrations
@@ -170,7 +170,7 @@ cd /path/to/abaco-loans-analytics
 supabase db push
 
 # Method 2: Manual via SQL Editor
-# 1. Go to https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/sql
+# 1. Go to https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/sql
 # 2. Copy contents of each migration file in order:
 #    - db/migrations/20260204_enable_rls.sql
 #    - db/migrations/20260204_rls_policies.sql

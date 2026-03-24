@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-GRAFANA_URL="${GRAFANA_URL:-http://localhost:3001}"
+GRAFANA_URL="${GRAFANA_URL:-https://jenineferderas.grafana.net}"
 GRAFANA_USER="${GRAFANA_USER:-admin}"
 GRAFANA_PASSWORD="${GRAFANA_PASSWORD:-${GRAFANA_ADMIN_PASSWORD:-admin123}}"
 DASHBOARD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../grafana/dashboards" && pwd)"

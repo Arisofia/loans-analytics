@@ -1,38 +1,38 @@
-# Observability & Monitoring Setup
+﻿# Observability & Monitoring Setup
 
 **Last Updated:** 2026-01-29  
-**Status:** ✅ **PRODUCTION READY**
+**Status:** âœ… **PRODUCTION READY**
 
 ---
 
-## 📊 Overview
+## ðŸ“Š Overview
 
 ABACO Loans Analytics observability stack provides real-time monitoring of KPIs, system health, and data quality metrics through Grafana dashboards connected to Supabase.
 
 ### Architecture
 
 ```
-┌─────────────────┐
-│  Data Pipeline  │
-│ (Python/TS)     │
-└────────┬────────┘
-         │
-         ↓
-┌─────────────────┐      ┌──────────────┐
-│   Supabase DB   │←────→│   Grafana    │
-│  (PostgreSQL)   │      │  Dashboards  │
-└────────┬────────┘      └──────────────┘
-         │
-         ↓
-┌─────────────────┐
-│  n8n Automation │
-│  (Alerts/Jobs)  │
-└─────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  Data Pipeline  â”‚
+â”‚ (Python/TS)     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+         â”‚
+         â†“
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”      â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚   Supabase DB   â”‚â†â”€â”€â”€â”€â†’â”‚   Grafana    â”‚
+â”‚  (PostgreSQL)   â”‚      â”‚  Dashboards  â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+         â”‚
+         â†“
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  n8n Automation â”‚
+â”‚  (Alerts/Jobs)  â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
 
-## 🚀 Quick Start
+## ðŸš€ Quick Start
 
 ### 1. Deploy Observability Stack
 
@@ -43,7 +43,7 @@ docker-compose up -d
 
 This starts:
 
-- **Grafana** on `http://localhost:3001`
+- **Grafana** on `https://jenineferderas.grafana.net`
 - **n8n** on `http://localhost:5678`
 
 ### 2. Configure Credentials
@@ -55,11 +55,11 @@ cp n8n/.env.example n8n/.env
 ```
 
 Get Supabase credentials from:
-https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/settings/api
+https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/settings/api
 
 Required variables:
 
-- `SUPABASE_URL=https://goxdevkqozomyhsyxhte.supabase.co`
+- `SUPABASE_URL=https://sddviizcgheusvwqpthm.supabase.co`
 - `SUPABASE_ANON_KEY=<your-anon-key>`
 - `SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>`
 
@@ -67,13 +67,13 @@ Required variables:
 
 | Service             | URL                                                         | Default Credentials |
 | ------------------- | ----------------------------------------------------------- | ------------------- |
-| **Grafana**         | http://localhost:3001                                       | admin / admin123    |
+| **Grafana**         | https://jenineferderas.grafana.net                                       | admin / admin123    |
 | **n8n**             | http://localhost:5678                                       | admin / changeme123 |
-| **Supabase Studio** | https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte | SSO Login           |
+| **Supabase Studio** | https://supabase.com/dashboard/project/sddviizcgheusvwqpthm | SSO Login           |
 
 ---
 
-## 📈 Grafana Dashboards
+## ðŸ“ˆ Grafana Dashboards
 
 ### Available Dashboards
 
@@ -110,12 +110,12 @@ Monitors:
 Configured automatically via provisioning:
 
 1. **Supabase PostgreSQL** (Primary)
-   - Direct connection to `db.goxdevkqozomyhsyxhte.supabase.co:5432`
+   - Direct connection to `db.sddviizcgheusvwqpthm.supabase.co:5432`
    - Queries: `monitoring.kpi_definitions`, `monitoring.kpi_values`, `public.historical_kpis`
    - SSL: Required
 
 2. **Supabase REST API** (Secondary)
-   - REST endpoint: `https://goxdevkqozomyhsyxhte.supabase.co/rest/v1`
+   - REST endpoint: `https://sddviizcgheusvwqpthm.supabase.co/rest/v1`
    - Auth: Bearer token with SUPABASE_ANON_KEY
 
 3. **Azure Monitor** (Optional)
@@ -124,7 +124,7 @@ Configured automatically via provisioning:
 
 ---
 
-## 🤖 n8n Automation Workflows
+## ðŸ¤– n8n Automation Workflows
 
 ### Configured Workflows
 
@@ -184,7 +184,7 @@ return { redKPIs };
 
 ---
 
-## 🔐 Azure Key Vault Integration
+## ðŸ” Azure Key Vault Integration
 
 ### Required Secrets
 
@@ -192,7 +192,7 @@ Add to **Azure Key Vault: aiagent-secrets-kv**
 
 | Secret Name                 | Value                                      | Purpose              |
 | --------------------------- | ------------------------------------------ | -------------------- |
-| `SUPABASE-URL`              | `https://goxdevkqozomyhsyxhte.supabase.co` | Supabase project URL |
+| `SUPABASE-URL`              | `https://sddviizcgheusvwqpthm.supabase.co` | Supabase project URL |
 | `SUPABASE-ANON-KEY`         | `<anon-key>`                               | Public API key       |
 | `SUPABASE-SERVICE-ROLE-KEY` | `<service-role-key>`                       | Admin operations     |
 | `GRAFANA-ADMIN-PASSWORD`    | `<secure-password>`                        | Grafana login        |
@@ -207,7 +207,7 @@ az account set --subscription <subscription-id>
 # Add secrets to Key Vault
 az keyvault secret set --vault-name aiagent-secrets-kv \
   --name SUPABASE-URL \
-  --value "https://goxdevkqozomyhsyxhte.supabase.co"
+  --value "https://sddviizcgheusvwqpthm.supabase.co"
 
 az keyvault secret set --vault-name aiagent-secrets-kv \
   --name SUPABASE-ANON-KEY \
@@ -231,7 +231,7 @@ az webapp config appsettings set --name abaco-analytics-app \
 
 ---
 
-## 🧪 Testing
+## ðŸ§ª Testing
 
 ### 1. Test Supabase Connection
 
@@ -246,29 +246,29 @@ node scripts/test-supabase-connection.js
 Expected output:
 
 ```
-🔍 Testing Supabase Connection...
+ðŸ” Testing Supabase Connection...
 
-📍 Supabase URL: https://goxdevkqozomyhsyxhte.supabase.co
-🔑 API Key: eyJhbGciOiJIUzI1NiIs...xHte
+ðŸ“ Supabase URL: https://sddviizcgheusvwqpthm.supabase.co
+ðŸ”‘ API Key: eyJhbGciOiJIUzI1NiIs...xHte
 
-🧪 Test 1: Querying monitoring.kpi_definitions...
-✅ Successfully connected! Found 19 KPI definitions
+ðŸ§ª Test 1: Querying monitoring.kpi_definitions...
+âœ… Successfully connected! Found 19 KPI definitions
 
-🧪 Test 2: Querying monitoring.kpi_values...
-✅ Successfully queried kpi_values! Found 10 recent records
+ðŸ§ª Test 2: Querying monitoring.kpi_values...
+âœ… Successfully queried kpi_values! Found 10 recent records
 
-🧪 Test 3: Querying public.historical_kpis...
-✅ Successfully queried historical_kpis! Found 10 records
+ðŸ§ª Test 3: Querying public.historical_kpis...
+âœ… Successfully queried historical_kpis! Found 10 records
 
-✅ All connection tests passed!
+âœ… All connection tests passed!
 ```
 
 ### 2. Test Grafana Datasource
 
-1. Open Grafana: http://localhost:3001
-2. Navigate to: Configuration → Data Sources → Supabase PostgreSQL
+1. Open Grafana: https://jenineferderas.grafana.net
+2. Navigate to: Configuration â†’ Data Sources â†’ Supabase PostgreSQL
 3. Click "Test" button
-4. Expected: ✅ "Data source is working"
+4. Expected: âœ… "Data source is working"
 
 ### 3. Test n8n Workflow
 
@@ -279,7 +279,7 @@ Expected output:
 
 ---
 
-## 🛠️ Troubleshooting
+## ðŸ› ï¸ Troubleshooting
 
 ### Issue: Grafana can't connect to Supabase
 
@@ -298,7 +298,7 @@ Expected output:
 
 **Solution:**
 
-1. Regenerate Supabase keys: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/settings/api
+1. Regenerate Supabase keys: https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/settings/api
 2. Update `n8n/.env` with new `SUPABASE_ANON_KEY`
 3. Restart n8n: `docker-compose restart n8n`
 
@@ -333,16 +333,16 @@ docker-compose up -d
 
 ---
 
-## 📚 Additional Resources
+## ðŸ“š Additional Resources
 
-- **Supabase Dashboard:** https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte
+- **Supabase Dashboard:** https://supabase.com/dashboard/project/sddviizcgheusvwqpthm
 - **Grafana Docs:** https://grafana.com/docs/
 - **n8n Docs:** https://docs.n8n.io/
 - **Azure Monitor:** https://learn.microsoft.com/azure/azure-monitor/
 
 ---
 
-## 🚨 Production Checklist
+## ðŸš¨ Production Checklist
 
 Before deploying to production:
 

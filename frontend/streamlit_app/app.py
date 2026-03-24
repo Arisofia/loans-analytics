@@ -268,7 +268,7 @@ global_api_kpi_snapshot, global_api_snapshot_month, global_is_api_source = load_
 with st.expander('🔗 Dashboard Links & Strategic Reporting', expanded=True):
     deployed_dashboard_url = os.getenv('DASHBOARD_PUBLIC_URL', 'https://abaco-dashboard-app.kindocean-8ac70092.spaincentral.azurecontainerapps.io')
     dashboard_local_url = os.getenv('DASHBOARD_URL', 'http://localhost:8501')
-    grafana_local_url = os.getenv('GRAFANA_URL', 'http://localhost:3001/dashboards')
+    grafana_local_url = os.getenv('GRAFANA_URL', 'https://jenineferderas.grafana.net/dashboards')
     st.markdown(f'- **Streamlit (Local):** {dashboard_local_url}')
     st.markdown(f'- **Grafana (Local):** {grafana_local_url}')
     st.markdown(f'- **Streamlit (Deployed):** {deployed_dashboard_url}')
