@@ -210,11 +210,15 @@ jobs:
 
       - name: Install Gitleaks
         run: |
+          mkdir -p "$HOME/.local/bin"
           curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
             -o /tmp/gitleaks.tar.gz
-          tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks
-          chmod +x /usr/local/bin/gitleaks
-          gitleaks version
+          tar -xzf /tmp/gitleaks.tar.gz -C "$HOME/.local/bin" gitleaks
+          chmod +x "$HOME/.local/bin/gitleaks"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Gitleaks
+        run: gitleaks version
 
       - name: Run Gitleaks scan
         run: |
