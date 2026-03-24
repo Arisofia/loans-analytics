@@ -208,20 +208,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.22"
-          cache: false
-
-      - name: Install Gitleaks via Go
+      - name: Install Gitleaks
         run: |
-          go install "github.com/gitleaks/gitleaks/v8@v${GITLEAKS_VERSION}"
-          echo "GITLEAKS=$(go env GOPATH)/bin/gitleaks" >> "$GITHUB_ENV"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
 
       - name: Run Gitleaks scan
         run: |
-          "$GITLEAKS" version
-          "$GITLEAKS" dir \
+          gitleaks dir \
             --source . \
             --config .gitleaks.toml \
             --report-format json \
@@ -231,7 +226,7 @@ jobs:
       - name: Generate Gitleaks SARIF report
         if: always()
         run: |
-          "$GITLEAKS" dir \
+          gitleaks dir \
             --source . \
             --config .gitleaks.toml \
             --report-format sarif \
