@@ -40,43 +40,55 @@ class TransformationPhase:
     def execute(self, raw_data_path: Optional[Path]=None, df: Optional[pd.DataFrame]=None, run_dir: Optional[Path]=None) -> Dict[str, Any]:
         logger.info('Starting Phase 2: Transformation')
         try:
-            if df is None and raw_data_path and raw_data_path.exists():
-                df = pd.read_parquet(raw_data_path)
-            elif df is None:
-                raise ValueError('No data provided for transformation')
-            initial_rows = len(df)
-            transformation_metrics: Dict[str, Any] = {}
-            df = self._normalize_column_names(df)
-            df = self._map_canonical_semantic_layer(df)
-            df, structural_filter_metrics = self._drop_structurally_empty_rows(df)
-            transformation_metrics['structural_row_filter'] = structural_filter_metrics
-            df, control_metrics = self._derive_control_mora_fields(df)
-            transformation_metrics['control_derivations'] = control_metrics
-            df = self._collapse_duplicate_columns(df)
-            df, null_metrics = self._handle_nulls(df)
-            transformation_metrics['null_handling'] = null_metrics
-            df, type_metrics = self._normalize_types(df)
-            transformation_metrics['type_normalization'] = type_metrics
-            df, rule_metrics = self._apply_business_rules(df)
-            transformation_metrics['business_rules'] = rule_metrics
-            df, risk_state_metrics = self._derive_canonical_risk_state(df)
-            transformation_metrics['canonical_risk_state'] = risk_state_metrics
-            df, outlier_metrics = self._detect_outliers(df)
-            transformation_metrics['outlier_detection'] = outlier_metrics
-            df, integrity_metrics = self._check_referential_integrity(df)
-            transformation_metrics['referential_integrity'] = integrity_metrics
-            if run_dir:
-                output_path = run_dir / 'clean_data.parquet'
-                df.to_parquet(output_path, index=False)
-                logger.info('Saved clean data to %s', output_path)
-            else:
-                output_path = None
-            results = {'status': 'success', 'initial_rows': initial_rows, 'final_rows': len(df), 'rows_removed': initial_rows - len(df), 'columns': len(df.columns), 'output_path': str(output_path) if output_path else None, 'transformation_metrics': transformation_metrics, 'timestamp': datetime.now().isoformat()}
-            logger.info('Transformation completed: %d → %d rows', initial_rows, len(df))
-            return results
+            return self._execute_transformation(raw_data_path=raw_data_path, df=df, run_dir=run_dir)
         except Exception as e:
             logger.error('Transformation failed: %s', str(e), exc_info=True)
             raise ValueError(f'CRITICAL: Transformation phase failed: {e}') from e
+
+    def _execute_transformation(self, raw_data_path: Optional[Path], df: Optional[pd.DataFrame], run_dir: Optional[Path]) -> Dict[str, Any]:
+        df = self._resolve_input_dataframe(raw_data_path=raw_data_path, df=df)
+        initial_rows = len(df)
+        df, transformation_metrics = self._run_transformation_pipeline(df)
+        output_path = None
+        if run_dir:
+            output_path = run_dir / 'clean_data.parquet'
+            df.to_parquet(output_path, index=False)
+            logger.info('Saved clean data to %s', output_path)
+        results = {'status': 'success', 'initial_rows': initial_rows, 'final_rows': len(df), 'rows_removed': initial_rows - len(df), 'columns': len(df.columns), 'output_path': str(output_path) if output_path else None, 'transformation_metrics': transformation_metrics, 'timestamp': datetime.now().isoformat()}
+        logger.info('Transformation completed: %d → %d rows', initial_rows, len(df))
+        return results
+
+    def _resolve_input_dataframe(self, raw_data_path: Optional[Path], df: Optional[pd.DataFrame]) -> pd.DataFrame:
+        if df is not None:
+            return df
+        if not raw_data_path:
+            raise ValueError('No data provided for transformation')
+        if not raw_data_path.exists():
+            raise ValueError('No data provided for transformation')
+        return pd.read_parquet(raw_data_path)
+
+    def _run_transformation_pipeline(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        transformation_metrics: Dict[str, Any] = {}
+        df = self._normalize_column_names(df)
+        df = self._map_canonical_semantic_layer(df)
+        df, structural_filter_metrics = self._drop_structurally_empty_rows(df)
+        transformation_metrics['structural_row_filter'] = structural_filter_metrics
+        df, control_metrics = self._derive_control_mora_fields(df)
+        transformation_metrics['control_derivations'] = control_metrics
+        df = self._collapse_duplicate_columns(df)
+        df, null_metrics = self._handle_nulls(df)
+        transformation_metrics['null_handling'] = null_metrics
+        df, type_metrics = self._normalize_types(df)
+        transformation_metrics['type_normalization'] = type_metrics
+        df, rule_metrics = self._apply_business_rules(df)
+        transformation_metrics['business_rules'] = rule_metrics
+        df, risk_state_metrics = self._derive_canonical_risk_state(df)
+        transformation_metrics['canonical_risk_state'] = risk_state_metrics
+        df, outlier_metrics = self._detect_outliers(df)
+        transformation_metrics['outlier_detection'] = outlier_metrics
+        df, integrity_metrics = self._check_referential_integrity(df)
+        transformation_metrics['referential_integrity'] = integrity_metrics
+        return (df, transformation_metrics)
 
     def _drop_structurally_empty_rows(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         key_columns = [column for column in self.STRUCTURAL_KEY_COLUMNS if column in df.columns]
@@ -87,8 +99,7 @@ class TransformationPhase:
         normalized = probe.apply(lambda col: col.str.strip().str.lower())
         missing_mask = normalized.isna() | normalized.isin(self.STRUCTURAL_EMPTY_MARKERS)
         structural_empty_mask = missing_mask.all(axis=1)
-        rows_removed = int(structural_empty_mask.sum())
-        if rows_removed == 0:
+        if (rows_removed := int(structural_empty_mask.sum())) == 0:
             return (df, {'rows_removed': 0, 'basis': 'key_columns' if key_columns else 'all_columns'})
         logger.warning('Removed %d structurally empty rows before null handling', rows_removed)
         cleaned_df = df.loc[~structural_empty_mask].reset_index(drop=True)
@@ -97,8 +108,7 @@ class TransformationPhase:
 
     def _normalize_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
         column_mapping = {'days_past_due': 'dpd', 'dias_vencido': 'dpd', 'mora_en_dias': 'dpd', 'principal_amount': 'amount', 'current_status': 'status', 'loan_status': 'status', 'principal_balance': 'current_balance', 'loan_amount': 'amount', 'fechadesembolso': 'origination_date', 'fecha_de_desembolso': 'origination_date', 'fechapagoprogramado': 'due_date', 'fecha_vencimiento': 'due_date', 'fecha_de_vencimiento': 'due_date', 'fecha_de_pago': 'last_payment_date', 'fechacobro': 'last_payment_date', '_pagado': 'last_payment_amount', 'lineacredito': 'credit_line', 'cod_kam_hunter': 'kam_hunter', 'cod_kam_farmer': 'kam_farmer', 'asesoriadigital': 'advisory_channel', 'fechasolicitado': 'application_date', 'porcentaje_utilizado': 'utilization_pct', 'procede_a_cobrar': 'collections_eligible', 'definicion_m': 'delinquency_definition', 'rango_m': 'delinquency_bucket_raw', 'rango_de_la_linea': 'credit_line_range', 'ministerio': 'gov', 'ministry': 'gov', 'goes': 'government_sector', 'capitalcobrado': 'capital_collected', 'montototalabonado': 'total_payment_received', 'mdscposteado': 'mdsc_posted', 'diasnegociacion': 'negotiation_days', 'dias_en_pagar': 'days_to_pay', 'numerodesembolsos': 'disbursement_count', 'valoraprobado': 'approved_value', 'fecha_actual': 'as_of_date', 'term_max': 'term_months', 'term_ponderado': 'term_months', 'apr__term__ponderado': 'term_months', 'ingreso_total_por_desembolso': 'tpv', 'ingreso_pagadopendiente': 'tpv'}
-        rename_dict = {source: target for source, target in column_mapping.items() if source in df.columns and target not in df.columns}
-        if rename_dict:
+        if rename_dict := {source: target for source, target in column_mapping.items() if source in df.columns and target not in df.columns}:
             df = df.rename(columns=rename_dict)
             logger.info('Renamed columns: %s', rename_dict)
         if 'loan_id' in df.columns and 'origination_date' in df.columns:
@@ -118,8 +128,7 @@ class TransformationPhase:
 
     def _map_canonical_semantic_layer(self, df: pd.DataFrame) -> pd.DataFrame:
         semantic_mapping: Dict[str, str] = {'application_date': 'approved_at', 'fecha_aprobacion': 'approved_at', 'approval_date': 'approved_at', 'origination_date': 'funded_at', 'disbursement_date': 'funded_at', 'fecha_desembolso': 'funded_at', 'total_scheduled': 'scheduled_amount', 'monto_programado': 'scheduled_amount', 'total_due': 'scheduled_amount', 'last_payment_amount': 'actual_payment_amount', 'total_payment_received': 'actual_payment_amount'}
-        rename_dict = {source: target for source, target in semantic_mapping.items() if source in df.columns and target not in df.columns}
-        if rename_dict:
+        if rename_dict := {source: target for source, target in semantic_mapping.items() if source in df.columns and target not in df.columns}:
             df = df.rename(columns=rename_dict)
             logger.info('Canonical semantic layer applied: %s', rename_dict)
         return df
@@ -441,18 +450,16 @@ class TransformationPhase:
         df, strategy_metrics = self._apply_null_strategy(df, null_columns)
         metrics.update(strategy_metrics)
         final_nulls = df.isnull().sum().sum()
-        metrics['final_total_nulls'] = int(final_nulls)
+        metrics['final_total_nulls'] = final_nulls
         return (df, metrics)
 
     def _create_null_metrics(self, total_nulls: int, null_columns: Dict[str, int]) -> Dict[str, Any]:
-        return {'initial_total_nulls': int(total_nulls), 'null_columns': null_columns, 'strategy_applied': self.null_strategy, 'columns_affected': list(null_columns.keys())}
+        return {'initial_total_nulls': total_nulls, 'null_columns': null_columns, 'strategy_applied': self.null_strategy, 'columns_affected': list(null_columns.keys())}
 
     def _apply_null_strategy(self, df: pd.DataFrame, null_columns: Dict[str, int]) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         strategy_handlers = {'drop': lambda: self._apply_drop_strategy(df), 'fill': lambda: self._apply_fill_strategy(df), 'smart': lambda: self._smart_null_handling(df, null_columns)}
         handler = strategy_handlers.get(self.null_strategy)
-        if handler:
-            return handler()
-        return (df, {})
+        return handler() if handler else (df, {})
 
     def _apply_drop_strategy(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         rows_before = len(df)
@@ -468,9 +475,11 @@ class TransformationPhase:
 
     def _fill_nulls_by_type(self, df: pd.DataFrame) -> pd.DataFrame:
         for col in df.columns:
-            if df[col].isnull().any() and pd.api.types.is_numeric_dtype(df[col]):
+            if not df[col].isnull().any():
+                continue
+            if pd.api.types.is_numeric_dtype(df[col]):
                 df[col] = df[col].fillna(self.fill_values.get('numeric', 0))
-            elif df[col].isnull().any():
+            else:
                 df[col] = df[col].fillna(self.fill_values.get('categorical', 'unknown'))
         return df
 
@@ -595,7 +604,6 @@ class TransformationPhase:
 
     def _automate_gov_identification(self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]) -> None:
         pagador_col = next((c for c in ('emisor', 'issuer_name', 'issuer') if c in df.columns), None)
-        goes_source = next((c for c in ('government_sector', 'goes') if c in df.columns), None)
         if not pagador_col:
             return
         for col in ['gov', 'industry']:
@@ -608,15 +616,14 @@ class TransformationPhase:
         gov_keywords = ['MINISTERIO', 'INSTITUTO', 'COMISION', 'PROCURADURIA', 'ALCALDIA', 'MUNICIPALIDAD', 'GOBIERNO', 'ASAMBLEA', 'CORTE', 'ORGANO', 'CONSEJO', 'FONDO', 'BANCO CENTRAL', 'FISCALIA', 'DEFENSORIA', 'UNIVERSIDAD', 'LOTERIA', 'VICEPRESIDENCIA', 'PRESIDENCIA', 'AUTORIDAD', 'SUPERINTENDENCIA', 'CENTRO NACIONAL', 'INSAFOR', 'INCAF', 'ANDA', 'SIGET', 'GOES']
         gov_pattern = '|'.join(gov_keywords)
         keyword_gov_mask = df[pagador_col].astype(str).str.upper().str.contains(gov_pattern, na=False)
-        existing_goes_mask = df[goes_source].astype(str).str.upper().str.strip() == 'GOES' if goes_source else pd.Series(False, index=df.index)
-        is_gov_mask = keyword_gov_mask | existing_goes_mask
-        industry_map = {'Retail': 'TIENDA|SUPERMERCADO|BOUTIQUE|COMERCIAL|ALMACEN|DISTRIBUIDORA|RETAIL|VENTA|ABARROTES', 'Services': 'SERVICIOS|CONSULTOR|SOLUCION|ASESORIA|LIMPIEZA|MANTENIMIENTO|SEGURIDAD|HOTEL|RESTAURANTE|GASTRONOMIA', 'Manufacturing': 'INDUSTRIA|FABRICA|MANUFACTURA|TEXTIL|ALIMENTO|PLASTICO|QUIMICA|METAL|PRODUCCION', 'Logistics': 'TRANSPORTE|LOGISTICA|CARGA|ADUANA|MUDANZA|ENVIO|COURIER|PUERTO', 'Tech': 'TECNOLOGIA|SOFTWARE|SISTEMA|DIGITAL|IT|INFORMATICA|DESARROLLO', 'Financial': 'BANCO|FINANCIER|SEGURO|CREDITO|COOPERATIVA|AHORRO|BOLSA', 'Construction': 'CONSTRUCCION|INGENIERIA|EDIFIC|OBRA|PROYECTO|ARQUITECT', 'Healthcare': 'HOSPITAL|CLINICA|MEDIC|SALUD|FARMACIA|DIAGNOSTICO|LABORATORIO'}
+        is_gov_mask = keyword_gov_mask | (df[goes_source].astype(str).str.upper().str.strip() == 'GOES' if (goes_source := next((c for c in ('government_sector', 'goes') if c in df.columns), None)) else pd.Series(False, index=df.index))
         needs_gov_name = is_gov_mask & df['gov'].astype(str).str.lower().isin(['', 'no', 'nan', 'none', 'missing'])
         needs_industry = df['industry'].astype(str).str.lower().isin(['', 'other', 'nan', 'none', 'missing', 'unknown'])
         df.loc[needs_gov_name, 'gov'] = df.loc[needs_gov_name, pagador_col]
         df.loc[is_gov_mask, 'government_sector'] = 'GOES'
         df.loc[is_gov_mask, 'industry'] = 'Government'
-        if not is_gov_mask.all():
+        if (~is_gov_mask).any():
+            industry_map = {'Retail': 'TIENDA|SUPERMERCADO|BOUTIQUE|COMERCIAL|ALMACEN|DISTRIBUIDORA|RETAIL|VENTA|ABARROTES', 'Services': 'SERVICIOS|CONSULTOR|SOLUCION|ASESORIA|LIMPIEZA|MANTENIMIENTO|SEGURIDAD|HOTEL|RESTAURANTE|GASTRONOMIA', 'Manufacturing': 'INDUSTRIA|FABRICA|MANUFACTURA|TEXTIL|ALIMENTO|PLASTICO|QUIMICA|METAL|PRODUCCION', 'Logistics': 'TRANSPORTE|LOGISTICA|CARGA|ADUANA|MUDANZA|ENVIO|COURIER|PUERTO', 'Tech': 'TECNOLOGIA|SOFTWARE|SISTEMA|DIGITAL|IT|INFORMATICA|DESARROLLO', 'Financial': 'BANCO|FINANCIER|SEGURO|CREDITO|COOPERATIVA|AHORRO|BOLSA', 'Construction': 'CONSTRUCCION|INGENIERIA|EDIFIC|OBRA|PROYECTO|ARQUITECT', 'Healthcare': 'HOSPITAL|CLINICA|MEDIC|SALUD|FARMACIA|DIAGNOSTICO|LABORATORIO'}
             for industry, pattern in industry_map.items():
                 match_mask = ~is_gov_mask & needs_industry & df[pagador_col].astype(str).str.upper().str.contains(pattern, na=False)
                 df.loc[match_mask, 'industry'] = industry
@@ -739,54 +746,43 @@ class TransformationPhase:
 
     def _assign_dpd_bucket(self, dpd: float) -> str:
         if pd.isna(dpd) or dpd < 0:
-            bucket = 'unknown'
-        elif dpd == 0:
-            bucket = 'current'
-        elif dpd < 30:
-            bucket = '1-29'
-        elif dpd < 60:
-            bucket = '30-59'
-        elif dpd < 90:
-            bucket = '60-89'
-        elif dpd < 180:
-            bucket = '90-179'
-        else:
-            bucket = '180+'
-        return bucket
+            return 'unknown'
+        if dpd == 0:
+            return 'current'
+        if dpd < 30:
+            return '1-29'
+        if dpd < 60:
+            return '30-59'
+        if dpd < 90:
+            return '60-89'
+        return '90-179' if dpd < 180 else '180+'
 
     def _calculate_risk_category(self, row: pd.Series) -> str:
         status = row.get('status', '')
         dpd = row.get('dpd', 0)
         if status == 'defaulted':
-            category = 'critical'
-        elif status == 'delinquent' or (pd.notna(dpd) and dpd >= 90):
-            category = 'high'
-        elif pd.notna(dpd) and dpd >= 30:
-            category = 'medium'
-        elif status == 'active' and (pd.isna(dpd) or dpd < 30):
-            category = 'low'
-        else:
-            category = 'unknown'
-        return category
+            return 'critical'
+        if status == 'delinquent' or (pd.notna(dpd) and dpd >= 90):
+            return 'high'
+        if pd.notna(dpd) and dpd >= 30:
+            return 'medium'
+        if status == 'active' and (pd.isna(dpd) or dpd < 30):
+            return 'low'
+        return 'unknown'
 
     def _assign_amount_tier(self, amount: float) -> str:
         if pd.isna(amount) or amount <= 0:
-            tier = 'invalid'
-        elif amount < 5000:
-            tier = 'micro'
-        elif amount < 25000:
-            tier = 'small'
-        elif amount < 100000:
-            tier = 'medium'
-        elif amount < 500000:
-            tier = 'large'
-        else:
-            tier = 'jumbo'
-        return tier
+            return 'invalid'
+        if amount < 5000:
+            return 'micro'
+        if amount < 25000:
+            return 'small'
+        if amount < 100000:
+            return 'medium'
+        return 'large' if amount < 500000 else 'jumbo'
 
     def _apply_custom_rule(self, df: pd.DataFrame, rule: Dict[str, Any]) -> Tuple[pd.DataFrame, bool]:
-        rule_type = rule.get('type')
-        if rule_type == 'column_mapping':
+        if (rule_type := rule.get('type')) == 'column_mapping':
             return self._apply_column_mapping_rule(df, rule)
         if rule_type == 'derived_field':
             return self._apply_derived_field_rule(df, rule)
@@ -803,15 +799,12 @@ class TransformationPhase:
         return (df, False)
 
     def _apply_derived_field_rule(self, df: pd.DataFrame, rule: Dict[str, Any]) -> Tuple[pd.DataFrame, bool]:
-        target_col = rule.get('target_column')
-        expression = rule.get('expression', '')
-        if not expression or not target_col:
+        if not (target_col := rule.get('target_column')) or not (expression := rule.get('expression', '')):
             return (df, False)
         if not self._is_safe_expression(expression):
             return (df, False)
         tokens = re.findall('[A-Za-z_]\\w*', expression)
-        pii_cols = [t for t in tokens if t in df.columns and self._PII_COLUMN_RE.search(t)]
-        if pii_cols:
+        if pii_cols := [t for t in tokens if t in df.columns and self._PII_COLUMN_RE.search(t)]:
             logger.warning("Derived field expression '%s' references potential PII column(s) %s — skipping", expression, pii_cols)
             return (df, False)
         try:
@@ -828,7 +821,7 @@ class TransformationPhase:
 
     def _check_allowed_chars(self, expression: str) -> bool:
         allowed_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). ')
-        if not all((c in allowed_chars for c in expression)):
+        if any((c not in allowed_chars for c in expression)):
             logger.warning("Unsafe characters in expression '%s', skipping rule", expression)
             return False
         return True
@@ -836,10 +829,10 @@ class TransformationPhase:
     def _check_dangerous_patterns(self, expression: str) -> bool:
         dangerous_patterns = ['import', 'exec', 'eval', 'compile', '__import__', '__builtins__', '__class__', '__getattr__', '__setattr__', 'open', 'file']
         expression_lower = expression.lower()
-        if any((pattern in expression_lower for pattern in dangerous_patterns)):
+        has_dangerous_pattern = any((pattern in expression_lower for pattern in dangerous_patterns))
+        if has_dangerous_pattern:
             logger.warning("Dangerous pattern detected in expression '%s', skipping rule", expression)
-            return True
-        return False
+        return has_dangerous_pattern
 
     def _detect_outliers(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         logger.info('Detecting outliers (method: %s)', self.outlier_method)
@@ -901,11 +894,11 @@ class TransformationPhase:
         self._check_foreign_key_integrity(df, integrity_issues)
         self._check_date_consistency(df, integrity_issues)
         self._check_positive_amounts(df, integrity_issues)
-        metrics = {'checks_performed': 4, 'issues_found': len(integrity_issues), 'issues': integrity_issues, 'integrity_status': 'pass' if len(integrity_issues) == 0 else 'warning'}
-        if integrity_issues:
-            logger.warning('Found %d referential integrity issues', len(integrity_issues))
-        else:
+        metrics = {'checks_performed': 4, 'issues_found': len(integrity_issues), 'issues': integrity_issues, 'integrity_status': 'warning' if integrity_issues else 'pass'}
+        if not integrity_issues:
             logger.info('Referential integrity checks passed')
+        else:
+            logger.warning('Found %d referential integrity issues', len(integrity_issues))
         return (df, metrics)
 
     def _check_primary_key_integrity(self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]) -> None:
