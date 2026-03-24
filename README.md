@@ -58,13 +58,7 @@ make test
 make e2e
 ```
 
-3. Validate repository structure
-
-```bash
-python3 scripts/maintenance/validate_structure.py
-```
-
-4. Run pipeline with real input
+3. Run pipeline with real input
 
 ```bash
 # Full execution
@@ -119,12 +113,11 @@ bash scripts/monitoring/auto_start_monitoring.sh
 ### Scripts (canonical paths)
 
 - `scripts/data/run_data_pipeline.py`
-- `scripts/maintenance/validate_structure.py`
-- `scripts/maintenance/abaco_infra_validator.py`
-- `scripts/maintenance/repo_maintenance.sh`
+- `scripts/maintenance/generate_service_status_report.py`
+- `scripts/maintenance/validate_migration_index.py`
 - `scripts/monitoring/auto_start_monitoring.sh`
-- `scripts/performance/profile_kpi_engine.py`
-- `scripts/performance/benchmark_kpi_engine_scale.py`
+- `scripts/ml/train_default_risk_model.py`
+- `scripts/ml/train_scorecard.py`
 
 ### Apps and analytics
 
@@ -156,8 +149,7 @@ Pipeline runs are written under `logs/runs/<run_id>/`, including:
 Repository and pipeline checks:
 
 ```bash
-python3 scripts/maintenance/validate_structure.py
-python3 scripts/maintenance/abaco_infra_validator.py -v
+python3 scripts/maintenance/validate_migration_index.py
 ```
 
 Quality checks:

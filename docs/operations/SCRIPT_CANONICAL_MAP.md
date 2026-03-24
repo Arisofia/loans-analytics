@@ -5,8 +5,8 @@ Single source of truth for script execution paths. Use only these commands.
 ## Data Pipeline
 
 - Run pipeline: `python3 scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv`
-- Validate structure: `python3 scripts/maintenance/validate_structure.py`
 - Analyze real input files: `python3 scripts/data/analyze_real_data.py --data-dir ~/Downloads`
+- Local monthly ETL: `python3 scripts/data/local_monthly_etl.py`
 
 ## Zero-Cost ETL (DuckDB + Parquet — replaces Azure)
 
@@ -32,22 +32,29 @@ Single source of truth for script execution paths. Use only these commands.
 
 ## Maintenance
 
-- Repo maintenance: `./scripts/maintenance/repo_maintenance.sh --mode=standard`
-- Comprehensive cleanup (integrations/caches/orphans): `./scripts/maintenance/comprehensive_cleanup.sh --dry-run`
-- Repo doctor: `./scripts/maintenance/repo-doctor.sh`
-- Cleanup old workflow runs: `./scripts/maintenance/comprehensive_cleanup.sh --cleanup-workflow-runs --keep 25`
 - Service status report: `python3 scripts/maintenance/generate_service_status_report.py`
-- Infra validator (Task 1-5): `python3 scripts/maintenance/abaco_infra_validator.py --apply -v`
+- Validate migration index: `python3 scripts/maintenance/validate_migration_index.py`
+
+## ML Training
+
+- Train default risk model: `python3 scripts/ml/train_default_risk_model.py`
+- Train WoE/IV scorecard: `python3 scripts/ml/train_scorecard.py`
+- Retrain pipeline: `python3 scripts/ml/retrain_pipeline.py`
 
 ## Monitoring
 
 - Auto-start monitoring stack: `bash scripts/monitoring/auto_start_monitoring.sh`
 - Monitoring health check: `bash scripts/monitoring/health_check_monitoring.sh`
+- Harden RLS on sensitive tables: `DATABASE_URL=... bash scripts/monitoring/harden_rls_sensitive_tables.sh`
+
+## Validation
+
+- Validate migration order: `python3 scripts/validation/validate_migration_order.py`
+- Validate port consistency: `python3 scripts/validation/validate_port_consistency.py`
+- Validate doc links: `python3 tools/validate_doc_links.py`
 
 ## Performance
 
-- KPI profiler (cProfile, real/synthetic): `python3 scripts/performance/profile_kpi_engine.py --rows 1000000`
-- KPI scale benchmark (pandas/polars): `python3 scripts/performance/benchmark_kpi_engine_scale.py --rows 100000,500000,1000000 --mode both`
 - API load test (Locust): `locust -f tests/load/locustfile.py --headless -u 30 -r 5 -t 5m --host http://localhost:8000`
 
 ## Rule

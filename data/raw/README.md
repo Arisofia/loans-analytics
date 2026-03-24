@@ -25,9 +25,6 @@ Keep credentials out of git (`credentials/`).
 ## Unified run
 
 ```bash
-python scripts/data/run_unified_analysis.py \
-  --data-dir data/raw \
-  --output-dir exports/unified \
-  --cutoff 2026-03-13 \
-  --control-mora-input gsheets://INTERMEDIA
+python scripts/data/run_data_pipeline.py \
+  --input data/raw/loan_data.csv
 ```

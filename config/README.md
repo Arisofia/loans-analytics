@@ -130,7 +130,7 @@ sudo systemctl start grafana-server
 
 ```bash
 # From project root
-python scripts/metrics_exporter.py
+python scripts/monitoring/metrics_exporter.py
 
 # Access metrics
 curl http://localhost:8000/metrics
@@ -295,7 +295,7 @@ wget -O- --user=service_role --password="$SUPABASE_SECRET_API_KEY" \
 curl http://localhost:8000/health
 
 # 2. Start it if not
-python scripts/metrics_exporter.py
+python scripts/monitoring/metrics_exporter.py
 
 # 3. Check if metrics are exposed
 curl http://localhost:8000/metrics | grep pipeline_runs_total
@@ -330,7 +330,7 @@ curl http://localhost:9093/api/v1/alerts
 - **Full Integration Guide**: `../docs/SUPABASE_METRICS_INTEGRATION.md`
 - **5-Min Quick Start**: `../docs/MONITORING_QUICK_START.md`
 - **Analysis (ES)**: `../docs/METRICSAPI_ANALYSIS_ES.md`
-- **Metrics Exporter**: `../scripts/metrics_exporter.py`
+- **Metrics Exporter**: `../scripts/monitoring/metrics_exporter.py`
 - **Connection Pool**: `../python/supabase_pool.py`
 
 ---

@@ -22,7 +22,6 @@ All 7 scripts with user-provided path inputs now use `validate_path()`:
 
 | Script                              | Lines Protected | Validation                              |
 | ----------------------------------- | --------------- | --------------------------------------- |
-| `store_metrics.py`                  | 30, 53, 67      | Metrics file, storage dir, output paths |
 | `compare_costs.py`                  | 53              | Report file path                        |
 | `compare_performance.py`            | 51              | Metrics file path                       |
 | `generate_performance_dashboard.py` | 60, 189, 190    | Metrics file, output paths              |
@@ -85,13 +84,10 @@ This ensures **any** path traversal attempt (using `../`, symlinks, or absolute 
 
 ## Snyk Findings Status
 
-### All 10 Findings: FALSE POSITIVES
+### All 7 Active Findings: FALSE POSITIVES
 
 | Finding ID  | File                              | Line | Status       |
 | ----------- | --------------------------------- | ---- | ------------ |
-| f6be9097... | store_metrics.py                  | 30   | ✅ Validated |
-| f1572f76... | store_metrics.py                  | 53   | ✅ Validated |
-| 1c5826a5... | store_metrics.py                  | 67   | ✅ Validated |
 | 614452fc... | compare_costs.py                  | 53   | ✅ Validated |
 | 3abe2bc2... | compare_performance.py            | 51   | ✅ Validated |
 | 8b4beff2... | generate_performance_dashboard.py | 60   | ✅ Validated |

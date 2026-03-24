@@ -13,7 +13,6 @@ Scripts for monitoring, metrics collection, and dashboard management.
 **Metrics:**
 
 - `metrics_exporter.py` - Export metrics to Prometheus format
-- `store_metrics.py` - Store metrics in database
 
 **Dashboards:**
 
