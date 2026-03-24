@@ -202,22 +202,21 @@ jobs:
     permissions:
       contents: read
       security-events: write
+    env:
+      GITLEAKS_VERSION: "8.24.2"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Gitleaks CLI
+      - name: Install Gitleaks via Go
         run: |
-          set -euo pipefail
-          GITLEAKS_VERSION="8.24.2"
-          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
-          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
-          sudo install /tmp/gitleaks /usr/local/bin/gitleaks
-          gitleaks version
+          go install "github.com/gitleaks/gitleaks/v8@v${GITLEAKS_VERSION}"
+          echo "GITLEAKS=$(go env GOPATH)/bin/gitleaks" >> "$GITHUB_ENV"
 
       - name: Run Gitleaks scan
         run: |
-          gitleaks dir \
+          "$GITLEAKS" version
+          "$GITLEAKS" dir \
             --source . \
             --config .gitleaks.toml \
             --report-format json \
@@ -227,22 +226,12 @@ jobs:
       - name: Generate Gitleaks SARIF report
         if: always()
         run: |
-          gitleaks dir \
+          "$GITLEAKS" dir \
             --source . \
             --config .gitleaks.toml \
             --report-format sarif \
             --report-path gitleaks-report.sarif \
             --exit-code 0
-
-      - name: Output Gitleaks results
-        if: always()
-        run: |
-          echo "=== Gitleaks Scan Results ==="
-          if [ -f gitleaks-report.json ]; then
-            echo "✅ No secrets detected"
-          else
-            echo "❌ Secrets detected - see action logs for details"
-          fi
 
       - name: Upload Gitleaks report
         if: always()
