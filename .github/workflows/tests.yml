@@ -65,40 +65,38 @@ jobs:
         continue-on-error: true
         run: |
           pytest tests/ -v --tb=short -m "not integration and not e2e" \
-            --junit-xml=test-results.xml
+            --no-cov --junit-xml=test-results.xml
 
-      - name: Publish test failure summary
+      - name: Diagnose test results
         if: always() && steps.pytest.outcome == 'failure'
         run: |
-          echo "## Failed Tests" >> "$GITHUB_STEP_SUMMARY"
-          python -c "
-          import xml.etree.ElementTree as ET, sys
-          tree = ET.parse('test-results.xml')
-          failed = []
-          for tc in tree.iter('testcase'):
-              if tc.find('failure') is not None:
-                  name = tc.get('classname','') + '::' + tc.get('name','')
-                  msg = (tc.find('failure').get('message','') or '')[:200]
-                  failed.append((name, msg))
-          if not failed:
-              print('No individual test failures found in XML.')
-              sys.exit(0)
-          for name, msg in failed:
-              print(f'- **{name}**')
-              print(f'  \`{msg}\`')
-              print()
-          " >> "\$GITHUB_STEP_SUMMARY"
-          # Also emit as GitHub annotations (visible via API)
-          python -c "
+          echo "::error title=pytest exited with failure::pytest outcome=${{ steps.pytest.outcome }}"
+          if [ ! -f test-results.xml ]; then
+            echo "::error title=No JUnit XML::test-results.xml was not generated"
+            exit 0
+          fi
+          # Extract suite summary and individual failures/errors
+          python3 << 'PYEOF'
           import xml.etree.ElementTree as ET
           tree = ET.parse('test-results.xml')
-          for tc in tree.iter('testcase'):
-              f = tc.find('failure')
-              if f is not None:
-                  name = tc.get('classname','') + '::' + tc.get('name','')
-                  msg = (f.get('message','') or f.text or '')[:200].replace('\n',' ')
-                  print(f'::error title=FAILED {name}::{msg}')
-          "
+          root = tree.getroot()
+          # Print suite-level summary
+          for ts in ([root] if root.tag == 'testsuite' else list(root.iter('testsuite'))):
+              summary = ', '.join(f'{k}={ts.get(k)}' for k in ['tests','failures','errors','skipped'] if ts.get(k))
+              print(f'::warning title=Test Suite Summary::{summary}')
+          # Print each failure and error
+          count = 0
+          for tc in root.iter('testcase'):
+              for child in tc:
+                  if child.tag in ('failure', 'error'):
+                      name = (tc.get('classname','') + '::' + tc.get('name','')).strip(':')
+                      msg = (child.get('message','') or child.text or 'no details')[:300]
+                      msg = msg.replace('\n',' ').replace('\r','')
+                      print(f'::error title={child.tag.upper()} {name}::{msg}')
+                      count += 1
+          if count == 0:
+              print('::warning title=No test failures in XML::All tests passed in JUnit XML but pytest exited non-zero. Likely a coverage or plugin error.')
+          PYEOF
 
       - name: Upload test results
         if: always()
