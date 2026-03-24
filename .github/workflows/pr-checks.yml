@@ -14,16 +14,32 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
+
+      - name: Set up Python 3.12 (no external action)
+        run: |
+          if command -v python3.12 >/dev/null 2>&1; then
+            PYTHON_BIN="python3.12"
+          elif command -v python3 >/dev/null 2>&1; then
+            PYTHON_BIN="python3"
+          else
+            echo "❌ Python is not available on runner"
+            exit 1
+          fi
+          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
+          "$PYTHON_BIN" --version
 
       - name: Install QA tools
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip
+          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
 
       - name: Run linting
         run: |
@@ -32,7 +48,7 @@ jobs:
 
       - name: Run mypy type checking (strict mode)
         run: |
-          python -m mypy --no-incremental
+          "$PYTHON_BIN" -m mypy --no-incremental
         continue-on-error: false
 
       - name: Run tests
@@ -46,33 +62,37 @@ jobs:
 
       - name: Validate port consistency
         run: |
-          python scripts/validation/validate_port_consistency.py
+          "$PYTHON_BIN" scripts/validation/validate_port_consistency.py
 
       - name: Validate migration order determinism
         run: |
-          python scripts/validation/validate_migration_order.py
+          "$PYTHON_BIN" scripts/validation/validate_migration_order.py
 
       - name: Validate documentation links
         run: |
-          python tools/validate_doc_links.py
+          "$PYTHON_BIN" tools/validate_doc_links.py
 
       - name: Comment QA result on PR
         if: always() && github.actor != 'dependabot[bot]'
-        uses: actions/github-script@v7
         env:
           JOB_STATUS: ${{ job.status }}
-        with:
-          script: |
-            const status = process.env.JOB_STATUS || "unknown";
-            const messageByStatus = {
-              success: "✅ Basic QA checks passed.",
-              failure: "❌ Basic QA checks failed.",
-              cancelled: "⚠️ Basic QA checks were cancelled."
-            };
-            const summary = messageByStatus[status] || `ℹ️ Basic QA checks finished with status: ${status}.`;
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: `${summary} Review workflow logs for details.`
-            })
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          STATUS="${JOB_STATUS:-unknown}"
+          case "$STATUS" in
+            success) SUMMARY="✅ Basic QA checks passed." ;;
+            failure) SUMMARY="❌ Basic QA checks failed." ;;
+            cancelled) SUMMARY="⚠️ Basic QA checks were cancelled." ;;
+            *) SUMMARY="ℹ️ Basic QA checks finished with status: $STATUS." ;;
+          esac
+
+          ISSUE_NUMBER="${{ github.event.pull_request.number }}"
+          API_URL="https://api.github.com/repos/${{ github.repository }}/issues/${ISSUE_NUMBER}/comments"
+          BODY="${SUMMARY} Review workflow logs for details."
+
+          jq -n --arg body "$BODY" '{body: $body}' > comment.json
+          curl -fsS -X POST "$API_URL" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            --data @comment.json
