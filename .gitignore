@@ -64,6 +64,7 @@ logs/
 data/metrics/
 data/archives/
 data/agent_outputs/
+data/features/
 data/usage_metrics/
 data/samples/*.csv
 data/raw/*.csv
