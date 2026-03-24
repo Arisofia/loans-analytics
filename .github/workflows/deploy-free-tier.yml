@@ -126,8 +126,7 @@ jobs:
     needs: build-and-push
     if: |
       github.event.inputs.target == 'render' ||
-      github.event.inputs.target == 'all' ||
-      github.event_name == 'push'
+      github.event.inputs.target == 'all'
     env:
       ALL_SECRETS_JSON: ${{ toJson(secrets) }}
     steps:

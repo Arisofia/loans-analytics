@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements-dev.txt
+          pip install -r requirements.lock.txt
 
       - name: Check Supabase secrets availability
         id: check-secrets
@@ -82,7 +82,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements-dev.txt
+          pip install -r requirements.lock.txt
 
       - name: Run integration tests
         env:
@@ -124,7 +124,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements-dev.txt
+          pip install -r requirements.lock.txt
 
       - name: Run multi-agent tests
         run: pytest tests/agents/ -v -k "test_" --tb=short
@@ -149,7 +149,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements-dev.txt
+          pip install -r requirements.lock.txt
 
       - name: Install Playwright browser
         run: python -m playwright install --with-deps chromium
@@ -232,7 +232,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements-dev.txt
+          pip install -r requirements.lock.txt
 
       - name: Pipeline config validation
         run: python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --mode validate

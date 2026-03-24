@@ -16,11 +16,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the maintained runtime requirements to leverage Docker cache.
-COPY requirements.txt ./requirements.txt
+# Copy the pre-resolved production lock file to leverage Docker cache.
+COPY requirements.prod.lock.txt ./requirements.txt
 
 # Create wheels for all dependencies
-RUN pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt
+RUN pip wheel --prefer-binary --no-cache-dir --wheel-dir /app/wheels -r requirements.txt
 
 
 # Stage 2: Runtime

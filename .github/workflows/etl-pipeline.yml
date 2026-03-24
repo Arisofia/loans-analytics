@@ -153,8 +153,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt duckdb rapidfuzz pyarrow
-          pip install -r requirements-dev.txt
+          pip install -r requirements.lock.txt
 
       - name: Run tests
         run: make test
@@ -186,7 +185,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.prod.lock.txt
 
       - name: Run pipeline
         env:
@@ -266,7 +265,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt duckdb rapidfuzz pyarrow
+          pip install -r requirements.prod.lock.txt duckdb rapidfuzz
 
       - name: Initialize DuckDB star schema
         run: python scripts/data/init_duckdb_schema.py
