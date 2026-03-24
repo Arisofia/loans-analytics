@@ -858,10 +858,10 @@ class TransformationPhase:
         any_outlier_mask = pd.Series(False, index=df.index, dtype=bool)
         for col in check_cols:
             outliers = self._detect_outliers_iqr(df[col]) if self.outlier_method == 'iqr' else self._detect_outliers_zscore(df[col])
+            outlier_flags[f'{col}_outlier'] = outliers.fillna(False).astype(bool)
             outlier_count = outliers.sum()
             if outlier_count > 0:
                 outlier_counts[col] = int(outlier_count)
-                outlier_flags[f'{col}_outlier'] = outliers.fillna(False).astype(bool)
                 any_outlier_mask = any_outlier_mask | outlier_flags[f'{col}_outlier']
                 logger.info("Found %d outliers in column '%s'", int(outlier_count), col)
         if outlier_flags:
