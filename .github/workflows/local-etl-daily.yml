@@ -28,7 +28,13 @@ jobs:
       snapshot_month: ${{ steps.date.outputs.snapshot_month }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
       - name: Set snapshot month
         id: date
@@ -69,22 +75,35 @@ jobs:
       PYTHON_VERSION: "3.12"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
       - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
+        run: |
+          if command -v python3.12 >/dev/null 2>&1; then
+            PYTHON_BIN="python3.12"
+          elif command -v python3 >/dev/null 2>&1; then
+            PYTHON_BIN="python3"
+          else
+            echo "❌ Python is not available on runner"
+            exit 1
+          fi
+          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
+          "$PYTHON_BIN" --version
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.prod.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip
+          "$PYTHON_BIN" -m pip install -r requirements.prod.lock.txt
 
       - name: Run local ETL
         run: |
-          python scripts/data/local_monthly_etl.py \
+          "$PYTHON_BIN" scripts/data/local_monthly_etl.py \
             --loan-tape-dir "${{ github.event.inputs.loan_tape_dir || 'data/raw' }}" \
             --control-mora "${{ github.event.inputs.control_mora_path }}" \
             --snapshot-month "${{ needs.preflight.outputs.snapshot_month }}" \
@@ -113,9 +132,7 @@ jobs:
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: local-etl-${{ github.run_number }}
-          path: |
-            exports/local_star/
-          retention-days: 14
+        run: |
+          mkdir -p artifacts
+          tar -czf "artifacts/local-etl-${{ github.run_number }}.tar.gz" exports/local_star/ 2>/dev/null || true
+          echo "Generated local artifact archive: artifacts/local-etl-${{ github.run_number }}.tar.gz"

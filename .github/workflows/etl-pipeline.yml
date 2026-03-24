@@ -80,7 +80,14 @@ jobs:
       run_type: ${{ steps.resolve.outputs.run_type }}
       supabase_ready: ${{ steps.secret_gate.outputs.supabase_ready }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
       - name: Check required secrets
         id: secret_gate
@@ -142,18 +149,32 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
+      - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
+        run: |
+          if command -v python3.12 >/dev/null 2>&1; then
+            PYTHON_BIN="python3.12"
+          elif command -v python3 >/dev/null 2>&1; then
+            PYTHON_BIN="python3"
+          else
+            echo "❌ Python is not available on runner"
+            exit 1
+          fi
+          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
+          "$PYTHON_BIN" --version
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip
+          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
 
       - name: Run tests
         run: make test
@@ -174,18 +195,32 @@ jobs:
         needs.preflight.outputs.run_type == 'both'
       )
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
+      - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
+        run: |
+          if command -v python3.12 >/dev/null 2>&1; then
+            PYTHON_BIN="python3.12"
+          elif command -v python3 >/dev/null 2>&1; then
+            PYTHON_BIN="python3"
+          else
+            echo "❌ Python is not available on runner"
+            exit 1
+          fi
+          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
+          "$PYTHON_BIN" --version
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.prod.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip
+          "$PYTHON_BIN" -m pip install -r requirements.prod.lock.txt
 
       - name: Run pipeline
         env:
@@ -230,14 +265,11 @@ jobs:
 
       - name: Upload pipeline artifacts
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pipeline-output-${{ github.run_number }}
-          path: |
-            data/processed/
-            exports/
-            logs/
-          retention-days: 30
+        run: |
+          mkdir -p artifacts
+          tar -czf "artifacts/pipeline-output-${{ github.run_number }}.tar.gz" \
+            data/processed/ exports/ logs/ 2>/dev/null || true
+          echo "Generated local artifact archive: artifacts/pipeline-output-${{ github.run_number }}.tar.gz"
 
   # ---------------------------------------------------------------------------
   # 4. Monthly snapshot (1st of month cron or manual)
@@ -255,17 +287,32 @@ jobs:
         needs.preflight.outputs.run_type == 'both'
       )
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
+        run: |
+          if command -v python3.12 >/dev/null 2>&1; then
+            PYTHON_BIN="python3.12"
+          elif command -v python3 >/dev/null 2>&1; then
+            PYTHON_BIN="python3"
+          else
+            echo "❌ Python is not available on runner"
+            exit 1
+          fi
+          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
+          "$PYTHON_BIN" --version
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.prod.lock.txt duckdb rapidfuzz
+          "$PYTHON_BIN" -m pip install --upgrade pip
+          "$PYTHON_BIN" -m pip install -r requirements.prod.lock.txt duckdb rapidfuzz
 
       - name: Initialize DuckDB star schema
         run: python scripts/data/init_duckdb_schema.py
@@ -279,13 +326,11 @@ jobs:
 
       - name: Upload snapshot artifacts
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: snapshot-${{ github.run_number }}
-          path: |
-            data/duckdb/
-            exports/
-          retention-days: 30
+        run: |
+          mkdir -p artifacts
+          tar -czf "artifacts/snapshot-${{ github.run_number }}.tar.gz" \
+            data/duckdb/ exports/ 2>/dev/null || true
+          echo "Generated local artifact archive: artifacts/snapshot-${{ github.run_number }}.tar.gz"
 
   etl-skipped:
     name: Report skipped Supabase ETL jobs

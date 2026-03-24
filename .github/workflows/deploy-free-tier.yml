@@ -62,59 +62,81 @@ jobs:
       api_image: ${{ steps.meta-api.outputs.tags }}
       dashboard_image: ${{ steps.meta-dash.outputs.tags }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to GHCR (no external action)
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login "${{ env.REGISTRY }}" \
+            --username "${{ github.actor }}" \
+            --password-stdin
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx (no external action)
+        run: |
+          docker buildx inspect ci-builder >/dev/null 2>&1 || \
+            docker buildx create --name ci-builder --driver docker-container --use
+          docker buildx use ci-builder
+          docker buildx inspect --bootstrap
 
       # ---- API image ----
       - name: Docker metadata (API)
         id: meta-api
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE_BASE }}-api
-          tags: |
-            type=sha,prefix=sha-
-            type=raw,value=latest,enable={{is_default_branch}}
+        run: |
+          SHA_TAG="${{ env.IMAGE_BASE }}-api:sha-${GITHUB_SHA}"
+          if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
+            TAGS="${SHA_TAG},${{ env.IMAGE_BASE }}-api:latest"
+          else
+            TAGS="${SHA_TAG}"
+          fi
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "labels=org.opencontainers.image.revision=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push API image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: ${{ steps.meta-api.outputs.tags }}
-          labels: ${{ steps.meta-api.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          IFS=',' read -ra TAG_ARRAY <<< "${{ steps.meta-api.outputs.tags }}"
+          TAG_ARGS=""
+          for t in "${TAG_ARRAY[@]}"; do
+            TAG_ARGS="$TAG_ARGS --tag $t"
+          done
+          docker buildx build \
+            --file Dockerfile \
+            --label "${{ steps.meta-api.outputs.labels }}" \
+            $TAG_ARGS \
+            --push \
+            .
 
       # ---- Dashboard image ----
       - name: Docker metadata (Dashboard)
         id: meta-dash
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE_BASE }}-dashboard
-          tags: |
-            type=sha,prefix=sha-
-            type=raw,value=latest,enable={{is_default_branch}}
+        run: |
+          SHA_TAG="${{ env.IMAGE_BASE }}-dashboard:sha-${GITHUB_SHA}"
+          if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
+            TAGS="${SHA_TAG},${{ env.IMAGE_BASE }}-dashboard:latest"
+          else
+            TAGS="${SHA_TAG}"
+          fi
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "labels=org.opencontainers.image.revision=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Dashboard image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile.dashboard
-          push: true
-          tags: ${{ steps.meta-dash.outputs.tags }}
-          labels: ${{ steps.meta-dash.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          IFS=',' read -ra TAG_ARRAY <<< "${{ steps.meta-dash.outputs.tags }}"
+          TAG_ARGS=""
+          for t in "${TAG_ARRAY[@]}"; do
+            TAG_ARGS="$TAG_ARGS --tag $t"
+          done
+          docker buildx build \
+            --file Dockerfile.dashboard \
+            --label "${{ steps.meta-dash.outputs.labels }}" \
+            $TAG_ARGS \
+            --push \
+            .
 
   # ---------------------------------------------------------------------------
   # 2. Deploy to Render.com
@@ -172,7 +194,14 @@ jobs:
       github.event.inputs.target == 'railway' ||
       github.event.inputs.target == 'all'
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
@@ -203,10 +232,19 @@ jobs:
       github.event.inputs.target == 'fly' ||
       github.event.inputs.target == 'all'
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
       - name: Install flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@fc53c09e1bc3be6f54706524e3b82c4f462f77be # v1
+        run: |
+          curl -L https://fly.io/install.sh | sh
+          echo "$HOME/.fly/bin" >> "$GITHUB_PATH"
 
       - name: Deploy to Fly.io
         env:
