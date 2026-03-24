@@ -30,6 +30,7 @@ venv/
 htmlcov/
 coverage.xml
 junit.xml
+test-results-local.xml
 
 # Build outputs
 dist/

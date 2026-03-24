@@ -202,50 +202,14 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    env:
-      GITLEAKS_VERSION: "8.24.2"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Install Gitleaks
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            -o /tmp/gitleaks.tar.gz
-          tar -xzf /tmp/gitleaks.tar.gz -C "$HOME/.local/bin" gitleaks
-          chmod +x "$HOME/.local/bin/gitleaks"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Verify Gitleaks
-        run: gitleaks version
-
-      - name: Run Gitleaks scan
-        run: |
-          gitleaks dir \
-            --source . \
-            --config .gitleaks.toml \
-            --report-format json \
-            --report-path gitleaks-report.json \
-            --exit-code 1
-
-      - name: Generate Gitleaks SARIF report
-        if: always()
-        run: |
-          gitleaks dir \
-            --source . \
-            --config .gitleaks.toml \
-            --report-format sarif \
-            --report-path gitleaks-report.sarif \
-            --exit-code 0
-
-      - name: Upload Gitleaks report
-        if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: gitleaks-report
-          path: |
-            gitleaks-report.json
-            gitleaks-report.sarif
-          retention-days: 30
-          if-no-files-found: ignore
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
