@@ -96,7 +96,9 @@ output:
     kpi_name_aliases:
       total_outstanding_balance: "total_aum"
       total_loans_count: "loan_count"
-      default_rate: "npl_rate"
+      # default_rate is a distinct count-based metric; do NOT alias to npl_rate
+      # (balance-weighted).  Both exist as separate kpi_definitions rows.
+      default_rate: "default_rate"
       collections_rate: "collection_rate_6m"
       disbursement_volume_mtd: "disbursement_volume"
       new_loans_count_mtd: "new_loans"
