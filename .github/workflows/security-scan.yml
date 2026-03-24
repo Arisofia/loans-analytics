@@ -208,7 +208,11 @@ jobs:
 
       - name: Install Gitleaks CLI
         run: |
-          GOBIN=/usr/local/bin go install github.com/gitleaks/gitleaks/v8@v8.24.2
+          set -euo pipefail
+          GITLEAKS_VERSION="8.24.2"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_amd64.tar.gz" -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install /tmp/gitleaks /usr/local/bin/gitleaks
           gitleaks version
 
       - name: Run Gitleaks scan

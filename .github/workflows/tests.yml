@@ -78,7 +78,7 @@ jobs:
           for tc in tree.iter('testcase'):
               if tc.find('failure') is not None:
                   name = tc.get('classname','') + '::' + tc.get('name','')
-                  msg = tc.find('failure').get('message','')[:200]
+                  msg = (tc.find('failure').get('message','') or '')[:200]
                   failed.append((name, msg))
           if not failed:
               print('No individual test failures found in XML.')
@@ -87,7 +87,18 @@ jobs:
               print(f'- **{name}**')
               print(f'  \`{msg}\`')
               print()
-          " >> "$GITHUB_STEP_SUMMARY"
+          " >> "\$GITHUB_STEP_SUMMARY"
+          # Also emit as GitHub annotations (visible via API)
+          python -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('test-results.xml')
+          for tc in tree.iter('testcase'):
+              f = tc.find('failure')
+              if f is not None:
+                  name = tc.get('classname','') + '::' + tc.get('name','')
+                  msg = (f.get('message','') or f.text or '')[:200].replace('\n',' ')
+                  print(f'::error title=FAILED {name}::{msg}')
+          "
 
       - name: Upload test results
         if: always()
