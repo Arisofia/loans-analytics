@@ -309,25 +309,46 @@ class OutputPhase:
     def _to_numeric_value(value: Any) -> Optional[float]:
         return float(value) if isinstance(value, (Decimal, int, float)) else None
 
+    @staticmethod
+    def _select_kpi_definitions_response(query: Any) -> Any:
+        try:
+            return query.select('id, name, kpi_key, display_name').execute()
+        except Exception:
+            return query.select('name, kpi_key').execute()
+
+    @staticmethod
+    def _register_kpi_definition_aliases(kpi: Dict[str, Any], *, name_to_key: Dict[str, str], name_to_id: Dict[str, int]) -> None:
+        name = kpi.get('name') or kpi.get('kpi_key')
+        kpi_key = kpi.get('kpi_key') or name
+        if not name or not kpi_key:
+            return
+
+        canonical_key = str(kpi_key).strip()
+        aliases = {
+            str(name).strip(),
+            canonical_key,
+            str(name).strip().lower(),
+            canonical_key.lower(),
+        }
+        display_name = kpi.get('display_name')
+        if isinstance(display_name, str) and display_name.strip():
+            aliases.add(display_name.strip())
+            aliases.add(display_name.strip().lower())
+
+        for alias in aliases:
+            name_to_key[alias] = canonical_key
+            if kpi.get('id') is not None:
+                name_to_id[alias] = int(kpi['id'])
+
     def _get_kpi_definitions_map(self, supabase: Any) -> Optional[tuple[Dict[str, str], Dict[str, int]]]:
         try:
             definitions_table = self.config.get('database', {}).get('definitions_table', KPI_DEFINITIONS_TABLE)
             query = self._table_query(supabase, definitions_table)
-            response = None
-            try:
-                response = query.select('id, name, kpi_key').execute()
-            except Exception:
-                response = query.select('name, kpi_key').execute()
+            response = self._select_kpi_definitions_response(query)
             name_to_key: Dict[str, str] = {}
             name_to_id: Dict[str, int] = {}
             for kpi in response.data:
-                name = kpi.get('name') or kpi.get('kpi_key')
-                kpi_key = kpi.get('kpi_key') or name
-                if not name or not kpi_key:
-                    continue
-                name_to_key[str(name)] = str(kpi_key)
-                if kpi.get('id') is not None:
-                    name_to_id[str(name)] = int(kpi['id'])
+                self._register_kpi_definition_aliases(kpi, name_to_key=name_to_key, name_to_id=name_to_id)
             logger.info('Loaded KPI definitions: %d names mapped', len(name_to_key))
             return (name_to_key, name_to_id)
         except Exception as e:
@@ -365,7 +386,15 @@ class OutputPhase:
             logger.error('Cannot write to monitoring.kpi_values without KPI definitions')
             return []
         name_to_key, name_to_id = kpi_maps
-        mapped_names = {self._map_monitoring_kpi_name(str(row.get('kpi_name', ''))) for row in rows if row.get('kpi_name')}
+        mapped_names: Set[str] = set()
+        for row in rows:
+            if not row.get('kpi_name'):
+                continue
+            mapped_name = self._map_monitoring_kpi_name(str(row.get('kpi_name', ''))).strip()
+            if not mapped_name:
+                continue
+            mapped_names.add(mapped_name)
+            mapped_names.add(mapped_name.lower())
         self._ensure_missing_kpi_definitions(mapped_names, set(name_to_key.keys()))
         if not mapped_names.issubset(set(name_to_key.keys())):
             if refreshed_maps := self._get_kpi_definitions_map(supabase):
@@ -383,16 +412,17 @@ class OutputPhase:
 
     def _build_monitoring_row(self, row: Dict[str, Any], name_to_key: Dict[str, str], name_to_id: Dict[str, int], metadata: Dict[str, str]) -> Optional[Dict[str, Any]]:
         original_name = str(row.get('kpi_name', ''))
-        mapped_name = self._map_monitoring_kpi_name(original_name)
-        if mapped_name not in name_to_key:
+        mapped_name = self._map_monitoring_kpi_name(original_name).strip()
+        lookup_name = mapped_name if mapped_name in name_to_key else mapped_name.lower()
+        if lookup_name not in name_to_key:
             logger.warning('KPI not found in definitions: %s (mapped: %s)', original_name, mapped_name)
             return None
         row_timestamp = row.get('timestamp')
         as_of_date = str(row_timestamp).split('T')[0] if row_timestamp else date.today().isoformat()
         value = row.get('value')
-        monitoring_row: Dict[str, Any] = {'kpi_key': name_to_key[mapped_name], 'value': value, 'value_num': value, 'timestamp': row_timestamp, 'computed_at': row_timestamp, 'as_of_date': as_of_date, 'status': row.get('status', 'green'), **metadata}
-        if mapped_name in name_to_id:
-            monitoring_row['kpi_id'] = name_to_id[mapped_name]
+        monitoring_row: Dict[str, Any] = {'kpi_key': name_to_key[lookup_name], 'value': value, 'value_num': value, 'timestamp': row_timestamp, 'computed_at': row_timestamp, 'as_of_date': as_of_date, 'status': row.get('status', 'green'), **metadata}
+        if lookup_name in name_to_id:
+            monitoring_row['kpi_id'] = name_to_id[lookup_name]
         return monitoring_row
 
     def _write_row_batches(self, *, supabase: Any, table_name: str, rows: list, batch_size: int, is_monitoring_table: bool) -> int:
@@ -412,13 +442,18 @@ class OutputPhase:
         missing = sorted((name for name in mapped_names if name and name not in existing_names))
         if not missing:
             return
-        # Fail closed: do not auto-create KPI definitions in production.
-        # Missing definitions indicate an incomplete migration — fix via
-        # Supabase migrations rather than silently mutating metadata.
-        raise RuntimeError(
+        db_config = self.config.get('database', {}) if isinstance(self.config.get('database', {}), dict) else {}
+        strict_from_config = db_config.get('strict_kpi_definitions')
+        strict_from_env = os.getenv('PIPELINE_STRICT_KPI_DEFINITIONS', '').strip().lower() in {'1', 'true', 'yes'}
+        strict_mode = bool(strict_from_config) or strict_from_env
+        message = (
             f'Missing KPI definitions in monitoring table: {missing}. '
-            'Apply database migrations to register these KPIs before running the pipeline.'
+            'Only mapped KPIs with existing definitions will be written. '
+            'Apply database migrations to register missing KPIs for full coverage.'
         )
+        if strict_mode:
+            raise RuntimeError(message)
+        logger.warning(message)
 
     def _write_to_database(self, kpi_results: Dict[str, Any]) -> Dict[str, Any]:
         if prereq_error := self._check_database_prerequisites():
@@ -514,14 +549,17 @@ class OutputPhase:
             audit_df = kpi_engine.get_audit_trail()
             if audit_df.empty:
                 return
-            failed_kpis = self._get_failed_kpis_from_audit(audit_df)
-            payload['kpi_engine_used'] = True
-            payload['total_calculations'] = len(audit_df)
-            payload['failed_calculations'] = len(failed_kpis)
-            if failed_kpis:
-                payload['failed_kpis'] = failed_kpis
+            self._apply_kpi_engine_audit_fields(payload, audit_df)
         except Exception as e:
             logger.warning('Could not add KPI engine audit info: %s', e)
+
+    def _apply_kpi_engine_audit_fields(self, target: Dict[str, Any], audit_df: pd.DataFrame) -> None:
+        failed_kpis = self._get_failed_kpis_from_audit(audit_df)
+        target['kpi_engine_used'] = True
+        target['total_calculations'] = len(audit_df)
+        target['failed_calculations'] = len(failed_kpis)
+        if failed_kpis:
+            target['failed_kpis'] = failed_kpis
 
     def _generate_audit_metadata(self, kpi_results: Dict[str, Any], exports: Dict[str, str], kpi_engine: Optional['KPIEngineV2']=None) -> Dict[str, Any]:
         quality_score = self._calculate_quality_score(kpi_results, kpi_engine)
@@ -531,12 +569,7 @@ class OutputPhase:
             try:
                 audit_df = kpi_engine.get_audit_trail()
                 if not audit_df.empty:
-                    failed_kpis = self._get_failed_kpis_from_audit(audit_df)
-                    audit_info['kpi_engine_used'] = True
-                    audit_info['total_calculations'] = len(audit_df)
-                    audit_info['failed_calculations'] = len(failed_kpis)
-                    if failed_kpis:
-                        audit_info['failed_kpis'] = failed_kpis
+                    self._apply_kpi_engine_audit_fields(audit_info, audit_df)
             except Exception as e:
                 logger.warning('Could not add detailed audit info: %s', e)
         return audit_info

@@ -19,6 +19,8 @@ class TransformationPhase:
     MISSING_NUMERIC_INDICATOR: int = -999
     FORCE_ZERO_NUMERIC_COLUMNS: Set[str] = {'last_payment_amount', 'payment_amount', 'recovery_value'}
     HIGH_NULL_WARNING_NUMERIC_COLUMNS: Set[str] = {'amount', 'principal_amount', 'current_balance', 'outstanding_balance', 'interest_rate', 'dpd', 'days_past_due', 'last_payment_amount', 'total_scheduled', 'recovery_value'}
+    STRUCTURAL_EMPTY_MARKERS: Set[str] = {'', 'nan', 'none', 'null', 'missing', 'n/a'}
+    STRUCTURAL_KEY_COLUMNS: Tuple[str, ...] = ('loan_id', 'borrower_id', 'amount', 'principal_amount', 'status', 'current_balance', 'outstanding_balance', 'dpd', 'days_past_due')
 
     def __init__(self, config: Dict[str, Any], business_rules: Optional[Dict[str, Any]]=None):
         self.config = config
@@ -46,6 +48,8 @@ class TransformationPhase:
             transformation_metrics: Dict[str, Any] = {}
             df = self._normalize_column_names(df)
             df = self._map_canonical_semantic_layer(df)
+            df, structural_filter_metrics = self._drop_structurally_empty_rows(df)
+            transformation_metrics['structural_row_filter'] = structural_filter_metrics
             df, control_metrics = self._derive_control_mora_fields(df)
             transformation_metrics['control_derivations'] = control_metrics
             df = self._collapse_duplicate_columns(df)
@@ -73,6 +77,23 @@ class TransformationPhase:
         except Exception as e:
             logger.error('Transformation failed: %s', str(e), exc_info=True)
             raise ValueError(f'CRITICAL: Transformation phase failed: {e}') from e
+
+    def _drop_structurally_empty_rows(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        key_columns = [column for column in self.STRUCTURAL_KEY_COLUMNS if column in df.columns]
+        candidate_columns = key_columns or list(df.columns)
+        if not candidate_columns:
+            return (df, {'rows_removed': 0, 'basis': 'none'})
+        probe = df[candidate_columns].astype('string')
+        normalized = probe.apply(lambda col: col.str.strip().str.lower())
+        missing_mask = normalized.isna() | normalized.isin(self.STRUCTURAL_EMPTY_MARKERS)
+        structural_empty_mask = missing_mask.all(axis=1)
+        rows_removed = int(structural_empty_mask.sum())
+        if rows_removed == 0:
+            return (df, {'rows_removed': 0, 'basis': 'key_columns' if key_columns else 'all_columns'})
+        logger.warning('Removed %d structurally empty rows before null handling', rows_removed)
+        cleaned_df = df.loc[~structural_empty_mask].reset_index(drop=True)
+        metrics = {'rows_removed': rows_removed, 'basis': 'key_columns' if key_columns else 'all_columns', 'key_columns_used': candidate_columns}
+        return (cleaned_df, metrics)
 
     def _normalize_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
         column_mapping = {'days_past_due': 'dpd', 'dias_vencido': 'dpd', 'mora_en_dias': 'dpd', 'principal_amount': 'amount', 'current_status': 'status', 'loan_status': 'status', 'principal_balance': 'current_balance', 'loan_amount': 'amount', 'fechadesembolso': 'origination_date', 'fecha_de_desembolso': 'origination_date', 'fechapagoprogramado': 'due_date', 'fecha_vencimiento': 'due_date', 'fecha_de_vencimiento': 'due_date', 'fecha_de_pago': 'last_payment_date', 'fechacobro': 'last_payment_date', '_pagado': 'last_payment_amount', 'lineacredito': 'credit_line', 'cod_kam_hunter': 'kam_hunter', 'cod_kam_farmer': 'kam_farmer', 'asesoriadigital': 'advisory_channel', 'fechasolicitado': 'application_date', 'porcentaje_utilizado': 'utilization_pct', 'procede_a_cobrar': 'collections_eligible', 'definicion_m': 'delinquency_definition', 'rango_m': 'delinquency_bucket_raw', 'rango_de_la_linea': 'credit_line_range', 'ministerio': 'gov', 'ministry': 'gov', 'goes': 'government_sector', 'capitalcobrado': 'capital_collected', 'montototalabonado': 'total_payment_received', 'mdscposteado': 'mdsc_posted', 'diasnegociacion': 'negotiation_days', 'dias_en_pagar': 'days_to_pay', 'numerodesembolsos': 'disbursement_count', 'valoraprobado': 'approved_value', 'fecha_actual': 'as_of_date', 'term_max': 'term_months', 'term_ponderado': 'term_months', 'apr__term__ponderado': 'term_months', 'ingreso_total_por_desembolso': 'tpv', 'ingreso_pagadopendiente': 'tpv'}

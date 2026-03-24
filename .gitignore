@@ -42,6 +42,8 @@ pipeline_output.yaml
 migrate_test.py
 test_dashboard_local.py
 tracked_files_manifest.txt
+_git_info.txt
+_git_remote.txt
 
 # Local environment / secrets
 .env

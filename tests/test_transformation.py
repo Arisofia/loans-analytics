@@ -90,7 +90,7 @@ class TestNullHandling:
         out, metrics = transformer._handle_nulls(df)
         assert out['amount'].iloc[-1] == pytest.approx(0.0), 'Expected structural zero, not median imputation'
         assert 'amount_is_missing' in out.columns
-        assert bool(out['amount_is_missing'].iloc[-1]) is True
+        assert out['amount_is_missing'].iloc[-1]
         assert not out['amount_is_missing'].iloc[0]
         actions = metrics.get('smart_actions', {})
         assert 'filled_structural_zero+flag' in actions.get('amount', '')
@@ -272,9 +272,9 @@ class TestOutlierDetection:
         transformer = TransformationPhase(default_config)
         result_df, metrics = transformer._detect_outliers(df)
         assert metrics['enabled'] is True
-        if 'amount_outlier' in result_df.columns:
-            nan_positions = df['amount'].isna()
-            assert not result_df.loc[nan_positions, 'amount_outlier'].any()
+        assert 'amount_outlier' in result_df.columns
+        nan_positions = df['amount'].isna()
+        assert not result_df.loc[nan_positions, 'amount_outlier'].any()
 
     def test_outlier_detection_iqr_identical_values(self, default_config):
         df = pd.DataFrame({'loan_id': ['L001', 'L002', 'L003', 'L004', 'L005'], 'amount': [100, 100, 100, 100, 100]})
@@ -319,6 +319,25 @@ class TestExecute:
         assert results['initial_rows'] == 5
         assert results['final_rows'] == 5
         assert 'transformation_metrics' in results
+
+    def test_execute_drops_structurally_empty_rows_before_null_failfast(self, default_config):
+        transformer = TransformationPhase(default_config)
+        df = pd.DataFrame({
+            'loan_id': ['L001', 'L002', 'L003', 'L004', 'L005', 'L006', None, None, None, None],
+            'amount': [1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0, None, None, None, None],
+            'principal_amount': [1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0, None, None, None, None],
+            'status': ['active', 'active', 'delinquent', 'active', 'closed', 'defaulted', None, None, None, None],
+            'dpd': [0.0, 5.0, 35.0, 0.0, 0.0, 120.0, None, None, None, None],
+            'days_past_due': [0.0, 5.0, 35.0, 0.0, 0.0, 120.0, None, None, None, None],
+            'origination_date': ['2025-01-01', '2025-01-02', '2025-01-03', '2025-01-04', '2025-01-05', '2025-01-06', None, None, None, None],
+            'due_date': ['2025-02-01', '2025-02-02', '2025-02-03', '2025-02-04', '2025-02-05', '2025-02-06', None, None, None, None],
+        })
+        results = transformer.execute(df=df)
+        assert results['status'] == 'success'
+        assert results['initial_rows'] == 10
+        assert results['final_rows'] == 6
+        structural_filter = results['transformation_metrics'].get('structural_row_filter', {})
+        assert structural_filter.get('rows_removed') == 4
 
     def test_execute_no_data_raises_error(self, default_config):
         transformer = TransformationPhase(default_config)
