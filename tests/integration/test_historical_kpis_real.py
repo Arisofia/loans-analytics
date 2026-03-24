@@ -30,8 +30,7 @@ def supabase_backend():
 @pytest.fixture(scope='module')
 def historical_provider(supabase_backend):
     from backend.python.multi_agent.historical_context import HistoricalContextProvider
-    provider = HistoricalContextProvider(mode='REAL', backend=supabase_backend)
-    return provider
+    return HistoricalContextProvider(mode='REAL', backend=supabase_backend)
 
 @pytest.fixture(scope='module')
 def test_portfolio_id():
@@ -126,7 +125,6 @@ def test_historical_context_provider_cache_behavior(historical_provider, test_po
     import time
     test_kpi_id = seed_test_data['kpi_id']
     historical_provider.clear_cache()
-    start_time = time.time()
     result1 = historical_provider.get_kpi_history(kpi_id=test_kpi_id, start_date=date.today() - timedelta(days=30), end_date=date.today())
     start_time = time.time()
     result2 = historical_provider.get_kpi_history(kpi_id=test_kpi_id, start_date=date.today() - timedelta(days=30), end_date=date.today())
@@ -164,4 +162,4 @@ def test_historical_kpis_data_integrity(supabase_backend, test_portfolio_id, see
     duplicate_data = {'kpi_id': test_kpi_id, 'value_numeric': 0.999, 'date': (date.today() - timedelta(days=30)).isoformat(), 'ts_utc': '2026-01-28T00:00:00Z', 'value_json': {'test': True, 'duplicate': True}}
     url = f'{supabase_backend.base_url}/rest/v1/{supabase_backend.table}'
     response = requests.post(url, headers=_service_headers, json=duplicate_data, timeout=10)
-    assert response.status_code in (201, 409), f'Expected 201 or 409 for duplicate insert, got {response.status_code}: {response.text}'
+    assert response.status_code in {201, 409}, f'Expected 201 or 409 for duplicate insert, got {response.status_code}: {response.text}'

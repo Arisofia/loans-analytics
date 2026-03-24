@@ -73,7 +73,7 @@ def api_request(url: str, *, method: str='GET', data: dict | None=None, token: s
     payload = json.dumps(data).encode('utf-8') if data else None
     request = urllib.request.Request(url, data=payload, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(request) as response:
+        with urllib.request.urlopen(request) as response:  # nosec B310
             content = response.read()
     except urllib.error.HTTPError as error:
         body = error.read().decode('utf-8', errors='ignore')
@@ -103,7 +103,7 @@ def push_secret(token: str, key_id: str, public_key: str, secret_name: str, secr
     api_request(f'{API_BASE}/repos/{REPO}/actions/secrets/{secret_name}', method='PUT', data={'encrypted_value': encrypted_value, 'key_id': key_id}, token=token)
 
 def is_configured(value: str) -> bool:
-    return bool(value) and (not any((marker in value for marker in PLACEHOLDER_MARKERS)))
+    return bool(value) and all(marker not in value for marker in PLACEHOLDER_MARKERS)
 
 def collect_uploadable_secrets(secret_map: dict[str, str]) -> tuple[dict[str, str], list[str]]:
     uploadable: dict[str, str] = {}

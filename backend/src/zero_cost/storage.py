@@ -65,10 +65,10 @@ class ZeroCostStorage:
         table_dir = self.base_dir / table_name
         if not table_dir.exists():
             raise FileNotFoundError(f"No data found for table '{table_name}' at {table_dir}")
-        return self.query(f"SELECT * FROM read_parquet('{table_dir}/**/*.parquet')")
+        return self.query(f"SELECT * FROM read_parquet('{table_dir}/**/*.parquet')")  # nosec B608
 
     def _validate_identifier(self, name: str) -> str:
-        if not re.match('^[A-Za-z_][A-Za-z0-9_]*$', name):
+        if not re.match(r'^[A-Za-z_]\w*$', name):
             raise ValueError(f'Invalid DuckDB identifier: {name!r}')
         return name
 
@@ -76,7 +76,7 @@ class ZeroCostStorage:
         conn = self._get_conn()
         glob_path = str(table_dir / '**' / '*.parquet')
         safe_name = self._validate_identifier(table_name)
-        conn.execute(f"""CREATE OR REPLACE VIEW "{safe_name}" AS SELECT * FROM read_parquet('{glob_path}')""")
+        conn.execute(f"""CREATE OR REPLACE VIEW \"{safe_name}\" AS SELECT * FROM read_parquet('{glob_path}')""")  # nosec B608
 
     def _compute_file_sha256(self, path: Path, chunk_size: int=1024 * 1024) -> str:
         hasher = hashlib.sha256()

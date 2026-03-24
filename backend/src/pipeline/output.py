@@ -9,12 +9,12 @@ from backend.python.logging_config import get_logger
 try:
     import httpx
 except ImportError:
-    httpx = None
+    httpx = None  # type: ignore[assignment]
 try:
     from supabase import Client, create_client
 except ImportError:
-    Client = None
-    create_client = None
+    Client = None  # type: ignore[assignment,misc]
+    create_client = None  # type: ignore[assignment]
 if TYPE_CHECKING:
     from backend.python.kpis.engine import KPIEngineV2
 logger = get_logger(__name__)
@@ -31,8 +31,7 @@ class OutputPhase:
         try:
             exports = self._export_run_outputs(kpi_results=kpi_results, run_dir=run_dir, kpi_engine=kpi_engine, segment_kpis=segment_kpis, time_series=time_series, anomalies=anomalies, nsm_recurrent_tpv=nsm_recurrent_tpv, clustering_metrics=clustering_metrics, transformation_metrics=transformation_metrics)
             if kpi_engine is not None:
-                audit_path = self._export_kpi_audit_trail(kpi_engine)
-                if audit_path:
+                if audit_path := self._export_kpi_audit_trail(kpi_engine):
                     exports['kpi_audit_trail'] = str(audit_path)
             db_result = self._write_to_database(kpi_results)
             dashboard_result = self._trigger_dashboard_refresh()
@@ -177,8 +176,7 @@ class OutputPhase:
         dimensions = ['company', 'credit_line', 'kam_hunter', 'kam_farmer', 'gov', 'industry', 'doc_type']
         missing_markers = {'', 'nan', 'none', 'null', 'n/a', 'missing', 'unknown'}
         for dimension in dimensions:
-            rows = self._build_segment_dimension_rows(working, dimension, loan_id_col, missing_markers)
-            if rows:
+            if rows := self._build_segment_dimension_rows(working, dimension, loan_id_col, missing_markers):
                 dimension_rows[dimension] = rows
         return dimension_rows
 
@@ -200,7 +198,7 @@ class OutputPhase:
         balance_sum = Decimal(str(group['__balance'].sum()))
         if balance_sum <= 0:
             return None
-        loan_count = int(group[loan_id_col].astype(str).nunique()) if loan_id_col is not None else int(len(group))
+        loan_count = int(group[loan_id_col].astype(str).nunique()) if loan_id_col is not None else len(group)
         row: Dict[str, Any] = {'segment': str(segment_name), 'loan_count': loan_count, 'total_outstanding_balance': float(balance_sum), 'par_30': float(self._segment_ratio(group, balance_sum, dpd_threshold=30)), 'par_60': float(self._segment_ratio(group, balance_sum, dpd_threshold=60)), 'par_90': float(self._segment_ratio(group, balance_sum, dpd_threshold=90)), 'default_rate': float(self._segment_default_rate(group, loan_count)), 'avg_dpd': float(Decimal(str(group['__dpd'].mean())))}
         if group['__interest_rate'].notna().any():
             portfolio_yield = Decimal(str(group['__interest_rate'].mean())) * Decimal('100')
@@ -309,11 +307,7 @@ class OutputPhase:
 
     @staticmethod
     def _to_numeric_value(value: Any) -> Optional[float]:
-        if isinstance(value, Decimal):
-            return float(value)
-        if isinstance(value, (int, float)):
-            return float(value)
-        return None
+        return float(value) if isinstance(value, (Decimal, int, float)) else None
 
     def _get_kpi_definitions_map(self, supabase: Any) -> Optional[tuple[Dict[str, str], Dict[str, int]]]:
         try:
@@ -374,8 +368,7 @@ class OutputPhase:
         mapped_names = {self._map_monitoring_kpi_name(str(row.get('kpi_name', ''))) for row in rows if row.get('kpi_name')}
         self._ensure_missing_kpi_definitions(supabase, mapped_names, set(name_to_key.keys()))
         if not mapped_names.issubset(set(name_to_key.keys())):
-            refreshed_maps = self._get_kpi_definitions_map(supabase)
-            if refreshed_maps:
+            if refreshed_maps := self._get_kpi_definitions_map(supabase):
                 name_to_key, name_to_id = refreshed_maps
         metadata = self._get_monitoring_write_metadata()
         monitoring_rows: list[Dict[str, Any]] = []
@@ -439,20 +432,14 @@ class OutputPhase:
                 logger.warning("Could not auto-create KPI definition '%s'. Apply Supabase migrations for full KPI coverage. Last error: %s", kpi_name, last_error)
 
     def _write_to_database(self, kpi_results: Dict[str, Any]) -> Dict[str, Any]:
-        prereq_error = self._check_database_prerequisites()
+        if prereq_error := self._check_database_prerequisites():
+            return prereq_error
+        if input_error := self._validate_kpi_results(kpi_results):
+            return input_error
         result: Dict[str, Any]
-        if prereq_error:
-            result = prereq_error
-            return result
-        input_error = self._validate_kpi_results(kpi_results)
-        if input_error:
-            result = input_error
-            return result
         try:
-            setup_error = self._validate_supabase_setup()
-            if setup_error:
-                result = setup_error
-                return result
+            if setup_error := self._validate_supabase_setup():
+                return setup_error
             supabase_url, supabase_key, key_source = self._resolve_supabase_credentials()
             if supabase_url is None or supabase_key is None:
                 raise RuntimeError('Supabase credentials missing during Phase 4 persistence')
@@ -461,8 +448,7 @@ class OutputPhase:
             rows_to_insert, timestamp, _ = self._prepare_kpi_rows(kpi_results)
             if not rows_to_insert:
                 logger.warning('No rows to insert after filtering')
-                result = {'status': 'skipped', 'reason': 'no_valid_kpis'}
-                return result
+                return {'status': 'skipped', 'reason': 'no_valid_kpis'}
             table_name = self.config.get('database', {}).get('table', 'kpi_timeseries_daily')
             logger.info('Writing %d KPI records to Supabase table: %s', len(rows_to_insert), table_name)
             total_inserted = self._insert_batch_rows(supabase, table_name, rows_to_insert)
@@ -502,8 +488,7 @@ class OutputPhase:
             if 'status' not in audit_df.columns or 'kpi_name' not in audit_df.columns:
                 raise ValueError('Audit DataFrame missing required columns: status, kpi_name')
             failed_mask = audit_df['status'] == 'failed'
-            failed_kpis = audit_df[failed_mask]['kpi_name'].tolist()
-            return failed_kpis
+            return audit_df[failed_mask]['kpi_name'].tolist()
         except Exception as e:
             logger.error('Error extracting failed KPIs from audit trail: %s', e)
             raise RuntimeError(f'Could not extract failed KPI audit data: {e}') from e

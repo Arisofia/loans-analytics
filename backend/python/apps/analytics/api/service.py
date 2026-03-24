@@ -56,7 +56,7 @@ def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
     try:
         import hashlib
         with open(KPI_DEFINITIONS_PATH, 'rb') as f:
-            current_hash = hashlib.md5(f.read()).hexdigest()
+            current_hash = hashlib.md5(f.read(), usedforsecurity=False).hexdigest()  # nosec B324
         if current_hash == _CATALOG_STATE['file_hash']:
             return _CATALOG_STATE['cache']
         with open(KPI_DEFINITIONS_PATH, encoding='utf-8') as handle:

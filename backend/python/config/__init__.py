@@ -134,7 +134,6 @@ class Settings(BaseSettings):
         guardrails = dict(yaml_data.get('guardrails') or {})
         if not guardrails:
             return {}
-        mapped: dict[str, Any] = {}
         alias_map = {'target_rotation': 'min_rotation', 'max_default_rate': 'max_default_rate', 'max_top_10_concentration': 'max_top_10_concentration', 'max_single_obligor': 'max_single_obligor_concentration', 'target_apr_min': 'target_apr_min', 'target_apr_max': 'target_apr_max', 'min_dscr': 'min_dscr', 'min_collection_efficiency_6m': 'min_ce_6m'}
         mapped: dict[str, Any] = {target_key: guardrails[source_key] for source_key, target_key in alias_map.items() if source_key in guardrails}
         return mapped

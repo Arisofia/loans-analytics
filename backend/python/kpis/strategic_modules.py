@@ -46,7 +46,7 @@ def _compute_weighted_zscore_stats(var_name: str, series: pd.Series, bal: pd.Ser
     w_std = float(np.sqrt(w_var)) if w_var > 0 else 0.0
     
     summary_entry = {'mean_w': w_mean, 'std_w': 0.0, 'outlier_count': 0, 'outlier_balance_usd': 0.0}
-    alerts = []
+    alerts: list[dict[str, Any]] = []
     
     if w_std == 0:
         summary_entry['mean_w'] = w_mean

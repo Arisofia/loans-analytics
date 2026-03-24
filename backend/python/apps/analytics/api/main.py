@@ -32,25 +32,25 @@ try:
     app: Optional[FastAPI] = FastAPI(title='Abaco Loans Analytics API')
 except ImportError:
 
-    class HTTPException(Exception):
+    class HTTPException(Exception):  # type: ignore[no-redef]
 
         def __init__(self, status_code: int, detail: str):
             self.status_code = status_code
             self.detail = detail
 
-    class Depends:
+    class Depends:  # type: ignore[no-redef]
 
         def __init__(self, *args, **kwargs):
             self.args = args
             self.kwargs = kwargs
 
-    class Body:
+    class Body:  # type: ignore[no-redef]
 
         def __init__(self, *args, **kwargs):
             self.args = args
             self.kwargs = kwargs
 
-    class Query:
+    class Query:  # type: ignore[no-redef]
 
         def __init__(self, *args, **kwargs):
             self.args = args

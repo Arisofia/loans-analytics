@@ -138,6 +138,7 @@ def _build_loans_meta(loans_df: pd.DataFrame, customer_df: pd.DataFrame | None, 
     loans_meta = loans_df[meta_cols].copy()
     has_customer_agent = customer_df is not None and agent_col and (loan_id in customer_df.columns) and (agent_col in customer_df.columns)
     if has_customer_agent and agent_col not in loans_meta.columns:
+        assert customer_df is not None and agent_col is not None
         agent_lookup = customer_df[[loan_id, agent_col]].drop_duplicates(loan_id)
         loans_meta = loans_meta.merge(agent_lookup, on=loan_id, how='left')
     return loans_meta
@@ -170,6 +171,7 @@ def collection_efficiency_by_segment(loans_df: pd.DataFrame, payments_df: pd.Dat
     agent_col = _col(loans_df, ['sales_agent', 'kam']) or (_col(customer_df, ['sales_agent']) if customer_df is not None else None)
     if not all([loan_id, sched_amt, real_amt]):
         return {'status': 'missing_columns'}
+    assert loan_id is not None and sched_amt is not None and real_amt is not None
     sched_agg = _aggregate_numeric_sum(schedule_df, loan_id, sched_amt, 'sched')
     real_agg = _aggregate_numeric_sum(payments_df, loan_id, real_amt, 'real')
     ce = sched_agg.to_frame().join(real_agg, how='outer').fillna(0)
@@ -242,14 +244,14 @@ def equifax_vs_dpd_scatter(loans_df: pd.DataFrame, customer_df: pd.DataFrame) ->
     scatter_data = [{'customer_id': str(row[cust_col]), 'equifax_score': round(float(row['_eq']), 1), 'actual_dpd': round(float(row['_dpd']), 1), 'expected_dpd': round(float(row['_expected_dpd']), 1), 'residual': round(float(row['_residual']), 1), 'alpha_flag': bool(row['_alpha_flag']), 'risk_flag': bool(row['_risk_flag']), 'total_balance_usd': round(float(row.get('total_bal', 0)), 2)} for _, row in df.iterrows()]
     alpha_clients = [s for s in scatter_data if s['alpha_flag']]
     risk_clients = [s for s in scatter_data if s['risk_flag']]
-    alpha_balance = sum((float(s['total_balance_usd']) for s in alpha_clients))
+    alpha_balance = sum(float(s['total_balance_usd']) for s in alpha_clients)  # type: ignore[arg-type,misc]
     if r_sq < 0.1:
         power = 'weak'
     elif r_sq < 0.3:
         power = 'moderate'
     else:
         power = 'strong'
-    return {'status': 'ok', 'scatter_data': scatter_data, 'regression': {'slope': round(float(slope), 6), 'intercept': round(float(intercept), 2), 'r_squared': round(float(r_sq), 4), 'interpretation': f'Each 1-point rise in Equifax score changes expected DPD by {slope:+.3f} days. R²={r_sq:.3f} — {power} predictive power.'}, 'alpha_clients': sorted(alpha_clients, key=lambda item: float(item['residual']))[:30], 'risk_clients': sorted(risk_clients, key=lambda item: float(item['residual']), reverse=True)[:30], 'summary': {'n_total': len(scatter_data), 'n_alpha': len(alpha_clients), 'n_risk': len(risk_clients), 'alpha_balance_usd': round(float(alpha_balance), 2), 'alpha_pct_of_n': round(len(alpha_clients) / max(len(scatter_data), 1) * 100, 1), 'residual_std': round(residual_std, 2), 'threshold_used': 'residual < -1.5σ for alpha; > +1.5σ for risk'}}
+    return {'status': 'ok', 'scatter_data': scatter_data, 'regression': {'slope': round(float(slope), 6), 'intercept': round(float(intercept), 2), 'r_squared': round(float(r_sq), 4), 'interpretation': f'Each 1-point rise in Equifax score changes expected DPD by {slope:+.3f} days. R²={r_sq:.3f} — {power} predictive power.'}, 'alpha_clients': sorted(alpha_clients, key=lambda item: float(item['residual']))[:30], 'risk_clients': sorted(risk_clients, key=lambda item: float(item['residual']), reverse=True)[:30], 'summary': {'n_total': len(scatter_data), 'n_alpha': len(alpha_clients), 'n_risk': len(risk_clients), 'alpha_balance_usd': round(float(alpha_balance), 2), 'alpha_pct_of_n': round(len(alpha_clients) / max(len(scatter_data), 1) * 100, 1), 'residual_std': round(residual_std, 2), 'threshold_used': 'residual < -1.5σ for alpha; > +1.5σ for risk'}}  # type: ignore[arg-type]
 _CREDIT_LINE_STRATEGY_TARGETS: dict[str, dict[str, float]] = {'>$200K': {'target_rotation': 4.9, 'max_default': 1.8}, '$150-200K': {'target_rotation': 5.1, 'max_default': 2.5}, '$100-150K': {'target_rotation': 5.4, 'max_default': 3.1}, '$75-100K': {'target_rotation': 5.6, 'max_default': 3.5}, '$50-75K': {'target_rotation': 6.0, 'max_default': 3.8}, '$25-50K': {'target_rotation': 6.3, 'max_default': 4.2}, '$10-25K': {'target_rotation': 6.6, 'max_default': 4.5}, '< $10K': {'target_rotation': 7.0, 'max_default': 4.9}}
 
 def _revenue_by_loan(payments_df: pd.DataFrame | None) -> dict:

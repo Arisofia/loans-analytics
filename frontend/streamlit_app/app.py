@@ -53,8 +53,7 @@ def load_local_exports() -> dict[str, pd.DataFrame]:
     if LOCAL_EXPORTS_DIR.exists():
         for local_exports_file_item in LOCAL_EXPORTS_DIR.iterdir():
             if local_exports_file_item.suffix.lower() == '.csv':
-                export_file_map_key = get_table_type_from_filename(local_exports_file_item.name)
-                if export_file_map_key:
+                if export_file_map_key := get_table_type_from_filename(local_exports_file_item.name):
                     try:
                         export_data[export_file_map_key] = pd.read_csv(local_exports_file_item)
                     except Exception as exc:
@@ -66,8 +65,7 @@ def handle_file_uploads() -> dict[str, pd.DataFrame]:
     upload_data: dict[str, pd.DataFrame] = {}
     if sidebar_uploaded_files_widget:
         for uploaded_file_widget_item in sidebar_uploaded_files_widget:
-            upload_widget_key = get_table_type_from_filename(uploaded_file_widget_item.name)
-            if upload_widget_key:
+            if upload_widget_key := get_table_type_from_filename(uploaded_file_widget_item.name):
                 try:
                     upload_data[upload_widget_key] = pd.read_csv(uploaded_file_widget_item)
                     st.sidebar.success(f"Mapped '{uploaded_file_widget_item.name}' to {upload_widget_key}")
@@ -141,13 +139,9 @@ def _resolve_kpi_snapshot_month(input_analytics_facts: pd.DataFrame) -> Optional
     return None
 
 def build_kpi_snapshot(input_dashboard_metrics: dict, input_analytics_facts: pd.DataFrame) -> tuple[dict[str, dict], Optional[pd.Timestamp]]:
-    kpi_snapshot: dict[str, float] = {}
     kpi_snapshot_month = _resolve_kpi_snapshot_month(input_analytics_facts)
-    kpi_extended_kpis = input_dashboard_metrics.get('extended_kpis', {})
-    kpi_executive_strip = kpi_extended_kpis.get('executive_strip', {})
-    for unique_key_var, kpi_exec_value_item in kpi_executive_strip.items():
-        if isinstance(kpi_exec_value_item, (int, float)):
-            kpi_snapshot[unique_key_var] = float(kpi_exec_value_item)
+    kpi_executive_strip = input_dashboard_metrics.get('extended_kpis', {}).get('executive_strip', {})
+    kpi_snapshot: dict[str, float] = {unique_key_var: float(kpi_exec_value_item) for unique_key_var, kpi_exec_value_item in kpi_executive_strip.items() if isinstance(kpi_exec_value_item, (int, float))}
     kpi_root_keys = ('total_aum_usd', 'active_clients', 'monthly_revenue_usd', 'revenue_per_active_client_monthly', 'mom_growth_pct', 'yoy_growth_pct', 'par_90_ratio_pct', 'delinquency_rate_30_pct')
     for unique_root_key_var in kpi_root_keys:
         kpi_root_value_item = input_dashboard_metrics.get(unique_root_key_var)
@@ -205,8 +199,7 @@ with st.sidebar:
     st.title('Data Ingestion')
     data_source = st.radio('Data Source', ['Local artifacts (auto)', 'Manual upload'], index=0)
     if data_source == 'Local artifacts (auto)':
-        _data = load_local_exports()
-        if _data:
+        if _data := load_local_exports():
             st.session_state['data'] = _data
             st.session_state['loaded'] = True
             st.caption(f"Loaded artifacts: {', '.join(_data.keys())}")
@@ -315,18 +308,13 @@ render_risk_analysis(merged_df)
 render_advanced_intelligence(global_dashboard_metrics_var)
 st.header('📋 KPI Catalog')
 with st.expander('View all computed KPIs'):
-    all_kpis_expanded = global_dashboard_metrics_var.get('extended_kpis', {})
-    if all_kpis_expanded:
-        flat_kpis_expanded = []
-        for unique_kpi_key_exp, kpi_value_exp in all_kpis_expanded.items():
-            if isinstance(kpi_value_exp, (int, float, str)):
-                flat_kpis_expanded.append({'KPI': kpi_label(unique_kpi_key_exp), 'Value': format_kpi_value(unique_kpi_key_exp, kpi_value_exp)})
+    if all_kpis_expanded := global_dashboard_metrics_var.get('extended_kpis', {}):
+        flat_kpis_expanded = [{'KPI': kpi_label(unique_kpi_key_exp), 'Value': format_kpi_value(unique_kpi_key_exp, kpi_value_exp)} for unique_kpi_key_exp, kpi_value_exp in all_kpis_expanded.items() if isinstance(kpi_value_exp, (int, float, str))]
         if flat_kpis_expanded:
             st.table(pd.DataFrame(flat_kpis_expanded))
         st.write('**Detailed Data Tables:**')
         table_keys_expanded = [unique_table_key_exp for unique_table_key_exp, v_exp in all_kpis_expanded.items() if isinstance(v_exp, list) and v_exp]
-        selected_table_expanded = st.selectbox('Select table to view', table_keys_expanded)
-        if selected_table_expanded:
+        if selected_table_expanded := st.selectbox('Select table to view', table_keys_expanded):
             st.dataframe(pd.DataFrame(all_kpis_expanded[selected_table_expanded]))
     else:
         st.info('No extended KPIs found.')

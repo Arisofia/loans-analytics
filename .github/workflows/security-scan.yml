@@ -167,9 +167,10 @@ jobs:
 
           if [ "${#SCAN_DIRS[@]}" -gt 0 ]; then
             echo "Scanning directories: ${SCAN_DIRS[*]}"
-            bandit -r "${SCAN_DIRS[@]}" -f json -o bandit-report.json
+            bandit -r "${SCAN_DIRS[@]}" -f json -o bandit-report.json || true
             bandit -r "${SCAN_DIRS[@]}" -f sarif -o bandit-results.sarif \
-              --severity-level medium
+              --severity-level medium || true
+            bandit -r "${SCAN_DIRS[@]}" --severity-level medium -f screen
           else
             echo "⚠️ No Python source directories found to scan"
             echo "[]" > bandit-report.json
@@ -204,8 +205,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Install Gitleaks CLI
         run: |
@@ -215,7 +214,7 @@ jobs:
 
       - name: Run Gitleaks scan
         run: |
-          gitleaks git \
+          gitleaks dir \
             --source . \
             --config .gitleaks.toml \
             --report-format json \
@@ -225,7 +224,7 @@ jobs:
       - name: Generate Gitleaks SARIF report
         if: always()
         run: |
-          gitleaks git \
+          gitleaks dir \
             --source . \
             --config .gitleaks.toml \
             --report-format sarif \

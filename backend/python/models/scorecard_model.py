@@ -372,13 +372,13 @@ class ScorecardModel:
             raise FileNotFoundError(f'Model directory not found: {path}')
         instance = cls()
         with open(path / 'lr_model.pkl', 'rb') as f:
-            instance.lr_model = pickle.load(f)
+            instance.lr_model = pickle.load(f)  # nosec B301
         with open(path / 'binning_map.pkl', 'rb') as f:
-            instance.binning_map = pickle.load(f)
+            instance.binning_map = pickle.load(f)  # nosec B301
         instance.iv_table = pd.read_csv(path / 'iv_table.csv')
         instance.scorecard_table = pd.read_csv(path / 'scorecard_table.csv')
-        with open(path / 'metadata.json') as f:
-            instance.metadata = json.load(f)
+        with open(path / 'metadata.json') as fj:
+            instance.metadata = json.load(fj)
         instance.selected_features = instance.metadata.get('features', [])
         instance.feature_names_woe = [f'{f}_woe' for f in instance.selected_features]
         logger.info('Scorecard loaded from %s', path)

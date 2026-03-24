@@ -56,8 +56,6 @@ def _safe_log_value(value: object, max_length: int = 200) -> str:
 def _json_default(value: Any) -> str:
     if isinstance(value, (datetime, date)):
         return value.isoformat()
-    if isinstance(value, (UUID, Decimal)):
-        return str(value)
     return str(value)
 
 
@@ -147,14 +145,14 @@ class MonitoringService:
         where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         params.extend([limit, offset])
 
-        query = f"""
-            SELECT id, event_type, severity, source, correlation_id,
-                   payload, created_at, acknowledged_at
-            FROM monitoring.operational_events
-            {where}
-            ORDER BY created_at DESC
-            LIMIT ${idx} OFFSET ${idx + 1}
-        """
+        query = (
+            f"SELECT id, event_type, severity, source, correlation_id,"
+            f" payload, created_at, acknowledged_at"
+            f" FROM monitoring.operational_events"
+            f" {where}"  # nosec B608
+            f" ORDER BY created_at DESC"
+            f" LIMIT ${idx} OFFSET ${idx + 1}"
+        )
 
         rows = await pool.fetch(query, *params)
         return [self._row_to_event(row) for row in rows]
@@ -229,14 +227,14 @@ class MonitoringService:
 
         params.append(limit)
 
-        query = f"""
-            SELECT id, command_type, status, requested_by, event_id,
-                   parameters, result, created_at, started_at, completed_at
-            FROM monitoring.commands
-            {where}
-            ORDER BY created_at DESC
-            LIMIT ${idx}
-        """
+        query = (
+            f"SELECT id, command_type, status, requested_by, event_id,"
+            f" parameters, result, created_at, started_at, completed_at"
+            f" FROM monitoring.commands"
+            f" {where}"  # nosec B608
+            f" ORDER BY created_at DESC"
+            f" LIMIT ${idx}"
+        )
 
         rows = await pool.fetch(query, *params)
         return [self._row_to_command(row) for row in rows]

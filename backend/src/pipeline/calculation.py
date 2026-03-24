@@ -273,10 +273,10 @@ class CalculationPhase:
         if balance_col is None:
             error_msg = 'CRITICAL: MISSING BALANCE COLUMN FOR SEGMENT CALCULATION'
             self._log_and_raise_critical_error(error_msg)
-        work = self._prepare_segment_workframe(df, balance_col, dpd_col, status_col)
+        work = self._prepare_segment_workframe(df, balance_col, dpd_col, status_col)  # type: ignore[arg-type]
         if work.empty:
             return {}
-        return {dim: self._calculate_dimension_segment_kpis(work, dim, balance_col, dpd_col, status_col) for dim in segment_dims}
+        return {dim: self._calculate_dimension_segment_kpis(work, dim, balance_col, dpd_col, status_col) for dim in segment_dims}  # type: ignore[arg-type]
 
     @staticmethod
     def _available_segment_dimensions(df: pd.DataFrame) -> List[str]:

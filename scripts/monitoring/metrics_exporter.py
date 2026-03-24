@@ -34,37 +34,43 @@ class MetricsRegistry:
 
     async def collect_metrics(self) -> None:
         self.metrics.clear()
-        await self._collect_pipeline_metrics()
+        self._collect_pipeline_metrics()
         await self._collect_connection_pool_metrics()
-        await self._collect_cache_metrics()
-        await self._collect_kpi_metrics()
+        self._collect_cache_metrics()
+        self._collect_kpi_metrics()
 
-    async def _collect_pipeline_metrics(self) -> None:
+    def _load_latest_pipeline_result(self) -> tuple[dict | None, str]:
+        runs_dir = Path('logs/runs')
+        if not runs_dir.exists():
+            return None, ''
+        run_dirs = sorted(runs_dir.glob('*'), reverse=True)
+        if not run_dirs:
+            return None, ''
+        latest_run = run_dirs[0]
+        result_file = latest_run / 'pipeline_results.json'
+        if not result_file.exists():
+            return None, latest_run.name
+        with open(result_file) as f:
+            return json.load(f), latest_run.name
+
+    def _collect_pipeline_metrics(self) -> None:
         try:
-            runs_dir = Path('logs/runs')
-            if not runs_dir.exists():
+            result, run_name = self._load_latest_pipeline_result()
+            if result is None:
                 return
-            run_dirs = sorted(runs_dir.glob('*'), reverse=True)
-            if not run_dirs:
-                return
-            latest_run = run_dirs[0]
-            result_file = latest_run / 'pipeline_results.json'
-            if result_file.exists():
-                with open(result_file) as f:
-                    result = json.load(f)
-                status = 'success' if result.get('status') == 'success' else 'error'
-                status_val = 1 if status == 'success' else 0
-                self.register_gauge('pipeline_last_run_status', status_val, {'status': status, 'run_id': latest_run.name})
-                if 'duration_seconds' in result:
-                    self.register_gauge('pipeline_duration_seconds', result['duration_seconds'], {'run_id': latest_run.name})
-                for phase_name, phase_data in result.get('phases', {}).items():
-                    phase_status = 'success' if phase_data.get('status') == 'success' else 'error'
-                    self.register_counter('pipeline_phase_runs_total', 1, {'phase': phase_name, 'status': phase_status})
-                    if 'duration_seconds' in phase_data:
-                        self.register_gauge('pipeline_phase_duration_seconds', phase_data['duration_seconds'], {'phase': phase_name})
-                if 'ingestion' in result.get('phases', {}):
-                    rows = result['phases']['ingestion'].get('rows', 0)
-                    self.register_gauge('fact_loans_row_count', rows)
+            status = 'success' if result.get('status') == 'success' else 'error'
+            status_val = 1 if status == 'success' else 0
+            self.register_gauge('pipeline_last_run_status', status_val, {'status': status, 'run_id': run_name})
+            if 'duration_seconds' in result:
+                self.register_gauge('pipeline_duration_seconds', result['duration_seconds'], {'run_id': run_name})
+            for phase_name, phase_data in result.get('phases', {}).items():
+                phase_status = 'success' if phase_data.get('status') == 'success' else 'error'
+                self.register_counter('pipeline_phase_runs_total', 1, {'phase': phase_name, 'status': phase_status})
+                if 'duration_seconds' in phase_data:
+                    self.register_gauge('pipeline_phase_duration_seconds', phase_data['duration_seconds'], {'phase': phase_name})
+            if 'ingestion' in result.get('phases', {}):
+                rows = result['phases']['ingestion'].get('rows', 0)
+                self.register_gauge('fact_loans_row_count', rows)
         except Exception as e:
             print(f'Error collecting pipeline metrics: {e}')
 
@@ -93,7 +99,7 @@ class MetricsRegistry:
             print(f'Error collecting connection pool metrics: {e}')
             self.register_gauge('connection_pool_health_check', 0)
 
-    async def _collect_cache_metrics(self) -> None:
+    def _collect_cache_metrics(self) -> None:
         try:
             cache_file = Path('data/cache/idempotency_stats.json')
             if cache_file.exists():
@@ -107,26 +113,18 @@ class MetricsRegistry:
         except Exception as e:
             print(f'Error collecting cache metrics: {e}')
 
-    async def _collect_kpi_metrics(self) -> None:
+    def _collect_kpi_metrics(self) -> None:
         try:
-            runs_dir = Path('logs/runs')
-            if not runs_dir.exists():
+            result, _ = self._load_latest_pipeline_result()
+            if result is None:
                 return
-            run_dirs = sorted(runs_dir.glob('*'), reverse=True)
-            if not run_dirs:
-                return
-            latest_run = run_dirs[0]
-            result_file = latest_run / 'pipeline_results.json'
-            if result_file.exists():
-                with open(result_file) as f:
-                    result = json.load(f)
-                calc_phase = result.get('phases', {}).get('calculation', {})
-                kpi_results = calc_phase.get('kpi_results', {})
-                for kpi_name, kpi_data in kpi_results.items():
-                    status = 'success' if kpi_data.get('status') == 'success' else 'error'
-                    self.register_counter('kpi_calculations_total', 1, {'kpi_name': kpi_name, 'status': status})
-                    if status == 'error':
-                        self.register_counter('kpi_calculation_failures_total', 1, {'kpi_name': kpi_name})
+            calc_phase = result.get('phases', {}).get('calculation', {})
+            kpi_results = calc_phase.get('kpi_results', {})
+            for kpi_name, kpi_data in kpi_results.items():
+                status = 'success' if kpi_data.get('status') == 'success' else 'error'
+                self.register_counter('kpi_calculations_total', 1, {'kpi_name': kpi_name, 'status': status})
+                if status == 'error':
+                    self.register_counter('kpi_calculation_failures_total', 1, {'kpi_name': kpi_name})
         except Exception as e:
             print(f'Error collecting KPI metrics: {e}')
 
@@ -143,8 +141,7 @@ class MetricsRegistry:
             lines.append(f'# HELP {metric_name} {help_text}')
             metric_type = 'counter' if 'total' in metric_name else 'gauge'
             lines.append(f'# TYPE {metric_name} {metric_type}')
-            for metric_key, value in entries:
-                lines.append(f'{metric_key} {value}')
+            lines.extend(f'{metric_key} {value}' for metric_key, value in entries)
             lines.append('')
         return '\n'.join(lines)
 
@@ -155,6 +152,12 @@ registry = MetricsRegistry()
 
 class MetricsHandler(BaseHTTPRequestHandler):
 
+    def _send_json_response(self, status_code: int, body: bytes) -> None:
+        self.send_response(status_code)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self) -> None:
         if self.path == '/metrics':
             asyncio.run(registry.collect_metrics())
@@ -164,16 +167,13 @@ class MetricsHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(response.encode())
         elif self.path == '/health':
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(b'{"status": "healthy"}')
+            self._send_json_response(200, b'{"status": "healthy"}')
         else:
             self.send_response(404)
             self.end_headers()
 
     def log_message(self, _format: str, *args: object) -> None:
-        pass
+        """Intentionally suppressed to avoid noisy per-request logs."""
 
 def main() -> None:
     port = int(os.getenv('METRICS_PORT', '8000'))
@@ -189,7 +189,7 @@ def main() -> None:
     print('    static_configs:')
     print(f"      - targets: ['localhost:{port}']")
     print('=' * 60)
-    server = HTTPServer(('0.0.0.0', port), MetricsHandler)
+    server = HTTPServer(('0.0.0.0', port), MetricsHandler)  # nosec B104
     try:
         server.serve_forever()
     except KeyboardInterrupt:
