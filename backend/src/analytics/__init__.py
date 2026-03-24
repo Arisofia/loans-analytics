@@ -1,3 +1,16 @@
+"""COMPATIBILITY_ONLY — Legacy analytics helpers.
+
+This module provides utility functions (standardize_numeric, calculate_quality_score,
+portfolio_kpis, project_growth) retained for backward compatibility and test support.
+
+It is NOT the KPI Single Source of Truth.  Canonical KPI formulas live in:
+  - backend.python.kpis.ssot_asset_quality  (PAR, NPL, asset-quality)
+  - backend.python.kpis.engine              (KPIEngineV2)
+  - backend.python.kpis.health_score        (portfolio health scoring)
+
+Do NOT add new financial math here.  Any new metric must be added to the
+canonical KPI engine and routed through the SSoT layer.
+"""
 from __future__ import annotations
 from datetime import datetime, timezone
 import numpy as np
