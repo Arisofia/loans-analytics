@@ -5,6 +5,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+
+optbinning = pytest.importorskip("optbinning", reason="optbinning not installed")
+
 from backend.python.models.scorecard_model import ScorecardModel
 INDUSTRIES = ['Comercio al por menor', 'Otras actividades especializadas de construccion', 'Transporte de carga', 'Servicios de alimentacion', 'Manufactura textil', 'Agricultura y ganaderia', 'Servicios profesionales']
 LOAN_STATUSES = ['active', 'closed', 'defaulted', 'active', 'active', 'closed']
