@@ -83,3 +83,11 @@ models/risk/*.ubj
 models/risk/*.bin
 models/risk/*.json
 !models/risk/.gitkeep
+
+# Test runner artifacts
+.pytest_failures.exit
+.pytest_junit*.xml
+test_results*.txt
+
+# Zencoder
+.zencoder/
