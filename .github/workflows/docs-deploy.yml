@@ -20,6 +20,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read # Required for deploy-pages@v4 to access artifacts
 
 concurrency:
   group: pages
@@ -30,10 +31,10 @@ jobs:
     name: Build documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.4.0
         with:
           python-version: "3.12"
           cache: pip
@@ -63,7 +64,7 @@ jobs:
           fi
 
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v3.0.1
         with:
           path: _site
 
@@ -77,4 +78,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v4.0.5
