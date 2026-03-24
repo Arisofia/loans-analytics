@@ -16,10 +16,10 @@ async def test_calculate_kpis_for_portfolio_includes_next_gen_kpis():
     assert 'COR' in kpi_map
     assert 'CURERATE' in kpi_map
     assert 'NIM' in kpi_map
-    assert kpi_map['PAR60'].value == 50.0
-    assert kpi_map['NPL'].value == 50.0
-    assert kpi_map['LGD'].value == 80.0
-    assert kpi_map['COR'].value == 40.0
+    assert kpi_map['PAR60'].value == pytest.approx(50.0)
+    assert kpi_map['NPL'].value == pytest.approx(50.0)
+    assert kpi_map['LGD'].value == pytest.approx(80.0)
+    assert kpi_map['COR'].value == pytest.approx(40.0)
 
 @pytest.mark.asyncio
 async def test_get_risk_stratification():
@@ -50,5 +50,5 @@ async def test_get_vintage_curves():
     avg_points = {p.months_on_book: p for p in response.portfolio_average_curve}
     assert 1 in avg_points
     assert 6 in avg_points
-    assert avg_points[1].npl_ratio == 100.0
-    assert avg_points[6].npl_ratio == 0.0
+    assert avg_points[1].npl_ratio == pytest.approx(100.0)
+    assert avg_points[6].npl_ratio == pytest.approx(0.0)

@@ -59,6 +59,7 @@ class KpiProjection(BaseModel):
 class HistoricalDataBackend(Protocol):
 
     def get_kpi_history(self, kpi_id: str, start_date: date, end_date: date) -> List[KpiHistoricalValue]:
+        # This is a Protocol method and does not require an implementation here.
         pass
 
 class HistoricalContextProvider:
