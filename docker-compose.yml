@@ -27,7 +27,9 @@ x-common-env: &common-env
   DUCKDB_PATH: /app/data/duckdb/analytics.duckdb
   PARQUET_BASE_DIR: /app/data/duckdb
   # Pipeline
-  PIPELINE_INPUT: /app/data/samples/abaco_sample_data_20260202.csv
+  # Pipeline — PIPELINE_INPUT must be set explicitly for production.
+  # The sample data default is for local development only.
+  PIPELINE_INPUT: ${PIPELINE_INPUT:?Set PIPELINE_INPUT to your production data path}
   PIPELINE_MODE: full
   # Observability
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
@@ -109,7 +111,7 @@ services:
       <<: *common-env
     command: >
       python scripts/data/run_data_pipeline.py
-        --input ${PIPELINE_INPUT:-data/samples/abaco_sample_data_20260202.csv}
+        --input ${PIPELINE_INPUT:?Set PIPELINE_INPUT to your production data path}
         --mode  ${PIPELINE_MODE:-full}
         --verbose
     profiles:

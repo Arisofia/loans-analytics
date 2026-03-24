@@ -18,12 +18,8 @@ export STREAMLIT_SERVER_ADDRESS=0.0.0.0
 export STREAMLIT_LOGGER_LEVEL=info
 export STREAMLIT_CLIENT_LOGGER_LEVEL=info
 
-# Install/update dependencies
-echo "📦 Installing dependencies..."
-pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt --quiet
-
-echo "✅ Dependencies installed"
+# Dependencies must be baked into the container image at build time.
+# Do NOT install at runtime — this ensures immutable, reproducible deployments.
 
 # Run Streamlit app on the canonical port
 echo "🎯 Starting Streamlit application on port ${CANONICAL_PORT}..."

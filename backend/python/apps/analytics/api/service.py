@@ -11,6 +11,7 @@ from backend.python.config import settings
 from backend.python.kpis.advanced_risk import calculate_advanced_risk_metrics
 from backend.python.kpis.catalog_processor import KPICatalogProcessor
 from backend.python.kpis.health_score import calculate_portfolio_health_score
+from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 from backend.python.kpis.unit_economics import calculate_all_unit_economics, calculate_cost_of_risk, calculate_lgd, calculate_nim, calculate_npl_ratio
 from backend.python.logging_config import get_logger
 from backend.python.supabase_pool import get_pool
@@ -202,7 +203,13 @@ class KPIService:
             if df.empty:
                 return []
             df = self._calculate_loan_risk_metrics(df)
-            high_risk_df = df[(df['ltv'] > ltv_threshold) | (df['dti'] > dti_threshold) | (df['days_past_due'] > 30)]
+            high_risk_df = df[
+                (df['ltv'] > ltv_threshold)
+                | (df['dti'] > dti_threshold)
+                | (df['days_past_due'] > 30)
+                | df['ltv_insufficient']
+                | df['dti_insufficient']
+            ]
             return [self._build_loan_risk_alert(rec, ltv_threshold, dti_threshold) for _, rec in high_risk_df.iterrows()]
         except Exception as e:
             logger.error('Error calculating risk alerts for actor %s: %s', self.actor, e, exc_info=True)
@@ -218,13 +225,17 @@ class KPIService:
 
     def _calculate_loan_risk_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
         if 'appraised_value' in df.columns and df['appraised_value'].notna().any():
-            df['ltv'] = (df['principal_balance'] / df['appraised_value'] * 100).fillna(0)
+            df['ltv'] = (df['principal_balance'] / df['appraised_value'] * 100)
+            df['ltv_insufficient'] = False
         else:
-            df['ltv'] = 0.0
+            df['ltv'] = float('nan')
+            df['ltv_insufficient'] = True
         if 'monthly_debt' in df.columns and 'borrower_income' in df.columns and df['borrower_income'].notna().any():
-            df['dti'] = (df['monthly_debt'] / df['borrower_income'] * 100).fillna(0)
+            df['dti'] = (df['monthly_debt'] / df['borrower_income'] * 100)
+            df['dti_insufficient'] = False
         else:
-            df['dti'] = 0.0
+            df['dti'] = float('nan')
+            df['dti_insufficient'] = True
         if 'days_past_due' not in df.columns:
             df['days_past_due'] = df['loan_status'].apply(self._dpd_from_status)
         else:
@@ -237,12 +248,20 @@ class KPIService:
         ltv = rec['ltv']
         dti = rec['dti']
         dpd = rec['days_past_due']
-        risk_score = ltv / 100 * 0.3 + dti / 100 * 0.3 + dpd / 100 * 0.4
+        ltv_valid = not (pd.isna(ltv) or rec.get('ltv_insufficient', False))
+        dti_valid = not (pd.isna(dti) or rec.get('dti_insufficient', False))
+        ltv_score = (ltv / 100 * 0.3) if ltv_valid else 0.0
+        dti_score = (dti / 100 * 0.3) if dti_valid else 0.0
+        risk_score = ltv_score + dti_score + dpd / 100 * 0.4
         risk_score = min(100.0, risk_score * 100)
         alerts = []
-        if ltv > ltv_threshold:
+        if not ltv_valid:
+            alerts.append('LTV data insufficient — collateral valuation unavailable')
+        elif ltv > ltv_threshold:
             alerts.append(f'LTV {ltv:.1f}% exceeds threshold {ltv_threshold}%')
-        if dti > dti_threshold:
+        if not dti_valid:
+            alerts.append('DTI data insufficient — income data unavailable')
+        elif dti > dti_threshold:
             alerts.append(f'DTI {dti:.1f}% exceeds threshold {dti_threshold}%')
         if dpd > 30:
             alerts.append(f'DPD {dpd} indicates high credit risk')
@@ -1015,13 +1034,13 @@ class KPIService:
     @staticmethod
     def _populate_ltv_dti_ratios(df: pd.DataFrame) -> None:
         if 'appraised_value' in df.columns and df['appraised_value'].notna().any():
-            df['ltv_ratio'] = (df['loan_amount'] / df['appraised_value'] * 100).fillna(0)
+            df['ltv_ratio'] = df['loan_amount'] / df['appraised_value'] * 100
         else:
-            df['ltv_ratio'] = 0.0
+            df['ltv_ratio'] = float('nan')
         if 'monthly_debt' in df.columns and 'borrower_income' in df.columns and df['borrower_income'].notna().any():
-            df['dti_ratio'] = (df['monthly_debt'] / df['borrower_income'] * 100).fillna(0)
+            df['dti_ratio'] = df['monthly_debt'] / df['borrower_income'] * 100
         else:
-            df['dti_ratio'] = 0.0
+            df['dti_ratio'] = float('nan')
 
     @staticmethod
     def _calculate_processing_time_avg(df: pd.DataFrame) -> float:
@@ -1057,10 +1076,28 @@ class KPIService:
         return float(len(df))
 
     def _calculate_par_and_bucket_metrics(self, df: pd.DataFrame, total_outstanding: float) -> dict[str, float]:
-        par30_val = float(df[df['dpd'] >= 30]['principal_balance'].sum())
-        par60_val = float(df[df['dpd'] >= 60]['principal_balance'].sum())
-        par90_val = float(df[df['dpd'] >= 90]['principal_balance'].sum())
-        return {'par30': par30_val / total_outstanding * 100 if total_outstanding > 0 else 0.0, 'par60': par60_val / total_outstanding * 100 if total_outstanding > 0 else 0.0, 'par90': par90_val / total_outstanding * 100 if total_outstanding > 0 else 0.0, 'dpd_1_30': float(df[(df['dpd'] > 0) & (df['dpd'] <= 30)]['principal_balance'].sum()) / total_outstanding * 100 if total_outstanding > 0 else 0.0, 'dpd_31_60': float(df[(df['dpd'] > 30) & (df['dpd'] <= 60)]['principal_balance'].sum()) / total_outstanding * 100 if total_outstanding > 0 else 0.0, 'dpd_61_90': float(df[(df['dpd'] > 60) & (df['dpd'] <= 90)]['principal_balance'].sum()) / total_outstanding * 100 if total_outstanding > 0 else 0.0, 'dpd_90_plus': float(df[df['dpd'] > 90]['principal_balance'].sum()) / total_outstanding * 100 if total_outstanding > 0 else 0.0}
+        status_series = df['loan_status'] if 'loan_status' in df.columns else None
+        ssot = calculate_asset_quality_metrics(
+            balance=df['principal_balance'],
+            dpd=df['dpd'],
+            status=status_series,
+            actor='api.service',
+            metric_aliases=['par30', 'par60', 'par90'],
+        )
+        # DPD bucket metrics are granular breakdowns not covered by SSOT
+        dpd_1_30 = float(df[(df['dpd'] > 0) & (df['dpd'] <= 30)]['principal_balance'].sum()) / total_outstanding * 100 if total_outstanding > 0 else 0.0
+        dpd_31_60 = float(df[(df['dpd'] > 30) & (df['dpd'] <= 60)]['principal_balance'].sum()) / total_outstanding * 100 if total_outstanding > 0 else 0.0
+        dpd_61_90 = float(df[(df['dpd'] > 60) & (df['dpd'] <= 90)]['principal_balance'].sum()) / total_outstanding * 100 if total_outstanding > 0 else 0.0
+        dpd_90_plus = float(df[df['dpd'] > 90]['principal_balance'].sum()) / total_outstanding * 100 if total_outstanding > 0 else 0.0
+        return {
+            'par30': ssot.get('par30', 0.0),
+            'par60': ssot.get('par60', 0.0),
+            'par90': ssot.get('par90', 0.0),
+            'dpd_1_30': dpd_1_30,
+            'dpd_31_60': dpd_31_60,
+            'dpd_61_90': dpd_61_90,
+            'dpd_90_plus': dpd_90_plus,
+        }
 
     def _calculate_collection_recovery_metrics(self, df: pd.DataFrame, status_defaulted_mask: pd.Series) -> tuple[float, float]:
         scheduled = pd.to_numeric(df['total_scheduled'], errors='coerce').fillna(0) if 'total_scheduled' in df.columns else pd.Series([0.0] * len(df), index=df.index)
@@ -1101,8 +1138,10 @@ class KPIService:
             extended = processor.get_all_kpis()
             revenue_df = processor.get_monthly_revenue_df()
         except Exception as exc:
-            logger.warning('Executive KPI fallback failed in realtime path: %s', exc)
-            return {'cac': 0.0, 'gross_margin_pct': 0.0, 'revenue_forecast_6m': 0.0, 'churn_90d': 0.0}
+            logger.error('Executive KPI computation failed — raising degraded state: %s', exc, exc_info=True)
+            raise RuntimeError(
+                f'Executive metrics unavailable: upstream KPI computation failed ({exc})'
+            ) from exc
         executive_strip = extended.get('executive_strip', {}) or {}
         unit_economics = extended.get('unit_economics', []) or []
         churn_rows = extended.get('churn_90d_metrics', []) or []

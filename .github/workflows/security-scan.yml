@@ -208,6 +208,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: false
+
       - name: Install Gitleaks via Go
         run: |
           go install "github.com/gitleaks/gitleaks/v8@v${GITLEAKS_VERSION}"

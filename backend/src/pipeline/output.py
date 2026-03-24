@@ -412,24 +412,13 @@ class OutputPhase:
         missing = sorted((name for name in mapped_names if name and name not in existing_names))
         if not missing:
             return
-        configured_table = self.config.get('database', {}).get('definitions_table', KPI_DEFINITIONS_TABLE)
-        definitions_table = configured_table if '.' in configured_table else KPI_DEFINITIONS_TABLE
-        query = self._table_query(supabase, definitions_table)
-        for kpi_name in missing:
-            payload_variants = [({'kpi_key': kpi_name, 'name': kpi_name, 'display_name': kpi_name.replace('_', ' ').title(), 'category': 'Pipeline', 'description': f'Auto-registered KPI definition for {kpi_name}', 'unit': 'unknown'}, 'kpi_key'), ({'kpi_key': kpi_name, 'display_name': kpi_name.replace('_', ' ').title(), 'category': 'Pipeline', 'description': f'Auto-registered KPI definition for {kpi_name}', 'unit': 'unknown'}, 'kpi_key'), ({'kpi_key': kpi_name, 'display_name': kpi_name.replace('_', ' ').title()}, 'kpi_key'), ({'name': kpi_name, 'category': 'Pipeline', 'description': f'Auto-registered KPI definition for {kpi_name}', 'unit': 'unknown'}, 'name')]
-            created = False
-            last_error: Optional[Exception] = None
-            for payload, conflict_col in payload_variants:
-                try:
-                    query.upsert([payload], on_conflict=conflict_col).execute()
-                    created = True
-                    break
-                except Exception as exc:
-                    last_error = exc
-            if created:
-                logger.info('Auto-created missing KPI definition: %s', kpi_name)
-            else:
-                logger.warning("Could not auto-create KPI definition '%s'. Apply Supabase migrations for full KPI coverage. Last error: %s", kpi_name, last_error)
+        # Fail closed: do not auto-create KPI definitions in production.
+        # Missing definitions indicate an incomplete migration — fix via
+        # Supabase migrations rather than silently mutating metadata.
+        raise RuntimeError(
+            f'Missing KPI definitions in monitoring table: {missing}. '
+            'Apply database migrations to register these KPIs before running the pipeline.'
+        )
 
     def _write_to_database(self, kpi_results: Dict[str, Any]) -> Dict[str, Any]:
         if prereq_error := self._check_database_prerequisites():
