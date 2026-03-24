@@ -27,17 +27,32 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
+      - name: Set up Python 3.12 (no external action)
+        run: |
+          if command -v python3.12 >/dev/null 2>&1; then
+            PYTHON_BIN="python3.12"
+          elif command -v python3 >/dev/null 2>&1; then
+            PYTHON_BIN="python3"
+          else
+            echo "❌ Python is not available on runner"
+            exit 1
+          fi
+          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
+          "$PYTHON_BIN" --version
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip
+          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
 
       - name: Check Supabase secrets availability
         id: check-secrets
@@ -54,11 +69,12 @@ jobs:
 
       - name: Run mypy type checking (strict mode)
         run: |
-          python -m mypy --no-incremental
+          "$PYTHON_BIN" -m mypy --no-incremental
         continue-on-error: false
 
       - name: Validate migration governance
-        run: python scripts/maintenance/validate_migration_index.py
+        run: |
+          "$PYTHON_BIN" scripts/maintenance/validate_migration_index.py
 
       - name: Run unit tests
         id: pytest
@@ -76,7 +92,7 @@ jobs:
             exit 0
           fi
           # Extract suite summary and individual failures/errors
-          python3 << 'PYEOF'
+          "$PYTHON_BIN" << 'PYEOF'
           import xml.etree.ElementTree as ET
           tree = ET.parse('test-results.xml')
           root = tree.getroot()
@@ -100,12 +116,14 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: test-results.xml
-          retention-days: 7
-          if-no-files-found: ignore
+        run: |
+          mkdir -p artifacts
+          if [ -f test-results.xml ]; then
+            cp test-results.xml "artifacts/test-results-${{ github.run_number }}.xml"
+            echo "Saved artifacts/test-results-${{ github.run_number }}.xml"
+          else
+            echo "No test-results.xml found; skipping artifact packaging"
+          fi
 
       - name: Fail if tests failed
         if: steps.pytest.outcome == 'failure'
@@ -120,17 +138,32 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
+      - name: Set up Python 3.12 (no external action)
+        run: |
+          if command -v python3.12 >/dev/null 2>&1; then
+            PYTHON_BIN="python3.12"
+          elif command -v python3 >/dev/null 2>&1; then
+            PYTHON_BIN="python3"
+          else
+            echo "❌ Python is not available on runner"
+            exit 1
+          fi
+          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
+          "$PYTHON_BIN" --version
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip
+          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
 
       - name: Run integration tests
         env:
@@ -139,7 +172,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RUN_REAL_SUPABASE_TESTS: "1"
         run: |
-          pytest tests/ -v -m "integration" --tb=short
+          "$PYTHON_BIN" -m pytest tests/ -v -m "integration" --tb=short
 
   integration-tests-skipped:
     runs-on: ubuntu-latest
@@ -162,20 +195,36 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       HISTORICAL_CONTEXT_MODE: MOCK
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
+      - name: Set up Python 3.12 (no external action)
+        run: |
+          if command -v python3.12 >/dev/null 2>&1; then
+            PYTHON_BIN="python3.12"
+          elif command -v python3 >/dev/null 2>&1; then
+            PYTHON_BIN="python3"
+          else
+            echo "❌ Python is not available on runner"
+            exit 1
+          fi
+          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
+          "$PYTHON_BIN" --version
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip
+          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
 
       - name: Run multi-agent tests
-        run: pytest tests/agents/ -v -k "test_" --tb=short
+        run: |
+          "$PYTHON_BIN" -m pytest tests/agents/ -v -k "test_" --tb=short
 
   e2e-tests:
     runs-on: ubuntu-latest
@@ -187,20 +236,36 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
+      - name: Set up Python 3.12 (no external action)
+        run: |
+          if command -v python3.12 >/dev/null 2>&1; then
+            PYTHON_BIN="python3.12"
+          elif command -v python3 >/dev/null 2>&1; then
+            PYTHON_BIN="python3"
+          else
+            echo "❌ Python is not available on runner"
+            exit 1
+          fi
+          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
+          "$PYTHON_BIN" --version
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip
+          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
 
       - name: Install Playwright browser
-        run: python -m playwright install --with-deps chromium
+        run: |
+          "$PYTHON_BIN" -m playwright install --with-deps chromium
 
       - name: Start backend and dashboard
         env:
@@ -251,7 +316,8 @@ jobs:
           FRONTEND_BASE_URL: "http://127.0.0.1:8501"
           CSV_PATH: "data/samples/abaco_sample_data_20260202.csv"
           EXPECT_FALLBACK_MODE: "1"
-        run: pytest tests/e2e -v -m e2e --tb=short
+        run: |
+          "$PYTHON_BIN" -m pytest tests/e2e -v -m e2e --tb=short
 
       - name: Print service logs on failure
         if: failure()
@@ -270,17 +336,33 @@ jobs:
     env:
       PYTHONPATH: ".:backend:frontend"
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository (no external action)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git checkout --detach FETCH_HEAD
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
+      - name: Set up Python 3.12 (no external action)
+        run: |
+          if command -v python3.12 >/dev/null 2>&1; then
+            PYTHON_BIN="python3.12"
+          elif command -v python3 >/dev/null 2>&1; then
+            PYTHON_BIN="python3"
+          else
+            echo "❌ Python is not available on runner"
+            exit 1
+          fi
+          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
+          "$PYTHON_BIN" --version
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip
+          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
 
       - name: Pipeline config validation
-        run: python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --mode validate
+        run: |
+          "$PYTHON_BIN" scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --mode validate

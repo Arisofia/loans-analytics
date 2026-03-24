@@ -366,7 +366,7 @@ class OutputPhase:
             return []
         name_to_key, name_to_id = kpi_maps
         mapped_names = {self._map_monitoring_kpi_name(str(row.get('kpi_name', ''))) for row in rows if row.get('kpi_name')}
-        self._ensure_missing_kpi_definitions(supabase, mapped_names, set(name_to_key.keys()))
+        self._ensure_missing_kpi_definitions(mapped_names, set(name_to_key.keys()))
         if not mapped_names.issubset(set(name_to_key.keys())):
             if refreshed_maps := self._get_kpi_definitions_map(supabase):
                 name_to_key, name_to_id = refreshed_maps
@@ -408,7 +408,7 @@ class OutputPhase:
             logger.info('Inserted batch', extra={'batch_start': index, 'batch_end': index + len(batch), 'batch_size': len(batch)})
         return total_inserted
 
-    def _ensure_missing_kpi_definitions(self, supabase: Any, mapped_names: Set[str], existing_names: Set[str]) -> None:
+    def _ensure_missing_kpi_definitions(self, mapped_names: Set[str], existing_names: Set[str]) -> None:
         missing = sorted((name for name in mapped_names if name and name not in existing_names))
         if not missing:
             return
