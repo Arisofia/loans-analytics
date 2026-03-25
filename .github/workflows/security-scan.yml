@@ -106,22 +106,6 @@ jobs:
           git fetch --depth=1 origin "${{ github.sha }}"
           git checkout --detach FETCH_HEAD
 
-      - name: Detect Code Scanning availability
-        id: check_code_scanning_availability
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?per_page=1")
-          if [ "${STATUS}" = "200" ]; then
-            echo "enabled=true" >> "${GITHUB_OUTPUT}"
-          else
-            echo "enabled=false" >> "${GITHUB_OUTPUT}"
-            echo "::warning::Code scanning API unavailable (HTTP ${STATUS}). SARIF upload will be skipped."
-          fi
-
       - name: Skip Snyk scan when token is missing
         if: ${{ env.SNYK_TOKEN == '' }}
         run: echo "::warning::SNYK_TOKEN is not configured. Skipping Snyk dependency scan."
@@ -129,8 +113,11 @@ jobs:
       - name: Run Snyk to check for vulnerabilities
         if: ${{ env.SNYK_TOKEN != '' }}
         run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install snyk
+          if ! command -v npm >/dev/null 2>&1; then
+            echo "::error::npm is required to install Snyk CLI on this runner"
+            exit 1
+          fi
+          npm install --global snyk
           snyk auth "$SNYK_TOKEN"
           snyk test --file=requirements.txt --package-manager=pip --severity-threshold=high --fail-on=all
 
@@ -268,8 +255,10 @@ jobs:
           ARCHIVE="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           curl -fsSL -o "$ARCHIVE" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${ARCHIVE}"
           tar -xzf "$ARCHIVE" gitleaks
+          mkdir -p "$HOME/.local/bin"
           install -m 0755 gitleaks "$HOME/.local/bin/gitleaks"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
           gitleaks version
           gitleaks detect --source . --config .gitleaks.toml --redact --verbose
         env:
