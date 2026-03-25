@@ -579,7 +579,7 @@ prometheus-fastapi-instrumentator==7.1.0
     # via -r requirements.txt
 propcache==0.4.1
     # via yarl
-protobuf==6.33.5
+protobuf==7.34.1
     # via
     #   -r requirements.txt
     #   googleapis-common-protos
@@ -858,7 +858,7 @@ sqlalchemy[asyncio]==2.0.48
     # via
     #   alembic
     #   prefect
-starlette==0.52.1
+starlette==1.0.0
     # via
     #   fastapi
     #   prometheus-fastapi-instrumentator
