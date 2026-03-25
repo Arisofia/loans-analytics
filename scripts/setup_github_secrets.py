@@ -120,9 +120,7 @@ def print_secret_list(label: str, values: Iterable[str]) -> None:
     items = list(values)
     if not items:
         return
-    print(label)
-    for value in items:
-        print(f'  - {value}')
+    print(f'{label} {len(items)}')
 
 def upload_actions_secrets(token: str, dry_run: bool) -> None:
     uploadable, skipped = collect_uploadable_secrets(GITHUB_ACTIONS_SECRETS)
@@ -140,14 +138,15 @@ def upload_actions_secrets(token: str, dry_run: bool) -> None:
         raise SystemExit(1)
     key_id, public_key = get_repo_public_key(token)
     print(f'Fetched repository public key: {key_id[:8]}...')
+    uploaded_count = 0
     failures: list[str] = []
     for secret_name, secret_value in uploadable.items():
         try:
             push_secret(token, key_id, public_key, secret_name, secret_value)
-            print(f'Uploaded: {secret_name}')
-        except RuntimeError as error:
+            uploaded_count += 1
+        except RuntimeError:
             failures.append(secret_name)
-            print(f'Failed: {secret_name} -> {error}')
+    print(f'Upload completed: {uploaded_count} succeeded, {len(failures)} failed.')
     if failures:
         raise SystemExit(1)
 

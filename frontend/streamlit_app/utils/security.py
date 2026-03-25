@@ -28,7 +28,7 @@ def sanitize_api_base(base: str) -> Optional[str]:
                     if not ip.is_global and os.environ.get('ALLOW_PRIVATE_API_BASE') != '1':
                         return None
             except socket.gaierror:
-                pass
+                return None
         return safe
     except (TypeError, ValueError, AttributeError):
         return None

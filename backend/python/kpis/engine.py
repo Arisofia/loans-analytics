@@ -13,7 +13,6 @@ from backend.python.logging_config import get_logger
 logger = get_logger(__name__)
 _LOG_KPI_CALCULATED = 'Calculated %s: %s'
 _LOG_KPI_CALCULATION_ERROR = 'Failed to calculate %s: %s'
-_NPL_BROAD_STATUSES: tuple[str, ...] = ('delinquent', 'defaulted')
 _NPL_STRICT_STATUSES: tuple[str, ...] = ('defaulted',)
 
 class KPIEngineV2:
