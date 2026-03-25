@@ -117,14 +117,19 @@ class KPIEngineV2:
         missing_columns = [col for col in required_columns if col not in self.df.columns]
         if missing_columns:
             raise ValueError(f"CRITICAL: {kpi_name} missing required columns: {', '.join(missing_columns)}")
-        # NOTE: pandas Series.sum() returns a float for float columns.  Converting
-        # through str avoids Decimal(float) representation errors (e.g. Decimal(0.1)
-        # → 0.10000000000000000555...).  The str() path gives the shortest accurate
-        # representation, so there is a negligible rounding artifact only at the last
-        # significant digit of the float; for portfolio-level LTV this is immaterial.
-        # If callers require full decimal precision they should pass Decimal columns.
-        total_loans = Decimal(str(self.df['loan_amount'].sum()))
-        total_collateral = Decimal(str(self.df['collateral_value'].sum()))
+        # NOTE: Aggregate using Decimal end-to-end to avoid intermediate float
+        # rounding. We convert each non-missing value via str() to avoid
+        # Decimal(float) representation issues (e.g. Decimal(0.1) →
+        # 0.10000000000000000555...). Missing values are skipped, matching
+        # pandas' default skipna=True behavior for sum().
+        total_loans = sum(
+            (Decimal(str(v)) for v in self.df['loan_amount'] if pd.notna(v)),
+            Decimal('0'),
+        )
+        total_collateral = sum(
+            (Decimal(str(v)) for v in self.df['collateral_value'] if pd.notna(v)),
+            Decimal('0'),
+        )
         if total_collateral <= Decimal('0'):
             raise ValueError(
                 f'CRITICAL: {kpi_name} denominator (total_collateral_value={total_collateral}) is zero or '
