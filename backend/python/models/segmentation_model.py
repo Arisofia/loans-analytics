@@ -126,6 +126,7 @@ class SegmentationModel:
 
         payment_df['_is_late'] = (
             payment_df[status_col]
+            .astype(str)
             .str.strip()
             .str.lower()
             .isin(['late', 'tardio', 'tardío', 'mora', 'atrasado', 'en_mora'])
@@ -262,26 +263,27 @@ class SegmentationModel:
         feat = loan_df[[loan_id_loan]].copy().rename(columns={loan_id_loan: 'loan_id'})
         feat = feat.set_index('loan_id')
 
+        payment_df_copy = payment_df.copy()
         feat['days_past_due'] = (
             pd.to_numeric(loan_df.set_index(loan_id_loan)[dpd_col], errors='coerce').clip(lower=0)
             if dpd_col
             else 0.0
         )
 
-        tpv = self._extract_tpv(payment_df.copy(), loan_id_pay)
+        tpv = self._extract_tpv(payment_df_copy, loan_id_pay)
         tpv.index.name = 'loan_id'
         feat = feat.join(tpv, how='left')
 
-        late_feats = self._extract_late_flags(payment_df.copy(), loan_id_pay)
+        late_feats = self._extract_late_flags(payment_df_copy, loan_id_pay)
         late_feats.index.name = 'loan_id'
         feat = feat.join(late_feats, how='left')
 
-        volatility = self._extract_payment_volatility(payment_df.copy(), loan_id_pay)
+        volatility = self._extract_payment_volatility(payment_df_copy, loan_id_pay)
         volatility.index.name = 'loan_id'
         feat = feat.join(volatility, how='left')
 
         pay_ratio = self._extract_payment_ratio(
-            payment_df.copy(), loan_df.copy(), loan_id_pay, loan_id_loan
+            payment_df_copy, loan_df.copy(), loan_id_pay, loan_id_loan
         )
         pay_ratio.index.name = 'loan_id'
         feat = feat.join(pay_ratio, how='left')
@@ -524,13 +526,11 @@ class SegmentationModel:
     # ------------------------------------------------------------------ #
 
     def save(self, model_dir: str = 'models/segmentation') -> str:
-        import pickle
+        import joblib
         path = Path(model_dir)
         path.mkdir(parents=True, exist_ok=True)
-        with open(path / 'scaler.pkl', 'wb') as f:
-            pickle.dump(self.scaler, f)
-        with open(path / 'cluster_model.pkl', 'wb') as f:
-            pickle.dump(self.cluster_model, f)
+        joblib.dump(self.scaler, path / 'scaler.joblib')
+        joblib.dump(self.cluster_model, path / 'cluster_model.joblib')
         with open(path / 'metadata.json', 'w', encoding='utf-8') as f:
             json.dump(self.metadata, f, indent=2, default=str)
         with open(path / 'cluster_profiles.json', 'w', encoding='utf-8') as f:
@@ -538,22 +538,19 @@ class SegmentationModel:
         with open(path / 'segment_map.json', 'w', encoding='utf-8') as f:
             json.dump({str(k): v for k, v in self.segment_map.items()}, f, indent=2)
         if self._train_scaled is not None:
-            with open(path / 'train_scaled.pkl', 'wb') as f:
-                pickle.dump(self._train_scaled, f)
+            np.save(path / 'train_scaled.npy', self._train_scaled)
         logger.info('Segmentation model saved to %s', path)
         return str(path)
 
     @classmethod
     def load(cls, model_dir: str = 'models/segmentation') -> 'SegmentationModel':
-        import pickle
+        import joblib
         path = Path(model_dir)
         if not path.exists():
             raise FileNotFoundError(f'Model directory not found: {path}')
         instance = cls()
-        with open(path / 'scaler.pkl', 'rb') as f:
-            instance.scaler = pickle.load(f)  # nosec B301
-        with open(path / 'cluster_model.pkl', 'rb') as f:
-            instance.cluster_model = pickle.load(f)  # nosec B301
+        instance.scaler = joblib.load(path / 'scaler.joblib')
+        instance.cluster_model = joblib.load(path / 'cluster_model.joblib')
         with open(path / 'metadata.json', encoding='utf-8') as f:
             instance.metadata = json.load(f)
         with open(path / 'cluster_profiles.json', encoding='utf-8') as f:
@@ -563,11 +560,17 @@ class SegmentationModel:
         with open(path / 'segment_map.json', encoding='utf-8') as f:
             instance.segment_map = {int(k): v for k, v in json.load(f).items()}
         instance.feature_columns = instance.metadata.get('feature_columns', [])
-        instance.algorithm = instance.metadata.get('algorithm', 'kmeans')
-        instance.n_clusters = instance.metadata.get('n_clusters_requested', 3)
-        train_scaled_path = path / 'train_scaled.pkl'
+        raw_algo = instance.metadata.get('algorithm', 'kmeans')
+        if raw_algo not in ('kmeans', 'dbscan'):
+            raise ValueError(
+                f"Invalid algorithm in saved metadata: {raw_algo!r}. "
+                "Expected 'kmeans' or 'dbscan'."
+            )
+        instance.algorithm = raw_algo
+        raw_n = instance.metadata.get('n_clusters_requested', 3)
+        instance.n_clusters = int(raw_n) if isinstance(raw_n, (int, float)) and raw_n >= 1 else 3
+        train_scaled_path = path / 'train_scaled.npy'
         if train_scaled_path.exists():
-            with open(train_scaled_path, 'rb') as f:
-                instance._train_scaled = pickle.load(f)  # nosec B301
+            instance._train_scaled = np.load(train_scaled_path)
         logger.info('Segmentation model loaded from %s', path)
         return instance
