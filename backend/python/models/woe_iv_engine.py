@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import logging
-from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 logger = logging.getLogger(__name__)
@@ -9,7 +10,7 @@ class WoEIVEngine:
     def __init__(self, target_col: str='is_default') -> None:
         self.target_col = target_col
 
-    def analyze_all(self, df: pd.DataFrame, feature_cols: List[str]) -> Dict[str, float]:
+    def analyze_all(self, df: pd.DataFrame, feature_cols: list[str]) -> dict[str, float]:
         iv_results = {}
         for feat in feature_cols:
             iv = self.compute_iv(df, feat)
@@ -17,7 +18,7 @@ class WoEIVEngine:
                 iv_results[feat] = iv
         return dict(sorted(iv_results.items(), key=lambda x: x[1], reverse=True))
 
-    def compute_iv(self, df: pd.DataFrame, feat: str) -> Optional[float]:
+    def compute_iv(self, df: pd.DataFrame, feat: str) -> float | None:
         try:
             from optbinning import OptimalBinning
         except ImportError:
