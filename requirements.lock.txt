@@ -562,7 +562,7 @@ pluggy==1.6.0
     #   pytest-cov
 polars==1.39.3
     # via -r requirements.txt
-polars-runtime-32==1.39.3
+polars-runtime-32==1.39.3 ; sys_platform == "win32"
     # via polars
 postgrest==2.28.3
     # via supabase

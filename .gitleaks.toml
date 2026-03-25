@@ -72,7 +72,10 @@ paths = [
   '''pnpm-lock\.yaml$''',
   '''.*\.lock\.txt$''',
   '''requirements.*\.lock\.txt$''',
-  
+  # Dependency audit output files (pip-audit, safety) — no secrets, only CVE/package data
+  '''pip-audit.*\.json$''',
+  '''safety.*\.json$''',
+
   # Build and test artifacts
   '''build/.*''',
   '''dist/.*''',
