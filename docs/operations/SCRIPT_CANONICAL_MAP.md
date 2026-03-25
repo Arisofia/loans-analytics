@@ -9,12 +9,14 @@ Single source of truth for script execution paths. Use only these commands.
 - Analyze real input files: `python3 scripts/data/analyze_real_data.py --data-dir ~/Downloads`
 - Local monthly ETL: `python3 scripts/data/local_monthly_etl.py`
 
-## Google Sheets Integration
+## Google Sheets & Targets
 
 - Setup guide: See `docs/GOOGLE_SHEETS_SETUP.md`
+- 2026 targets guide: See `docs/TARGETS_2026.md`
 - Credentials: `credentials/google-service-account.json` (gitignored; provide your own)
-- Configuration: `config/pipeline.yml` (google_sheets section)
-- Spreadsheet: `1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o`
+- Configuration: `config/pipeline.yml` (google_sheets and targets sections)
+- Data spreadsheet: `1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o`
+- Load 2026 targets from database: `python3 -c "from backend.python.kpis.target_loader import get_2026_targets; print(get_2026_targets())"`
 
 ## Zero-Cost ETL (DuckDB + Parquet — replaces Azure)
 

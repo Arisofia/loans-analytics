@@ -29,6 +29,19 @@ ingestion:
     spreadsheet_id: "1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o"
     worksheet: "DESEMBOLSOS"
 
+  # 2026 Portfolio Targets Configuration
+  targets:
+    enabled: true
+    source: "google_sheets"
+    spreadsheet_id: "1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o"
+    worksheet: "TARGETS_2026"
+    expected_columns:
+      - "Month"
+      - "Portfolio_Target"
+      - "NPL_Target"
+      - "Default_Rate_Target"
+    persist_to_database: true
+
   # Schema validation
   validation:
     enabled: true
