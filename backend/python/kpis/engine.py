@@ -122,7 +122,8 @@ class KPIEngineV2:
         if total_collateral <= 0:
             raise ValueError(
                 f'CRITICAL: {kpi_name} denominator (total_collateral_value={total_collateral}) is zero or '
-                'negative — LTV is mathematically undefined. Populate collateral_value before calculating LTV.'
+                'negative — LTV is mathematically undefined. Please investigate collateral data and overall input '
+                'data quality before calculating LTV.'
             )
         raw_val = total_loans / total_collateral * 100
         value = Decimal(str(round(raw_val, 2))).quantize(Decimal('0.01'))
