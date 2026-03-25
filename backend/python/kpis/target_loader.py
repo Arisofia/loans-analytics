@@ -49,12 +49,29 @@ class TargetLoader:
             month: Month number (1-12) or name (Jan-Dec).
             
         Returns:
-            Target portfolio value or None if month not found.
+            Target portfolio value as Decimal.
+            
+        Raises:
+            ValueError: If month is invalid.
         """
         if isinstance(month, int):
+            if not 1 <= month <= 12:
+                raise ValueError(f"Month number must be 1-12, got {month}")
             month = self.month_map.get(month, "")
+        else:
+            month_str = str(month).strip()
+            if month_str not in self.targets:
+                for target_month in self.targets.keys():
+                    if target_month.lower() == month_str.lower():
+                        month = target_month
+                        break
+            else:
+                month = month_str
         
-        return self.targets.get(month)
+        if month not in self.targets:
+            raise ValueError(f"Invalid month: {month}")
+        
+        return self.targets[month]
 
     def calculate_variance(self, actual: Decimal, target: Decimal) -> Dict[str, Any]:
         """Calculate variance between actual and target.
@@ -73,10 +90,12 @@ class TargetLoader:
         variance_pct = (variance_amount / target * Decimal(100)).quantize(Decimal("0.01"))
         
         # Determine status
-        if variance_pct >= Decimal(0):
-            status = "EXCEEDED" if variance_pct >= Decimal(5) else "ON_TRACK"
+        if variance_pct >= Decimal(5):
+            status = "EXCEEDED"
+        elif variance_pct >= Decimal(-5):
+            status = "ON_TRACK"
         else:
-            status = "AT_RISK" if variance_pct <= Decimal(-5) else "ON_TRACK"
+            status = "AT_RISK"
         
         return {
             "variance_amount": variance_amount,
@@ -107,8 +126,9 @@ class TargetLoader:
         logger.info(f"Loaded {len(targets)} targets from DataFrame")
         
         return {
-            "count": len(targets),
-            "months": list(targets.keys()),
+            "status": "success",
+            "rows_loaded": len(targets),
+            "months_loaded": list(targets.keys()),
             "total_end_target": targets.get("Dec"),
             "loaded_at": datetime.now().isoformat(),
         }
