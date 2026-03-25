@@ -43,7 +43,7 @@ asyncpg==0.31.0
     # via
     #   -r requirements.txt
     #   prefect
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   allure-python-commons
     #   cyclopts
