@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import argparse
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -146,10 +147,12 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
     )
 
     def stat_sql(kpi_key: str) -> str:
+        if not re.match(r'^[a-z][a-z0-9_]*$', kpi_key):
+            raise ValueError(f"Invalid kpi_key: {kpi_key!r}")
         return (
             "SELECT value_num AS value "
             "FROM monitoring.kpi_values "
-            f"WHERE kpi_key = '{kpi_key}' "
+            "WHERE kpi_key = '" + kpi_key + "' "
             "ORDER BY as_of_date DESC "
             "LIMIT 1"
         )

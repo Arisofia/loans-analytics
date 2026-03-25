@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import sys
 from datetime import date, datetime, timezone
-from pathlib import Path
 from typing import Any
 from uuid import UUID
 
@@ -25,6 +24,7 @@ except ImportError:
     if __package__ not in (None, ""):
         raise
 
+    from pathlib import Path
     repo_root = Path(__file__).resolve().parents[5]
     repo_root_str = str(repo_root)
     if repo_root_str not in sys.path:

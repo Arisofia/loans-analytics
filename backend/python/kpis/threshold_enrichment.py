@@ -53,7 +53,9 @@ def get_threshold_status(kpi_value: float | int | Decimal, thresholds: Optional[
     if critical_val is not None and warning_val is not None:
         critical_thresh = float(critical_val)
         warning_thresh = float(warning_val)
-        return _eval_high_is_good(value, critical_thresh, warning_thresh) if critical_thresh > warning_thresh else _eval_low_is_good(value, critical_thresh, warning_thresh)
+        if critical_thresh > warning_thresh:
+            return _eval_high_is_good(value, critical_thresh, warning_thresh)
+        return _eval_low_is_good(value, critical_thresh, warning_thresh)
     if critical_val is not None:
         return _eval_only_critical(value, float(critical_val))
     return _eval_only_warning(value, float(warning_val))
