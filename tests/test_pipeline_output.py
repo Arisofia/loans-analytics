@@ -1,8 +1,9 @@
 import json
+import os
 from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
-from backend.src.pipeline.output import OutputPhase
+from backend.src.pipeline.output import OutputPhase, _parse_bool_env
 
 def _output(config_overrides=None) -> OutputPhase:
     config = {'database': {'enabled': True, 'table': 'kpi_values'}}
@@ -134,10 +135,6 @@ def test_check_sla_is_fail_closed_for_malformed_audit_trail():
 # ---------------------------------------------------------------------------
 # Tests for _parse_bool_env helper
 # ---------------------------------------------------------------------------
-
-import os
-from unittest.mock import patch
-from backend.src.pipeline.output import _parse_bool_env
 
 
 def test_parse_bool_env_unset_returns_default_true():

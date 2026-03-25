@@ -1,4 +1,5 @@
 import types
+from decimal import ROUND_HALF_UP, Decimal
 import pandas as pd
 import pytest
 import numpy as np
@@ -378,8 +379,6 @@ class TestSilentHandlerHardening:
 # Tests for KPIEngineV2.calculate_ltv — Decimal arithmetic
 # ---------------------------------------------------------------------------
 
-from decimal import Decimal
-
 
 def test_calculate_ltv_uses_decimal_arithmetic():
     """Verify that calculate_ltv returns a Decimal and avoids float rounding."""
@@ -392,17 +391,15 @@ def test_calculate_ltv_uses_decimal_arithmetic():
 
 
 def test_calculate_ltv_result_matches_pure_decimal_division():
-    """Ensure Decimal division avoids the float→Decimal path that the previous
-    str(round(...)) approach used.  Both the test expectation and the engine
-    receive *float* sums (the pandas Series sums of float columns), so both go
-    through the same str(float) rounding; the results should be identical."""
+    """Ensure Decimal division matches end-to-end Decimal arithmetic.
+    Both the test expectation and the engine use per-row Decimal(str(v)) conversion,
+    so the results should be exactly equal and ROUND_HALF_UP is applied consistently."""
     loan = Decimal('1234567890.123456')
     collateral = Decimal('9876543210.987654')
-    expected = (loan / collateral * Decimal('100')).quantize(Decimal('0.01'))
+    expected = (loan / collateral * Decimal('100')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     df = pd.DataFrame({'loan_amount': [float(loan)], 'collateral_value': [float(collateral)]})
     engine = KPIEngineV2(df=df)
     value, _ = engine.calculate_ltv()
-    # Both sides derive from str(float_sum), so the result must be exactly equal.
     assert value == expected
 
 
