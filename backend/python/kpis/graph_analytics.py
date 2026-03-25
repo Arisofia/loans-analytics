@@ -380,6 +380,7 @@ def npl_benchmarks(intermedia_df: pd.DataFrame) -> dict[str, Any]:
         active['_due'] = pd.to_datetime(active[fpp_col], errors='coerce')
         active['_dpd'] = (cutoff - active['_due']).dt.days.clip(lower=0).fillna(0)
     else:
+        active = active.copy()
         active['_dpd'] = 0.0
     try:
         npl_90, npl_180 = _calculate_ssot_npl_metrics(active['_bal'], active['_dpd'])

@@ -72,7 +72,7 @@ def _build_persona_stats(payments_df: pd.DataFrame, cust_col: str, stat_col: str
     pay[stat_col] = pay[stat_col].astype(str).str.strip()
     if dev_col:
         pay['_dev'] = _num(pay, dev_col)
-    stats = pay.groupby(cust_col).apply(lambda grp: _payment_rates(grp, stat_col, dev_col)).reset_index()
+    stats = pay.groupby(cust_col).apply(lambda grp: _payment_rates(grp, stat_col, dev_col), include_groups=False).reset_index()
     stats.columns = [cust_col, 'op_count', 'late_rate', 'prepay_rate', 'ontime_rate', 'dev_rate']
     return stats
 

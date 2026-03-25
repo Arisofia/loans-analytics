@@ -152,18 +152,29 @@ class TargetLoader:
         
         return pd.DataFrame(rows)
 
-    def compare_actuals_vs_targets(self, actual_by_month: Dict[str, Decimal]) -> pd.DataFrame:
+    def compare_actuals_vs_targets(self, actual_by_month: Dict) -> pd.DataFrame:
         """Compare actual portfolio values against targets.
         
         Args:
-            actual_by_month: Dict mapping month names to actual portfolio values.
+            actual_by_month: Dict mapping month names (str) or month numbers (int)
+                to actual portfolio values.
             
         Returns:
-            DataFrame with actual, target, variance_pct, and status columns.
+            DataFrame with actual_portfolio, target, variance_pct, and status columns.
         """
+        # Normalise keys: convert int month numbers to month name strings
+        normalised: Dict[str, Decimal] = {}
+        for key, value in actual_by_month.items():
+            if isinstance(key, int):
+                month_name = self.month_map.get(key)
+                if month_name:
+                    normalised[month_name] = value
+            else:
+                normalised[str(key)] = value
+
         rows = []
         for month_name, target in self.targets.items():
-            actual = actual_by_month.get(month_name)
+            actual = normalised.get(month_name)
             
             if actual is None:
                 status_info = {
@@ -172,12 +183,12 @@ class TargetLoader:
                     "status": "NO_DATA",
                 }
             else:
-                status_info = self.calculate_variance(actual, target)
+                status_info = self.calculate_variance(Decimal(str(actual)), target)
             
             rows.append({
                 "month": month_name,
                 "target": float(target),
-                "actual": float(actual) if actual else None,
+                "actual_portfolio": float(actual) if actual is not None else None,
                 "variance_amount": float(status_info["variance_amount"]) if status_info["variance_amount"] else None,
                 "variance_pct": float(status_info["variance_pct"]) if status_info["variance_pct"] else None,
                 "status": status_info["status"],
