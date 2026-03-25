@@ -46,6 +46,31 @@ class KPICatalogProcessor:
     def _customer_columns(self) -> dict[str, Optional[str]]:
         return {'customer_id': self._first_existing_column(self.customers_df, ['customer_id', 'client_id', 'borrower_id']), 'created_at': self._first_existing_column(self.customers_df, ['created_at', 'signup_date', 'onboarding_date', 'first_loan_date']), 'marketing_spend': self._first_existing_column(self.customers_df, ['marketing_spend', 'commercial_expense', 'acquisition_cost', 'cac_spend'])}
 
+    def _build_intermedia_from_loans(self) -> pd.DataFrame:
+        """Build an intermedia-like frame from loan tape columns.
+
+        Graph analytics expects CodCliente, Emisor and TotalSaldoVigente. When
+        intermedia_df is not provided, we derive those columns from loans_df to
+        keep concentration/ring analytics active with real portfolio data.
+        """
+        if self.loans_df.empty:
+            return pd.DataFrame()
+
+        customer_col = self._first_existing_column(self.loans_df, ['customer_id', 'client_id', 'borrower_id', 'CodCliente'])
+        debtor_col = self._first_existing_column(self.loans_df, ['pagador', 'Emisor', 'emisor', 'debtor_id', 'payer_id'])
+        balance_col = self._first_existing_column(self.loans_df, ['outstanding_loan_value', 'outstanding_balance', 'principal_balance', 'current_balance', 'TotalSaldoVigente'])
+
+        if customer_col is None or debtor_col is None or balance_col is None:
+            return pd.DataFrame()
+
+        intermedia = self.loans_df[[customer_col, debtor_col, balance_col]].copy()
+        intermedia = intermedia.rename(columns={customer_col: 'CodCliente', debtor_col: 'Emisor', balance_col: 'TotalSaldoVigente'})
+        intermedia['CodCliente'] = intermedia['CodCliente'].astype(str).str.strip()
+        intermedia['Emisor'] = intermedia['Emisor'].astype(str).str.strip()
+        intermedia['TotalSaldoVigente'] = pd.to_numeric(intermedia['TotalSaldoVigente'], errors='coerce').fillna(0.0)
+        intermedia = intermedia[(intermedia['CodCliente'] != '') & (intermedia['Emisor'] != '')]
+        return intermedia
+
     @staticmethod
     def _latest_non_null_metric(rows: list[dict[str, Any]], metric_key: str) -> float | None:
         for row in reversed(rows):
@@ -545,10 +570,12 @@ class KPICatalogProcessor:
         return 'amber' if quality_score >= 0.6 else 'red'
 
     def get_graph_analytics(self) -> dict[str, Any]:
-        if self.intermedia_df.empty:
-            return {'status': 'unavailable', 'reason': 'intermedia_df is empty'}
-        else:
-            return build_graph_kpi_report(intermedia_df=self.intermedia_df, loans_df=self.loans_df, payments_df=self.payments_df)
+        intermedia_source = self.intermedia_df
+        if intermedia_source.empty:
+            intermedia_source = self._build_intermedia_from_loans()
+        if intermedia_source.empty:
+            return {'status': 'unavailable', 'reason': 'intermedia_df is empty and could not be derived from loans_df'}
+        return build_graph_kpi_report(intermedia_df=intermedia_source, loans_df=self.loans_df, payments_df=self.payments_df)
 
     def get_portfolio_analytics(self) -> dict[str, Any]:
         return build_portfolio_analytics_report(loans_df=self.loans_df, payments_df=self.payments_df, schedule_df=self.schedule_df, customer_df=self.customers_df, collateral_df=self.collateral_df)
