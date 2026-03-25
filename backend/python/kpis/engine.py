@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 from datetime import datetime
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple
 import numpy as np
 import pandas as pd
@@ -117,10 +117,26 @@ class KPIEngineV2:
         missing_columns = [col for col in required_columns if col not in self.df.columns]
         if missing_columns:
             raise ValueError(f"CRITICAL: {kpi_name} missing required columns: {', '.join(missing_columns)}")
-        total_loans = self.df['loan_amount'].sum()
-        total_collateral = self.df['collateral_value'].sum()
-        raw_val = total_loans / total_collateral * 100 if total_collateral > 0 else 0.0
-        value = Decimal(str(round(raw_val, 2))).quantize(Decimal('0.01'))
+        # NOTE: Aggregate using Decimal end-to-end to avoid intermediate float
+        # rounding. We convert each non-missing value via str() to avoid
+        # Decimal(float) representation issues (e.g. Decimal(0.1) →
+        # 0.10000000000000000555...). Missing values are skipped, matching
+        # pandas' default skipna=True behavior for sum().
+        total_loans = sum(
+            (Decimal(str(v)) for v in self.df['loan_amount'] if pd.notna(v)),
+            Decimal('0'),
+        )
+        total_collateral = sum(
+            (Decimal(str(v)) for v in self.df['collateral_value'] if pd.notna(v)),
+            Decimal('0'),
+        )
+        if total_collateral <= Decimal('0'):
+            raise ValueError(
+                f'CRITICAL: {kpi_name} denominator (total_collateral_value={total_collateral}) is zero or '
+                'negative — LTV is mathematically undefined. Please investigate collateral data and overall input '
+                'data quality before calculating LTV.'
+            )
+        value = (total_loans / total_collateral * Decimal('100')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         context = {'formula': 'total_loan_amount / total_collateral_value * 100', 'rows_processed': len(self.df), 'calculation_method': 'v2_engine'}
         return self._finalize_kpi_success(kpi_name, value, context)
 

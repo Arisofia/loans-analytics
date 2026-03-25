@@ -34,7 +34,8 @@ jobs:
         run: |
           git init .
           git remote add origin "https://github.com/${{ github.repository }}.git"
-          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.ref }}"
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git fetch --depth=1 origin "${{ github.ref }}"
           git checkout --detach FETCH_HEAD
 
       - name: Set up Python 3.12
