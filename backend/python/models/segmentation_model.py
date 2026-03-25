@@ -213,6 +213,7 @@ class SegmentationModel:
         if amount_col is None or sched_col is None:
             return pd.Series(dtype=float, name='payment_ratio')
 
+        payment_df[amount_col] = pd.to_numeric(payment_df[amount_col], errors='coerce')
         total_paid = payment_df.groupby(loan_id_pay)[amount_col].sum().rename('_total_paid')
         sched = pd.to_numeric(loan_df.set_index(loan_id_loan)[sched_col], errors='coerce').rename(
             '_scheduled'
