@@ -110,6 +110,22 @@ restoration procedures.
 
 ### Known Dependency Vulnerabilities
 
+#### Pygments ReDoS (GHSA-5239-wwwm-4pmq / CVE-2026-4539)
+
+- **Package**: `pygments`
+- **Affected**: `<=2.19.2`
+- **Patched version**: _None published upstream_
+- **Severity**: Low (local attack vector)
+
+Current status:
+- The advisory has no patched release yet, so an upgrade-based remediation is not available.
+- We track this advisory and will upgrade immediately once upstream publishes a fixed version.
+
+Temporary mitigation:
+- Dependabot pip updates are configured to ignore this advisory range until a real patch exists.
+- Production exposure is limited because the attack requires local access and low privileges.
+- Existing least-privilege and environment isolation controls remain required.
+
 #### DoS/ReDoS in body-parser and path-to-regexp
 
 The following advisories are present in the dependency tree (see

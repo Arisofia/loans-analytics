@@ -17,6 +17,11 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # Temporary until upstream releases a patched Pygments version.
+      # GHSA-5239-wwwm-4pmq / CVE-2026-4539 currently has no fixed release.
+      - dependency-name: "pygments"
+        versions: ["<=2.19.2"]
     open-pull-requests-limit: 10
     assignees:
       - "codex"
