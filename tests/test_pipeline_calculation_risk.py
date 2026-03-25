@@ -1,4 +1,5 @@
 import types
+from decimal import ROUND_HALF_UP, Decimal
 import pandas as pd
 import pytest
 import numpy as np
@@ -292,8 +293,8 @@ def test_npl_ratio_and_npl_90_ratio_are_distinct():
     engine = KPIEngineV2.__new__(KPIEngineV2)
     kpis = engine._calculate_derived_risk_kpis(df)
     assert float(kpis['npl_90_ratio']) == pytest.approx(40.0, rel=0.0001)
-    assert float(kpis['npl_ratio']) == pytest.approx(80.0, rel=0.0001)
-    assert kpis['npl_ratio'] != kpis['npl_90_ratio'], 'npl_ratio and npl_90_ratio must be distinct; they were identical before fix'
+    assert float(kpis['npl_ratio']) == pytest.approx(60.0, rel=0.0001)
+    assert kpis['npl_ratio'] != kpis['npl_90_ratio'], 'npl_ratio and npl_90_ratio must be distinct; npl uses dpd>=60 while npl_90 uses dpd>=90'
 
 def test_npl_90_ratio_strictly_subset_of_npl_ratio():
     df = pd.DataFrame({'outstanding_balance': [500.0, 500.0, 1000.0], 'dpd': [0, 45, 120], 'status': ['active', 'active', 'active']})
@@ -372,3 +373,52 @@ class TestSilentHandlerHardening:
         df = pd.DataFrame({'ltv_sintetico': [1.0, 2.0, 3.0] * 5})
         with pytest.raises(ValueError, match='CRITICAL:'):
             phase._run_advanced_clustering(df)
+
+
+# ---------------------------------------------------------------------------
+# Tests for KPIEngineV2.calculate_ltv — Decimal arithmetic
+# ---------------------------------------------------------------------------
+
+
+def test_calculate_ltv_uses_decimal_arithmetic():
+    """Verify that calculate_ltv returns a Decimal and avoids float rounding."""
+    df = pd.DataFrame({'loan_amount': [100.0], 'collateral_value': [300.0]})
+    engine = KPIEngineV2(df=df)
+    value, ctx = engine.calculate_ltv()
+    assert isinstance(value, Decimal)
+    assert value == Decimal('33.33')
+    assert ctx['calculation_method'] == 'v2_engine'
+
+
+def test_calculate_ltv_result_matches_pure_decimal_division():
+    """Ensure Decimal division matches end-to-end Decimal arithmetic.
+    Both the test expectation and the engine use per-row Decimal(str(v)) conversion,
+    so the results should be exactly equal and ROUND_HALF_UP is applied consistently."""
+    loan = Decimal('1234567890.123456')
+    collateral = Decimal('9876543210.987654')
+    expected = (loan / collateral * Decimal('100')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    df = pd.DataFrame({'loan_amount': [float(loan)], 'collateral_value': [float(collateral)]})
+    engine = KPIEngineV2(df=df)
+    value, _ = engine.calculate_ltv()
+    assert value == expected
+
+
+def test_calculate_ltv_raises_when_collateral_is_zero():
+    df = pd.DataFrame({'loan_amount': [500.0], 'collateral_value': [0.0]})
+    engine = KPIEngineV2(df=df)
+    with pytest.raises(ValueError, match='CRITICAL: LTV denominator'):
+        engine.calculate_ltv()
+
+
+def test_calculate_ltv_raises_when_collateral_is_negative():
+    df = pd.DataFrame({'loan_amount': [500.0], 'collateral_value': [-100.0]})
+    engine = KPIEngineV2(df=df)
+    with pytest.raises(ValueError, match='CRITICAL: LTV denominator'):
+        engine.calculate_ltv()
+
+
+def test_calculate_ltv_raises_on_missing_columns():
+    df = pd.DataFrame({'loan_amount': [100.0]})
+    engine = KPIEngineV2(df=df)
+    with pytest.raises(ValueError, match='missing required columns'):
+        engine.calculate_ltv()

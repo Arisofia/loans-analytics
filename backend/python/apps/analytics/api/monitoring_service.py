@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import sys
 from datetime import date, datetime, timezone
-from decimal import Decimal
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -54,9 +53,7 @@ def _safe_log_value(value: object, max_length: int = 200) -> str:
 
 
 def _json_default(value: Any) -> str:
-    if isinstance(value, (datetime, date)):
-        return value.isoformat()
-    return str(value)
+    return value.isoformat() if isinstance(value, (datetime, date)) else str(value)
 
 
 def _json_dumps(value: Any) -> str:

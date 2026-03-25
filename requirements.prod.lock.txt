@@ -35,7 +35,7 @@ asyncpg==0.31.0
     # via
     #   -r requirements.txt
     #   prefect
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   cyclopts
     #   jsonschema
@@ -214,7 +214,7 @@ idna==3.11
     #   httpx
     #   requests
     #   yarl
-importlib-metadata==8.7.1
+importlib-metadata==9.0.0
     # via opentelemetry-api
 isodate==0.7.2
     # via

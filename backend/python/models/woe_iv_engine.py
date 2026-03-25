@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class WoEIVEngine:
         y_clean = y[mask].values
         if len(np.unique(x_clean)) < 2:
             return None
-        dtype = 'categorical' if series.dtype == object or series.dtype == bool else 'numerical'
+        dtype = 'categorical' if series.dtype in (object, bool) else 'numerical'
         try:
             ob = OptimalBinning(name=feat, dtype=dtype, solver='cp', max_n_bins=8, min_bin_size=0.03)
             ob.fit(x_clean, y_clean)
