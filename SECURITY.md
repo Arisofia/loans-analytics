@@ -116,6 +116,9 @@ restoration procedures.
 - **Affected**: `<=2.19.2`
 - **Patched version**: _None published upstream_
 - **Severity**: Low (local attack vector)
+- **Current alerts**:
+  - `#138` on `requirements.prod.lock.txt`
+  - `#137` on `requirements.lock.txt`
 
 Current status:
 - The advisory has no patched release yet, so an upgrade-based remediation is not available.
@@ -125,6 +128,7 @@ Temporary mitigation:
 - Dependabot pip updates are configured to ignore this advisory range until a real patch exists.
 - Production exposure is limited because the attack requires local access and low privileges.
 - Existing least-privilege and environment isolation controls remain required.
+- Security alert disposition should be marked as accepted risk until upstream ships a fix.
 
 #### DoS/ReDoS in body-parser and path-to-regexp
 
