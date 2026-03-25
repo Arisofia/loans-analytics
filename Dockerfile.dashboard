@@ -58,9 +58,9 @@ USER appuser
 # Expose Streamlit port (canonical: 8501, aligns with startup.sh and API)
 EXPOSE 8501
 
-# Healthcheck
+# Healthcheck — port matches PORT env var (defaults to 8501)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+    CMD curl -f http://localhost:${PORT:-8501}/_stcore/health || exit 1
 
 # Run Streamlit (port is configurable via PORT env var, defaults to 8501)
-ENTRYPOINT ["streamlit", "run", "frontend/streamlit_app/app.py", "--server.port=${PORT:-8501}", "--server.address=0.0.0.0"]
+ENTRYPOINT ["/bin/sh", "-c", "exec streamlit run frontend/streamlit_app/app.py --server.port=${PORT:-8501} --server.address=0.0.0.0"]
