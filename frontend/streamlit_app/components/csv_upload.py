@@ -98,7 +98,7 @@ def _stringify_nullable(value: Any) -> Any:
         for encoding in ('utf-8', 'latin-1'):
             try:
                 return value.decode(encoding)
-            except Exception:
+            except UnicodeDecodeError:
                 continue
         return repr(value)
     return str(value)

@@ -4,7 +4,7 @@ import base64
 import json
 import os
 import secrets
-import subprocess
+import subprocess  # nosec B404
 import sys
 import urllib.error
 import urllib.request
@@ -82,9 +82,9 @@ def api_request(url: str, *, method: str='GET', data: dict | None=None, token: s
 
 def ensure_pynacl() -> None:
     try:
-        import nacl
+        import nacl  # noqa: F401
     except ImportError:
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'PyNaCl', '-q'])
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'PyNaCl', '-q'])  # nosec B603 B607
 
 def get_repo_public_key(token: str) -> tuple[str, str]:
     response = api_request(f'{API_BASE}/repos/{REPO}/actions/secrets/public-key', token=token)
@@ -124,8 +124,10 @@ def print_secret_list(label: str, values: Iterable[str]) -> None:
 
 def upload_actions_secrets(token: str, dry_run: bool) -> None:
     uploadable, skipped = collect_uploadable_secrets(GITHUB_ACTIONS_SECRETS)
-    print_secret_list('Secrets ready for upload:', uploadable.keys())
-    print_secret_list('Secrets skipped because they are empty or placeholders:', skipped)
+    if uploadable:
+        print(f'Secrets ready for upload: {len(uploadable)}')
+    if skipped:
+        print(f'Secrets skipped (empty or placeholder): {len(skipped)}')
     if not uploadable:
         print('No configured secrets are available for upload.')
         raise SystemExit(1)
@@ -139,15 +141,15 @@ def upload_actions_secrets(token: str, dry_run: bool) -> None:
     key_id, public_key = get_repo_public_key(token)
     print(f'Fetched repository public key: {key_id[:8]}...')
     uploaded_count = 0
-    failures: list[str] = []
+    failure_count = 0
     for secret_name, secret_value in uploadable.items():
         try:
             push_secret(token, key_id, public_key, secret_name, secret_value)
             uploaded_count += 1
         except RuntimeError:
-            failures.append(secret_name)
-    print(f'Upload completed: {uploaded_count} succeeded, {len(failures)} failed.')
-    if failures:
+            failure_count += 1
+    print(f'Upload completed: {uploaded_count} succeeded, {failure_count} failed.')
+    if failure_count:
         raise SystemExit(1)
 
 def main() -> None:

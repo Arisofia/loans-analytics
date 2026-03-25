@@ -173,25 +173,25 @@ class TestKPIServiceUnitEconomics:
     async def test_calculate_unit_economics_empty_loans(self):
         service = KPIService(actor='test')
         result = await service.calculate_unit_economics([])
-        assert result.npl.npl_ratio == 0.0
-        assert result.lgd.lgd_pct == 0.0
-        assert result.cost_of_risk.cost_of_risk_pct == 0.0
-        assert result.nim.nim_pct == 0.0
-        assert result.cure_rate.cure_rate_pct == 0.0
-        assert result.payback.payback_months is None
+        assert result.npl.npl_ratio == 0.0  # nosec B101
+        assert result.lgd.lgd_pct == 0.0  # nosec B101
+        assert result.cost_of_risk.cost_of_risk_pct == 0.0  # nosec B101
+        assert result.nim.nim_pct == 0.0  # nosec B101
+        assert result.cure_rate.cure_rate_pct == 0.0  # nosec B101
+        assert result.payback.payback_months is None  # nosec B101
 
     @pytest.mark.asyncio
     async def test_calculate_unit_economics_nim_with_custom_funding_cost(self):
         service = KPIService(actor='test')
         loans = [LoanRecord(id='L1', loan_amount=1000.0, principal_balance=1000.0, interest_rate=0.3, loan_status='current', days_past_due=0.0)]
         result = await service.calculate_unit_economics(loans, funding_cost_rate=0.05)
-        assert result.nim.funding_cost_pct == pytest.approx(5.0, abs=0.01)
-        assert result.nim.gross_yield_pct > 0.0
-        assert result.nim.nim_pct > 0.0
+        assert result.nim.funding_cost_pct == pytest.approx(5.0, abs=0.01)  # nosec B101
+        assert result.nim.gross_yield_pct > 0.0  # nosec B101
+        assert result.nim.nim_pct > 0.0  # nosec B101
 
     @pytest.mark.asyncio
     async def test_calculate_unit_economics_payback_period(self):
         service = KPIService(actor='test')
         loans = [LoanRecord(id='L1', loan_amount=1000.0, principal_balance=1000.0, interest_rate=0.1, loan_status='current', days_past_due=0.0)]
         result = await service.calculate_unit_economics(loans, cac=240.0, monthly_arpu=20.0)
-        assert result.payback.payback_months == pytest.approx(12.0, abs=0.01)
+        assert result.payback.payback_months == pytest.approx(12.0, abs=0.01)  # nosec B101
