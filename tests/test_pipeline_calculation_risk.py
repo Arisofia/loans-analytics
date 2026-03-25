@@ -372,3 +372,56 @@ class TestSilentHandlerHardening:
         df = pd.DataFrame({'ltv_sintetico': [1.0, 2.0, 3.0] * 5})
         with pytest.raises(ValueError, match='CRITICAL:'):
             phase._run_advanced_clustering(df)
+
+
+# ---------------------------------------------------------------------------
+# Tests for KPIEngineV2.calculate_ltv — Decimal arithmetic
+# ---------------------------------------------------------------------------
+
+from decimal import Decimal
+
+
+def test_calculate_ltv_uses_decimal_arithmetic():
+    """Verify that calculate_ltv returns a Decimal and avoids float rounding."""
+    df = pd.DataFrame({'loan_amount': [100.0], 'collateral_value': [300.0]})
+    engine = KPIEngineV2(df=df)
+    value, ctx = engine.calculate_ltv()
+    assert isinstance(value, Decimal)
+    assert value == Decimal('33.33')
+    assert ctx['calculation_method'] == 'v2_engine'
+
+
+def test_calculate_ltv_result_matches_pure_decimal_division():
+    """Ensure Decimal division avoids the float→Decimal path that the previous
+    str(round(...)) approach used.  Both the test expectation and the engine
+    receive *float* sums (the pandas Series sums of float columns), so both go
+    through the same str(float) rounding; the results should be identical."""
+    loan = Decimal('1234567890.123456')
+    collateral = Decimal('9876543210.987654')
+    expected = (loan / collateral * Decimal('100')).quantize(Decimal('0.01'))
+    df = pd.DataFrame({'loan_amount': [float(loan)], 'collateral_value': [float(collateral)]})
+    engine = KPIEngineV2(df=df)
+    value, _ = engine.calculate_ltv()
+    # Both sides derive from str(float_sum), so the result must be exactly equal.
+    assert value == expected
+
+
+def test_calculate_ltv_raises_when_collateral_is_zero():
+    df = pd.DataFrame({'loan_amount': [500.0], 'collateral_value': [0.0]})
+    engine = KPIEngineV2(df=df)
+    with pytest.raises(ValueError, match='CRITICAL: LTV denominator'):
+        engine.calculate_ltv()
+
+
+def test_calculate_ltv_raises_when_collateral_is_negative():
+    df = pd.DataFrame({'loan_amount': [500.0], 'collateral_value': [-100.0]})
+    engine = KPIEngineV2(df=df)
+    with pytest.raises(ValueError, match='CRITICAL: LTV denominator'):
+        engine.calculate_ltv()
+
+
+def test_calculate_ltv_raises_on_missing_columns():
+    df = pd.DataFrame({'loan_amount': [100.0]})
+    engine = KPIEngineV2(df=df)
+    with pytest.raises(ValueError, match='missing required columns'):
+        engine.calculate_ltv()

@@ -129,3 +129,110 @@ def test_check_sla_is_fail_closed_for_malformed_audit_trail():
     kpi_engine = MagicMock()
     kpi_engine.get_audit_trail.return_value = pd.DataFrame([{'unexpected': 'column'}])
     assert output._check_sla({'par_30': 4.2}, kpi_engine=kpi_engine) is False
+
+
+# ---------------------------------------------------------------------------
+# Tests for _parse_bool_env helper
+# ---------------------------------------------------------------------------
+
+import os
+from unittest.mock import patch
+from backend.src.pipeline.output import _parse_bool_env
+
+
+def test_parse_bool_env_unset_returns_default_true():
+    with patch.dict(os.environ, {}, clear=True):
+        assert _parse_bool_env('MISSING_VAR', default=True) is True
+
+
+def test_parse_bool_env_unset_returns_default_false():
+    with patch.dict(os.environ, {}, clear=True):
+        assert _parse_bool_env('MISSING_VAR', default=False) is False
+
+
+def test_parse_bool_env_truthy_values():
+    for val in ('1', 'true', 'True', 'TRUE', 'yes', 'YES', 'on', 'ON'):
+        with patch.dict(os.environ, {'MY_FLAG': val}):
+            assert _parse_bool_env('MY_FLAG') is True, f'Expected True for {val!r}'
+
+
+def test_parse_bool_env_falsy_values():
+    for val in ('0', 'false', 'False', 'FALSE', 'no', 'NO', 'off', 'OFF'):
+        with patch.dict(os.environ, {'MY_FLAG': val}):
+            assert _parse_bool_env('MY_FLAG') is False, f'Expected False for {val!r}'
+
+
+def test_parse_bool_env_raises_on_unrecognised_value():
+    with patch.dict(os.environ, {'MY_FLAG': 'maybe'}):
+        with pytest.raises(ValueError, match='unrecognised boolean value'):
+            _parse_bool_env('MY_FLAG')
+
+
+# ---------------------------------------------------------------------------
+# Tests for _ensure_missing_kpi_definitions behaviour and compat shim
+# ---------------------------------------------------------------------------
+
+
+def _make_output(strict_kpi_definitions=None):
+    db_cfg: dict = {'enabled': True, 'table': 'kpi_values'}
+    if strict_kpi_definitions is not None:
+        db_cfg['strict_kpi_definitions'] = strict_kpi_definitions
+    return OutputPhase({'database': db_cfg})
+
+
+def test_ensure_missing_kpi_raises_by_default():
+    output = _make_output()
+    with pytest.raises(RuntimeError, match='Missing KPI definitions'):
+        output._ensure_missing_kpi_definitions({'new_kpi'}, set())
+
+
+def test_ensure_missing_kpi_raises_when_no_config_key_and_no_env(monkeypatch):
+    monkeypatch.delenv('PIPELINE_STRICT_KPI_DEFINITIONS', raising=False)
+    output = _make_output()
+    with pytest.raises(RuntimeError, match='Missing KPI definitions'):
+        output._ensure_missing_kpi_definitions({'new_kpi'}, set())
+
+
+def test_ensure_missing_kpi_disabled_via_config_false():
+    output = _make_output(strict_kpi_definitions=False)
+    # Should warn, not raise
+    with patch('backend.src.pipeline.output.logger') as mock_log:
+        output._ensure_missing_kpi_definitions({'new_kpi'}, set())
+    mock_log.warning.assert_called()
+    warning_msg = mock_log.warning.call_args[0][0]
+    assert 'Missing KPI definitions' in warning_msg
+
+
+def test_ensure_missing_kpi_disabled_via_env_false(monkeypatch):
+    monkeypatch.setenv('PIPELINE_STRICT_KPI_DEFINITIONS', 'false')
+    output = _make_output()
+    with patch('backend.src.pipeline.output.logger') as mock_log:
+        output._ensure_missing_kpi_definitions({'new_kpi'}, set())
+    mock_log.warning.assert_called()
+
+
+def test_ensure_missing_kpi_legacy_truthy_config_logs_deprecation(monkeypatch):
+    monkeypatch.delenv('PIPELINE_STRICT_KPI_DEFINITIONS', raising=False)
+    output = _make_output(strict_kpi_definitions=True)
+    with patch('backend.src.pipeline.output.logger') as mock_log:
+        with pytest.raises(RuntimeError, match='Missing KPI definitions'):
+            output._ensure_missing_kpi_definitions({'new_kpi'}, set())
+    # Deprecation warning must have been logged
+    warning_calls = [str(c) for c in mock_log.warning.call_args_list]
+    assert any('deprecated' in w for w in warning_calls)
+
+
+def test_ensure_missing_kpi_legacy_truthy_env_logs_deprecation(monkeypatch):
+    monkeypatch.setenv('PIPELINE_STRICT_KPI_DEFINITIONS', '1')
+    output = _make_output()
+    with patch('backend.src.pipeline.output.logger') as mock_log:
+        with pytest.raises(RuntimeError, match='Missing KPI definitions'):
+            output._ensure_missing_kpi_definitions({'new_kpi'}, set())
+    warning_calls = [str(c) for c in mock_log.warning.call_args_list]
+    assert any('deprecated' in w for w in warning_calls)
+
+
+def test_ensure_missing_kpi_no_op_when_all_present():
+    output = _make_output()
+    # No error, no warning when nothing is missing
+    output._ensure_missing_kpi_definitions({'kpi_a', 'kpi_b'}, {'kpi_a', 'kpi_b', 'kpi_c'})
