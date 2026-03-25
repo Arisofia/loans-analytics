@@ -293,8 +293,8 @@ def test_npl_ratio_and_npl_90_ratio_are_distinct():
     engine = KPIEngineV2.__new__(KPIEngineV2)
     kpis = engine._calculate_derived_risk_kpis(df)
     assert float(kpis['npl_90_ratio']) == pytest.approx(40.0, rel=0.0001)
-    assert float(kpis['npl_ratio']) == pytest.approx(60.0, rel=0.0001)
-    assert kpis['npl_ratio'] != kpis['npl_90_ratio'], 'npl_ratio and npl_90_ratio must be distinct; npl uses dpd>=60 while npl_90 uses dpd>=90'
+    assert float(kpis['npl_ratio']) == pytest.approx(80.0, rel=0.0001)
+    assert kpis['npl_ratio'] != kpis['npl_90_ratio'], 'npl_ratio and npl_90_ratio must be distinct; npl uses dpd>=30 while npl_90 uses dpd>=90'
 
 def test_npl_90_ratio_strictly_subset_of_npl_ratio():
     df = pd.DataFrame({'outstanding_balance': [500.0, 500.0, 1000.0], 'dpd': [0, 45, 120], 'status': ['active', 'active', 'active']})

@@ -12,7 +12,7 @@ _METRIC_ALIAS_TO_ID: dict[str, str] = {
     "npl180": "npl_180_proxy",
 }
 _ASSET_QUALITY_REGISTRY = {
-    "version": "asset-quality-ssot-1.2",
+    "version": "asset-quality-ssot-1.3",
     "asset_quality_kpis": {
         "par_30": {
             "formula": (
@@ -34,7 +34,7 @@ _ASSET_QUALITY_REGISTRY = {
         },
         "npl": {
             "formula": (
-                "SUM(outstanding_balance WHERE dpd >= 60 OR status IN ['delinquent', 'defaulted'])"
+                "SUM(outstanding_balance WHERE dpd >= 30 OR status IN ['delinquent', 'defaulted'])"
                 " / SUM(outstanding_balance) * 100"
             ),
             "unit": "percentage",
