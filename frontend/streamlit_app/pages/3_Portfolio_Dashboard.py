@@ -27,6 +27,20 @@ ABACO_API_BASE = os.environ.get('ABACO_API_BASE', 'http://127.0.0.1:8000')
 ABACO_API_BASE_SAFE = sanitize_api_base(ABACO_API_BASE)
 AGENT_OUTPUTS_DIR = REPO_ROOT / 'data' / 'agent_outputs'
 AGENT_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+KPI_EXPECTED_LOSS = 'Expected Loss'
+DPD_30_PLUS = 'DPD 30+'
+DPD_60_PLUS = 'DPD 60+'
+DPD_90_PLUS = 'DPD 90+'
+SEG_OUTSTANDING = 'Outstanding ($)'
+SEG_PAR_30 = 'PAR 30 (%)'
+SEG_PAR_60 = 'PAR 60 (%)'
+SEG_PAR_90 = 'PAR 90 (%)'
+SEG_DEFAULT_RATE = 'Default Rate (%)'
+_ACTIVE_ALIASES = {'active', 'current', 'vigente', 'open', 'in_force'}
+_CLOSED_ALIASES = {'closed', 'complete', 'completed', 'paid', 'paid_off', 'paid-off', 'cancelled', 'canceled', 'liquidated'}
+_DELINQUENT_ALIASES = {'delinquent', 'late', 'past_due', 'arrears', 'mora'}
+_DEFAULTED_ALIASES = {'default', 'defaulted', 'charged_off', 'charge_off', 'written_off'}
+STATUS_ALIAS_TO_CANONICAL = dict.fromkeys(_ACTIVE_ALIASES, 'active') | dict.fromkeys(_CLOSED_ALIASES, 'closed') | dict.fromkeys(_DELINQUENT_ALIASES, 'delinquent') | dict.fromkeys(_DEFAULTED_ALIASES, 'defaulted')
 
 def _build_monitoring_events_url() -> str | None:
     if ABACO_API_BASE_SAFE is None:
@@ -95,7 +109,22 @@ def _kpi_methodology_rows(metrics: dict[str, Any]) -> list[dict[str, str]]:
     methodology = _kpi_methodology_from_metrics(metrics)
     total_loans = int(metrics.get('total_loans', 0))
     total_portfolio = float(metrics.get('total_portfolio', 0.0))
-    return [{'KPI': 'Total Portfolio Value', 'Formula': 'sum(exposure_amount) for active loans', 'Numerator': fmt_currency(total_portfolio), 'Denominator': 'n/a', 'Value': fmt_currency(total_portfolio)}, {'KPI': 'Weighted Avg Rate', 'Formula': methodology['weighted_avg_rate']['formula'], 'Numerator': f"{methodology['weighted_avg_rate']['numerator']:,.2f}", 'Denominator': fmt_currency(float(methodology['weighted_avg_rate']['denominator'] or 0.0)), 'Value': f"{float(methodology['weighted_avg_rate']['value']):.2%}"}, {'KPI': 'DPD 30+ Rate', 'Formula': methodology['delinquency_rate_30']['formula'], 'Numerator': f"{int(methodology['delinquency_rate_30']['numerator']):,} loans", 'Denominator': f'{total_loans:,} loans', 'Value': fmt_percent(float(methodology['delinquency_rate_30']['value']))}, {'KPI': 'DPD 60+ Rate', 'Formula': methodology['delinquency_rate_60']['formula'], 'Numerator': f"{int(methodology['delinquency_rate_60']['numerator']):,} loans", 'Denominator': f'{total_loans:,} loans', 'Value': fmt_percent(float(methodology['delinquency_rate_60']['value']))}, {'KPI': 'DPD 90+ Rate', 'Formula': methodology['delinquency_rate_90']['formula'], 'Numerator': f"{int(methodology['delinquency_rate_90']['numerator']):,} loans", 'Denominator': f'{total_loans:,} loans', 'Value': fmt_percent(float(methodology['delinquency_rate_90']['value']))}, {'KPI': 'PAR 30', 'Formula': methodology['par_30_rate']['formula'], 'Numerator': fmt_currency(float(methodology['par_30_rate']['numerator'])), 'Denominator': fmt_currency(float(methodology['par_30_rate']['denominator'] or 0.0)), 'Value': fmt_percent(float(methodology['par_30_rate']['value']))}, {'KPI': 'PAR 90', 'Formula': methodology['par_90_rate']['formula'], 'Numerator': fmt_currency(float(methodology['par_90_rate']['numerator'])), 'Denominator': fmt_currency(float(methodology['par_90_rate']['denominator'] or 0.0)), 'Value': fmt_percent(float(methodology['par_90_rate']['value']))}, {'KPI': 'Default Rate', 'Formula': methodology['default_rate']['formula'], 'Numerator': f"{int(methodology['default_rate']['numerator']):,} loans", 'Denominator': f'{total_loans:,} loans', 'Value': fmt_percent(float(methodology['default_rate']['value']))}, {'KPI': 'Collections Rate', 'Formula': methodology['collections_rate']['formula'], 'Numerator': fmt_currency(float(methodology['collections_rate']['numerator'])), 'Denominator': fmt_currency(float(methodology['collections_rate']['denominator'] or 0.0)), 'Value': fmt_percent(float(methodology['collections_rate']['value']))}, {'KPI': 'Recovery Rate', 'Formula': methodology['recovery_rate']['formula'], 'Numerator': fmt_currency(float(methodology['recovery_rate']['numerator'])), 'Denominator': fmt_currency(float(methodology['recovery_rate']['denominator'] or 0.0)), 'Value': fmt_percent(float(methodology['recovery_rate']['value']))}, {'KPI': 'Expected Loss', 'Formula': methodology['expected_loss']['formula'], 'Numerator': fmt_currency(float(methodology['expected_loss']['numerator'])), 'Denominator': 'n/a', 'Value': fmt_currency(float(methodology['expected_loss']['value']))}, {'KPI': 'Expected Loss Rate', 'Formula': methodology['expected_loss_rate']['formula'], 'Numerator': fmt_currency(float(methodology['expected_loss_rate']['numerator'])), 'Denominator': fmt_currency(float(methodology['expected_loss_rate']['denominator'] or 0.0)), 'Value': fmt_percent(float(methodology['expected_loss_rate']['value']))}, {'KPI': 'Average Loan Size', 'Formula': 'total_portfolio / total_loans', 'Numerator': fmt_currency(total_portfolio), 'Denominator': f'{total_loans:,} loans', 'Value': fmt_currency(float(metrics.get('avg_loan_size', 0.0)))}, {'KPI': 'Average Risk Score', 'Formula': 'sum(risk_score) / total_loans', 'Numerator': f"{float(metrics.get('risk_score_sum', 0.0)):.4f}", 'Denominator': f'{total_loans:,} loans', 'Value': fmt_ratio(float(metrics.get('avg_risk_score', 0.0)))}]
+    return [
+        {'KPI': 'Total Portfolio Value', 'Formula': 'sum(exposure_amount) for active loans', 'Numerator': fmt_currency(total_portfolio), 'Denominator': 'n/a', 'Value': fmt_currency(total_portfolio)},
+        {'KPI': 'Weighted Avg Rate', 'Formula': methodology['weighted_avg_rate']['formula'], 'Numerator': f"{methodology['weighted_avg_rate']['numerator']:,.2f}", 'Denominator': fmt_currency(float(methodology['weighted_avg_rate']['denominator'] or 0.0)), 'Value': f"{float(methodology['weighted_avg_rate']['value']):.2%}"},
+        {'KPI': f'{DPD_30_PLUS} Rate', 'Formula': methodology['delinquency_rate_30']['formula'], 'Numerator': f"{int(methodology['delinquency_rate_30']['numerator']):,} loans", 'Denominator': f'{total_loans:,} loans', 'Value': fmt_percent(float(methodology['delinquency_rate_30']['value']))},
+        {'KPI': f'{DPD_60_PLUS} Rate', 'Formula': methodology['delinquency_rate_60']['formula'], 'Numerator': f"{int(methodology['delinquency_rate_60']['numerator']):,} loans", 'Denominator': f'{total_loans:,} loans', 'Value': fmt_percent(float(methodology['delinquency_rate_60']['value']))},
+        {'KPI': f'{DPD_90_PLUS} Rate', 'Formula': methodology['delinquency_rate_90']['formula'], 'Numerator': f"{int(methodology['delinquency_rate_90']['numerator']):,} loans", 'Denominator': f'{total_loans:,} loans', 'Value': fmt_percent(float(methodology['delinquency_rate_90']['value']))},
+        {'KPI': 'PAR 30', 'Formula': methodology['par_30_rate']['formula'], 'Numerator': fmt_currency(float(methodology['par_30_rate']['numerator'])), 'Denominator': fmt_currency(float(methodology['par_30_rate']['denominator'] or 0.0)), 'Value': fmt_percent(float(methodology['par_30_rate']['value']))},
+        {'KPI': 'PAR 90', 'Formula': methodology['par_90_rate']['formula'], 'Numerator': fmt_currency(float(methodology['par_90_rate']['numerator'])), 'Denominator': fmt_currency(float(methodology['par_90_rate']['denominator'] or 0.0)), 'Value': fmt_percent(float(methodology['par_90_rate']['value']))},
+        {'KPI': 'Default Rate', 'Formula': methodology['default_rate']['formula'], 'Numerator': f"{int(methodology['default_rate']['numerator']):,} loans", 'Denominator': f'{total_loans:,} loans', 'Value': fmt_percent(float(methodology['default_rate']['value']))},
+        {'KPI': 'Collections Rate', 'Formula': methodology['collections_rate']['formula'], 'Numerator': fmt_currency(float(methodology['collections_rate']['numerator'])), 'Denominator': fmt_currency(float(methodology['collections_rate']['denominator'] or 0.0)), 'Value': fmt_percent(float(methodology['collections_rate']['value']))},
+        {'KPI': 'Recovery Rate', 'Formula': methodology['recovery_rate']['formula'], 'Numerator': fmt_currency(float(methodology['recovery_rate']['numerator'])), 'Denominator': fmt_currency(float(methodology['recovery_rate']['denominator'] or 0.0)), 'Value': fmt_percent(float(methodology['recovery_rate']['value']))},
+        {'KPI': KPI_EXPECTED_LOSS, 'Formula': methodology['expected_loss']['formula'], 'Numerator': fmt_currency(float(methodology['expected_loss']['numerator'])), 'Denominator': 'n/a', 'Value': fmt_currency(float(methodology['expected_loss']['value']))},
+        {'KPI': f'{KPI_EXPECTED_LOSS} Rate', 'Formula': methodology['expected_loss_rate']['formula'], 'Numerator': fmt_currency(float(methodology['expected_loss_rate']['numerator'])), 'Denominator': fmt_currency(float(methodology['expected_loss_rate']['denominator'] or 0.0)), 'Value': fmt_percent(float(methodology['expected_loss_rate']['value']))},
+        {'KPI': 'Average Loan Size', 'Formula': 'total_portfolio / total_loans', 'Numerator': fmt_currency(total_portfolio), 'Denominator': f'{total_loans:,} loans', 'Value': fmt_currency(float(metrics.get('avg_loan_size', 0.0)))},
+        {'KPI': 'Average Risk Score', 'Formula': 'sum(risk_score) / total_loans', 'Numerator': f"{float(metrics.get('risk_score_sum', 0.0)):.4f}", 'Denominator': f'{total_loans:,} loans', 'Value': fmt_ratio(float(metrics.get('avg_risk_score', 0.0)))}
+    ]
 
 def _enrich_agent_results_with_kpis(results: dict[str, Any], metrics: dict[str, Any], mode: str) -> dict[str, Any]:
     enriched = dict(results)
@@ -117,7 +146,7 @@ def _emit_kpi_snapshot_to_monitoring(results: dict[str, Any]) -> int:
     if events_url is None:
         return 0
     metadata = results.get('_metadata', {}) if isinstance(results.get('_metadata'), dict) else {}
-    message = f"KPI snapshot | Portfolio: €{float(kpi_snapshot.get('total_portfolio', 0.0)):,.0f} | DPD30+: {float(kpi_snapshot.get('delinquency_rate_30', 0.0)):.2f}% | PAR30: {float(kpi_snapshot.get('par_30_rate', 0.0)):.2f}% | Expected Loss: €{float(kpi_snapshot.get('expected_loss', 0.0)):,.0f}"
+    message = f"KPI snapshot | Portfolio: €{float(kpi_snapshot.get('total_portfolio', 0.0)):,.0f} | DPD30+: {float(kpi_snapshot.get('delinquency_rate_30', 0.0)):.2f}% | PAR30: {float(kpi_snapshot.get('par_30_rate', 0.0)):.2f}% | {KPI_EXPECTED_LOSS}: €{float(kpi_snapshot.get('expected_loss', 0.0)):,.0f}"
     body = {'event_type': 'agent_kpi_snapshot', 'severity': 'info', 'source': 'dashboard', 'payload': {'message': message, 'kpis': kpi_snapshot, 'kpi_methodology': results.get('kpi_methodology', {}), 'scenario_name': metadata.get('scenario_name'), 'trace_id': metadata.get('trace_id'), 'analysis_mode': metadata.get('analysis_mode')}}
     try:
         resp = requests.post(events_url, json=body, timeout=5)
@@ -158,9 +187,6 @@ def _persist_agent_outputs(results: dict[str, Any]) -> int:
     return saved
 COLUMN_ALIASES = {'loan_id': ['id_loan', 'idprestamo', 'prestamo_id', 'loanid', 'id', 'numero_desembolso', 'codigo_desembolso', 'correlativo_de_operaciones', 'nrc', 'application_id'], 'borrower_name': ['customer_name', 'client_name', 'nombre', 'nombre_cliente'], 'borrower_email': ['email', 'correo', 'correo_electronico', 'customer_email'], 'borrower_id_number': ['dni', 'documento', 'id_number', 'cedula', 'nif'], 'borrower_id': ['customer_id', 'customer_id_cust', 'codcliente', 'codcliente1', 'cliente_id'], 'principal_amount': ['principal', 'loan_amount', 'principal_balance', 'outstanding_balance', 'current_balance', 'amount', 'monto', 'monto_prestamo', 'monto_financiado', 'monto_financiar', 'valor_financiado', 'valor_factura', 'importe', 'capital_inicial', 'saldo_inicial', 'capital', 'tpv', 'total_receivable_usd', 'discounted_balance_usd', 'monto_del_desembolso', 'monto_financiado_real_por_desembolso', 'monto_total_aprobado_por_desembolso', 'monto_financiado_real', 'monto_total_aprobado'], 'interest_rate': ['interest_rate_apr', 'annual_interest_rate', 'apr', 'rate', 'rate_pct', 'rate_percent', 'tasa', 'tasa_interes', 'tasa_de_interes', 'tasa_anual', 'tasa_nominal', 'tasa_efectiva', 'interest_rate_percent', 'interest_pct', 'interest', 'interes'], 'term_months': ['term', 'tenor_months', 'plazo_meses', 'duration_months'], 'origination_date': ['disbursement_date', 'start_date', 'fecha_originacion', 'fecha_inicio', 'fecha_desembolso', 'fechadesembolso', 'fecha_de_desembolso'], 'current_status': ['status', 'loan_status', 'estado', 'estado_actual'], 'payment_history_json': ['payment_history', 'payments_json', 'historial_pagos'], 'risk_score': ['score', 'riesgo', 'risk', 'credit_score'], 'region': ['province', 'zona', 'location', 'state'], 'days_past_due': ['dias_mora', 'dias_de_mora', 'dpd', 'dias_vencido', 'mora_en_dias'], 'company': ['empresa', 'compania'], 'credit_line': ['lineacredito'], 'kam_hunter': ['cod_kam_hunter', 'cod_kam_hunter_', 'cod_kam_hunter1', 'cod_kam_hunter_1'], 'kam_farmer': ['cod_kam_farmer', 'cod_kam_farmer_', 'cod_kam_farmer1', 'cod_kam_farmer_1', 'farmer'], 'collections_eligible': ['procede_a_cobrar'], 'delinquency_definition': ['definicion_m'], 'delinquency_bucket_raw': ['rango_m'], 'credit_line_range': ['rango_de_la_linea'], 'ministry': ['ministerio'], 'government_sector': ['goes'], 'capital_collected': ['capitalcobrado'], 'total_payment_received': ['montototalabonado'], 'utilization_pct': ['porcentaje_utilizado'], 'approved_value': ['valoraprobado'], 'mdsc_posted': ['mdscposteado'], 'advisory_channel': ['asesoriadigital']}
 OPTIONAL_DEFAULTS = {'borrower_name': 'Unknown Borrower', 'borrower_email': '', 'borrower_id_number': '', 'payment_history_json': '[]', 'risk_score': 0.2, 'region': 'unknown'}
-DPD_30_PLUS = 'DPD 30+'
-DPD_60_PLUS = 'DPD 60+'
-DPD_90_PLUS = 'DPD 90+'
 STATUS_ACTIVE_EXPOSURE = {'active', 'delinquent', 'defaulted', 'unknown'}
 
 def _normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
@@ -183,32 +209,36 @@ def _apply_column_aliases(df: pd.DataFrame) -> pd.DataFrame:
         renamed = renamed.rename(columns=rename_map)
     return renamed
 
+
+def _coalesce_duplicate_columns(merged: pd.DataFrame) -> pd.DataFrame:
+    dup_cols = [col for col in merged.columns if col.endswith('_dup')]
+    updates: dict[str, pd.Series] = {}
+    drop_cols: list[str] = []
+    rename_map: dict[str, str] = {}
+    for dup_col in dup_cols:
+        base_col = dup_col[:-4]
+        if base_col in merged.columns:
+            fill_mask = merged[base_col].isna() & merged[dup_col].notna()
+            updates[base_col] = merged[base_col].where(~fill_mask, merged[dup_col])
+            drop_cols.append(dup_col)
+        else:
+            rename_map[dup_col] = base_col
+    if updates:
+        merged = merged.assign(**updates)
+    if drop_cols:
+        merged = merged.drop(columns=drop_cols)
+    if rename_map:
+        merged = merged.rename(columns=rename_map)
+    return merged.copy()
+
 def _merge_uploaded_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
     merged = frames[0].copy()
     for frame in frames[1:]:
         if 'loan_id' in merged.columns and 'loan_id' in frame.columns:
             merged = merged.merge(frame, on='loan_id', how='outer', suffixes=('', '_dup'))
-            dup_cols = [col for col in merged.columns if col.endswith('_dup')]
-            updates: dict[str, pd.Series] = {}
-            drop_cols: list[str] = []
-            rename_map: dict[str, str] = {}
-            for dup_col in dup_cols:
-                base_col = dup_col[:-4]
-                if base_col in merged.columns:
-                    fill_mask = merged[base_col].isna() & merged[dup_col].notna()
-                    updates[base_col] = merged[base_col].where(~fill_mask, merged[dup_col])
-                    drop_cols.append(dup_col)
-                else:
-                    rename_map[dup_col] = base_col
-            if updates:
-                merged = merged.assign(**updates)
-            if drop_cols:
-                merged = merged.drop(columns=drop_cols)
-            if rename_map:
-                merged = merged.rename(columns=rename_map)
-            merged = merged.copy()
-        else:
-            merged = pd.concat([merged, frame], ignore_index=True, sort=False)
+            merged = _coalesce_duplicate_columns(merged)
+            continue
+        merged = pd.concat([merged, frame], ignore_index=True, sort=False)
     return merged
 
 def _normalize_payment_history(value: Any) -> str:
@@ -228,7 +258,7 @@ def _normalize_payment_history(value: Any) -> str:
         if isinstance(parsed, dict):
             return json.dumps([parsed])
     except (json.JSONDecodeError, TypeError):
-        pass
+        return '[]'
     return '[]'
 
 def _get_exposure_series(df: pd.DataFrame) -> pd.Series:
@@ -252,23 +282,11 @@ def _canonicalize_status(value: Any) -> str:
     raw = str(value).strip().lower()
     if not raw or raw == 'nan':
         return 'active'
-    active_aliases = {'active', 'current', 'vigente', 'open', 'in_force'}
-    closed_aliases = {'closed', 'complete', 'completed', 'paid', 'paid_off', 'paid-off', 'cancelled', 'canceled', 'liquidated'}
-    delinquent_aliases = {'delinquent', 'late', 'past_due', 'arrears', 'mora'}
-    defaulted_aliases = {'default', 'defaulted', 'charged_off', 'charge_off', 'written_off'}
-    if raw in active_aliases:
-        return 'active'
-    if raw in closed_aliases:
-        return 'closed'
-    if raw in delinquent_aliases:
-        return 'delinquent'
-    if raw in defaulted_aliases:
-        return 'defaulted'
-    return 'unknown'
+    return STATUS_ALIAS_TO_CANONICAL.get(raw, 'unknown')
 
 def validate_uploaded_data(df: pd.DataFrame) -> tuple[bool, list[str]]:
     missing_columns = [col for col in CORE_REQUIRED_COLUMNS if col not in df.columns]
-    return (len(missing_columns) == 0, missing_columns)
+    return (all(col in df.columns for col in CORE_REQUIRED_COLUMNS), missing_columns)
 
 def _suggest_columns_for_missing(df: pd.DataFrame, missing: list[str]) -> dict[str, list[str]]:
     suggestions: dict[str, list[str]] = {}
@@ -346,6 +364,43 @@ def calculate_days_past_due(df: pd.DataFrame) -> pd.DataFrame:
     df['days_past_due'] = pd.concat([existing_dpd, derived_dpd], axis=1).max(axis=1)
     return df
 
+
+def _safe_pct(numerator: float, denominator: float) -> float:
+    return numerator / denominator * 100 if denominator > 0 else 0.0
+
+
+def _compute_borrower_metrics(portfolio_df: pd.DataFrame) -> tuple[int, float]:
+    borrower_col = next((col for col in ('borrower_id', 'borrower_id_number', 'borrower_email', 'borrower_name') if col in portfolio_df.columns), None)
+    if borrower_col is None:
+        return (0, 0.0)
+    borrower_series = portfolio_df[borrower_col].fillna('').astype(str).str.strip().replace({'': pd.NA, 'nan': pd.NA, 'none': pd.NA, 'unknown borrower': pd.NA}).dropna()
+    active_borrowers = int(borrower_series.nunique())
+    if active_borrowers <= 0:
+        return (0, 0.0)
+    borrower_counts = borrower_series.value_counts()
+    repeat_rate = float((borrower_counts > 1).sum() / active_borrowers * 100)
+    return (active_borrowers, repeat_rate)
+
+
+def _compute_dpd_and_par_metrics(portfolio_df: pd.DataFrame, total_loans: int, total_portfolio: float) -> dict[str, float | int]:
+    dpd_30_plus = int((portfolio_df['days_past_due'] >= 30).sum())
+    dpd_60_plus = int((portfolio_df['days_past_due'] >= 60).sum())
+    dpd_90_plus = int((portfolio_df['days_past_due'] >= 90).sum())
+    par_30_amount = float(portfolio_df[portfolio_df['days_past_due'] >= 30]['exposure_amount'].sum())
+    par_90_amount = float(portfolio_df[portfolio_df['days_past_due'] >= 90]['exposure_amount'].sum())
+    return {
+        'dpd_30_count': dpd_30_plus,
+        'dpd_60_count': dpd_60_plus,
+        'dpd_90_count': dpd_90_plus,
+        'delinquency_rate_30': _safe_pct(float(dpd_30_plus), float(total_loans)),
+        'delinquency_rate_60': _safe_pct(float(dpd_60_plus), float(total_loans)),
+        'delinquency_rate_90': _safe_pct(float(dpd_90_plus), float(total_loans)),
+        'par_30_amount': par_30_amount,
+        'par_90_amount': par_90_amount,
+        'par_30_rate': _safe_pct(par_30_amount, total_portfolio),
+        'par_90_rate': _safe_pct(par_90_amount, total_portfolio),
+    }
+
 def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
     df = calculate_days_past_due(df)
     status_series = df['current_status'] if 'current_status' in df.columns else pd.Series('unknown', index=df.index)
@@ -358,45 +413,60 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
     weighted_rate_numerator = float((portfolio_df['exposure_amount'] * portfolio_df['interest_rate']).sum())
     weighted_rate = weighted_rate_numerator / total_portfolio if total_portfolio > 0 else 0.0
     total_loans = len(portfolio_df)
-    dpd_30_plus = int((portfolio_df['days_past_due'] >= 30).sum())
-    dpd_60_plus = int((portfolio_df['days_past_due'] >= 60).sum())
-    dpd_90_plus = int((portfolio_df['days_past_due'] >= 90).sum())
-    delinquency_rate_30 = dpd_30_plus / total_loans * 100 if total_loans > 0 else 0
-    delinquency_rate_60 = dpd_60_plus / total_loans * 100 if total_loans > 0 else 0
-    delinquency_rate_90 = dpd_90_plus / total_loans * 100 if total_loans > 0 else 0
-    par_30_amount = float(portfolio_df[portfolio_df['days_past_due'] >= 30]['exposure_amount'].sum())
-    par_90_amount = float(portfolio_df[portfolio_df['days_past_due'] >= 90]['exposure_amount'].sum())
-    par_30_rate = par_30_amount / total_portfolio * 100 if total_portfolio > 0 else 0
-    par_90_rate = par_90_amount / total_portfolio * 100 if total_portfolio > 0 else 0
+    dpd_par_metrics = _compute_dpd_and_par_metrics(portfolio_df, total_loans, total_portfolio)
     risk_score_sum = float(portfolio_df['risk_score'].sum())
     expected_loss = float((portfolio_df['risk_score'] * portfolio_df['exposure_amount']).sum())
-    expected_loss_rate = expected_loss / total_portfolio * 100 if total_portfolio > 0 else 0
+    expected_loss_rate = _safe_pct(expected_loss, total_portfolio)
     avg_risk_score = float(portfolio_df['risk_score'].mean()) if total_loans > 0 else 0.0
     default_mask = portfolio_df['current_status'] == 'defaulted'
     default_count = int(default_mask.sum())
     default_exposure = float(portfolio_df.loc[default_mask, 'exposure_amount'].sum())
-    default_rate = default_count / total_loans * 100 if total_loans > 0 else 0.0
-    loss_rate = default_exposure / total_portfolio * 100 if total_portfolio > 0 else 0.0
+    default_rate = _safe_pct(float(default_count), float(total_loans))
+    loss_rate = _safe_pct(default_exposure, total_portfolio)
     scheduled_sum = float(_get_numeric_series(portfolio_df, 'total_scheduled').sum())
     collected_sum = float(_get_numeric_series(portfolio_df, 'last_payment_amount').sum())
-    collections_rate = collected_sum / scheduled_sum * 100 if scheduled_sum > 0 else 0.0
+    collections_rate = _safe_pct(collected_sum, scheduled_sum)
     default_collected_sum = float(_get_numeric_series(portfolio_df.loc[default_mask], 'last_payment_amount').sum())
-    recovery_rate = default_collected_sum / default_exposure * 100 if default_exposure > 0 else 0.0
+    recovery_rate = _safe_pct(default_collected_sum, default_exposure)
     cash_on_hand = float(_get_numeric_series(portfolio_df, 'current_balance').sum()) if 'current_balance' in portfolio_df.columns else total_portfolio
-    borrower_col = next((col for col in ('borrower_id', 'borrower_id_number', 'borrower_email', 'borrower_name') if col in portfolio_df.columns), None)
-    if borrower_col:
-        borrower_series = portfolio_df[borrower_col].fillna('').astype(str).str.strip().replace({'': pd.NA, 'nan': pd.NA, 'none': pd.NA, 'unknown borrower': pd.NA}).dropna()
-        active_borrowers = int(borrower_series.nunique())
-    else:
-        borrower_series = pd.Series(dtype=str)
-        active_borrowers = 0
-    if active_borrowers > 0:
-        borrower_counts = borrower_series.value_counts()
-        repeat_borrower_rate = float((borrower_counts > 1).sum() / active_borrowers * 100)
-    else:
-        repeat_borrower_rate = 0.0
+    active_borrowers, repeat_borrower_rate = _compute_borrower_metrics(portfolio_df)
     status_dist = portfolio_df['current_status'].value_counts().to_dict()
-    return {'total_portfolio': total_portfolio, 'weighted_avg_rate': weighted_rate, 'weighted_rate_numerator': weighted_rate_numerator, 'delinquency_rate_30': delinquency_rate_30, 'delinquency_rate_60': delinquency_rate_60, 'delinquency_rate_90': delinquency_rate_90, 'dpd_30_count': dpd_30_plus, 'dpd_60_count': dpd_60_plus, 'dpd_90_count': dpd_90_plus, 'par_30_rate': par_30_rate, 'par_30_amount': par_30_amount, 'par_90_rate': par_90_rate, 'par_90_amount': par_90_amount, 'expected_loss': expected_loss, 'expected_loss_rate': expected_loss_rate, 'default_count': default_count, 'default_rate': default_rate, 'default_exposure': default_exposure, 'loss_rate': loss_rate, 'collections_received': collected_sum, 'collections_scheduled': scheduled_sum, 'collections_rate': collections_rate, 'default_collections': default_collected_sum, 'recovery_rate': recovery_rate, 'cash_on_hand': cash_on_hand, 'active_borrowers': active_borrowers, 'repeat_borrower_rate': repeat_borrower_rate, 'total_loans_all': total_loans_all, 'closed_loans': closed_loans, 'total_loans': total_loans, 'status_distribution': status_dist, 'avg_loan_size': float(portfolio_df['exposure_amount'].mean()) if total_loans > 0 else 0.0, 'risk_score_sum': risk_score_sum, 'avg_risk_score': avg_risk_score}
+    return {
+        'total_portfolio': total_portfolio,
+        'weighted_avg_rate': weighted_rate,
+        'weighted_rate_numerator': weighted_rate_numerator,
+        'delinquency_rate_30': float(dpd_par_metrics['delinquency_rate_30']),
+        'delinquency_rate_60': float(dpd_par_metrics['delinquency_rate_60']),
+        'delinquency_rate_90': float(dpd_par_metrics['delinquency_rate_90']),
+        'dpd_30_count': int(dpd_par_metrics['dpd_30_count']),
+        'dpd_60_count': int(dpd_par_metrics['dpd_60_count']),
+        'dpd_90_count': int(dpd_par_metrics['dpd_90_count']),
+        'par_30_rate': float(dpd_par_metrics['par_30_rate']),
+        'par_30_amount': float(dpd_par_metrics['par_30_amount']),
+        'par_90_rate': float(dpd_par_metrics['par_90_rate']),
+        'par_90_amount': float(dpd_par_metrics['par_90_amount']),
+        'expected_loss': expected_loss,
+        'expected_loss_rate': expected_loss_rate,
+        'default_count': default_count,
+        'default_rate': default_rate,
+        'default_exposure': default_exposure,
+        'loss_rate': loss_rate,
+        'collections_received': collected_sum,
+        'collections_scheduled': scheduled_sum,
+        'collections_rate': collections_rate,
+        'default_collections': default_collected_sum,
+        'recovery_rate': recovery_rate,
+        'cash_on_hand': cash_on_hand,
+        'active_borrowers': active_borrowers,
+        'repeat_borrower_rate': repeat_borrower_rate,
+        'total_loans_all': total_loans_all,
+        'closed_loans': closed_loans,
+        'total_loans': total_loans,
+        'status_distribution': status_dist,
+        'avg_loan_size': float(portfolio_df['exposure_amount'].mean()) if total_loans > 0 else 0.0,
+        'risk_score_sum': risk_score_sum,
+        'avg_risk_score': avg_risk_score,
+    }
 
 def render_metrics_cards(metrics: dict[str, Any]):
     col1, col2, col3, col4 = st.columns(4)
@@ -407,7 +477,7 @@ def render_metrics_cards(metrics: dict[str, Any]):
     with col3:
         st.metric(label='⚠️ Delinquency Rate (30+ DPD)', value=f"{metrics['delinquency_rate_30']:.1f}%", delta=f"60+: {metrics['delinquency_rate_60']:.1f}%", delta_color='inverse')
     with col4:
-        st.metric(label='🎯 PAR > 30', value=f"{metrics['par_30_rate']:.2f}%", delta=f"Expected Loss: {metrics['expected_loss_rate']:.2f}%", delta_color='inverse')
+        st.metric(label='🎯 PAR > 30', value=f"{metrics['par_30_rate']:.2f}%", delta=f"{KPI_EXPECTED_LOSS}: {metrics['expected_loss_rate']:.2f}%", delta_color='inverse')
     col5, col6, col7, col8 = st.columns(4)
     with col5:
         st.metric(label='📉 PAR > 90', value=f"{metrics.get('par_90_rate', 0.0):.2f}%", delta=f"Loss Rate: {metrics.get('loss_rate', 0.0):.2f}%", delta_color='inverse')
@@ -538,56 +608,73 @@ def create_vintage_analysis(df: pd.DataFrame) -> go.Figure:
     fig.update_layout(title='Vintage Analysis - Loan Status by Origination Quarter', xaxis_title='Origination Quarter', yaxis_title='Percentage (%)', barmode='stack', height=400, hovermode='x unified')
     return fig
 
+
+def _run_agent_analysis(df: pd.DataFrame, metrics: dict[str, Any]) -> dict[str, Any]:
+    context = build_agent_portfolio_context(df)
+    has_openai_key = bool(os.getenv('OPENAI_API_KEY'))
+    if has_openai_key:
+        orchestrator = MultiAgentOrchestrator(provider=LLMProvider.OPENAI, enable_tracing=False)
+        base_results = orchestrator.run_scenario('loan_risk_review', context)
+        return _enrich_agent_results_with_kpis(base_results, metrics, 'llm_openai')
+    base_results = _build_local_agent_fallback(df, metrics)
+    return _enrich_agent_results_with_kpis(base_results, metrics, 'local_fallback')
+
+
+def _persist_and_notify_agent_results(results: dict[str, Any]) -> None:
+    st.session_state['agent_results'] = results
+    emitted_events = _emit_agent_comments_to_monitoring(results)
+    emitted_kpi_events = _emit_kpi_snapshot_to_monitoring(results)
+    saved_outputs = _persist_agent_outputs(results)
+    analysis_mode = str(results.get('_metadata', {}).get('analysis_mode', 'local_fallback'))
+    if analysis_mode == 'llm_openai':
+        st.success('✅ Agent analysis completed')
+    else:
+        st.warning('OPENAI_API_KEY is not set. Generated deterministic local analysis with full KPIs.')
+    if emitted_events > 0:
+        st.info(f'📝 Published {emitted_events} agent comments to monitoring feed (Grafana).')
+    if emitted_kpi_events > 0:
+        st.info('📊 Published KPI snapshot event to monitoring feed (Grafana).')
+    elif ABACO_API_BASE_SAFE is None:
+        st.caption('Agent comments were generated locally. Set ABACO_API_BASE to publish them to Monitoring/Grafana.')
+    if saved_outputs > 0:
+        st.caption(f'Saved {saved_outputs} agent output files to data/agent_outputs for Agent Insights.')
+
+
+def _handle_agent_button_click() -> None:
+    if not st.session_state.get('data_loaded'):
+        st.warning('Please upload data before running agent analysis.')
+        return
+    with st.spinner('Running multi-agent analysis...'):
+        df = st.session_state.get('loan_data')
+        if not isinstance(df, pd.DataFrame) or df.empty:
+            st.warning('No valid loan data available for analysis.')
+            return
+        metrics = calculate_portfolio_metrics(df)
+        try:
+            results = _run_agent_analysis(df, metrics)
+        except Exception as exc:
+            fallback_results = _enrich_agent_results_with_kpis(_build_local_agent_fallback(df, metrics), metrics, 'local_fallback_after_error')
+            _persist_and_notify_agent_results(fallback_results)
+            st.warning('LLM agent execution failed. Deterministic local analysis was generated instead.')
+            st.error(f'Original LLM error: {exc}')
+            return
+        _persist_and_notify_agent_results(results)
+
+
+def _load_and_normalize_uploaded_frames(uploaded_files: Any) -> list[pd.DataFrame]:
+    normalized_frames: list[pd.DataFrame] = []
+    for uploaded_file in uploaded_files:
+        raw_df = pd.read_csv(uploaded_file, low_memory=False)
+        normalized_frames.append(_apply_column_aliases(_normalize_column_names(raw_df)))
+    return normalized_frames
+
 def render_sidebar() -> Any:
     st.header('📤 Upload Loan Data')
     uploaded_files = st.file_uploader('Upload one or more CSV files', type=['csv'], accept_multiple_files=True, help=f"You can upload one consolidated file or multiple partial files. Minimum required columns: {', '.join(CORE_REQUIRED_COLUMNS)}")
     st.markdown('---')
     st.header('🤖 AI Analysis')
     if st.button('🔍 Run Agent Analysis'):
-        if not st.session_state.get('data_loaded'):
-            st.warning('Please upload data before running agent analysis.')
-        else:
-            with st.spinner('Running multi-agent analysis...'):
-                df = st.session_state.get('loan_data')
-                if not isinstance(df, pd.DataFrame) or df.empty:
-                    st.warning('No valid loan data available for analysis.')
-                    return uploaded_files
-                metrics = calculate_portfolio_metrics(df)
-                context = build_agent_portfolio_context(df)
-                has_openai_key = bool(os.getenv('OPENAI_API_KEY'))
-                try:
-                    if has_openai_key:
-                        orchestrator = MultiAgentOrchestrator(provider=LLMProvider.OPENAI, enable_tracing=False)
-                        base_results = orchestrator.run_scenario('loan_risk_review', context)
-                        analysis_mode = 'llm_openai'
-                    else:
-                        base_results = _build_local_agent_fallback(df, metrics)
-                        analysis_mode = 'local_fallback'
-                    results = _enrich_agent_results_with_kpis(base_results, metrics, analysis_mode)
-                    st.session_state['agent_results'] = results
-                    emitted_events = _emit_agent_comments_to_monitoring(results)
-                    emitted_kpi_events = _emit_kpi_snapshot_to_monitoring(results)
-                    saved_outputs = _persist_agent_outputs(results)
-                    if analysis_mode == 'llm_openai':
-                        st.success('✅ Agent analysis completed')
-                    else:
-                        st.warning('OPENAI_API_KEY is not set. Generated deterministic local analysis with full KPIs.')
-                    if emitted_events > 0:
-                        st.info(f'📝 Published {emitted_events} agent comments to monitoring feed (Grafana).')
-                    if emitted_kpi_events > 0:
-                        st.info('📊 Published KPI snapshot event to monitoring feed (Grafana).')
-                    elif ABACO_API_BASE_SAFE is None:
-                        st.caption('Agent comments were generated locally. Set ABACO_API_BASE to publish them to Monitoring/Grafana.')
-                    if saved_outputs > 0:
-                        st.caption(f'Saved {saved_outputs} agent output files to data/agent_outputs for Agent Insights.')
-                except Exception as exc:
-                    fallback_results = _enrich_agent_results_with_kpis(_build_local_agent_fallback(df, metrics), metrics, 'local_fallback_after_error')
-                    st.session_state['agent_results'] = fallback_results
-                    _emit_agent_comments_to_monitoring(fallback_results)
-                    _emit_kpi_snapshot_to_monitoring(fallback_results)
-                    _persist_agent_outputs(fallback_results)
-                    st.warning('LLM agent execution failed. Deterministic local analysis was generated instead.')
-                    st.error(f'Original LLM error: {exc}')
+        _handle_agent_button_click()
     st.markdown('---')
     st.caption('💡 Upload your own CSV to analyze the loan portfolio')
     return uploaded_files
@@ -596,23 +683,7 @@ def handle_file_upload(uploaded_files: Any) -> bool:
     if not uploaded_files:
         return False
     try:
-        normalized_frames: list[pd.DataFrame] = []
-        for uploaded_file in uploaded_files:
-            raw_df = pd.read_csv(uploaded_file, low_memory=False)
-            normalized_frames.append(_apply_column_aliases(_normalize_column_names(raw_df)))
-        merged_df = _merge_uploaded_frames(normalized_frames)
-        prepared_df = prepare_uploaded_data(merged_df)
-        st.session_state['data_loaded'] = True
-        st.session_state['loan_data'] = prepared_df
-        st.success(f'✅ Data uploaded and validated successfully! Files: {len(uploaded_files)} | Rows: {len(prepared_df):,}')
-        _cls_candidates = ['loan_id'] + list(BORROWER_ID_COLS) + ['principal_amount']
-        _cls_cols = [c for c in _cls_candidates if c in prepared_df.columns]
-        classify_df = prepared_df[_cls_cols].rename(columns={'principal_amount': 'amount'}, errors='ignore')
-        for level, message in _classify_loan_id_duplicates(classify_df):
-            if level == 'info':
-                st.info(f'ℹ️ {message}')
-            else:
-                st.warning(f'⚠️ {message}')
+        _process_uploaded_files(uploaded_files)
         return True
     except ValueError as exc:
         st.error(f'❌ {exc}')
@@ -622,28 +693,122 @@ def handle_file_upload(uploaded_files: Any) -> bool:
         st.error(f'❌ Error loading file: {str(e)}')
         return False
 
+
+def _prepare_uploaded_dataframe(uploaded_files: Any) -> pd.DataFrame:
+    normalized_frames = _load_and_normalize_uploaded_frames(uploaded_files)
+    merged_df = _merge_uploaded_frames(normalized_frames)
+    return prepare_uploaded_data(merged_df)
+
+
+def _process_uploaded_files(uploaded_files: Any) -> None:
+    prepared_df = _prepare_uploaded_dataframe(uploaded_files)
+    _store_uploaded_dataframe(prepared_df, uploaded_files)
+
+
+def _store_uploaded_dataframe(prepared_df: pd.DataFrame, uploaded_files: Any) -> None:
+    st.session_state['data_loaded'] = True
+    st.session_state['loan_data'] = prepared_df
+    st.success(f'✅ Data uploaded and validated successfully! Files: {len(uploaded_files)} | Rows: {len(prepared_df):,}')
+    _cls_candidates = ['loan_id'] + list(BORROWER_ID_COLS) + ['principal_amount']
+    _cls_cols = [c for c in _cls_candidates if c in prepared_df.columns]
+    classify_df = prepared_df[_cls_cols].rename(columns={'principal_amount': 'amount'}, errors='ignore')
+    for level, message in _classify_loan_id_duplicates(classify_df):
+        if level == 'info':
+            st.info(f'ℹ️ {message}')
+        else:
+            st.warning(f'⚠️ {message}')
+
+def _render_markdown_items(title: str, items: list[str]) -> None:
+    st.markdown(title)
+    for item in items:
+        st.markdown(f'- `{item}`')
+
+
+def _render_required_columns_list(columns: list[str]) -> None:
+    for column in columns:
+        st.markdown(f'- `{column}`')
+
+
 def render_data_format_guide():
     st.info('👆 Please upload a CSV file or load sample data from the sidebar to begin analysis')
     st.markdown('### 📋 Required Data Format')
     st.markdown('Your CSV must include these minimum columns:')
-    st.markdown('- `loan_id`')
-    st.markdown('- `principal_amount`')
-    st.markdown('- `interest_rate`')
-    st.markdown('- `term_months`')
-    st.markdown('- `origination_date`')
-    st.markdown('- `current_status`')
+    _render_required_columns_list(['loan_id', 'principal_amount', 'interest_rate', 'term_months', 'origination_date', 'current_status'])
     st.markdown('Optional columns (auto-filled if missing):')
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('**Borrower Information (optional):**')
-        st.markdown('- `borrower_name`')
-        st.markdown('- `borrower_email`')
-        st.markdown('- `borrower_id_number`')
-        st.markdown('- `region`')
+        _render_markdown_items('**Borrower Information (optional):**', ['borrower_name', 'borrower_email', 'borrower_id_number', 'region'])
     with col2:
-        st.markdown('**Loan Details (optional):**')
-        st.markdown('- `risk_score`')
-        st.markdown('- `payment_history_json`')
+        _render_markdown_items('**Loan Details (optional):**', ['risk_score', 'payment_history_json'])
+
+
+def _render_agent_text_sections(results: dict[str, Any], metadata: dict[str, Any]) -> None:
+    with st.expander('View multi-agent outputs', expanded=True):
+        if results.get('risk_analysis'):
+            st.markdown('**Risk Analysis**')
+            st.write(results['risk_analysis'])
+        if results.get('compliance_review'):
+            st.markdown('**Compliance Review**')
+            st.write(results['compliance_review'])
+        if results.get('ops_recommendations'):
+            st.markdown('**Ops Recommendations**')
+            st.write(results['ops_recommendations'])
+        if metadata:
+            st.caption(f"Trace ID: {metadata.get('trace_id', 'n/a')} | Mode: {metadata.get('analysis_mode', 'n/a')}")
+
+
+def _render_agent_kpi_basis(results: dict[str, Any], metrics: dict[str, Any]) -> None:
+    with st.expander('KPI basis used in agent analysis', expanded=False):
+        methodology = results.get('kpi_methodology')
+        rows = [
+            {'KPI': kpi_id, 'Formula': details.get('formula', 'n/a'), 'Numerator': details.get('numerator', 'n/a'), 'Denominator': details.get('denominator', 'n/a'), 'Value': details.get('value', 'n/a'), 'Unit': details.get('unit', 'n/a')}
+            for kpi_id, details in methodology.items()
+            if isinstance(details, dict)
+        ] if isinstance(methodology, dict) and methodology else _kpi_methodology_rows(metrics)
+        st.dataframe(pd.DataFrame(rows), width='stretch', hide_index=True)
+
+
+def _resolve_segment_status_column(df: pd.DataFrame) -> str | None:
+    status_col = 'current_status' if 'current_status' in df.columns else None
+    if status_col is None and 'status' in df.columns:
+        status_col = 'status'
+    return status_col
+
+
+def _build_segment_row(grp: pd.DataFrame, exposure_col: str, dpd_col: str | None, status_col: str | None, seg_val: Any) -> dict[str, Any] | None:
+    total = grp[exposure_col].sum()
+    if total <= 0:
+        return None
+    row: dict[str, Any] = {'Segment': seg_val, 'Loans': len(grp), SEG_OUTSTANDING: round(total, 0)}
+    if dpd_col:
+        row[SEG_PAR_30] = round(float(grp.loc[grp[dpd_col] >= 30, exposure_col].sum()) / total * 100, 2)
+        row[SEG_PAR_60] = round(float(grp.loc[grp[dpd_col] >= 60, exposure_col].sum()) / total * 100, 2)
+        row[SEG_PAR_90] = round(float(grp.loc[grp[dpd_col] >= 90, exposure_col].sum()) / total * 100, 2)
+    if status_col:
+        defaulted = grp[status_col].astype(str).str.contains('default|charged', case=False, na=False).sum()
+        row[SEG_DEFAULT_RATE] = round(float(defaulted) / len(grp) * 100, 2)
+    return row
+
+
+def _render_segment_par_chart(seg_df: pd.DataFrame, dim_label: str) -> None:
+    if SEG_PAR_30 not in seg_df.columns:
+        return
+    fig = px.bar(seg_df, x='Segment', y=[SEG_PAR_30, SEG_PAR_60, SEG_PAR_90], barmode='group', title=f'PAR 30 / 60 / 90 by {dim_label}', color_discrete_map={SEG_PAR_30: '#ffc107', SEG_PAR_60: '#ff9800', SEG_PAR_90: '#dc3545'}, height=380)
+    fig.update_layout(xaxis_tickangle=-30, legend_title_text='')
+    st.plotly_chart(fig, width='stretch')
+
+
+def _render_segment_secondary_charts(seg_df: pd.DataFrame, dim_label: str) -> None:
+    col1, col2 = st.columns(2)
+    with col1:
+        outstanding_fig = px.bar(seg_df, x='Segment', y=SEG_OUTSTANDING, title=f'Outstanding Balance by {dim_label}', color=SEG_OUTSTANDING, color_continuous_scale='Blues', height=340)
+        outstanding_fig.update_layout(xaxis_tickangle=-30, showlegend=False)
+        st.plotly_chart(outstanding_fig, width='stretch')
+    with col2:
+        if SEG_DEFAULT_RATE in seg_df.columns:
+            default_fig = px.bar(seg_df, x='Segment', y=SEG_DEFAULT_RATE, title=f'Default Rate by {dim_label}', color=SEG_DEFAULT_RATE, color_continuous_scale='Reds', height=340)
+            default_fig.update_layout(xaxis_tickangle=-30, showlegend=False)
+            st.plotly_chart(default_fig, width='stretch')
 
 def render_agent_results(metrics: dict[str, Any]):
     if 'agent_results' not in st.session_state:
@@ -657,32 +822,11 @@ def render_agent_results(metrics: dict[str, Any]):
         kpi_snapshot = _kpi_snapshot_from_metrics(metrics)
     cols = st.columns(4)
     cols[0].metric('Portfolio', f"€{float(kpi_snapshot.get('total_portfolio', 0.0)):,.0f}")
-    cols[1].metric('DPD 30+', f"{float(kpi_snapshot.get('delinquency_rate_30', 0.0)):.2f}%")
+    cols[1].metric(DPD_30_PLUS, f"{float(kpi_snapshot.get('delinquency_rate_30', 0.0)):.2f}%")
     cols[2].metric('PAR 30', f"{float(kpi_snapshot.get('par_30_rate', 0.0)):.2f}%")
-    cols[3].metric('Expected Loss', f"€{float(kpi_snapshot.get('expected_loss', 0.0)):,.0f}")
-    with st.expander('View multi-agent outputs', expanded=True):
-        if results.get('risk_analysis'):
-            st.markdown('**Risk Analysis**')
-            st.write(results['risk_analysis'])
-        if results.get('compliance_review'):
-            st.markdown('**Compliance Review**')
-            st.write(results['compliance_review'])
-        if results.get('ops_recommendations'):
-            st.markdown('**Ops Recommendations**')
-            st.write(results['ops_recommendations'])
-        if metadata:
-            st.caption(f"Trace ID: {metadata.get('trace_id', 'n/a')} | Mode: {metadata.get('analysis_mode', 'n/a')}")
-    with st.expander('KPI basis used in agent analysis', expanded=False):
-        methodology = results.get('kpi_methodology')
-        if isinstance(methodology, dict) and methodology:
-            rows = []
-            for kpi_id, details in methodology.items():
-                if not isinstance(details, dict):
-                    continue
-                rows.append({'KPI': kpi_id, 'Formula': details.get('formula', 'n/a'), 'Numerator': details.get('numerator', 'n/a'), 'Denominator': details.get('denominator', 'n/a'), 'Value': details.get('value', 'n/a'), 'Unit': details.get('unit', 'n/a')})
-            st.dataframe(pd.DataFrame(rows), width='stretch', hide_index=True)
-        else:
-            st.dataframe(pd.DataFrame(_kpi_methodology_rows(metrics)), width='stretch', hide_index=True)
+    cols[3].metric(KPI_EXPECTED_LOSS, f"€{float(kpi_snapshot.get('expected_loss', 0.0)):,.0f}")
+    _render_agent_text_sections(results, metadata)
+    _render_agent_kpi_basis(results, metrics)
 
 def render_segment_breakdown(df: pd.DataFrame) -> None:
     st.subheader('🏷️ Segment Risk Breakdown')
@@ -699,7 +843,7 @@ def render_segment_breakdown(df: pd.DataFrame) -> None:
     dim_col = next((k for k, v in available_dims.items() if v == dim_label))
     exposure_col = next((c for c in ('outstanding_balance', 'current_balance', 'principal_amount') if c in df.columns), None)
     dpd_col = next((c for c in ('days_past_due', 'dpd') if c in df.columns), None)
-    status_col = 'current_status' if 'current_status' in df.columns else 'status' if 'status' in df.columns else None
+    status_col = _resolve_segment_status_column(df)
     if exposure_col is None:
         st.warning('No balance column found for segment analysis.')
         return
@@ -709,36 +853,14 @@ def render_segment_breakdown(df: pd.DataFrame) -> None:
         work[dpd_col] = pd.to_numeric(work[dpd_col], errors='coerce').fillna(0.0)
     rows = []
     for seg_val, grp in work.groupby(dim_col, sort=False):
-        total = float(grp[exposure_col].sum())
-        if total <= 0:
-            continue
-        row: dict[str, Any] = {'Segment': str(seg_val), 'Loans': int(len(grp)), 'Outstanding ($)': round(total, 0)}
-        if dpd_col:
-            row['PAR 30 (%)'] = round(float(grp.loc[grp[dpd_col] >= 30, exposure_col].sum()) / total * 100, 2)
-            row['PAR 60 (%)'] = round(float(grp.loc[grp[dpd_col] >= 60, exposure_col].sum()) / total * 100, 2)
-            row['PAR 90 (%)'] = round(float(grp.loc[grp[dpd_col] >= 90, exposure_col].sum()) / total * 100, 2)
-        if status_col:
-            defaulted = grp[status_col].astype(str).str.contains('default|charged', case=False, na=False).sum()
-            row['Default Rate (%)'] = round(float(defaulted) / len(grp) * 100, 2)
-        rows.append(row)
+        if (row := _build_segment_row(grp, exposure_col, dpd_col, status_col, seg_val)) is not None:
+            rows.append(row)
     if not rows:
         st.info('No data for selected dimension.')
         return
-    seg_df = pd.DataFrame(rows).sort_values('Outstanding ($)', ascending=False)
-    if 'PAR 30 (%)' in seg_df.columns:
-        fig = px.bar(seg_df, x='Segment', y=['PAR 30 (%)', 'PAR 60 (%)', 'PAR 90 (%)'], barmode='group', title=f'PAR 30 / 60 / 90 by {dim_label}', color_discrete_map={'PAR 30 (%)': '#ffc107', 'PAR 60 (%)': '#ff9800', 'PAR 90 (%)': '#dc3545'}, height=380)
-        fig.update_layout(xaxis_tickangle=-30, legend_title_text='')
-        st.plotly_chart(fig, width='stretch')
-    col1, col2 = st.columns(2)
-    with col1:
-        outstanding_fig = px.bar(seg_df, x='Segment', y='Outstanding ($)', title=f'Outstanding Balance by {dim_label}', color='Outstanding ($)', color_continuous_scale='Blues', height=340)
-        outstanding_fig.update_layout(xaxis_tickangle=-30, showlegend=False)
-        st.plotly_chart(outstanding_fig, width='stretch')
-    with col2:
-        if 'Default Rate (%)' in seg_df.columns:
-            default_fig = px.bar(seg_df, x='Segment', y='Default Rate (%)', title=f'Default Rate by {dim_label}', color='Default Rate (%)', color_continuous_scale='Reds', height=340)
-            default_fig.update_layout(xaxis_tickangle=-30, showlegend=False)
-            st.plotly_chart(default_fig, width='stretch')
+    seg_df = pd.DataFrame(rows).sort_values(SEG_OUTSTANDING, ascending=False)
+    _render_segment_par_chart(seg_df, dim_label)
+    _render_segment_secondary_charts(seg_df, dim_label)
     st.markdown('#### Segment Detail Table')
     st.dataframe(seg_df, width='stretch', hide_index=True)
 
@@ -757,6 +879,49 @@ def _coerce_money_series(df: pd.DataFrame, candidates: tuple[str, ...]) -> tuple
         return (pd.Series(0.0, index=df.index, dtype=float), None)
     return (_coerce_amount(df[col]).fillna(0.0), col)
 
+
+def _empty_temporal_metadata(disb_col: str | None, pay_col: str | None, principal_col: str | None, outstanding_col: str | None) -> dict[str, Any]:
+    return {
+        'raw_rows': 0,
+        'dedup_rows': 0,
+        'principal_sum': 0.0,
+        'outstanding_sum': 0.0,
+        'disbursement_col': disb_col,
+        'payment_col': pay_col,
+        'principal_col': principal_col,
+        'outstanding_col': outstanding_col,
+        'key_label': 'N/A',
+    }
+
+
+def _build_operational_temporal_key_parts(df: pd.DataFrame, work: pd.DataFrame, principal_work: pd.Series) -> tuple[list[pd.Series], str]:
+    client_col = _first_existing_column(df, ('codcliente', 'client_code', 'borrower_id', 'borrower_id_number'))
+    disb_num_col = _first_existing_column(df, ('numerodesembolso', 'numero_desembolso', 'codigo_desembolso', 'correlativo_de_operaciones', 'loan_id'))
+    due_date_series, due_col = _coerce_datetime_series(df, ('fechacobro', 'fechapagoprogramado'))
+    due_work = due_date_series.loc[work.index].dt.strftime('%Y-%m-%d').fillna('NA')
+    key_parts = [_string_part(work, client_col), _string_part(work, disb_num_col), principal_work.round(2).map(lambda x: f'{x:.2f}'), due_work]
+    key_label = f"Operational key: {client_col or 'NA'} + {disb_num_col or 'NA'} + principal + {due_col or 'NA'}"
+    return (key_parts, key_label)
+
+
+def _build_legacy_temporal_key_parts(df: pd.DataFrame, work: pd.DataFrame, principal_work: pd.Series) -> tuple[list[pd.Series], str]:
+    loan_col = _first_existing_column(df, ('loan_id',))
+    due_date_series, due_col = _coerce_datetime_series(df, ('fechacobro',))
+    due_work = due_date_series.loc[work.index].dt.strftime('%Y-%m-%d').fillna('NA')
+    key_parts = [_string_part(work, loan_col), principal_work.round(2).map(lambda x: f'{x:.2f}'), due_work]
+    key_label = f"Legacy key: {loan_col or 'NA'} + principal + {due_col or 'NA'}"
+    return (key_parts, key_label)
+
+
+def _build_temporal_key_data(df: pd.DataFrame, work: pd.DataFrame, principal_work: pd.Series, key_strategy: str) -> tuple[list[pd.Series], str]:
+    if key_strategy == 'operational_stable':
+        return _build_operational_temporal_key_parts(df, work, principal_work)
+    return _build_legacy_temporal_key_parts(df, work, principal_work)
+
+
+def _string_part(work: pd.DataFrame, col: str | None) -> pd.Series:
+    return work[col].astype(str).str.strip() if col else pd.Series('NA', index=work.index)
+
 def _calculate_temporal_active_set(df: pd.DataFrame, cutoff: pd.Timestamp, key_strategy: str) -> tuple[pd.DataFrame, dict[str, Any], str | None]:
     disb_series, disb_col = _coerce_datetime_series(df, ('origination_date', 'fechadesembolso', 'fecha_de_desembolso'))
     if disb_col is None:
@@ -769,30 +934,58 @@ def _calculate_temporal_active_set(df: pd.DataFrame, cutoff: pd.Timestamp, key_s
         temporal_mask = temporal_mask & (pay_series.isna() | (pay_series > cutoff))
     work = df.loc[temporal_mask].copy()
     if work.empty:
-        return (work, {'raw_rows': 0, 'dedup_rows': 0, 'principal_sum': 0.0, 'outstanding_sum': 0.0, 'disbursement_col': disb_col, 'payment_col': pay_col, 'principal_col': principal_col, 'outstanding_col': outstanding_col, 'key_label': 'N/A'}, None)
+        return work, _empty_temporal_metadata(disb_col, pay_col, principal_col, outstanding_col), None
     principal_work = principal_series.loc[work.index].fillna(0.0)
     outstanding_work = outstanding_series.loc[work.index].fillna(0.0)
     disb_work = disb_series.loc[work.index]
-    if key_strategy == 'operational_stable':
-        client_col = _first_existing_column(df, ('codcliente', 'client_code', 'borrower_id', 'borrower_id_number'))
-        disb_num_col = _first_existing_column(df, ('numerodesembolso', 'numero_desembolso', 'codigo_desembolso', 'correlativo_de_operaciones', 'loan_id'))
-        due_date_series, due_col = _coerce_datetime_series(df, ('fechacobro', 'fechapagoprogramado'))
-        due_work = due_date_series.loc[work.index].dt.strftime('%Y-%m-%d').fillna('NA')
-        key_parts = [work[client_col].astype(str).str.strip() if client_col else pd.Series('NA', index=work.index), work[disb_num_col].astype(str).str.strip() if disb_num_col else pd.Series('NA', index=work.index), principal_work.round(2).map(lambda x: f'{x:.2f}'), due_work]
-        key_label = f"Operational key: {client_col or 'NA'} + {disb_num_col or 'NA'} + {principal_col or 'NA'} + {due_col or 'NA'}"
-    else:
-        loan_col = _first_existing_column(df, ('loan_id',))
-        due_date_series, due_col = _coerce_datetime_series(df, ('fechacobro',))
-        due_work = due_date_series.loc[work.index].dt.strftime('%Y-%m-%d').fillna('NA')
-        key_parts = [work[loan_col].astype(str).str.strip() if loan_col else pd.Series('NA', index=work.index), principal_work.round(2).map(lambda x: f'{x:.2f}'), due_work]
-        key_label = f"Legacy key: {loan_col or 'NA'} + {principal_col or 'NA'} + {due_col or 'NA'}"
+    key_parts, key_label = _build_temporal_key_data(df, work, principal_work, key_strategy)
     work = work.assign(_temporal_principal=principal_work, _temporal_outstanding=outstanding_work, _temporal_disbursement_date=disb_work.dt.strftime('%Y-%m-%d').fillna('NA'))
     work['_temporal_key'] = key_parts[0].fillna('NA')
     for part in key_parts[1:]:
         work['_temporal_key'] = work['_temporal_key'] + '|' + part.fillna('NA')
     dedup = work.drop_duplicates(subset=['_temporal_key']).copy()
-    metadata = {'raw_rows': int(len(work)), 'dedup_rows': int(len(dedup)), 'principal_sum': float(dedup['_temporal_principal'].sum()), 'outstanding_sum': float(dedup['_temporal_outstanding'].sum()), 'disbursement_col': disb_col, 'payment_col': pay_col, 'principal_col': principal_col, 'outstanding_col': outstanding_col, 'key_label': key_label}
-    return (dedup, metadata, None)
+    metadata = {'raw_rows': len(work), 'dedup_rows': len(dedup), 'principal_sum': dedup['_temporal_principal'].sum(), 'outstanding_sum': dedup['_temporal_outstanding'].sum(), 'disbursement_col': disb_col, 'payment_col': pay_col, 'principal_col': principal_col, 'outstanding_col': outstanding_col, 'key_label': key_label}
+    return dedup, metadata, None
+
+
+def _render_regional_distribution(df: pd.DataFrame) -> None:
+    st.markdown('#### Regional Distribution')
+    regional_summary = df.groupby('region').agg({'principal_amount': 'sum', 'loan_id': 'count', 'risk_score': 'mean'}).round(2)
+    regional_summary.columns = ['Total Amount (€)', 'Loan Count', 'Avg Risk']
+    regional_summary = regional_summary.sort_values('Total Amount (€)', ascending=False)
+    st.dataframe(regional_summary, width='stretch')
+
+
+def _render_delinquency_tab(df: pd.DataFrame, metrics: dict[str, Any]) -> None:
+    st.plotly_chart(create_delinquency_trend(df), width='stretch')
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric(DPD_30_PLUS, f"{metrics['delinquency_rate_30']:.1f}%")
+    with col2:
+        st.metric('DPD 60+', f"{metrics['delinquency_rate_60']:.1f}%")
+    with col3:
+        st.metric('DPD 90+', f"{metrics['delinquency_rate_90']:.1f}%")
+
+
+def _render_risk_tab(df: pd.DataFrame, metrics: dict[str, Any]) -> None:
+    st.plotly_chart(create_risk_distribution(df), width='stretch')
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric('Average Risk Score', f"{metrics['avg_risk_score']:.4f}")
+    with col2:
+        st.metric(KPI_EXPECTED_LOSS, f"€{metrics['expected_loss']:,.0f}")
+
+
+def _render_vintage_tab(df: pd.DataFrame) -> None:
+    st.plotly_chart(create_vintage_analysis(df), width='stretch')
+    st.markdown('#### Status Distribution')
+    status_counts = df['current_status'].value_counts()
+    status_pct = (status_counts / len(df) * 100).round(1)
+    col1, col2, col3, col4 = st.columns(4)
+    for i, (status, count) in enumerate(status_counts.items()):
+        col = [col1, col2, col3, col4][i % 4]
+        with col:
+            st.metric(status.title(), f'{count} ({status_pct[status]:.1f}%)')
 
 def render_temporal_active_set(df: pd.DataFrame) -> None:
     st.subheader('⏱️ Temporal Active Set')
@@ -829,38 +1022,14 @@ def render_temporal_active_set(df: pd.DataFrame) -> None:
 def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(['📈 Delinquency Trends', '📊 Risk Distribution', '🗺️ Regional Analysis', '📅 Vintage Analysis', '📋 Loan Table', '🏷️ Segment Breakdown', '⏱️ Temporal Active Set'])
     with tab1:
-        st.plotly_chart(create_delinquency_trend(df), width='stretch')
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric('DPD 30+', f"{metrics['delinquency_rate_30']:.1f}%")
-        with col2:
-            st.metric('DPD 60+', f"{metrics['delinquency_rate_60']:.1f}%")
-        with col3:
-            st.metric('DPD 90+', f"{metrics['delinquency_rate_90']:.1f}%")
+        _render_delinquency_tab(df, metrics)
     with tab2:
-        st.plotly_chart(create_risk_distribution(df), width='stretch')
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric('Average Risk Score', f"{metrics['avg_risk_score']:.4f}")
-        with col2:
-            st.metric('Expected Loss', f"€{metrics['expected_loss']:,.0f}")
+        _render_risk_tab(df, metrics)
     with tab3:
         st.plotly_chart(create_regional_heatmap(df), width='stretch')
-        st.markdown('#### Regional Distribution')
-        regional_summary = df.groupby('region').agg({'principal_amount': 'sum', 'loan_id': 'count', 'risk_score': 'mean'}).round(2)
-        regional_summary.columns = ['Total Amount (€)', 'Loan Count', 'Avg Risk']
-        regional_summary = regional_summary.sort_values('Total Amount (€)', ascending=False)
-        st.dataframe(regional_summary, width='stretch')
+        _render_regional_distribution(df)
     with tab4:
-        st.plotly_chart(create_vintage_analysis(df), width='stretch')
-        st.markdown('#### Status Distribution')
-        status_counts = df['current_status'].value_counts()
-        status_pct = (status_counts / len(df) * 100).round(1)
-        col1, col2, col3, col4 = st.columns(4)
-        for i, (status, count) in enumerate(status_counts.items()):
-            col = [col1, col2, col3, col4][i % 4]
-            with col:
-                st.metric(status.title(), f'{count} ({status_pct[status]:.1f}%)')
+        _render_vintage_tab(df)
     with tab5:
         render_loan_table(df)
     with tab6:

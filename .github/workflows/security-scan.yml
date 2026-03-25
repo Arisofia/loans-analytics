@@ -35,7 +35,8 @@ jobs:
             git init .
             git remote add origin "$REPO_URL"
           fi
-          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.sha }}"
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git fetch --depth=1 origin "${{ github.sha }}"
           git checkout --detach FETCH_HEAD
 
       - name: Detect Code Scanning availability
@@ -101,7 +102,8 @@ jobs:
             git init .
             git remote add origin "$REPO_URL"
           fi
-          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.sha }}"
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git fetch --depth=1 origin "${{ github.sha }}"
           git checkout --detach FETCH_HEAD
 
       - name: Detect Code Scanning availability
@@ -152,7 +154,8 @@ jobs:
             git init .
             git remote add origin "$REPO_URL"
           fi
-          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.sha }}"
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git fetch --depth=1 origin "${{ github.sha }}"
           git checkout --detach FETCH_HEAD
 
       - name: Detect Code Scanning availability
@@ -255,7 +258,8 @@ jobs:
             git init .
             git remote add origin "$REPO_URL"
           fi
-          git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" fetch --depth=1 origin "${{ github.sha }}"
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git fetch --depth=1 origin "${{ github.sha }}"
           git checkout --detach FETCH_HEAD
 
       - name: Run Gitleaks

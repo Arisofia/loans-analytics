@@ -19,6 +19,35 @@ if TYPE_CHECKING:
     from backend.python.kpis.engine import KPIEngineV2
 logger = get_logger(__name__)
 KPI_DEFINITIONS_TABLE = 'monitoring.kpi_definitions'
+_BOOL_ENV_TRUE = frozenset({'1', 'true', 'yes', 'on'})
+_BOOL_ENV_FALSE = frozenset({'0', 'false', 'no', 'off'})
+
+
+def _parse_bool_env(var_name: str, default: bool = True) -> bool:
+    """Parse a boolean environment variable.
+
+    Args:
+        var_name: Name of the environment variable to read.
+        default: Value to return when the variable is unset or empty.
+
+    Returns *default* when the variable is unset or empty.
+    Recognises ``1/true/yes/on`` as ``True`` and ``0/false/no/off`` as
+    ``False`` (case-insensitive).  Raises ``ValueError`` for unrecognised
+    values so misconfigurations are caught immediately rather than silently
+    ignored.
+    """
+    original = os.getenv(var_name, '')
+    raw = original.strip().lower()
+    if not raw:
+        return default
+    if raw in _BOOL_ENV_TRUE:
+        return True
+    if raw in _BOOL_ENV_FALSE:
+        return False
+    raise ValueError(
+        f"Environment variable {var_name!r} has unrecognised boolean value {original!r}. "
+        f"Use one of: {sorted(_BOOL_ENV_TRUE)} (true) or {sorted(_BOOL_ENV_FALSE)} (false)."
+    )
 
 class OutputPhase:
 
@@ -443,17 +472,50 @@ class OutputPhase:
         if not missing:
             return
         db_config = self.config.get('database', {}) if isinstance(self.config.get('database', {}), dict) else {}
-        strict_from_config = db_config.get('strict_kpi_definitions')
-        strict_from_env = os.getenv('PIPELINE_STRICT_KPI_DEFINITIONS', '').strip().lower() in {'1', 'true', 'yes'}
-        strict_mode = bool(strict_from_config) or strict_from_env
-        message = (
-            f'Missing KPI definitions in monitoring table: {missing}. '
-            'Only mapped KPIs with existing definitions will be written. '
-            'Apply database migrations to register missing KPIs for full coverage.'
-        )
+        raw_config_value = db_config.get('strict_kpi_definitions')
+
+        # Compatibility shim: legacy deployments that explicitly opted *in* via
+        # ``strict_kpi_definitions: true`` (or any truthy value) no longer need
+        # to set this flag because strict mode is now the default.  Log a
+        # deprecation warning so operators know they can clean up their config
+        # (or switch to ``false`` to disable).
+        if raw_config_value is not None and raw_config_value is not False:
+            logger.warning(
+                'Config key strict_kpi_definitions=%r is deprecated. '
+                'Strict mode is now the default; remove this key to silence this warning. '
+                'Set strict_kpi_definitions: false to disable strict mode.',
+                raw_config_value,
+            )
+
+        strict_disabled_from_config = raw_config_value is False
+
+        # Use the centralised helper so that all boolean env flags in this
+        # module share the same parsing semantics.  Legacy truthy values
+        # (1/true/yes/on) no longer act as an opt-in; they are now a no-op
+        # because strict is the default — log a deprecation notice.
+        env_raw = os.getenv('PIPELINE_STRICT_KPI_DEFINITIONS', '').strip().lower()
+        if env_raw in _BOOL_ENV_TRUE:
+            logger.warning(
+                'Environment variable PIPELINE_STRICT_KPI_DEFINITIONS=%r is deprecated. '
+                'Strict mode is now the default; unset this variable to silence this warning. '
+                'Set PIPELINE_STRICT_KPI_DEFINITIONS=false to disable strict mode.',
+                os.getenv('PIPELINE_STRICT_KPI_DEFINITIONS'),
+            )
+        # default=True: unset/empty env var keeps strict mode on.
+        strict_disabled_from_env = not _parse_bool_env('PIPELINE_STRICT_KPI_DEFINITIONS', default=True)
+
+        strict_mode = not (strict_disabled_from_config or strict_disabled_from_env)
         if strict_mode:
-            raise RuntimeError(message)
-        logger.warning(message)
+            raise RuntimeError(
+                f'Missing KPI definitions in monitoring table: {missing}. '
+                'Apply database migrations to register missing KPIs before running the pipeline.'
+            )
+        logger.warning(
+            'Missing KPI definitions in monitoring table: %s. '
+            'Only mapped KPIs with existing definitions will be written to monitoring. '
+            'Apply database migrations to register missing KPIs for full coverage.',
+            missing,
+        )
 
     def _write_to_database(self, kpi_results: Dict[str, Any]) -> Dict[str, Any]:
         if prereq_error := self._check_database_prerequisites():
