@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test test-zero-cost e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic zero-cost-up zero-cost-down zero-cost-pipeline zero-cost-db zero-cost-schema etl-local snapshot-build run
+.PHONY: help setup format lint type-check test test-quick test-baseline test-zero-cost e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic train-scorecard-if-ready zero-cost-up zero-cost-down zero-cost-pipeline zero-cost-db zero-cost-schema etl-local snapshot-build run
 PYTHON ?= $(shell \
 	for p in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do \
 		if command -v $$p >/dev/null 2>&1 && $$p -c "import pytest" >/dev/null 2>&1; then \
@@ -20,6 +20,8 @@ help:
 	@echo "make agents         - List available multi-agent scenarios"
 	@echo "make kpis           - Run unified KPI pipeline (real data)"
 	@echo "make test           - Run default unit/integration-safe test suite"
+	@echo "make test-quick     - Run full pytest suite in quiet mode"
+	@echo "make test-baseline  - Validate full-suite baseline using pytest JSON report"
 	@echo "make e2e            - Run opt-in E2E suite (RUN_E2E=1)"
 	@echo "make clean          - Remove caches and build artifacts"
 	@echo ""
@@ -27,6 +29,7 @@ help:
 	@echo "make format         - Format code with black and isort"
 	@echo "make lint           - Run pylint, flake8, and ruff"
 	@echo "make type-check     - Run mypy static type checking"
+	@echo "make train-scorecard-if-ready - Train scorecard when data/raw CSV files exist"
 	@echo "make security-check - Run bandit and safety checks"
 	@echo "make dev            - Alias of make api"
 	@echo "make repo-map       - Open architecture map (docs/README.md)"
@@ -73,6 +76,12 @@ type-check:
 	$(BIN)/mypy --check-untyped-defs backend/src
 test:
 	"$(PYTHON)" -m pytest
+test-quick:
+	"$(PYTHON)" -m pytest -q
+test-baseline:
+	@mkdir -p artifacts
+	"$(PYTHON)" -m pytest -q --json-report --json-report-file=artifacts/full-suite-report.json
+	"$(PYTHON)" scripts/validation/check_full_suite_baseline.py --baseline .github/ci-baselines/full-suite-baseline.json --report artifacts/full-suite-report.json
 test-zero-cost:
 	"$(PYTHON)" -m pytest tests/zero_cost/ -v
 e2e:
@@ -114,6 +123,10 @@ agents:
 # KPI pipeline entry point
 kpis:
 	"$(PYTHON)" scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
+
+# Train scorecard model if required raw CSV files are present
+train-scorecard-if-ready:
+	"$(PYTHON)" scripts/ml/train_scorecard_if_ready.py
 
 # Train default-risk model artifact for /predict/default endpoint
 train-risk-model:

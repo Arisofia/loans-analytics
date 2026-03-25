@@ -39,6 +39,7 @@ Single source of truth for script execution paths. Use only these commands.
 
 - Train default risk model: `python3 scripts/ml/train_default_risk_model.py`
 - Train WoE/IV scorecard: `python3 scripts/ml/train_scorecard.py`
+- Train scorecard only when raw CSV files are ready and persist run metadata: `python3 scripts/ml/train_scorecard_if_ready.py`
 - Retrain pipeline: `python3 scripts/ml/retrain_pipeline.py`
 
 ## Monitoring
@@ -51,6 +52,7 @@ Single source of truth for script execution paths. Use only these commands.
 
 - Validate migration order: `python3 scripts/validation/validate_migration_order.py`
 - Validate port consistency: `python3 scripts/validation/validate_port_consistency.py`
+- Validate full-suite CI baseline: `python3 scripts/validation/check_full_suite_baseline.py --baseline .github/ci-baselines/full-suite-baseline.json --report artifacts/full-suite-report.json`
 - Validate doc links: `python3 tools/validate_doc_links.py`
 
 ## Performance
