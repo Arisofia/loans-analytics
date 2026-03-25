@@ -83,6 +83,12 @@ jobs:
           fi
           ruff check . || true
 
+      - name: Upload CodeQL fallback SARIF results
+        if: ${{ always() && steps.check_code_scanning_availability.outputs.enabled == 'true' && hashFiles('codeql-fallback.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: codeql-fallback.sarif
+
   dependency-scan:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
@@ -215,9 +221,9 @@ jobs:
 
       - name: Upload Bandit SARIF results
         if: ${{ always() && steps.check_code_scanning_availability.outputs.enabled == 'true' && hashFiles('bandit-results.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-        run: |
-          echo "SARIF file generated at bandit-results.sarif"
-          echo "::warning::Automatic SARIF upload step is disabled (external action not used)."
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit-results.sarif
 
       - name: Upload security reports
         if: always()
