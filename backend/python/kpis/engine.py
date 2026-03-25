@@ -119,7 +119,12 @@ class KPIEngineV2:
             raise ValueError(f"CRITICAL: {kpi_name} missing required columns: {', '.join(missing_columns)}")
         total_loans = self.df['loan_amount'].sum()
         total_collateral = self.df['collateral_value'].sum()
-        raw_val = total_loans / total_collateral * 100 if total_collateral > 0 else 0.0
+        if total_collateral <= 0:
+            raise ValueError(
+                f'CRITICAL: {kpi_name} denominator (total_collateral_value={total_collateral}) is zero or '
+                'negative — LTV is mathematically undefined. Populate collateral_value before calculating LTV.'
+            )
+        raw_val = total_loans / total_collateral * 100
         value = Decimal(str(round(raw_val, 2))).quantize(Decimal('0.01'))
         context = {'formula': 'total_loan_amount / total_collateral_value * 100', 'rows_processed': len(self.df), 'calculation_method': 'v2_engine'}
         return self._finalize_kpi_success(kpi_name, value, context)

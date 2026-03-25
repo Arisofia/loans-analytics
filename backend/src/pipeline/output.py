@@ -443,13 +443,12 @@ class OutputPhase:
         if not missing:
             return
         db_config = self.config.get('database', {}) if isinstance(self.config.get('database', {}), dict) else {}
-        strict_from_config = db_config.get('strict_kpi_definitions')
-        strict_from_env = os.getenv('PIPELINE_STRICT_KPI_DEFINITIONS', '').strip().lower() in {'1', 'true', 'yes'}
-        strict_mode = bool(strict_from_config) or strict_from_env
+        strict_disabled_from_config = db_config.get('strict_kpi_definitions') is False
+        strict_disabled_from_env = os.getenv('PIPELINE_STRICT_KPI_DEFINITIONS', '').strip().lower() in {'0', 'false', 'no'}
+        strict_mode = not (strict_disabled_from_config or strict_disabled_from_env)
         message = (
             f'Missing KPI definitions in monitoring table: {missing}. '
-            'Only mapped KPIs with existing definitions will be written. '
-            'Apply database migrations to register missing KPIs for full coverage.'
+            'Apply database migrations to register missing KPIs before running the pipeline.'
         )
         if strict_mode:
             raise RuntimeError(message)
