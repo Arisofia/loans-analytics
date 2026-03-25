@@ -9,12 +9,11 @@ from typing import Optional
 
 try:
     import psycopg
-    from psycopg.rows import dict_factory
-except ImportError:
-    print("ERROR: psycopg not installed. Run: pip install psycopg[binary]")
+    from psycopg.rows import dict_row
+except ImportError as exc:
+    print(f"ERROR: psycopg import failed: {exc}")
+    print("Install/repair dependency with: python -m pip install \"psycopg[binary]\"")
     sys.exit(1)
-
-import pandas as pd
 
 # Add backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
@@ -33,7 +32,7 @@ def get_actuals_by_month(conn, report_date: str) -> dict:
     Returns:
         Dict: {month_number: actual_value_decimal}
     """
-    with conn.cursor(row_factory=dict_factory) as cur:
+    with conn.cursor(row_factory=dict_row) as cur:
         # Query loans active in each month (to report_date)
         cur.execute("""
             SELECT 
@@ -76,7 +75,8 @@ def generate_report(report_date: Optional[str] = None, database_url: Optional[st
         database_url = os.getenv("DATABASE_URL")
         if not database_url:
             print("ERROR: DATABASE_URL environment variable not set")
-            print("Set it: export DATABASE_URL='postgresql://user:pass@host/db'")
+            print("Set it in PowerShell: $env:DATABASE_URL='postgresql://user:pass@host/db'")
+            print("Set it in Bash: export DATABASE_URL='postgresql://user:pass@host/db'")
             sys.exit(1)
     
     print("\n" + "=" * 100)
