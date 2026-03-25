@@ -17,6 +17,18 @@ ingestion:
       enabled: true
       table: "loan_tape"
 
+    - type: "google_sheets"
+      enabled: true
+      spreadsheet_id: "1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o"
+      worksheet: "DESEMBOLSOS"
+
+  # Google Sheets Configuration
+  google_sheets:
+    enabled: true
+    credentials_path: "credentials/google-service-account.json"
+    spreadsheet_id: "1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o"
+    worksheet: "DESEMBOLSOS"
+
   # Schema validation
   validation:
     enabled: true

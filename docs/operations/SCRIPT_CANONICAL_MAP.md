@@ -4,9 +4,17 @@ Single source of truth for script execution paths. Use only these commands.
 
 ## Data Pipeline
 
-- Run pipeline: `python3 scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv`
+- Run pipeline (CSV): `python3 scripts/data/run_data_pipeline.py --input data/raw/loan_data.csv`
+- Run pipeline (Google Sheets): `python3 scripts/data/run_data_pipeline.py --input gsheets://DESEMBOLSOS`
 - Analyze real input files: `python3 scripts/data/analyze_real_data.py --data-dir ~/Downloads`
 - Local monthly ETL: `python3 scripts/data/local_monthly_etl.py`
+
+## Google Sheets Integration
+
+- Setup guide: See `docs/GOOGLE_SHEETS_SETUP.md`
+- Credentials: `credentials/google-service-account.json` (gitignored; provide your own)
+- Configuration: `config/pipeline.yml` (google_sheets section)
+- Spreadsheet: `1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o`
 
 ## Zero-Cost ETL (DuckDB + Parquet — replaces Azure)
 
