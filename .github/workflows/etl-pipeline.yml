@@ -81,7 +81,7 @@ jobs:
       supabase_ready: ${{ steps.secret_gate.outputs.supabase_ready }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Check required secrets
         id: secret_gate
@@ -144,7 +144,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
         run: |
@@ -189,7 +189,7 @@ jobs:
       )
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
         run: |
@@ -275,7 +275,7 @@ jobs:
       )
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
         run: |

@@ -11,6 +11,15 @@ financial_guardrails:
   utilization_max: 0.90
   min_ce_6m: 0.96
   max_replines_deviation: 0.02
+  min_liquidity_reserve_pct: 0.05       # 5% mínimo sobre cartera activa
+  target_liquidity_reserve_pct: 0.08    # 8% objetivo liquidez
+  min_liquidity_floor_usd: 200000       # Piso absoluto de caja
+  min_collection_rate: 0.985            # 98.50% exigencia del fondo
+  max_delinquency_growth: 0.0           # Mora no puede crecer vs anterior
+  advance_rate: 0.80                    # 80% de cartera elegible financiada
+  repline_30d_max_pct: 0.45             # Máx cartera bucket 30 días
+  repline_60d_max_pct: 0.35             # Máx cartera bucket 60 días
+  repline_90d_max_pct: 0.20             # Máx cartera bucket 90 días
 
 risk_parameters:
   dilution_threshold: 0.05

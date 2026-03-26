@@ -1,0 +1,419 @@
+# ==============================================================================
+# Ábaco Holding — Proyección EEFF Consolidado 2025-2030
+# Configuración Central de Supuestos y Parámetros
+# Version: 1.0.0   |   Última actualización: 2026-03-26
+# ==============================================================================
+
+version: "1.0.0"
+last_updated: "2026-03-26"
+base_currency: "USD"
+
+# ==============================================================================
+# ENTIDADES DEL GRUPO
+# ==============================================================================
+entities:
+  abaco_technologies:
+    code: "AT"
+    country: "SLV"
+    status: "active"
+    consolidation: true
+    portfolio_dec_2024_usd: 2270000
+    portfolio_aug_2025_usd: 6650000
+    growth_ytd_pct: 193.0
+
+  abaco_financial:
+    code: "AF"
+    country: "SLV"
+    status: "active_migration"  # migrating to AT
+    consolidation: true
+    portfolio_dec_2024_usd: 1590000
+    portfolio_aug_2025_usd: 1080000
+    growth_ytd_pct: -32.0
+    migration_strategy: "portfolio_transfer_to_AT"
+    migration_note: >
+      La cartera de AF se migra progresivamente a AT. La contracción del -32%
+      en 8 meses es estratégica, no por deterioro. Los clientes activos de AF
+      se renuevan bajo la plataforma AT a medida que vencen sus operaciones.
+
+  gaston_commercial:
+    code: "GAS"
+    country: "PAN"
+    status: "holding"
+    consolidation: true
+    portfolio_usd: 0
+    note: "Entidad holding — genera costos sin ingresos propios"
+
+  guatemala:
+    code: "GTM"
+    country: "GTM"
+    status: "pre_launch"
+    consolidation: false
+    seed_capital_usd: 500000
+    projected_launch_year: 2026
+    setup_costs: &subsidiary_setup
+      regulatory_license_usd: 45000
+      legal_incorporation_usd: 15000
+      office_setup_usd: 25000
+      initial_payroll_months: 6
+      monthly_payroll_usd: 12000
+      technology_setup_usd: 35000
+      marketing_launch_usd: 20000
+      total_pre_revenue_usd: 212000
+
+  nicaragua:
+    code: "NIC"
+    country: "NIC"
+    status: "pre_launch"
+    consolidation: false
+    seed_capital_usd: 400000
+    projected_launch_year: 2026
+    setup_costs:
+      <<: *subsidiary_setup
+      regulatory_license_usd: 30000
+      total_pre_revenue_usd: 197000
+
+  costa_rica:
+    code: "CRI"
+    country: "CRI"
+    status: "pre_launch"
+    consolidation: false
+    seed_capital_usd: 600000
+    projected_launch_year: 2027
+    setup_costs:
+      <<: *subsidiary_setup
+      regulatory_license_usd: 60000
+      monthly_payroll_usd: 18000
+      total_pre_revenue_usd: 258000
+
+  dominican_republic:
+    code: "DOM"
+    country: "DOM"
+    status: "pre_launch"
+    consolidation: false
+    seed_capital_usd: 500000
+    projected_launch_year: 2027
+    setup_costs:
+      <<: *subsidiary_setup
+      regulatory_license_usd: 40000
+      total_pre_revenue_usd: 207000
+
+  ecuador:
+    code: "ECU"
+    country: "ECU"
+    status: "pre_launch"
+    consolidation: false
+    seed_capital_usd: 700000
+    projected_launch_year: 2027
+    setup_costs:
+      <<: *subsidiary_setup
+      regulatory_license_usd: 55000
+      monthly_payroll_usd: 14000
+      total_pre_revenue_usd: 234000
+
+  peru:
+    code: "PER"
+    country: "PER"
+    status: "pre_launch"
+    consolidation: false
+    seed_capital_usd: 1000000
+    projected_launch_year: 2028
+    setup_costs:
+      <<: *subsidiary_setup
+      regulatory_license_usd: 65000
+      monthly_payroll_usd: 16000
+      office_setup_usd: 35000
+      total_pre_revenue_usd: 262000
+
+# ==============================================================================
+# SUPUESTOS DE CRECIMIENTO — ESCENARIO BASE vs DOWNSIDE
+# ==============================================================================
+growth_scenarios:
+  base:
+    description: "Escenario base del modelo V08"
+    at_monthly_growth:
+      "2025_sep_dec": 0.035   # 3.5% promedio
+      "2026": 0.055            # 5.5% mensual constante (~90% anual)
+      "2027": 0.030
+      "2028": 0.025
+      "2029": 0.020
+      "2030": 0.020
+    af_strategy: "wind_down_migrate_to_at"
+    af_monthly_decline: -0.05  # -5% mensual promedio
+    revenue_growth_annual:
+      "2026": 1.20    # +120%
+      "2027": 0.85    # +85%
+      "2028": 0.84    # +84%
+      "2029": 0.87    # +87%
+      "2030": 0.87    # +87%
+
+  downside:
+    description: "Escenario conservador — AT crece 3% mensual (vs 5.5% base)"
+    at_monthly_growth:
+      "2025_sep_dec": 0.025
+      "2026": 0.030            # 3% mensual (~42% anual)
+      "2027": 0.025
+      "2028": 0.020
+      "2029": 0.015
+      "2030": 0.015
+    af_strategy: "wind_down_migrate_to_at"
+    af_monthly_decline: -0.05
+    revenue_growth_annual:
+      "2026": 0.42    # +42% (vs 120% base)
+      "2027": 0.34    # +34% (vs 85% base)
+      "2028": 0.27    # +27% (vs 84% base)
+      "2029": 0.20    # +20% (vs 87% base)
+      "2030": 0.20    # +20% (vs 87% base)
+    impact_vs_base:
+      revenue_2026_reduction_pct: -40.0
+      ebitda_breakeven_delay_months: 12
+      additional_equity_required_usd: 800000
+
+  stress:
+    description: "Escenario de estrés — AT crece 1.5% mensual con mora elevada"
+    at_monthly_growth:
+      "2025_sep_dec": 0.015
+      "2026": 0.015
+      "2027": 0.015
+      "2028": 0.015
+      "2029": 0.010
+      "2030": 0.010
+    default_rate_multiplier: 1.5
+    funding_cost_premium_bps: 200
+
+# ==============================================================================
+# COVENANTS DE DEUDA — ESTRUCTURA DE FINANCIAMIENTO
+# ==============================================================================
+debt_covenants:
+  description: >
+    El financiamiento de deuda exige mantener la distribución de pagos
+    estructurada según los replines a 30, 60 y 90 días. Solo se financia
+    el 80% de la cartera que cumple esas características. La mora no puede
+    crecer y el 98.50% de cumplimiento es la exigencia del fondo.
+    De no cubrirse, se debe incrementar el patrimonio.
+
+  repline_distribution:
+    # Porcentaje de cartera por bucket de vencimiento
+    bucket_30_days_max_pct: 0.45
+    bucket_60_days_max_pct: 0.35
+    bucket_90_days_max_pct: 0.20
+
+  advance_rate: 0.80  # Solo financian 80% de cartera elegible
+  eligible_criteria:
+    - "Pagos al día según distribución 30/60/90 de replines"
+    - "Sin mora reportada en últimos 90 días"
+    - "Documentación completa del préstamo"
+
+  performance_covenants:
+    min_collection_rate: 0.985   # 98.50% — exigencia del fondo
+    max_delinquency_growth: 0.0  # La mora no puede crecer vs período anterior
+    cure_action: "increment_equity"  # Si no se cumple → aportar patrimonio
+    cure_action_detail: >
+      Si la tasa de cobro cae por debajo del 98.50% o si la mora crece
+      respecto al período anterior, la entidad debe incrementar el patrimonio
+      hasta restaurar los ratios pactados con el fondo financiador.
+
+  max_d_ebitda_by_year:
+    "2025": null   # No aplica — EBITDA negativo, financiamiento vía SAFEs
+    "2026": 7.0
+    "2027": 5.5
+    "2028": 5.0
+    "2029": 4.0
+    "2030": 3.5
+
+# ==============================================================================
+# UNIT ECONOMICS — RECONCILIACIÓN DEFAULT RATE
+# ==============================================================================
+unit_economics_reconciliation:
+  description: >
+    El default rate en UNIT-EC es 5.96% por ticket ($19.2 sobre $322.5 de ingreso),
+    mientras que las cuentas irrecuperables en ER-CONS son prácticamente cero.
+    La reconciliación muestra que ambos números son consistentes bajo diferentes
+    ópticas contables.
+
+  unit_ec_default_rate_per_ticket: 0.0596  # 5.96% del ingreso por ticket
+  unit_ec_default_dollar_per_ticket: 19.2
+  unit_ec_revenue_per_ticket: 322.5
+  unit_ec_yield_per_ticket: 0.074   # 7.4%
+
+  er_cons_irrecoverable_rate: 0.0044  # 0.44% mensual sobre cartera
+  er_cons_note: >
+    Las cuentas irrecuperables en ER-CONS están expresadas como
+    porcentaje de la cartera total (no del ingreso por ticket).
+
+  reconciliation_method: >
+    El 5.96% de UNIT-EC se calcula sobre el ingreso por ticket individual.
+    El 0.44% de ER-CONS se calcula sobre el saldo de cartera total.
+    Para reconciliar:
+      Default_por_ticket = Default_rate_cartera × (Cartera_promedio / Num_tickets) / Yield_por_ticket
+      → 0.0044 × ($4,366 / 1) / $322.5 ≈ 0.059 → 5.9% ✓
+    Conclusión: Los números son coherentes. El default rate de 5.96% en UNIT-EC
+    YA INCLUYE la provisión por pérdida esperada derivada de la mora de cartera.
+    NO hay subestimación en ER-CONS; las cuentas irrecuperables reflejan solo
+    los write-offs efectivos (charge-offs realizados), no la provisión esperada.
+
+  ticket_avg_usd: 4366
+  active_operations: 544
+
+# ==============================================================================
+# RESERVA DE LIQUIDEZ
+# ==============================================================================
+liquidity_reserve:
+  min_reserve_pct: 0.05   # 5% mínimo sobre cartera activa
+  target_reserve_pct: 0.08  # 8% objetivo
+  description: >
+    Buffer de liquidez operativa. La prueba defensiva colapsa a 0.9% en 2025
+    si no se establece un piso. Esta reserva garantiza que incluso en escenario
+    de mora inesperada o corte de líneas de fondeo, hay caja para operar.
+  calculation: "max(cartera_activa × min_reserve_pct, 200000)"
+  reserves_by_year:
+    "2025": 386500     # 5% de $7.73M cartera
+    "2026": 1025000    # 5% de ~$20.5M
+    "2027": 1655000    # 5% de ~$33.1M
+    "2028": 2965000    # 5% de ~$59.3M
+    "2029": 5305000    # 5% de ~$106.1M
+    "2030": 10050000   # 5% de ~$201M
+
+# ==============================================================================
+# ELIMINACIONES INTERCOMPANY
+# ==============================================================================
+intercompany:
+  monthly_elimination_usd: 40000
+  start_date: "2024-09-01"
+  frequency: "monthly"
+  verification: >
+    La eliminación intercompany de $40K/mes se realiza mes con mes,
+    verificando que sea consistente con los préstamos entre entidades.
+    Se formalizó en septiembre 2024. Se valida contra los registros
+    de D_ACT_AT y D_ACT_AF para asegurar consistencia bilateral.
+  entities_involved:
+    - "AT"
+    - "AF"
+    - "GAS"
+
+# ==============================================================================
+# ESTRUCTURA DE CAPITAL (HISTORIAL DE INVERSIONES)
+# ==============================================================================
+capital_structure:
+  total_aft_llc_usd: 1260080
+  total_gaston_inc_usd: 2389678
+  total_abt_usd: 1140080
+  total_group_usd: 4789838
+  rounds_count: 24
+  notable_investors:
+    - name: "Mercy Corps Ventures"
+      amount_usd: 150000
+    - name: "Innogen"
+      amount_usd: 200000
+    - name: "Bridge Latam"
+      amount_usd: 300000
+      entity: "AFT LLC"
+  capital_flow_note: >
+    La mayoría de inversiones entraron primero a Gastón Commercial INC
+    (holding Panamá) y no directamente a subsidiarias operativas.
+    Requiere documentación detallada de flujo de fondos para Due Diligence.
+
+# ==============================================================================
+# INDICADORES FINANCIEROS HISTÓRICOS/PROYECTADOS
+# ==============================================================================
+financial_indicators:
+  profitability:
+    gpm:  # Gross Profit Margin
+      "2024": 0.885
+      "2025": 0.675
+      "2026": 0.575
+      "2027": 0.614
+      "2028": 0.642
+      "2029": 0.676
+      "2030": 0.691
+    roa:
+      "2024": 0.000
+      "2025": -0.016
+      "2026": 0.000
+      "2027": 0.020
+      "2028": 0.043
+      "2029": 0.072
+      "2030": 0.088
+    roe:
+      "2024": 0.001
+      "2025": -0.053
+      "2026": 0.001
+      "2027": 0.079
+      "2028": 0.165
+      "2029": 0.249
+      "2030": 0.278
+    ros:  # Return on Sales / Net Margin
+      "2024": 0.002
+      "2025": -0.108
+      "2026": 0.001
+      "2027": 0.082
+      "2028": 0.166
+      "2029": 0.258
+      "2030": 0.312
+
+  liquidity:
+    current_ratio:
+      "2024": 2.18
+      "2025": 1.66
+      "2026": 1.44
+      "2027": 1.39
+      "2028": 1.39
+      "2029": 1.43
+      "2030": 1.47
+    defensive_test_pct:
+      "2024": 0.390
+      "2025": 0.009
+      "2026": 0.011
+      "2027": 0.022
+      "2028": 0.052
+      "2029": 0.082
+      "2030": 0.101
+    working_capital_usd:
+      "2024": 5000000
+      "2025": 10300000
+      "2026": 20500000
+      "2027": 33100000
+      "2028": 59300000
+      "2029": 106100000
+      "2030": 201000000
+
+  leverage:
+    debt_ratio:
+      "2024": 0.432
+      "2025": 0.696
+      "2026": 0.744
+      "2027": 0.752
+      "2028": 0.741
+      "2029": 0.711
+      "2030": 0.684
+    debt_to_equity:
+      "2024": 0.76
+      "2025": 2.29
+      "2026": 2.91
+      "2027": 3.03
+      "2028": 2.86
+      "2029": 2.46
+      "2030": 2.17
+    financial_leverage:
+      "2024": 1.76
+      "2025": 3.29
+      "2026": 3.91
+      "2027": 4.03
+      "2028": 3.86
+      "2029": 3.46
+      "2030": 3.17
+    d_ebitda:
+      "2025": 25.36
+      "2026": 7.00
+      "2027": 5.48
+      "2028": 4.65
+      "2029": 3.82
+      "2030": 3.49
+
+  total_assets_usd:
+    "2024": 2560000
+    "2025": 10080000
+    "2026": 18390000
+    "2027": 28050000
+    "2028": 47000000
+    "2029": 78500000
+    "2030": 140500000
