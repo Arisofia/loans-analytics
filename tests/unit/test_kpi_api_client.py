@@ -235,9 +235,9 @@ class TestKPIResponse:
 class TestSingletonPattern:
 
     def test_singleton_instance(self):
-        from frontend.streamlit_app.kpi_api_client import get_client
-        client1 = get_client()
-        client2 = get_client()
+        import frontend.streamlit_app.kpi_api_client as client_module
+        client1 = client_module.get_client()
+        client2 = client_module.get_client()
         assert client1 is client2
 
     def test_singleton_with_parameters(self):
