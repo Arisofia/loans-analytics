@@ -512,7 +512,7 @@ class OutputPhase:
             return prereq_error
         if input_error := self._validate_kpi_results(kpi_results):
             return input_error
-        result: Dict[str, Any] = {'status': 'error', 'error': 'unknown'}
+        result: Dict[str, Any]
         try:
             if setup_error := self._validate_supabase_setup():
                 return setup_error

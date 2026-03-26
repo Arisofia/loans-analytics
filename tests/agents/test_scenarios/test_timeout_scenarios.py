@@ -8,6 +8,10 @@ class TestTimeoutScenarios:
     @pytest.mark.timeout(30)
     async def test_agent_timeout_detection(self):
         agent = MagicMock()
+
+        async def slow_task():
+            await asyncio.sleep(5)
+            return {'status': 'completed'}
         agent.execute_with_timeout.side_effect = asyncio.TimeoutError()
         with pytest.raises(asyncio.TimeoutError):
             agent.execute_with_timeout('slow_task', timeout=1)

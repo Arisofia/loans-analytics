@@ -627,7 +627,7 @@ pydantic==2.12.5
     #   realtime
     #   storage3
     #   supabase-auth
-pydantic-core==2.41.5
+pydantic-core==2.42.0
     # via
     #   prefect
     #   pydantic

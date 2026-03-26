@@ -109,9 +109,8 @@ regexes = [
 
 # Specific commits to allow (known false positives after manual review)
 # Add format: "commit-sha" = "reason"
-commits = [
-  "c8adb377fdfb33768eb50869d632fcc4ce0cc236",
-]
+# commits = [
+# ]
 
 [report]
 description = "Gitleaks scan report configuration"

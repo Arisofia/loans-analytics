@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 import pytest
 import requests as _requests
 from backend.python.multi_agent.historical_backend_supabase import SupabaseHistoricalBackend
