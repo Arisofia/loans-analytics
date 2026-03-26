@@ -70,6 +70,14 @@ def _build_collection_map(payments_df: pd.DataFrame | None) -> dict[str, float]:
     return payments_df.groupby(pay_cust)[pay_amt].apply(lambda s: pd.to_numeric(s, errors='coerce').sum()).to_dict()
 
 def _classify_mype_decision(pod: float, max_dpd: float, npl_ratio: float) -> tuple[str, str]:
+    """Classify micro-enterprise credit risk into a (risk_level, decision) pair.
+
+    Thresholds (any single condition triggers the level):
+    - CRITICAL / DECLINE: PD >= 0.75 *or* DPD >= 90 days
+    - HIGH    / REVIEW : PD >= 0.50 *or* NPL ratio >= 5 %
+    - MEDIUM  / REVIEW : PD >= 0.25 *or* NPL ratio >= 3 %
+    - LOW     / APPROVE: everything below the above
+    """
     if pod >= 0.75 or max_dpd >= 90:
         return ('CRITICAL', 'DECLINE')
     if pod >= 0.5 or npl_ratio >= 0.05:
@@ -79,6 +87,23 @@ def _classify_mype_decision(pod: float, max_dpd: float, npl_ratio: float) -> tup
     return ('LOW', 'APPROVE')
 
 def _build_mype_decision_row(row: pd.Series, cust_col: str, ce_map: dict[str, float]) -> dict[str, float | str]:
+    """Build a single micro-enterprise lending decision row.
+
+    Probability of Default (PD) proxy formula
+    ------------------------------------------
+    ``pod = min(1.0, max_dpd / 90 * 0.8 + npl_ratio * 0.2)``
+
+    This is a *heuristic* proxy, **not** a calibrated statistical model.
+
+    * **DPD component (weight 0.8)**: ``max_dpd / 90`` maps the borrower's
+      worst days-past-due into a [0, 1] scale, where 90 DPD = 1.0.  The
+      0.8 weight reflects that payment delinquency is the strongest single
+      predictor of default for micro-lenders.
+    * **NPL component (weight 0.2)**: ``npl_ratio`` (defaults / loans for
+      the customer) captures repeat-default history.  The 0.2 weight acts
+      as a secondary adjustment.
+    * The ``min(1.0, …)`` cap ensures PD stays in [0, 1].
+    """
     cid = str(row[cust_col])
     outstanding = float(row.get('outstanding', 0))
     max_dpd = float(row.get('max_dpd', 0))

@@ -1,5 +1,6 @@
 from __future__ import annotations
 from contextlib import suppress
+import hashlib
 import importlib.util
 import json
 import logging
@@ -18,6 +19,7 @@ PDO = 20
 BASE_ODDS = 50.0
 IV_USELESS = 0.02
 IV_WEAK = 0.1
+_RANDOM_STATE = 42
 IV_MEDIUM = 0.3
 
 class ScorecardModel:
@@ -291,9 +293,9 @@ class ScorecardModel:
         y = model_df[target].values
         x_woe = woe_df.values
         logger.info('Training Logistic Regression on WoE features...')
-        self.lr_model = LogisticRegression(C=0.1, max_iter=1000, solver='lbfgs', class_weight='balanced', random_state=42)
+        self.lr_model = LogisticRegression(C=0.1, max_iter=1000, solver='lbfgs', class_weight='balanced', random_state=_RANDOM_STATE)
         self.lr_model.fit(x_woe, y)
-        skf = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=42)
+        skf = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=_RANDOM_STATE)
         cv_aucs = cross_val_score(self.lr_model, x_woe, y, cv=skf, scoring='roc_auc')
         y_proba = self.lr_model.predict_proba(x_woe)[:, 1]
         auc = roc_auc_score(y, y_proba)
@@ -306,8 +308,11 @@ class ScorecardModel:
         model_df['predicted_pd'] = y_proba
         score_stats = {'defaults_mean_score': int(model_df[model_df[target] == 1]['predicted_score'].mean()), 'non_defaults_mean_score': int(model_df[model_df[target] == 0]['predicted_score'].mean()), 'score_p25': int(np.percentile(scores, 25)), 'score_p50': int(np.percentile(scores, 50)), 'score_p75': int(np.percentile(scores, 75))}
         self.scorecard_table = self._build_scorecard_table()
+        data_hash = hashlib.sha256(
+            pd.util.hash_pandas_object(model_df[selected + [target]]).values.tobytes()
+        ).hexdigest()[:16]
         metrics = {'auc_roc': round(auc, 4), 'gini_coefficient': round(gini, 4), 'ks_statistic': round(ks_stat, 4), 'cv_auc_mean': round(float(cv_aucs.mean()), 4), 'cv_auc_std': round(float(cv_aucs.std()), 4), 'n_features_selected': len(selected), 'n_samples': len(y), 'n_defaults': int(y.sum()), 'default_rate': round(float(y.mean()) * 100, 2), 'score_distribution': score_stats}
-        self.metadata = {'model_type': 'WoE_LogisticRegression', 'features': selected, 'iv_threshold': iv_threshold, 'regularisation_C': 0.1, 'score_scale': {'base': BASE_SCORE, 'pdo': PDO, 'base_odds': BASE_ODDS}, 'metrics': metrics}
+        self.metadata = {'model_type': 'WoE_LogisticRegression', 'features': selected, 'iv_threshold': iv_threshold, 'regularisation_C': 0.1, 'random_state': _RANDOM_STATE, 'data_fingerprint': data_hash, 'score_scale': {'base': BASE_SCORE, 'pdo': PDO, 'base_odds': BASE_ODDS}, 'metrics': metrics}
         logger.info('Scorecard trained: AUC=%.4f, KS=%.4f, Gini=%.4f, CV AUC=%.4f±%.4f', auc, ks_stat, gini, cv_aucs.mean(), cv_aucs.std())
         return metrics
 

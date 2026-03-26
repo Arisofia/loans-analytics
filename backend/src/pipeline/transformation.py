@@ -1221,6 +1221,17 @@ class TransformationPhase:
             rules_applied.append("non_negative_balance_enforcement")
 
     def _normalize_interest_rate(self, df: pd.DataFrame, rules_applied: List[str]) -> None:
+        """Normalize interest_rate to an annual decimal (e.g. 0.24 = 24 %/yr).
+
+        The heuristic uses the column's *median* plus the median loan term to
+        guess the original unit.  Because this is inherently fallible, the
+        method stamps every row with ``interest_rate_normalization`` so that
+        downstream consumers can audit which conversion was applied:
+
+        * ``monthly_pct_to_annual`` – median ∈ [0.2, 5) and median term < 6
+        * ``pct_to_decimal``        – median > 1  (whole-percentage data)
+        * ``none``                  – already looks like an annual decimal
+        """
         if "interest_rate" not in df.columns:
             return
         rates = pd.to_numeric(df["interest_rate"], errors="coerce")
@@ -1235,6 +1246,7 @@ class TransformationPhase:
                 median_term = terms.median()
         if 0.2 <= median_rate < 5 and median_term is not None and (median_term < 6):
             df["interest_rate"] = rates * 12 / 100
+            df["interest_rate_normalization"] = "monthly_pct_to_annual"
             logger.info(
                 "Normalized interest_rate: monthly %% → annual decimal (median %.4f%%/mo → %.4f annual)",
                 median_rate,
@@ -1243,6 +1255,7 @@ class TransformationPhase:
             rules_applied.append("interest_rate_monthly_pct_to_annual")
         elif median_rate > 1:
             df["interest_rate"] = rates / 100
+            df["interest_rate_normalization"] = "pct_to_decimal"
             logger.info(
                 "Normalized interest_rate: whole %% → annual decimal (median %.2f%% → %.4f)",
                 median_rate,
@@ -1250,6 +1263,7 @@ class TransformationPhase:
             )
             rules_applied.append("interest_rate_pct_to_decimal")
         else:
+            df["interest_rate_normalization"] = "none"
             logger.info(
                 "interest_rate appears to be annual decimal already (median=%.4f); no conversion applied",
                 median_rate,

@@ -1,8 +1,11 @@
+import logging
 from decimal import Decimal
 from typing import Any
 import pandas as pd
 from backend.python.kpis._column_utils import first_matching_column as _first_existing_column, resolve_dpd_heuristic, to_numeric_safe as _to_numeric
 from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+
+logger = logging.getLogger(__name__)
 
 def _series_sum_decimal(series: pd.Series) -> Decimal:
     return Decimal(str(series.sum()))
@@ -17,6 +20,11 @@ def _rounded_pct_from_sums(numerator_sum: Decimal, denominator_series: pd.Series
     return round(float(_safe_pct(numerator_sum, denominator_sum)), 2)
 
 def _normalize_interest_rate(series: pd.Series) -> pd.Series:
+    """Normalize interest rates to decimal form (e.g. 24 % → 0.24).
+
+    Uses a simple median > 1.0 heuristic — see the fuller implementation in
+    ``transformation.py._normalize_interest_rate`` for term-aware logic.
+    """
     if series.empty:
         return series
     clean = series.copy()
@@ -91,6 +99,10 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
         par60 = par_metrics['par60']
         par90 = par_metrics['par90']
     except Exception:
+        logger.warning(
+            "SSOT PAR calculation failed; using DPD-only fallback "
+            "(status-based delinquency flags will be ignored)"
+        )
         par30_pct = _safe_pct(_series_sum_decimal(balance[dpd >= 30]), total_balance)
         par60_pct = _safe_pct(_series_sum_decimal(balance[dpd >= 60]), total_balance)
         par90_pct = _safe_pct(_series_sum_decimal(balance[dpd >= 90]), total_balance)
