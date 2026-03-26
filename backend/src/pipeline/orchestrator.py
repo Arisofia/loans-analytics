@@ -129,7 +129,7 @@ class UnifiedPipeline:
 
     @staticmethod
     def _build_output_phase_kwargs(phase2_results: Dict[str, Any], phase3_results: Dict[str, Any], run_dir: Path) -> Dict[str, Any]:
-        return {'kpi_results': phase3_results.get('kpis', {}), 'run_dir': run_dir, 'kpi_engine': phase3_results.get('kpi_engine'), 'segment_kpis': phase3_results.get('segment_kpis'), 'time_series': phase3_results.get('time_series'), 'anomalies': phase3_results.get('anomalies'), 'nsm_recurrent_tpv': phase3_results.get('nsm_recurrent_tpv'), 'clustering_metrics': phase3_results.get('clustering_metrics'), 'transformation_metrics': phase2_results.get('transformation_metrics')}
+        return {'kpi_results': phase3_results.get('kpis', {}), 'run_dir': run_dir, 'kpi_engine': phase3_results.get('kpi_engine'), 'segment_kpis': phase3_results.get('segment_kpis'), 'time_series': phase3_results.get('time_series'), 'anomalies': phase3_results.get('anomalies'), 'nsm_recurrent_tpv': phase3_results.get('nsm_recurrent_tpv'), 'clustering_metrics': phase3_results.get('clustering_metrics'), 'transformation_metrics': phase2_results.get('transformation_metrics'), 'expected_loss': phase3_results.get('expected_loss'), 'roll_rates': phase3_results.get('roll_rates'), 'vintage_analysis': phase3_results.get('vintage_analysis'), 'concentration_hhi': phase3_results.get('concentration_hhi')}
 
     def execute(self, input_path: Optional[Path]=None, mode: str='full') -> Dict[str, Any]:
         run_id = self._build_run_id(input_path, mode)

@@ -98,8 +98,12 @@ class CalculationPhase:
             nsm_recurrent_tpv = self._calculate_recurrent_tpv(client_tpv_timeseries)
             clustering_metrics = self._run_advanced_clustering(df)
             anomalies = self._detect_anomalies(kpi_results)
+            expected_loss = self._calculate_expected_loss(df)
+            roll_rates = self._calculate_roll_rates(df)
+            vintage_analysis = self._calculate_vintage_analysis(df)
+            concentration_hhi = self._calculate_concentration_hhi(df)
             manifest = self._generate_manifest(kpi_results, df)
-            return {'kpis': kpi_results, 'segments': segments, 'segment_kpis': segments, 'time_series': time_series, 'nsm_recurrent_tpv': nsm_recurrent_tpv, 'anomalies': anomalies, 'clustering_metrics': clustering_metrics, 'manifest': manifest}
+            return {'kpis': kpi_results, 'segments': segments, 'segment_kpis': segments, 'time_series': time_series, 'nsm_recurrent_tpv': nsm_recurrent_tpv, 'anomalies': anomalies, 'clustering_metrics': clustering_metrics, 'expected_loss': expected_loss, 'roll_rates': roll_rates, 'vintage_analysis': vintage_analysis, 'concentration_hhi': concentration_hhi, 'manifest': manifest}
         except Exception as e:
             logger.error('CalculationPhase failure: %s', e, exc_info=True)
             raise ValueError(f'CRITICAL: KPI calculation pipeline failed: {e}') from e
@@ -363,6 +367,211 @@ class CalculationPhase:
 
     def _calculate_unified_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
         return self.engine.calculate(df)
+
+    def _calculate_expected_loss(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Calculate Expected Loss (EL = PD × LGD × EAD) per loan and portfolio total."""
+        logger.info('Calculating Expected Loss (EL = PD × LGD × EAD)')
+        balance_col = self._resolve_col(df, 'outstanding_balance', 'current_balance', 'amount')
+        dpd_col = self._resolve_col(df, 'dpd', 'days_past_due')
+        if not balance_col or not dpd_col:
+            logger.warning('EL skipped: missing balance or DPD column')
+            return {}
+        lgd = Decimal('0.10')
+        work = df.copy()
+        work['_ead'] = pd.to_numeric(work[balance_col], errors='coerce').fillna(0.0)
+        work['_dpd'] = pd.to_numeric(work[dpd_col], errors='coerce').fillna(0.0)
+        dpd_to_pd = {0: Decimal('0.005'), 30: Decimal('0.05'), 60: Decimal('0.15'), 90: Decimal('0.35'), 180: Decimal('0.70')}
+
+        def _assign_pd(dpd_val: float) -> Decimal:
+            if dpd_val >= 180:
+                return dpd_to_pd[180]
+            if dpd_val >= 90:
+                return dpd_to_pd[90]
+            if dpd_val >= 60:
+                return dpd_to_pd[60]
+            if dpd_val >= 30:
+                return dpd_to_pd[30]
+            return dpd_to_pd[0]
+
+        if 'status' in work.columns:
+            defaulted_mask = work['status'] == 'defaulted'
+        else:
+            defaulted_mask = pd.Series(False, index=work.index)
+        total_el = Decimal('0')
+        total_ead = Decimal('0')
+        pd_weighted_sum = Decimal('0')
+        for _, row in work.iterrows():
+            ead = Decimal(str(row['_ead']))
+            if ead <= 0:
+                continue
+            if defaulted_mask.loc[row.name]:
+                pd_i = Decimal('1.0')
+            else:
+                pd_i = _assign_pd(row['_dpd'])
+            el_i = pd_i * lgd * ead
+            total_el += el_i
+            total_ead += ead
+            pd_weighted_sum += pd_i * ead
+        el_rate = (total_el / total_ead * 100) if total_ead > 0 else Decimal('0')
+        weighted_avg_pd = (pd_weighted_sum / total_ead * 100) if total_ead > 0 else Decimal('0')
+        result = {
+            'total_expected_loss_usd': float(total_el.quantize(Decimal('0.01'))),
+            'expected_loss_rate_pct': float(el_rate.quantize(Decimal('0.0001'))),
+            'weighted_avg_pd_pct': float(weighted_avg_pd.quantize(Decimal('0.0001'))),
+            'lgd_assumed_pct': float(lgd * 100),
+            'total_ead_usd': float(total_ead.quantize(Decimal('0.01'))),
+            'loan_count': int((work['_ead'] > 0).sum()),
+        }
+        logger.info('EL calculated: $%.2f (%.4f%% of EAD)', result['total_expected_loss_usd'], result['expected_loss_rate_pct'])
+        return result
+
+    def _calculate_roll_rates(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Calculate DPD bucket roll rates (balance-weighted migration matrix)."""
+        logger.info('Calculating roll rates (DPD bucket transitions)')
+        balance_col = self._resolve_col(df, 'outstanding_balance', 'current_balance', 'amount')
+        dpd_col = self._resolve_col(df, 'dpd', 'days_past_due')
+        if not balance_col or not dpd_col:
+            logger.warning('Roll rates skipped: missing balance or DPD column')
+            return {}
+        work = df.copy()
+        work['_bal'] = pd.to_numeric(work[balance_col], errors='coerce').fillna(0.0)
+        work['_dpd'] = pd.to_numeric(work[dpd_col], errors='coerce').fillna(0.0)
+        buckets = [('current', 0, 0), ('1-30', 1, 30), ('31-60', 31, 60), ('61-90', 61, 90), ('91-180', 91, 180), ('180+', 180, 999999)]
+
+        def _assign_bucket(dpd_val: float) -> str:
+            for name, lo, hi in buckets:
+                if lo <= dpd_val <= hi:
+                    return name
+            return '180+'
+
+        work['_bucket'] = work['_dpd'].apply(_assign_bucket)
+        bucket_summary = {}
+        for name, _, _ in buckets:
+            mask = work['_bucket'] == name
+            bucket_summary[name] = {
+                'balance_usd': round(float(work.loc[mask, '_bal'].sum()), 2),
+                'loan_count': int(mask.sum()),
+                'pct_of_portfolio': 0.0,
+            }
+        total_bal = sum(b['balance_usd'] for b in bucket_summary.values())
+        if total_bal > 0:
+            for b in bucket_summary.values():
+                b['pct_of_portfolio'] = round(b['balance_usd'] / total_bal * 100, 4)
+        transitions = [('current', '1-30'), ('1-30', '31-60'), ('31-60', '61-90'), ('61-90', '91-180'), ('91-180', '180+')]
+        roll_rate_matrix = {}
+        for from_bucket, to_bucket in transitions:
+            from_bal = bucket_summary[from_bucket]['balance_usd']
+            to_bal = bucket_summary[to_bucket]['balance_usd']
+            rate = round(to_bal / from_bal * 100, 4) if from_bal > 0 else 0.0
+            roll_rate_matrix[f'{from_bucket}_to_{to_bucket}'] = {
+                'from_balance': from_bal,
+                'to_balance': to_bal,
+                'roll_rate_pct': rate,
+            }
+        result = {
+            'bucket_distribution': bucket_summary,
+            'roll_rate_matrix': roll_rate_matrix,
+            'total_portfolio_balance': round(total_bal, 2),
+        }
+        logger.info('Roll rates calculated across %d buckets', len(buckets))
+        return result
+
+    def _calculate_vintage_analysis(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Calculate vintage/cohort analysis by origination month."""
+        logger.info('Calculating vintage analysis by origination cohort')
+        date_col = self._resolve_col(df, 'origination_date', 'FechaDesembolso', 'disbursement_date')
+        balance_col = self._resolve_col(df, 'outstanding_balance', 'current_balance', 'amount')
+        dpd_col = self._resolve_col(df, 'dpd', 'days_past_due')
+        if not date_col:
+            logger.warning('Vintage analysis skipped: no origination date column')
+            return {}
+        work = df.copy()
+        work['_orig_date'] = pd.to_datetime(work[date_col], errors='coerce', format='mixed')
+        work = work.dropna(subset=['_orig_date'])
+        if work.empty:
+            return {}
+        work['_vintage'] = work['_orig_date'].dt.to_period('M').astype(str)
+        if balance_col:
+            work['_bal'] = pd.to_numeric(work[balance_col], errors='coerce').fillna(0.0)
+        else:
+            work['_bal'] = 1.0
+        if dpd_col:
+            work['_dpd'] = pd.to_numeric(work[dpd_col], errors='coerce').fillna(0.0)
+        else:
+            work['_dpd'] = 0.0
+        status_col = 'status' if 'status' in work.columns else None
+        vintage_data = {}
+        for vintage, grp in work.groupby('_vintage', sort=True):
+            total_bal = float(grp['_bal'].sum())
+            loan_count = len(grp)
+            avg_dpd = float(grp['_dpd'].mean())
+            par30_bal = float(grp.loc[grp['_dpd'] >= 30, '_bal'].sum())
+            par30_rate = round(par30_bal / total_bal * 100, 4) if total_bal > 0 else 0.0
+            par90_bal = float(grp.loc[grp['_dpd'] >= 90, '_bal'].sum())
+            par90_rate = round(par90_bal / total_bal * 100, 4) if total_bal > 0 else 0.0
+            default_count = int((grp[status_col] == 'defaulted').sum()) if status_col else 0
+            default_rate = round(default_count / loan_count * 100, 4) if loan_count > 0 else 0.0
+            vintage_data[str(vintage)] = {
+                'loan_count': loan_count,
+                'total_balance_usd': round(total_bal, 2),
+                'avg_dpd': round(avg_dpd, 2),
+                'par_30_rate': par30_rate,
+                'par_90_rate': par90_rate,
+                'default_rate': default_rate,
+                'default_count': default_count,
+            }
+        result = {
+            'vintages': vintage_data,
+            'total_vintages': len(vintage_data),
+            'worst_vintage': max(vintage_data.items(), key=lambda x: x[1]['default_rate'])[0] if vintage_data else None,
+            'best_vintage': min(vintage_data.items(), key=lambda x: x[1]['default_rate'])[0] if vintage_data else None,
+        }
+        logger.info('Vintage analysis: %d cohorts analyzed', len(vintage_data))
+        return result
+
+    def _calculate_concentration_hhi(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Calculate Herfindahl-Hirschman Index and concentration metrics."""
+        logger.info('Calculating concentration HHI')
+        balance_col = self._resolve_col(df, 'outstanding_balance', 'current_balance', 'amount')
+        borrower_col = self._resolve_col(df, 'borrower_id', 'client_id', 'CodCliente', 'debtor_id')
+        if not balance_col:
+            logger.warning('Concentration HHI skipped: missing balance column')
+            return {}
+        work = df.copy()
+        work['_bal'] = pd.to_numeric(work[balance_col], errors='coerce').fillna(0.0)
+        total_bal = work['_bal'].sum()
+        if total_bal <= 0:
+            return {}
+        if borrower_col:
+            obligor_bal = work.groupby(borrower_col)['_bal'].sum().sort_values(ascending=False)
+        else:
+            obligor_bal = work['_bal'].sort_values(ascending=False)
+        shares = obligor_bal / total_bal
+        hhi = float((shares ** 2).sum() * 10000)
+        top_1_pct = float(shares.iloc[0] * 100) if len(shares) > 0 else 0.0
+        top_5_pct = float(shares.iloc[:5].sum() * 100) if len(shares) >= 5 else float(shares.sum() * 100)
+        top_10_pct = float(shares.iloc[:10].sum() * 100) if len(shares) >= 10 else float(shares.sum() * 100)
+        top_20_pct = float(shares.iloc[:20].sum() * 100) if len(shares) >= 20 else float(shares.sum() * 100)
+        if hhi < 1000:
+            concentration_level = 'low'
+        elif hhi < 1800:
+            concentration_level = 'moderate'
+        elif hhi < 2500:
+            concentration_level = 'high'
+        else:
+            concentration_level = 'very_high'
+        result = {
+            'hhi_index': round(hhi, 2),
+            'concentration_level': concentration_level,
+            'top_1_obligor_pct': round(top_1_pct, 4),
+            'top_5_obligor_pct': round(top_5_pct, 4),
+            'top_10_obligor_pct': round(top_10_pct, 4),
+            'top_20_obligor_pct': round(top_20_pct, 4),
+            'total_obligors': len(shares),
+            'total_portfolio_usd': round(float(total_bal), 2),
+        }
+        logger.info('HHI: %.2f (%s), Top-10: %.2f%%', hhi, concentration_level, top_10_pct)
+        return result
 
     def _generate_manifest(self, kpi_results: Dict[str, Any], source_df: pd.DataFrame) -> Dict[str, Any]:
         return {'run_timestamp': datetime.now().isoformat(), 'source_rows': len(source_df), 'kpis_calculated': list(kpi_results.keys()), 'formula_version': self.kpi_definitions.get('version', 'unknown'), 'traceability': {'source_columns': list(source_df.columns), 'calculation_engine': 'kpi_engine_v2'}}

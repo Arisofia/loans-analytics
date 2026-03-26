@@ -55,10 +55,10 @@ class OutputPhase:
         self.config = config
         logger.info('Initialized output phase')
 
-    def execute(self, kpi_results: Dict[str, Any], run_dir: Optional[Path]=None, kpi_engine: Optional['KPIEngineV2']=None, segment_kpis: Optional[Dict[str, Any]]=None, time_series: Optional[Dict[str, Any]]=None, anomalies: Optional[list]=None, nsm_recurrent_tpv: Optional[Dict[str, Any]]=None, clustering_metrics: Optional[Dict[str, Any]]=None, transformation_metrics: Optional[Dict[str, Any]]=None) -> Dict[str, Any]:
+    def execute(self, kpi_results: Dict[str, Any], run_dir: Optional[Path]=None, kpi_engine: Optional['KPIEngineV2']=None, segment_kpis: Optional[Dict[str, Any]]=None, time_series: Optional[Dict[str, Any]]=None, anomalies: Optional[list]=None, nsm_recurrent_tpv: Optional[Dict[str, Any]]=None, clustering_metrics: Optional[Dict[str, Any]]=None, transformation_metrics: Optional[Dict[str, Any]]=None, expected_loss: Optional[Dict[str, Any]]=None, roll_rates: Optional[Dict[str, Any]]=None, vintage_analysis: Optional[Dict[str, Any]]=None, concentration_hhi: Optional[Dict[str, Any]]=None) -> Dict[str, Any]:
         logger.info('Starting Phase 4: Output')
         try:
-            exports = self._export_run_outputs(kpi_results=kpi_results, run_dir=run_dir, kpi_engine=kpi_engine, segment_kpis=segment_kpis, time_series=time_series, anomalies=anomalies, nsm_recurrent_tpv=nsm_recurrent_tpv, clustering_metrics=clustering_metrics, transformation_metrics=transformation_metrics)
+            exports = self._export_run_outputs(kpi_results=kpi_results, run_dir=run_dir, kpi_engine=kpi_engine, segment_kpis=segment_kpis, time_series=time_series, anomalies=anomalies, nsm_recurrent_tpv=nsm_recurrent_tpv, clustering_metrics=clustering_metrics, transformation_metrics=transformation_metrics, expected_loss=expected_loss, roll_rates=roll_rates, vintage_analysis=vintage_analysis, concentration_hhi=concentration_hhi)
             if kpi_engine is not None:
                 if audit_path := self._export_kpi_audit_trail(kpi_engine):
                     exports['kpi_audit_trail'] = str(audit_path)
@@ -72,7 +72,7 @@ class OutputPhase:
             logger.error('Output failed: %s', str(e), exc_info=True)
             raise RuntimeError(f'CRITICAL: Output phase failed: {e}') from e
 
-    def _export_run_outputs(self, *, kpi_results: Dict[str, Any], run_dir: Optional[Path], kpi_engine: Optional['KPIEngineV2'], segment_kpis: Optional[Dict[str, Any]], time_series: Optional[Dict[str, Any]], anomalies: Optional[list], nsm_recurrent_tpv: Optional[Dict[str, Any]], clustering_metrics: Optional[Dict[str, Any]], transformation_metrics: Optional[Dict[str, Any]]) -> Dict[str, str]:
+    def _export_run_outputs(self, *, kpi_results: Dict[str, Any], run_dir: Optional[Path], kpi_engine: Optional['KPIEngineV2'], segment_kpis: Optional[Dict[str, Any]], time_series: Optional[Dict[str, Any]], anomalies: Optional[list], nsm_recurrent_tpv: Optional[Dict[str, Any]], clustering_metrics: Optional[Dict[str, Any]], transformation_metrics: Optional[Dict[str, Any]], expected_loss: Optional[Dict[str, Any]]=None, roll_rates: Optional[Dict[str, Any]]=None, vintage_analysis: Optional[Dict[str, Any]]=None, concentration_hhi: Optional[Dict[str, Any]]=None) -> Dict[str, str]:
         exports: Dict[str, str] = {}
         if run_dir is None:
             return exports
@@ -98,6 +98,10 @@ class OutputPhase:
             industry_path = self._export_kpis_by_industry_csv(segment_kpis, run_dir)
             if industry_path is not None:
                 exports['kpis_by_industry_csv'] = str(industry_path)
+        self._export_optional_payload(exports, 'expected_loss', expected_loss, run_dir, 'expected_loss.json')
+        self._export_optional_payload(exports, 'roll_rates', roll_rates, run_dir, 'roll_rates.json')
+        self._export_optional_payload(exports, 'vintage_analysis', vintage_analysis, run_dir, 'vintage_analysis.json')
+        self._export_optional_payload(exports, 'concentration_hhi', concentration_hhi, run_dir, 'concentration_hhi.json')
         snapshot_path = self._export_kpis_snapshot_current_csv(kpi_results, run_dir)
         if snapshot_path is not None:
             exports['kpis_snapshot_current_csv'] = str(snapshot_path)

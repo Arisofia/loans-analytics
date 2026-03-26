@@ -398,6 +398,166 @@ nsm_kpis:
     unit: "percentage"
     implementability_status: "implement_now"
     priority: "high"
+
+# ────────────────────────────────────────────────────────────────────────────
+# Expected Loss & Capital Metrics (Basel-aligned)
+# ────────────────────────────────────────────────────────────────────────────
+expected_loss_kpis:
+  expected_loss:
+    id: "expected_loss"
+    name: "Expected Loss (EL)"
+    category: "risk"
+    definition: "Basel-standard EL = PD × LGD × EAD; total portfolio expected credit loss"
+    formula: "SUM(PD_i × LGD × EAD_i) for each loan i"
+    inputs: ["outstanding_balance", "dpd", "status"]
+    unit: "USD"
+    implementability_status: "implement_now"
+    priority: "critical"
+    thresholds:
+      warning_pct_of_portfolio: 3
+      critical_pct_of_portfolio: 5
+
+  expected_loss_rate:
+    id: "expected_loss_rate"
+    name: "Expected Loss Rate"
+    category: "risk"
+    definition: "EL as percentage of total EAD (portfolio-weighted loss rate)"
+    formula: "SUM(PD_i × LGD × EAD_i) / SUM(EAD_i) * 100"
+    inputs: ["outstanding_balance", "dpd", "status"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "critical"
+    thresholds:
+      warning: 3
+      critical: 5
+
+  weighted_avg_pd:
+    id: "weighted_avg_pd"
+    name: "Weighted Average PD"
+    category: "risk"
+    definition: "EAD-weighted average probability of default across portfolio"
+    formula: "SUM(PD_i × EAD_i) / SUM(EAD_i)"
+    inputs: ["outstanding_balance", "dpd", "status"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+
+# ────────────────────────────────────────────────────────────────────────────
+# Roll Rate / Migration Analysis
+# ────────────────────────────────────────────────────────────────────────────
+roll_rate_kpis:
+  roll_rate_current_to_30:
+    id: "roll_rate_current_to_30"
+    name: "Roll Rate: Current → 1-30 DPD"
+    category: "risk"
+    definition: "% of current-bucket balance that migrated to 1-30 DPD bucket"
+    formula: "balance_migrated_0_to_30 / balance_in_0_bucket * 100"
+    inputs: ["outstanding_balance", "dpd"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+
+  roll_rate_30_to_60:
+    id: "roll_rate_30_to_60"
+    name: "Roll Rate: 1-30 → 31-60 DPD"
+    category: "risk"
+    definition: "% of 1-30 DPD balance that migrated to 31-60 DPD bucket"
+    formula: "balance_migrated_30_to_60 / balance_in_30_bucket * 100"
+    inputs: ["outstanding_balance", "dpd"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+
+  roll_rate_60_to_90:
+    id: "roll_rate_60_to_90"
+    name: "Roll Rate: 31-60 → 61-90 DPD"
+    category: "risk"
+    definition: "% of 31-60 DPD balance that migrated to 61-90 DPD bucket"
+    formula: "balance_migrated_60_to_90 / balance_in_60_bucket * 100"
+    inputs: ["outstanding_balance", "dpd"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+
+  roll_rate_90_to_npl:
+    id: "roll_rate_90_to_npl"
+    name: "Roll Rate: 61-90 → 90+ DPD (NPL)"
+    category: "risk"
+    definition: "% of 61-90 DPD balance that migrated to NPL (90+ DPD)"
+    formula: "balance_migrated_90_to_npl / balance_in_90_bucket * 100"
+    inputs: ["outstanding_balance", "dpd"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "critical"
+
+# ────────────────────────────────────────────────────────────────────────────
+# Vintage / Cohort Analysis
+# ────────────────────────────────────────────────────────────────────────────
+vintage_kpis:
+  vintage_default_rate:
+    id: "vintage_default_rate"
+    name: "Vintage Default Rate"
+    category: "risk"
+    definition: "Default rate by origination cohort (month); tracks underwriting quality over time"
+    formula: "COUNT(defaulted WHERE cohort = month) / COUNT(originated WHERE cohort = month) * 100"
+    inputs: ["origination_date", "status", "loan_id"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "critical"
+
+  vintage_par30_rate:
+    id: "vintage_par30_rate"
+    name: "Vintage PAR30 Rate"
+    category: "risk"
+    definition: "PAR30 rate by origination cohort; measures delinquency evolution per vintage"
+    formula: "SUM(balance WHERE dpd >= 30 AND cohort = month) / SUM(balance WHERE cohort = month) * 100"
+    inputs: ["origination_date", "dpd", "outstanding_balance"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+
+  vintage_avg_dpd:
+    id: "vintage_avg_dpd"
+    name: "Vintage Average DPD"
+    category: "risk"
+    definition: "Average days past due by origination cohort"
+    formula: "AVG(dpd WHERE cohort = month)"
+    inputs: ["origination_date", "dpd"]
+    unit: "days"
+    implementability_status: "implement_now"
+    priority: "medium"
+
+# ────────────────────────────────────────────────────────────────────────────
+# Capital & Profitability Metrics
+# ────────────────────────────────────────────────────────────────────────────
+capital_kpis:
+  return_on_assets:
+    id: "return_on_assets"
+    name: "Return on Assets (ROA)"
+    category: "profitability"
+    definition: "Net interest income as % of total portfolio outstanding"
+    formula: "(interest_income - cost_of_funds) / total_outstanding * 100"
+    inputs: ["outstanding_balance", "interest_income", "cost_of_funds"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+    thresholds:
+      warning: 2
+      target: 4
+
+  operating_expense_ratio:
+    id: "operating_expense_ratio"
+    name: "Operating Expense Ratio (OER)"
+    category: "profitability"
+    definition: "Operating expenses as percentage of average portfolio outstanding"
+    formula: "operating_expenses / avg_outstanding * 100"
+    inputs: ["outstanding_balance"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "medium"
+    thresholds:
+      warning: 8
+      critical: 12
     python_method: "get_customer_types().recurrent_rate_12m_pct"
     thresholds:
       warning: 40
