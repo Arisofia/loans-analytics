@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers production deployment of the Loans Loans Analytics platform across multiple cloud providers and configurations.
+This guide covers production deployment of the Loans Analytics platform across multiple cloud providers and configurations.
 
 **Target Environments**: Azure Functions, AWS Lambda, GCP Cloud Run, Railway, Docker-based hosting
 

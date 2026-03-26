@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to complete the Google Sheets data integration for the Loans Loans Analytics pipeline. The spreadsheet ID `1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o` has been configured, but you need to provide valid Google Cloud service account credentials.
+This guide explains how to complete the Google Sheets data integration for the Loans Analytics pipeline. The spreadsheet ID `1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o` has been configured, but you need to provide valid Google Cloud service account credentials.
 
 ## Credentials Status
 

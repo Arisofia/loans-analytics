@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document describes the Row Level Security (RLS) implementation for Loans Loans Analytics. All sensitive tables now have RLS enabled with least-privilege policies.
+This document describes the Row Level Security (RLS) implementation for Loans Analytics. All sensitive tables now have RLS enabled with least-privilege policies.
 
 ## Tables with RLS Enabled
 

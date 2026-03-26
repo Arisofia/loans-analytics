@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-Loans Loans Analytics REQUIRES zero financial data drift. All monetary values must be stored and computed using precision-safe representations to prevent floating-point accumulation errors that are inevitable with IEEE 754 float arithmetic.
+Loans Analytics REQUIRES zero financial data drift. All monetary values must be stored and computed using precision-safe representations to prevent floating-point accumulation errors that are inevitable with IEEE 754 float arithmetic.
 
 **Non-Negotiable Rule**: Never use Float64 for monetary values. Always use Int64 with scaling (cents, basis points) + Decimal for calculations.
 

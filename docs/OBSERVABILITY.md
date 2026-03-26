@@ -7,7 +7,7 @@
 
 ## ðŸ“Š Overview
 
-LOANS Loans Analytics observability stack provides real-time monitoring of KPIs, system health, and data quality metrics through Grafana dashboards connected to Supabase.
+Loans Analytics observability stack provides real-time monitoring of KPIs, system health, and data quality metrics through Grafana dashboards connected to Supabase.
 
 ### Architecture
 

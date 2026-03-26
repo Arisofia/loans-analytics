@@ -37,10 +37,8 @@ nav:
   - Operations: OPERATIONS.md
   - Observability: OBSERVABILITY.md
   - KPIs:
-      - Catalog: KPI_CATALOG.md
-      - SSOT Registry: KPI_SSOT_REGISTRY.md
+      - KPI Reference: KPI.md
       - Lineage: kpi_lineage.md
-      - Operating Model: KPI-Operating-Model.md
   - Data:
       - Dictionary: DATA_DICTIONARY.md
       - Governance: DATA_GOVERNANCE.md

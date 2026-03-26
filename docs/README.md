@@ -19,9 +19,9 @@ This index contains only active documentation paths for the Loans Analytics plat
 
 - `docs/DATA_GOVERNANCE.md`
 - `docs/DATA_DICTIONARY.md`
-- `docs/KPI_CATALOG.md`
+- `docs/KPI.md`
 - `docs/HISTORICAL_KPIS_SUPABASE.md`
-- `docs/KPI-Operating-Model.md`
+- `docs/TARGETS_2026.md`
 
 ## Operations and Runbooks
 
