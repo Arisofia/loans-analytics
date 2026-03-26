@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload CodeQL fallback SARIF results
         if: ${{ always() && steps.check_code_scanning_availability.outputs.enabled == 'true' && hashFiles('codeql-fallback.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: codeql-fallback.sarif
 
@@ -221,7 +221,7 @@ jobs:
 
       - name: Upload Bandit SARIF results
         if: ${{ always() && steps.check_code_scanning_availability.outputs.enabled == 'true' && hashFiles('bandit-results.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: bandit-results.sarif
 
