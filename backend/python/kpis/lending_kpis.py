@@ -432,14 +432,12 @@ def collection_efficiency_6m(
     collected_usd = 0.0
     data_source = 'no_payment_data'
 
-    # Method 1: direct capital_collected column on the loan tape
     if cap_col and cap_col in window_df.columns:
         window_df['_cap'] = pd.to_numeric(window_df[cap_col], errors='coerce').fillna(0)
         collected_usd = float(window_df['_cap'].sum())
         if collected_usd > 0:
             data_source = 'direct_capital_collected'
 
-    # Method 2: match payments_df by loan_id for loans in the window
     if collected_usd == 0 and payments_df is not None and loan_id_col:
         pay_lid = _col(payments_df, ['loan_id'])
         pay_amt = _col(payments_df, ['true_principal_payment', 'true_total_payment'])
