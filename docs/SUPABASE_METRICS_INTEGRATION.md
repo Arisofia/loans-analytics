@@ -25,8 +25,10 @@ python scripts/data/setup_supabase_tables.py --apply
 ### Metrics Export
 
 All pipeline outputs automatically sync to Supabase:
+
 ```bash
-python scripts/data/run_data_pipeline.py --input data/samples/data.csv
+# See: docs/operations/SCRIPT_CANONICAL_MAP.md#data-pipeline
+python scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv
 # → kpi_values table updated
 # → calculation_audit logged
 ```

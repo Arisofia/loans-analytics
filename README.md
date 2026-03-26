@@ -112,12 +112,13 @@ bash scripts/monitoring/auto_start_monitoring.sh
 
 ### Scripts (canonical paths)
 
-- `scripts/data/run_data_pipeline.py`
-- `scripts/maintenance/generate_service_status_report.py`
-- `scripts/maintenance/validate_migration_index.py`
-- `scripts/monitoring/auto_start_monitoring.sh`
-- `scripts/ml/train_default_risk_model.py`
-- `scripts/ml/train_scorecard.py`
+**See [docs/operations/SCRIPT_CANONICAL_MAP.md](docs/operations/SCRIPT_CANONICAL_MAP.md) for all canonical execution commands.**
+
+Key script directories:
+- `scripts/data/` - Data pipeline and ETL
+- `scripts/maintenance/` - Database and index maintenance
+- `scripts/monitoring/` - Observability stack automation
+- `scripts/ml/` - ML model training and serving
 
 ### Apps and analytics
 
@@ -146,31 +147,16 @@ Pipeline runs are written under `logs/runs/<run_id>/`, including:
 
 ## Validation and testing
 
-Repository and pipeline checks:
+Repository validation and testing:
 
 ```bash
-python3 scripts/maintenance/validate_migration_index.py
+make test              # Main test suite (CI-aligned)
+make lint              # Code quality checks
+make type-check        # Static type analysis
+make security-check    # Security scanning
 ```
 
-Quality checks:
-
-```bash
-ruff check .
-black --check .
-```
-
-Tests:
-
-```bash
-# Main test suite (CI-aligned)
-pytest tests/ -v --tb=short -m "not integration"
-
-# Multi-agent suite
-pytest backend/python/multi_agent/ -v -k "test_" --tb=short
-
-# Integration tests (requires Supabase secrets)
-pytest tests/ -v -m "integration" --tb=short
-```
+**For complete command references, see [Canonical Script Map](docs/operations/SCRIPT_CANONICAL_MAP.md).**
 
 ## Security and CI
 

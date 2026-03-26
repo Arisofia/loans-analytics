@@ -122,11 +122,11 @@ targets:
 
 ### 3. Run Pipeline with Targets
 
-```bash
-# Ingests loan data + loads targets automatically
-python scripts/data/run_data_pipeline.py --input data/raw/loan_data.csv
+See **[Canonical Script Map - Data Pipeline](./operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)** for all pipeline execution commands.
 
-# Or directly from Google Sheets
+**Quick start:**
+```bash
+python scripts/data/run_data_pipeline.py --input data/raw/loan_data.csv
 python scripts/data/run_data_pipeline.py --input gsheets://DESEMBOLSOS
 ```
 

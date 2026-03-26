@@ -14,6 +14,8 @@ export PYTHONPATH := .:backend:frontend
 help:
 	@echo "Loans Analytics Automation"
 	@echo "--------------------------------"
+	@echo "📖 For all canonical CLI commands, see: docs/operations/SCRIPT_CANONICAL_MAP.md"
+	@echo ""
 	@echo "Canonical Entry Points:"
 	@echo "make api            - Start Analytics API (hot reload)"
 	@echo "make agents         - List available multi-agent scenarios"

@@ -22,9 +22,11 @@ Unified analytics raw inputs for portfolio analysis.
 Real raw CSVs in this folder are ignored by git (`data/raw/*.csv`).
 Keep credentials out of git (`credentials/`).
 
-## Unified run
+## Running the Pipeline
 
+For all pipeline execution commands, see **[docs/operations/SCRIPT_CANONICAL_MAP.md#data-pipeline](../../docs/operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)**.
+
+**Quick run:**
 ```bash
-python scripts/data/run_data_pipeline.py \
-  --input data/raw/loan_data.csv
+python scripts/data/run_data_pipeline.py --input data/raw/loan_data.csv
 ```

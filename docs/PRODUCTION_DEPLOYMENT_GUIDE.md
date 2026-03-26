@@ -109,6 +109,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+# See: docs/operations/SCRIPT_CANONICAL_MAP.md#data-pipeline
 CMD ["python", "scripts/data/run_data_pipeline.py", "--mode", "production"]
 ```
 
@@ -525,7 +526,7 @@ calculation:
 Enable verbose logging:
 
 ```bash
-# Local testing
+# Local testing - see docs/operations/SCRIPT_CANONICAL_MAP.md#data-pipeline
 python scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv --verbose
 
 # Production (environment variable)

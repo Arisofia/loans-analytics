@@ -435,7 +435,7 @@ See docs/operations/SCRIPT_CANONICAL_MAP.md
 
 After setup:
 
-1. **Run the pipeline**: `python scripts/data/run_data_pipeline.py`
+1. **Run the pipeline**: See [Canonical Script Map - Data Pipeline](./operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)
 2. **Start monitoring**: `make monitoring-start`
 3. **Explore dashboards**: <http://localhost:3001> (Grafana)
 4. **Run multi-agent**: See `python/multi_agent/README.md`

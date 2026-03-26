@@ -20,17 +20,16 @@ Production-focused lending analytics repository with:
 
 ## Canonical Commands
 
+**All execution commands are defined in `docs/operations/SCRIPT_CANONICAL_MAP.md` — this is the single source of truth.**
+
+### Quick Start
+
 ```bash
 # Environment
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# Pipeline
-python scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv
-python scripts/data/run_data_pipeline.py --mode validate
-python scripts/data/run_data_pipeline.py --mode dry-run
-
-# Quality
+# Quality & Testing
 make format
 make lint
 make type-check
@@ -40,6 +39,15 @@ make test
 make monitoring-start
 make monitoring-health
 ```
+
+### Using Operations Map
+
+For data pipeline, ML, monitoring, validation, and all other commands:
+
+- **Data Pipeline**: `docs/operations/SCRIPT_CANONICAL_MAP.md#data-pipeline`
+- **ML Training**: `docs/operations/SCRIPT_CANONICAL_MAP.md#ml-training`
+- **Monitoring**: `docs/operations/SCRIPT_CANONICAL_MAP.md#monitoring`
+- **Validation**: `docs/operations/SCRIPT_CANONICAL_MAP.md#validation`
 
 ## Engineering Rules
 

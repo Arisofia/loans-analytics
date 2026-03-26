@@ -18,18 +18,22 @@ This runbook covers deployment, execution, monitoring, incident response, and re
 
 ## Execution
 
-### Manual Run (Canonical)
+### Canonical Commands
+
+For all data pipeline execution commands, see **[docs/operations/SCRIPT_CANONICAL_MAP.md](./operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)**.
+
+**Quick reference:**
 
 ```bash
-python scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv
-```
+# Run pipeline (CSV)
+python scripts/data/run_data_pipeline.py --input data/raw/loan_data.csv
 
-### Configuration Override
+# Run pipeline (Google Sheets)
+python scripts/data/run_data_pipeline.py --input gsheets://DESEMBOLSOS
 
-```bash
-python scripts/data/run_data_pipeline.py \
-  --input data/samples/loans_sample_data_20260202.csv \
-  --config config/pipeline.yml
+# Via make
+make run                # Full pipeline with samples
+make etl-local INPUT=<path>  # Local ETL with custom input
 ```
 
 ## Run Artifacts
@@ -59,23 +63,16 @@ python scripts/data/run_data_pipeline.py \
 - Manifests and compliance reports are stored under `logs/runs/`.
 - To restore a prior run, rehydrate outputs from `data/metrics/<run_id>` and manifest.
 
-## Ready-to-Execute Commands
+## Additional Resources
 
-1. Run pipeline with file input:
+**See [docs/operations/SCRIPT_CANONICAL_MAP.md](./operations/SCRIPT_CANONICAL_MAP.md) for:**
+- All data pipeline commands
+- ML training workflows
+- Monitoring stack commands
+- Validation and maintenance commands
+- Performance testing
 
-   ```bash
-   python scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv
-   ```
-
-2. Run tests:
-
-   ```bash
-   pytest tests/ -v
-   ```
-
-3. Validate config:
-
-   ```bash
-   python -c "from src.pipeline.orchestrator import PipelineConfig; PipelineConfig()"
-   ```
+**For testing and validation:**
+- See `docs/GOVERNANCE.md` for test strategy
+- See `Makefile` targets: `make test`, `make test-baseline`, `make lint`
 

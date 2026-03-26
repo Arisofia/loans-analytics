@@ -131,7 +131,7 @@ Configured automatically via provisioning:
 #### 1. **KPI Data Ingestion** (Every 6 hours)
 
 - Fetches data from Cascade/CSV sources
-- Runs Python pipeline: `scripts/data/run_data_pipeline.py`
+- Runs Python pipeline: See [Canonical Script Map - Data Pipeline](./operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)
 - Writes to Supabase tables
 - Sends email notification on failure
 

@@ -37,7 +37,7 @@ This checklist ensures all production deployments are safe, auditable, and compl
 - [ ] **Formatting**: `black --check .` passes (`make format`)
 
 ### Integration Tests
-- [ ] **Pipeline End-to-End**: Full pipeline executes on sample data
+- [ ] **Pipeline End-to-End**: Full pipeline executes on sample data (see [SCRIPT_CANONICAL_MAP.md#data-pipeline](./SCRIPT_CANONICAL_MAP.md#data-pipeline))
   ```bash
   python scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data.csv
   ```
@@ -46,7 +46,10 @@ This checklist ensures all production deployments are safe, auditable, and compl
 - [ ] **KPI Accuracy**: Spot-check 5 key KPIs against expected values
 
 ### Compliance Tests
-- [ ] **Supabase Schema**: `python scripts/data/setup_supabase_tables.py --dry-run` succeeds
+- [ ] **Supabase Schema**: See [SCRIPT_CANONICAL_MAP.md#maintenance](./SCRIPT_CANONICAL_MAP.md#maintenance) for setup commands
+  ```bash
+  python scripts/data/setup_supabase_tables.py --dry-run
+  ```
 - [ ] **Data Governance**: All PII redaction paths active (guardrails.py)
 - [ ] **Audit Trail**: Calculation run IDs recorded for every computation
 - [ ] **Fail-Fast Validation**: Null handling, outlier detection working as expected
@@ -99,7 +102,7 @@ This checklist ensures all production deployments are safe, auditable, and compl
 ### Deployment Execution
 - [ ] **Blue-Green Setup**: New (green) environment ready, parallel to prod (blue)
 - [ ] **Code Deploy**: Push docker images, update K8s/ECS definitions
-- [ ] **Database Migrations**: Run Supabase migrations (if applicable)
+- [ ] **Database Migrations**: See [SCRIPT_CANONICAL_MAP.md#maintenance](./SCRIPT_CANONICAL_MAP.md#maintenance) for migration commands
   ```bash
   python scripts/data/setup_supabase_tables.py --apply
   ```

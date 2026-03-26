@@ -41,40 +41,28 @@ The file should contain:
 
 ## Step 3: Verify Integration
 
-Test the setup with:
+For all pipeline execution commands and Google Sheets integration examples, see **[Canonical Script Map - Data Pipeline](../operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)**.
+
+**Quick test:**
 
 ```bash
-# Run pipeline with Google Sheets source
 python scripts/data/run_data_pipeline.py --input gsheets://DESEMBOLSOS
-
-# Or load directly
-python -c "
-from backend.src.infrastructure.google_sheets_adapter import ControlMoraSheetsAdapter
-adapter = ControlMoraSheetsAdapter(
-    credentials_path='credentials/google-service-account.json',
-    spreadsheet_id='1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o'
-)
-records = adapter.fetch_desembolsos_raw()
-print(f'Loaded {len(records)} records from Google Sheets')
-"
 ```
 
 ## Step 4: Enable Google Sheets in Pipeline
 
-To use Google Sheets as the primary data source:
+Google Sheets integration is pre-configured in `config/pipeline.yml` with:
 
-```bash
-# Full pipeline from Google Sheets
-python scripts/data/run_data_pipeline.py --input gsheets://DESEMBOLSOS --config config/pipeline.yml
-
-# Or configure in pipeline.yml (already done):
-# ingestion:
-#   google_sheets:
-#     enabled: true
-#     credentials_path: "credentials/google-service-account.json"
-#     spreadsheet_id: "1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o"
-#     worksheet: "DESEMBOLSOS"
+```yaml
+ingestion:
+  google_sheets:
+    enabled: true
+    credentials_path: "credentials/google-service-account.json"
+    spreadsheet_id: "1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o"
+    worksheet: "DESEMBOLSOS"
 ```
+
+Run the pipeline as documented in **[Canonical Script Map](../operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)**.
 
 ## Expected Sheets Structure
 

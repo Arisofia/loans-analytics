@@ -28,9 +28,11 @@ CSV/API         Ingestion &      Transformation     KPI Calculation      Output 
 - **File**: `scripts/data/run_data_pipeline.py`
 - **Purpose**: Main CLI entry point for pipeline execution
 - **Triggers**: Manual execution, GitHub Actions, scheduled jobs, webhooks
-- **Command**:
+- **Canonical Commands**: See [SCRIPT_CANONICAL_MAP.md#data-pipeline](./SCRIPT_CANONICAL_MAP.md#data-pipeline)
+  
+  **Quick example:**
   ```bash
-  python scripts/data/run_data_pipeline.py --config config/pipeline.yml [--mode validate|publish]
+  python scripts/data/run_data_pipeline.py --input data/raw/loan_data.csv
   ```
 
 ### 2️⃣ **CORE PIPELINE ORCHESTRATION**
@@ -312,9 +314,7 @@ pytest tests/integration/ -v
 
 ### **Pipeline Validation**
 
-```bash
-python scripts/data/run_data_pipeline.py --mode validate
-```
+See [SCRIPT_CANONICAL_MAP.md#validation](./SCRIPT_CANONICAL_MAP.md#validation) for all validation commands.
 
 ---
 

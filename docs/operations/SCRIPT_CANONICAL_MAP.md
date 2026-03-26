@@ -74,3 +74,34 @@ Single source of truth for script execution paths. Use only these commands.
 - Avoid root-level wrappers and any duplicate command entrypoints.
 - Keep one active implementation path per task under `scripts/{data,maintenance,monitoring,deployment,evaluation}`.
 
+## Rules
+
+- **Single Source of Truth**: This map is the canonical reference for all CLI execution commands.
+- **No Duplication**: Command examples in README, docs, and tutorials reference this map instead of repeating.
+- **Avoid Wrappers**: No root-level scripts that wrap these canonical paths.
+- **One Path Per Task**: Keep one active implementation per task under `scripts/{data,maintenance,monitoring,deployment,evaluation}`.
+- **Documentation**: Product/operational docs mention "See SCRIPT_CANONICAL_MAP.md for commands" rather than embedding large command blocks.
+
+## Cross-Document Reference Pattern
+
+When documenting a feature, use this pattern:
+
+```markdown
+For [feature] execution commands, see **[Canonical Script Map - [Section]](./SCRIPT_CANONICAL_MAP.md#[anchor])**
+
+**Quick example:**
+\`\`\`bash
+[one example command]
+\`\`\`
+```
+
+This keeps docs DRY while ensuring all commands stay synchronized.
+
+## Maintenance
+
+When adding new commands:
+1. Add to appropriate section in this map
+2. Note in commit: "Add canonical command for [feature]"
+3. Update docs to reference this map (no inline command blocks)
+4. Archive old command references in comments if needed for reference
+
