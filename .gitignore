@@ -87,6 +87,7 @@ models/risk/*.ubj
 models/risk/*.bin
 models/risk/*.json
 !models/risk/.gitkeep
+models/scorecard/training_report.txt
 
 # Test runner artifacts
 .pytest_failures.exit

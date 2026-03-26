@@ -72,7 +72,7 @@ comparison = loader.compare_actuals_vs_targets(actuals)
 print(comparison.to_string())
 ```
 
-### 2. Database Schema (`db/migrations/002_create_kpi_targets_table.sql`)
+### 2. Database Schema (`db/migrations/20260324094000_create_kpi_targets_table.sql`)
 
 **Table:** `kpi_targets_2026`
 
@@ -242,7 +242,7 @@ def test_variance_calculation():
 
 1. ✅ Run SQL migration:
    ```bash
-   DATABASE_URL=... psql < db/migrations/002_create_kpi_targets_table.sql
+   DATABASE_URL=... psql < db/migrations/20260324094000_create_kpi_targets_table.sql
    ```
 
 2. ✅ Verify targets loaded:
@@ -274,6 +274,6 @@ def test_variance_calculation():
 ## Files Modified
 
 - ✅ `backend/python/kpis/target_loader.py` — Target loader class
-- ✅ `db/migrations/002_create_kpi_targets_table.sql` — Database schema + seeded targets
+- ✅ `db/migrations/20260324094000_create_kpi_targets_table.sql` — Database schema + seeded targets
 - ✅ `config/pipeline.yml` — Target ingestion config
 - ✅ `docs/TARGETS_2026.md` — This guide

@@ -33,3 +33,4 @@ ordered_migrations:
   - 20260223164000_add_missing_pipeline_kpi_definitions.sql
   - 20260226220000_reconcile_monitoring_kpi_schema_and_rls.sql
   - 20260324093000_add_remaining_monitoring_kpi_definitions.sql
+  - 20260324094000_create_kpi_targets_table.sql
