@@ -87,6 +87,20 @@ class OutputPhase:
         if segment_snapshot_path is not None:
             exports['segment_snapshot'] = str(segment_snapshot_path)
         self._export_optional_payload(exports, 'nsm_recurrent_tpv', nsm_recurrent_tpv, run_dir, 'nsm_recurrent_tpv_output.json')
+        if time_series:
+            ts_path = self._export_kpis_monthly_csv(time_series, run_dir)
+            if ts_path is not None:
+                exports['kpis_monthly_csv'] = str(ts_path)
+        if segment_kpis:
+            kam_path = self._export_kpis_by_kam_csv(segment_kpis, run_dir)
+            if kam_path is not None:
+                exports['kpis_by_kam_csv'] = str(kam_path)
+            industry_path = self._export_kpis_by_industry_csv(segment_kpis, run_dir)
+            if industry_path is not None:
+                exports['kpis_by_industry_csv'] = str(industry_path)
+        snapshot_path = self._export_kpis_snapshot_current_csv(kpi_results, run_dir)
+        if snapshot_path is not None:
+            exports['kpis_snapshot_current_csv'] = str(snapshot_path)
         audit_metadata_payload = self._build_audit_metadata_payload(kpi_results=kpi_results, exports=exports, kpi_engine=kpi_engine, transformation_metrics=transformation_metrics)
         exports['audit_metadata'] = str(self._export_payload_json(audit_metadata_payload, run_dir, 'audit_metadata.json'))
         return exports
@@ -118,6 +132,63 @@ class OutputPhase:
                     logger.warning('Could not convert %s to Decimal: %s', col, e)
         df.to_csv(output_path, index=False)
         logger.info('Exported CSV with Decimal precision: %s', output_path)
+        return output_path
+
+    def _export_kpis_monthly_csv(self, time_series: Dict[str, Any], run_dir: Path) -> Optional[Path]:
+        """Flatten monthly time-series rollups to ``kpis_monthly.csv``."""
+        monthly = time_series.get('monthly')
+        if not monthly:
+            logger.debug('kpis_monthly.csv skipped: no monthly rollup data')
+            return None
+        df = pd.DataFrame(monthly)
+        if df.empty:
+            return None
+        output_path = run_dir / 'kpis_monthly.csv'
+        df.to_csv(output_path, index=False)
+        logger.info('Exported kpis_monthly.csv: %s (%d rows)', output_path, len(df))
+        return output_path
+
+    def _export_kpis_by_kam_csv(self, segment_kpis: Dict[str, Any], run_dir: Path) -> Optional[Path]:
+        """Flatten KAM segment KPIs to ``kpis_by_kam.csv``."""
+        kam_data = segment_kpis.get('kam_hunter') or segment_kpis.get('kam_farmer') or {}
+        if not kam_data:
+            logger.debug('kpis_by_kam.csv skipped: no KAM segment data')
+            return None
+        rows = [{'kam': kam_name, **metrics} for kam_name, metrics in kam_data.items()]
+        df = pd.DataFrame(rows)
+        if df.empty:
+            return None
+        output_path = run_dir / 'kpis_by_kam.csv'
+        df.to_csv(output_path, index=False)
+        logger.info('Exported kpis_by_kam.csv: %s (%d rows)', output_path, len(df))
+        return output_path
+
+    def _export_kpis_by_industry_csv(self, segment_kpis: Dict[str, Any], run_dir: Path) -> Optional[Path]:
+        """Flatten industry segment KPIs to ``kpis_by_industry.csv``."""
+        industry_data = segment_kpis.get('industry') or {}
+        if not industry_data:
+            logger.debug('kpis_by_industry.csv skipped: no industry segment data')
+            return None
+        rows = [{'industry': industry_name, **metrics} for industry_name, metrics in industry_data.items()]
+        df = pd.DataFrame(rows)
+        if df.empty:
+            return None
+        output_path = run_dir / 'kpis_by_industry.csv'
+        df.to_csv(output_path, index=False)
+        logger.info('Exported kpis_by_industry.csv: %s (%d rows)', output_path, len(df))
+        return output_path
+
+    def _export_kpis_snapshot_current_csv(self, kpi_results: Dict[str, Any], run_dir: Path) -> Optional[Path]:
+        """Export current KPI snapshot as ``kpis_snapshot_current.csv``."""
+        if not kpi_results:
+            return None
+        rows = [{'kpi_name': k, 'value': v, 'timestamp': datetime.now().isoformat()} for k, v in kpi_results.items() if v is not None]
+        if not rows:
+            return None
+        df = pd.DataFrame(rows)
+        output_path = run_dir / 'kpis_snapshot_current.csv'
+        df.to_csv(output_path, index=False)
+        logger.info('Exported kpis_snapshot_current.csv: %s (%d KPIs)', output_path, len(df))
         return output_path
 
     def _export_json(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:

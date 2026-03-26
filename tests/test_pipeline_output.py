@@ -220,3 +220,131 @@ def test_ensure_missing_kpi_legacy_truthy_env_logs_deprecation(monkeypatch):
 def test_ensure_missing_kpi_no_op_when_all_present():
     output = _make_output()
     output._ensure_missing_kpi_definitions({'kpi_a', 'kpi_b'}, {'kpi_a', 'kpi_b', 'kpi_c'})
+
+
+# ── Tests for new KPI CSV exports ──────────────────────────────────
+
+
+def test_export_kpis_monthly_csv(tmp_path):
+    output = OutputPhase({'database': {'enabled': False}})
+    time_series = {
+        'daily': [],
+        'weekly': [],
+        'monthly': [
+            {'period': '2024-01', 'amount': 100.0, 'current_balance': 500.0},
+            {'period': '2024-02', 'amount': 200.0, 'current_balance': 450.0},
+        ],
+    }
+    path = output._export_kpis_monthly_csv(time_series, tmp_path)
+    assert path is not None
+    assert path.name == 'kpis_monthly.csv'
+    df = pd.read_csv(path)
+    assert len(df) == 2
+    assert 'period' in df.columns
+    assert 'amount' in df.columns
+
+
+def test_export_kpis_monthly_csv_skips_when_empty(tmp_path):
+    output = OutputPhase({'database': {'enabled': False}})
+    assert output._export_kpis_monthly_csv({'monthly': []}, tmp_path) is None
+    assert output._export_kpis_monthly_csv({}, tmp_path) is None
+
+
+def test_export_kpis_by_kam_csv(tmp_path):
+    output = OutputPhase({'database': {'enabled': False}})
+    segment_kpis = {
+        'kam_hunter': {
+            'Hunter A': {'outstanding_balance': 1000.0, 'loan_count': 5, 'par_30': 0.02},
+            'Hunter B': {'outstanding_balance': 2000.0, 'loan_count': 10, 'par_30': 0.05},
+        },
+    }
+    path = output._export_kpis_by_kam_csv(segment_kpis, tmp_path)
+    assert path is not None
+    assert path.name == 'kpis_by_kam.csv'
+    df = pd.read_csv(path)
+    assert len(df) == 2
+    assert 'kam' in df.columns
+    assert 'outstanding_balance' in df.columns
+
+
+def test_export_kpis_by_kam_csv_falls_back_to_farmer(tmp_path):
+    output = OutputPhase({'database': {'enabled': False}})
+    segment_kpis = {
+        'kam_farmer': {
+            'Farmer X': {'outstanding_balance': 3000.0, 'loan_count': 8},
+        },
+    }
+    path = output._export_kpis_by_kam_csv(segment_kpis, tmp_path)
+    assert path is not None
+    df = pd.read_csv(path)
+    assert df.iloc[0]['kam'] == 'Farmer X'
+
+
+def test_export_kpis_by_kam_csv_skips_when_no_data(tmp_path):
+    output = OutputPhase({'database': {'enabled': False}})
+    assert output._export_kpis_by_kam_csv({}, tmp_path) is None
+    assert output._export_kpis_by_kam_csv({'company': {}}, tmp_path) is None
+
+
+def test_export_kpis_by_industry_csv(tmp_path):
+    output = OutputPhase({'database': {'enabled': False}})
+    segment_kpis = {
+        'industry': {
+            'Comercio': {'outstanding_balance': 5000.0, 'loan_count': 20, 'par_30': 0.04, 'default_rate': 1.2},
+            'Manufactura': {'outstanding_balance': 8000.0, 'loan_count': 15, 'par_30': 0.06, 'default_rate': 2.0},
+        },
+    }
+    path = output._export_kpis_by_industry_csv(segment_kpis, tmp_path)
+    assert path is not None
+    assert path.name == 'kpis_by_industry.csv'
+    df = pd.read_csv(path)
+    assert len(df) == 2
+    assert 'industry' in df.columns
+    assert 'default_rate' in df.columns
+
+
+def test_export_kpis_by_industry_csv_skips_when_no_data(tmp_path):
+    output = OutputPhase({'database': {'enabled': False}})
+    assert output._export_kpis_by_industry_csv({}, tmp_path) is None
+
+
+def test_export_kpis_snapshot_current_csv(tmp_path):
+    output = OutputPhase({'database': {'enabled': False}})
+    kpi_results = {'par_30': 5.2, 'par_60': 3.1, 'default_rate': 1.5, 'empty_kpi': None}
+    path = output._export_kpis_snapshot_current_csv(kpi_results, tmp_path)
+    assert path is not None
+    assert path.name == 'kpis_snapshot_current.csv'
+    df = pd.read_csv(path)
+    assert len(df) == 3  # None value is excluded
+    assert set(df['kpi_name']) == {'par_30', 'par_60', 'default_rate'}
+    assert 'timestamp' in df.columns
+
+
+def test_export_kpis_snapshot_current_csv_skips_when_empty(tmp_path):
+    output = OutputPhase({'database': {'enabled': False}})
+    assert output._export_kpis_snapshot_current_csv({}, tmp_path) is None
+
+
+def test_execute_produces_all_four_kpi_csvs(tmp_path):
+    output = OutputPhase({'database': {'enabled': False}})
+    segment_kpis = {
+        'kam_hunter': {'H1': {'outstanding_balance': 100.0, 'loan_count': 1}},
+        'industry': {'Comercio': {'outstanding_balance': 200.0, 'loan_count': 2}},
+    }
+    time_series = {'daily': [], 'weekly': [], 'monthly': [{'period': '2024-01', 'amount': 50.0}]}
+    result = output.execute(
+        kpi_results={'par_30': 5.0},
+        run_dir=tmp_path,
+        segment_kpis=segment_kpis,
+        time_series=time_series,
+    )
+    assert result['status'] == 'success'
+    exports = result['exports']
+    assert 'kpis_monthly_csv' in exports
+    assert 'kpis_by_kam_csv' in exports
+    assert 'kpis_by_industry_csv' in exports
+    assert 'kpis_snapshot_current_csv' in exports
+    assert (tmp_path / 'kpis_monthly.csv').exists()
+    assert (tmp_path / 'kpis_by_kam.csv').exists()
+    assert (tmp_path / 'kpis_by_industry.csv').exists()
+    assert (tmp_path / 'kpis_snapshot_current.csv').exists()
