@@ -50,19 +50,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - name: Checkout repository
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-          if [ -d .git ]; then
-            git remote set-url origin "$REPO_URL" || git remote add origin "$REPO_URL"
-          else
-            git init .
-            git remote add origin "$REPO_URL"
-          fi
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.sha }}"
-          git checkout --detach FETCH_HEAD
+        uses: actions/checkout@v4
 
       - name: Skip Snyk scan when token is missing
         if: ${{ env.SNYK_TOKEN == '' }}
@@ -171,19 +159,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout repository
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-          if [ -d .git ]; then
-            git remote set-url origin "$REPO_URL" || git remote add origin "$REPO_URL"
-          else
-            git init .
-            git remote add origin "$REPO_URL"
-          fi
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.sha }}"
-          git checkout --detach FETCH_HEAD
+        uses: actions/checkout@v4
 
       - name: Run Gitleaks
         run: |

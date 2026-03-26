@@ -14,20 +14,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Checkout repository (no external action)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-          if [ -d .git ]; then
-            git remote set-url origin "$REPO_URL" || git remote add origin "$REPO_URL"
-          else
-            git init .
-            git remote add origin "$REPO_URL"
-          fi
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.sha }}"
-          git checkout --detach FETCH_HEAD
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.12 (no external action)
         run: |

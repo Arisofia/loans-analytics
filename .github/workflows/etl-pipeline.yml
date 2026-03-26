@@ -80,15 +80,8 @@ jobs:
       run_type: ${{ steps.resolve.outputs.run_type }}
       supabase_ready: ${{ steps.secret_gate.outputs.supabase_ready }}
     steps:
-      - name: Checkout repository (no external action)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git init .
-          git remote add origin "https://github.com/${{ github.repository }}.git"
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.ref }}"
-          git checkout --detach FETCH_HEAD
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Check required secrets
         id: secret_gate
@@ -150,15 +143,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Checkout repository (no external action)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git init .
-          git remote add origin "https://github.com/${{ github.repository }}.git"
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.ref }}"
-          git checkout --detach FETCH_HEAD
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
         run: |
@@ -197,15 +183,8 @@ jobs:
         needs.preflight.outputs.run_type == 'both'
       )
     steps:
-      - name: Checkout repository (no external action)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git init .
-          git remote add origin "https://github.com/${{ github.repository }}.git"
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.ref }}"
-          git checkout --detach FETCH_HEAD
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
         run: |
@@ -290,15 +269,8 @@ jobs:
         needs.preflight.outputs.run_type == 'both'
       )
     steps:
-      - name: Checkout repository (no external action)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git init .
-          git remote add origin "https://github.com/${{ github.repository }}.git"
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.ref }}"
-          git checkout --detach FETCH_HEAD
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
         run: |

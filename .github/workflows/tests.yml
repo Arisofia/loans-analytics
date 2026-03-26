@@ -1,7 +1,3 @@
-# ------------------------------------------------------------------
-# Canonical test workflow for Loans Analytics
-# Consolidated to a single workflow to avoid duplicate CI runs.
-# ------------------------------------------------------------------
 name: Tests
 
 on:
@@ -27,20 +23,8 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
-      - name: Checkout repository (no external action)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-          if [ -d .git ]; then
-            git remote set-url origin "$REPO_URL" || git remote add origin "$REPO_URL"
-          else
-            git init .
-            git remote add origin "$REPO_URL"
-          fi
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.sha }}"
-          git checkout --detach FETCH_HEAD
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.12 (no external action)
         run: |
@@ -135,6 +119,27 @@ jobs:
         if: steps.pytest.outcome == 'failure'
         run: exit 1
 
+      - name: Run full-suite baseline validation
+        if: steps.pytest.outcome == 'success'
+        run: |
+          mkdir -p artifacts
+          python -m pytest -q --json-report --json-report-file=artifacts/full-suite-report.json
+          python scripts/validation/check_full_suite_baseline.py \
+            --baseline .github/ci-baselines/full-suite-baseline.json \
+            --report artifacts/full-suite-report.json
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Append baseline status to summary
+        if: always() && steps.pytest.outcome == 'success'
+        run: |
+          echo "## Full Suite Baseline" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f artifacts/full-suite-report.json ]; then
+            echo "- Report generated: artifacts/full-suite-report.json" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Report generated: no" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   integration-tests:
     runs-on: ubuntu-latest
     needs: unit-tests
@@ -144,20 +149,8 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
-      - name: Checkout repository (no external action)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-          if [ -d .git ]; then
-            git remote set-url origin "$REPO_URL" || git remote add origin "$REPO_URL"
-          else
-            git init .
-            git remote add origin "$REPO_URL"
-          fi
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.sha }}"
-          git checkout --detach FETCH_HEAD
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.12 (no external action)
         run: |
@@ -207,20 +200,8 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       HISTORICAL_CONTEXT_MODE: MOCK
     steps:
-      - name: Checkout repository (no external action)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-          if [ -d .git ]; then
-            git remote set-url origin "$REPO_URL" || git remote add origin "$REPO_URL"
-          else
-            git init .
-            git remote add origin "$REPO_URL"
-          fi
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.sha }}"
-          git checkout --detach FETCH_HEAD
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.12 (no external action)
         run: |
@@ -254,20 +235,8 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
-      - name: Checkout repository (no external action)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-          if [ -d .git ]; then
-            git remote set-url origin "$REPO_URL" || git remote add origin "$REPO_URL"
-          else
-            git init .
-            git remote add origin "$REPO_URL"
-          fi
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.sha }}"
-          git checkout --detach FETCH_HEAD
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.12 (no external action)
         run: |
@@ -360,20 +329,8 @@ jobs:
     env:
       PYTHONPATH: ".:backend:frontend"
     steps:
-      - name: Checkout repository (no external action)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-          if [ -d .git ]; then
-            git remote set-url origin "$REPO_URL" || git remote add origin "$REPO_URL"
-          else
-            git init .
-            git remote add origin "$REPO_URL"
-          fi
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.sha }}"
-          git checkout --detach FETCH_HEAD
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.12 (no external action)
         run: |

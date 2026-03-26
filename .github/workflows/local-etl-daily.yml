@@ -28,14 +28,7 @@ jobs:
       snapshot_month: ${{ steps.date.outputs.snapshot_month }}
     steps:
       - name: Checkout
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git init .
-          git remote add origin "https://github.com/${{ github.repository }}.git"
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.ref }}"
-          git checkout --detach FETCH_HEAD
+        uses: actions/checkout@v4
 
       - name: Set snapshot month
         id: date
@@ -76,14 +69,7 @@ jobs:
       PYTHON_VERSION: "3.12"
     steps:
       - name: Checkout
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git init .
-          git remote add origin "https://github.com/${{ github.repository }}.git"
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.ref }}"
-          git checkout --detach FETCH_HEAD
+        uses: actions/checkout@v4
 
       - name: Setup Python
         run: |

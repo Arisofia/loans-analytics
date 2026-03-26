@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test test-quick test-baseline test-zero-cost e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic train-scorecard-if-ready zero-cost-up zero-cost-down zero-cost-pipeline zero-cost-db zero-cost-schema etl-local snapshot-build run
+.PHONY: help setup format lint type-check test test-quick test-baseline test-zero-cost e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic train-scorecard-if-ready zero-cost-schema etl-local snapshot-build run
 PYTHON ?= $(shell \
 	for p in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do \
 		if command -v $$p >/dev/null 2>&1 && $$p -c "import pytest" >/dev/null 2>&1; then \
@@ -11,9 +11,8 @@ PYTHON ?= $(shell \
 VENV := .venv
 BIN := $(VENV)/bin
 export PYTHONPATH := .:backend:frontend
-# Default target
 help:
-	@echo "Loans Loans Analytics Automation"
+	@echo "Loans Analytics Automation"
 	@echo "--------------------------------"
 	@echo "Canonical Entry Points:"
 	@echo "make api            - Start Analytics API (hot reload)"
@@ -93,8 +92,6 @@ clean:
 	@find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	@find . -name "*.pyc" -delete 2>/dev/null || true
 	@rm -rf .mypy_cache .pytest_cache .ruff_cache htmlcov .coverage
-
-# Monitoring Stack Automation
 monitoring-start:
 	@bash scripts/monitoring/auto_start_monitoring.sh
 
@@ -106,29 +103,20 @@ monitoring-logs:
 
 monitoring-health:
 	@bash scripts/monitoring/health_check_monitoring.sh
-
-# NOTE: run-analytics target removed (legacy script deleted in Phase B)
-# Pipeline modernization tracked separately
-
-# Development/API entry point (hot-reload)
 api:
 	@echo "Starting API server on http://127.0.0.1:8000 with hot-reload..."
 	"$(PYTHON)" -m uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir backend/python --reload-dir backend/src --reload-dir config
 dev: api
 
-# Multi-agent entry point
 agents:
 	"$(PYTHON)" -m python.multi_agent.cli list-scenarios
 
-# KPI pipeline entry point
 kpis:
 	"$(PYTHON)" scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv
 
-# Train scorecard model if required raw CSV files are present
 train-scorecard-if-ready:
 	"$(PYTHON)" scripts/ml/train_scorecard_if_ready.py
 
-# Train default-risk model artifact for /predict/default endpoint
 train-risk-model:
 	"$(PYTHON)" scripts/ml/train_default_risk_model.py
 
@@ -140,44 +128,28 @@ owner-map:
 	@echo "Open docs/OWNER_MAP.md"
 	@sed -n '1,220p' docs/OWNER_MAP.md
 
-# Strategic reporting
 report-strategic:
 	$(BIN)/python scripts/reporting/generate_strategic_report.py
 
-# =============================================================================
-# Docker Stack targets (Unified Compose)
-# =============================================================================
-
-## Start the local stack (API + dashboard)
 up:
 	@echo "Starting local stack (API + Dashboard)..."
 	docker compose up --build api dashboard
 
-## Stop the local stack
 down:
 	docker compose down
 
-## Run ETL pipeline inside the stack (one-shot)
 pipeline-run:
 	@echo "Running ETL pipeline (Docker)..."
 	docker compose --profile pipeline run --rm pipeline
 
-## Start local PostgreSQL (mirrors Supabase schema)
 db-up:
 	docker compose --profile db up -d db
 
-# Alias for backward compatibility (optional, but good for smooth transition)
-zero-cost-up: up
-zero-cost-down: down
-zero-cost-pipeline: pipeline-run
-zero-cost-db: db-up
 
-## Initialise DuckDB star schema locally
 zero-cost-schema:
 	@echo "Initialising DuckDB star schema..."
 	"$(PYTHON)" scripts/data/init_duckdb_schema.py
 
-## Run ETL pipeline locally (no Docker) — zero-cost variant
 etl-local:
 	@echo "Running local ETL pipeline..."
 	"$(PYTHON)" scripts/data/run_data_pipeline.py \
@@ -185,15 +157,12 @@ etl-local:
 		--mode  $(or $(MODE), full) \
 		--verbose
 
-## Build monthly snapshot into DuckDB star schema
 snapshot-build:
 	@echo "Building monthly snapshot..."
 	INPUT=$(or $(INPUT), data/samples/loans_sample_data_20260202.csv) \
 	MONTH=$(or $(MONTH),) \
 	"$(PYTHON)" scripts/data/build_snapshot.py
 
-## Run the full zero-cost ETL pipeline (ingest + snapshot)
-## Equivalent to what GitHub Actions runs on every push to main
 run:
 	@echo "Running zero-cost ETL pipeline (ingest + snapshot)..."
 	$(MAKE) etl-local
