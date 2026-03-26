@@ -1,7 +1,7 @@
 # Runtime dependencies for Loans Loans Analytics
 
 # Multi-Agent / LLM stack
-openai==2.29.0
+openai==2.30.0
 google-genai==1.68.0
 langchain>=1.2.10,<2.0.0
 langchain-openai>=1.1.9,<2.0.0
