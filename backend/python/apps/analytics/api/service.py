@@ -276,6 +276,27 @@ class KPIService:
     async def get_executive_analytics(self, loans: list[LoanRecord], payments: list[dict] | None=None, customers: list[dict] | None=None, schedule: list[dict] | None=None) -> dict:
         try:
             return await run_in_threadpool(self._calculate_executive_analytics_sync, loans, payments, customers, schedule)
+
+            async def calculate_guardrails(self, loans: list[LoanRecord], payments: list[dict] | None=None, customers: list[dict] | None=None, schedule: list[dict] | None=None) -> dict:
+                try:
+                    return await run_in_threadpool(self._calculate_guardrails_sync, loans, payments, customers, schedule)
+                except Exception as e:
+                    logger.error('Error calculating guardrails for actor %s: %s', self.actor, e, exc_info=True)
+                    raise
+
+            def _calculate_guardrails_sync(self, loans: list[LoanRecord], payments: list[dict] | None=None, customers: list[dict] | None=None, schedule: list[dict] | None=None) -> dict:
+                from datetime import timezone
+                loans_df = self._convert_loan_records_to_dataframe(loans)
+                payments_df = self._convert_dict_records_to_dataframe(payments)
+                customers_df = self._convert_dict_records_to_dataframe(customers)
+                schedule_df = self._convert_dict_records_to_dataframe(schedule)
+                loans_df = self._normalize_loans_for_catalog(loans_df, payments_df, customers_df)
+                processor = KPICatalogProcessor(loans_df=loans_df, payments_df=payments_df, customers_df=customers_df, schedule_df=schedule_df)
+                checks = processor.check_guardrails()
+                any_breach = any(c.get('breach', False) for c in checks)
+                breach_count = sum(1 for c in checks if c.get('breach', False))
+                return {'generated_at': datetime.now(timezone.utc), 'any_breach': any_breach, 'breach_count': breach_count, 'checks': checks}
+
         except Exception as e:
             logger.error('Error generating executive analytics for actor %s: %s', self.actor, e, exc_info=True)
             raise

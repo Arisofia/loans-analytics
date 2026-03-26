@@ -139,7 +139,10 @@ class KPICatalogProcessor:
         graph_analytics = self.get_graph_analytics()
         portfolio_analytics = self.get_portfolio_analytics()
         lending_kpis = self.get_lending_kpis()
-        return {'executive_strip': executive_strip, 'segmentation_summary': segmentation, 'churn_90d_metrics': churn_90d, 'unit_economics': unit_economics, 'pricing_analytics': pricing_analytics, 'revenue_forecast_6m': revenue_forecast, 'opportunity_prioritization': opportunity_prioritization, 'data_governance': governance, 'strategic_confirmations': strategic_confirmations, 'nsm_customer_types': nsm_customer_types, 'dpd_buckets': dpd_buckets, 'concentration': concentration, 'portfolio_rotation': rotation, 'weighted_apr': weighted_apr, 'weighted_fee_rate': weighted_fee_rate, 'monthly_pricing': pricing_analytics, 'graph_analytics': graph_analytics, 'portfolio_analytics': portfolio_analytics, 'lending_kpis': lending_kpis}
+        replines = self.get_replines()
+        ticket_segments = self.get_ticket_segments()
+        guardrails = self.check_guardrails()
+        return {'executive_strip': executive_strip, 'segmentation_summary': segmentation, 'churn_90d_metrics': churn_90d, 'unit_economics': unit_economics, 'pricing_analytics': pricing_analytics, 'revenue_forecast_6m': revenue_forecast, 'opportunity_prioritization': opportunity_prioritization, 'data_governance': governance, 'strategic_confirmations': strategic_confirmations, 'nsm_customer_types': nsm_customer_types, 'dpd_buckets': dpd_buckets, 'concentration': concentration, 'portfolio_rotation': rotation, 'weighted_apr': weighted_apr, 'weighted_fee_rate': weighted_fee_rate, 'monthly_pricing': pricing_analytics, 'graph_analytics': graph_analytics, 'portfolio_analytics': portfolio_analytics, 'lending_kpis': lending_kpis, 'replines': replines, 'ticket_segments': ticket_segments, 'guardrails': guardrails}
 
     def get_monthly_revenue_df(self) -> pd.DataFrame:
         payment_cols = self._payment_columns()

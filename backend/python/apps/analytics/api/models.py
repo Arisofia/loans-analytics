@@ -517,3 +517,17 @@ class NSMRecurrentTPVResponse(BaseModel):
     latest_period: Optional[str] = None
     latest: Optional[NSMPeriodMetrics] = None
     by_period: Dict[str, NSMPeriodMetrics] = Field(default_factory=dict)
+
+class GuardrailBreachItem(BaseModel):
+    kpi: str
+    current: float
+    limit: float
+    breach: bool
+    alert_level: str
+    unit: str
+
+class GuardrailsResponse(BaseModel):
+    generated_at: datetime
+    any_breach: bool
+    breach_count: int
+    checks: List[GuardrailBreachItem] = Field(default_factory=list)

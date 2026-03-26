@@ -26,6 +26,12 @@ class TestKPICatalogProcessorStrategic(unittest.TestCase):
         self.assertIn('weighted_fee_rate', kpis)
         self.assertIn('monthly_pricing', kpis)
         self.assertIn('lending_kpis', kpis)
+        self.assertIn('replines', kpis)
+        self.assertIn('ticket_segments', kpis)
+        self.assertIn('guardrails', kpis)
+        self.assertIsInstance(kpis['replines'], dict)
+        self.assertIsInstance(kpis['ticket_segments'], dict)
+        self.assertIsInstance(kpis['guardrails'], list)
         strategic = kpis['strategic_confirmations']
         self.assertTrue(strategic['cac_confirmed'])
         self.assertTrue(strategic['ltv_confirmed'])
