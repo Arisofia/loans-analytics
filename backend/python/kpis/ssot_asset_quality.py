@@ -33,6 +33,9 @@ _ASSET_QUALITY_REGISTRY = {
             "unit": "percentage",
         },
         "npl": {
+            # NOTE: NPL intentionally uses the same threshold as PAR30 per
+            # micro-lender convention.  For IFRS 9 / FASB reporting the formula
+            # should be tightened to dpd >= 90 with status = 'defaulted'.
             "formula": (
                 "SUM(outstanding_balance WHERE dpd >= 30 OR status IN ['delinquent', 'defaulted'])"
                 " / SUM(outstanding_balance) * 100"
@@ -58,7 +61,7 @@ _ASSET_QUALITY_REGISTRY = {
 
 
 def _normalize_status_for_ssot(status: pd.Series) -> pd.Series:
-    normalized = status.astype(str).str.lower().fillna("active")
+    normalized = status.astype(str).str.lower().fillna("unknown")
     normalized = normalized.mask(normalized.str.contains("default", na=False), "defaulted")
     normalized = normalized.mask(normalized.str.contains("delinq", na=False), "delinquent")
     return normalized
