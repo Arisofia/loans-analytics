@@ -25,64 +25,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-          if [ -d .git ]; then
-            git remote set-url origin "$REPO_URL" || git remote add origin "$REPO_URL"
-          else
-            git init .
-            git remote add origin "$REPO_URL"
-          fi
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.sha }}"
-          git checkout --detach FETCH_HEAD
-
-      - name: Detect Code Scanning availability
-        id: check_code_scanning_availability
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?per_page=1")
-          if [ "${STATUS}" = "200" ]; then
-            echo "enabled=true" >> "${GITHUB_OUTPUT}"
-            echo "Code scanning API is available (HTTP ${STATUS})."
-          else
-            echo "enabled=false" >> "${GITHUB_OUTPUT}"
-            echo "::warning::Code scanning API unavailable (HTTP ${STATUS}). CodeQL upload steps will be skipped."
-          fi
+        uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        if: steps.check_code_scanning_availability.outputs.enabled == 'true'
-        run: |
-          echo "::warning::CodeQL action disabled in this environment (external actions resolution unavailable)."
-          echo "Running fallback static checks in this job instead."
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
 
       - name: Autobuild
-        if: steps.check_code_scanning_availability.outputs.enabled == 'true'
-        run: |
-          echo "Autobuild skipped (CodeQL action not used)."
+        uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        if: steps.check_code_scanning_availability.outputs.enabled == 'true'
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install ruff
-          ruff check . || true
-
-          # Publish an empty SARIF in this legacy category so GitHub can close
-          # stale alerts previously emitted by this job.
-          printf '%s\n' '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[]}' > codeql-fallback.sarif
-
-      - name: Upload CodeQL fallback SARIF results
-        if: ${{ always() && steps.check_code_scanning_availability.outputs.enabled == 'true' && hashFiles('codeql-fallback.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/analyze@v4
         with:
-          sarif_file: codeql-fallback.sarif
+          category: "/language:${{ matrix.language }}"
 
   dependency-scan:
     name: Dependency Vulnerability Scan
@@ -133,35 +90,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-          if [ -d .git ]; then
-            git remote set-url origin "$REPO_URL" || git remote add origin "$REPO_URL"
-          else
-            git init .
-            git remote add origin "$REPO_URL"
-          fi
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git fetch --depth=1 origin "${{ github.sha }}"
-          git checkout --detach FETCH_HEAD
-
-      - name: Detect Code Scanning availability
-        id: check_code_scanning_availability
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?per_page=1")
-          if [ "${STATUS}" = "200" ]; then
-            echo "enabled=true" >> "${GITHUB_OUTPUT}"
-          else
-            echo "enabled=false" >> "${GITHUB_OUTPUT}"
-            echo "::warning::Code scanning API unavailable (HTTP ${STATUS}). SARIF upload will be skipped."
-          fi
+        uses: actions/checkout@v4
 
       - name: Set up Python
         run: |
@@ -220,10 +149,11 @@ jobs:
           fi
 
       - name: Upload Bandit SARIF results
-        if: ${{ always() && steps.check_code_scanning_availability.outputs.enabled == 'true' && hashFiles('bandit-results.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        if: ${{ always() && hashFiles('bandit-results.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: bandit-results.sarif
+          category: bandit
 
       - name: Upload security reports
         if: always()
