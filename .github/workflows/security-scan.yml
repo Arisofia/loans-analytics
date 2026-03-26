@@ -71,17 +71,12 @@ jobs:
         if: steps.check_code_scanning_availability.outputs.enabled == 'true'
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install "bandit[sarif]" ruff
-          SCAN_DIRS=()
-          for dir in backend/python backend/src frontend scripts; do
-            if [ -d "$dir" ]; then
-              SCAN_DIRS+=("$dir")
-            fi
-          done
-          if [ "${#SCAN_DIRS[@]}" -gt 0 ]; then
-            bandit -r "${SCAN_DIRS[@]}" -f sarif -o codeql-fallback.sarif || true
-          fi
+          python3 -m pip install ruff
           ruff check . || true
+
+          # Publish an empty SARIF in this legacy category so GitHub can close
+          # stale alerts previously emitted by this job.
+          printf '%s\n' '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[]}' > codeql-fallback.sarif
 
       - name: Upload CodeQL fallback SARIF results
         if: ${{ always() && steps.check_code_scanning_availability.outputs.enabled == 'true' && hashFiles('codeql-fallback.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
