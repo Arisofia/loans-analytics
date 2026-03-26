@@ -85,10 +85,7 @@ jobs:
 
       - name: Set up Docker Buildx (no external action)
         run: |
-          docker buildx inspect ci-builder >/dev/null 2>&1 || \
-            docker buildx create --name ci-builder --driver docker-container --use
-          docker buildx use ci-builder
-          docker buildx inspect --bootstrap
+          docker buildx version
 
       # ---- API image ----
       - name: Docker metadata (API)
@@ -110,12 +107,14 @@ jobs:
           for t in "${TAG_ARRAY[@]}"; do
             TAG_ARGS="$TAG_ARGS --tag $t"
           done
-          docker buildx build \
+          docker build \
             --file Dockerfile \
             --label "${{ steps.meta-api.outputs.labels }}" \
             $TAG_ARGS \
-            --push \
             .
+          for t in "${TAG_ARRAY[@]}"; do
+            docker push "$t"
+          done
 
       # ---- Dashboard image ----
       - name: Docker metadata (Dashboard)
@@ -137,12 +136,14 @@ jobs:
           for t in "${TAG_ARRAY[@]}"; do
             TAG_ARGS="$TAG_ARGS --tag $t"
           done
-          docker buildx build \
+          docker build \
             --file Dockerfile.dashboard \
             --label "${{ steps.meta-dash.outputs.labels }}" \
             $TAG_ARGS \
-            --push \
             .
+          for t in "${TAG_ARRAY[@]}"; do
+            docker push "$t"
+          done
 
   # ---------------------------------------------------------------------------
   # 2. Deploy to Render.com

@@ -95,3 +95,6 @@ test_results*.txt
 
 # Zencoder
 .zencoder/
+
+# MkDocs build output
+_site/

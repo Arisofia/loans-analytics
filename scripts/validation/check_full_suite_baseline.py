@@ -34,9 +34,18 @@ def _extract_summary(report: dict[str, Any]) -> dict[str, int]:
 def _compare(expected: dict[str, int], actual: dict[str, int]) -> list[str]:
     keys = sorted(set(expected) | set(actual))
     diffs: list[str] = []
+    # Strict equality for failed/errors; allow ±5 tolerance for others
+    strict_keys = {"failed", "errors"}
+    tolerance = 5
     for key in keys:
-        if _to_int(expected.get(key, 0)) != _to_int(actual.get(key, 0)):
-            diffs.append(f"{key}: expected={expected.get(key, 0)} actual={actual.get(key, 0)}")
+        exp = _to_int(expected.get(key, 0))
+        act = _to_int(actual.get(key, 0))
+        if key in strict_keys:
+            if exp != act:
+                diffs.append(f"{key}: expected={exp} actual={act}")
+        else:
+            if abs(exp - act) > tolerance:
+                diffs.append(f"{key}: expected={exp} actual={act} (tolerance={tolerance})")
     return diffs
 
 

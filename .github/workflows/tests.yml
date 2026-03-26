@@ -39,10 +39,15 @@ jobs:
           echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
           "$PYTHON_BIN" --version
 
+      - name: Install system build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev
+
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip
-          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
+          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
 
       - name: Check Supabase secrets availability
         id: check-secrets
@@ -123,8 +128,8 @@ jobs:
         if: steps.pytest.outcome == 'success'
         run: |
           mkdir -p artifacts
-          python -m pytest -q --json-report --json-report-file=artifacts/full-suite-report.json
-          python scripts/validation/check_full_suite_baseline.py \
+          "$PYTHON_BIN" -m pytest -q --json-report --json-report-file=artifacts/full-suite-report.json
+          "$PYTHON_BIN" scripts/validation/check_full_suite_baseline.py \
             --baseline .github/ci-baselines/full-suite-baseline.json \
             --report artifacts/full-suite-report.json
         env:
@@ -165,10 +170,15 @@ jobs:
           echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
           "$PYTHON_BIN" --version
 
+      - name: Install system build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev
+
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip
-          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
+          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
 
       - name: Run integration tests
         env:
@@ -216,10 +226,15 @@ jobs:
           echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
           "$PYTHON_BIN" --version
 
+      - name: Install system build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev
+
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip
-          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
+          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
 
       - name: Run multi-agent tests
         run: |
@@ -251,10 +266,15 @@ jobs:
           echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
           "$PYTHON_BIN" --version
 
+      - name: Install system build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev
+
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip
-          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
+          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
 
       - name: Install Playwright browser
         run: |
@@ -345,10 +365,15 @@ jobs:
           echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
           "$PYTHON_BIN" --version
 
+      - name: Install system build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev
+
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip
-          "$PYTHON_BIN" -m pip install -r requirements.lock.txt
+          "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
+          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
 
       - name: Pipeline config validation
         run: |
