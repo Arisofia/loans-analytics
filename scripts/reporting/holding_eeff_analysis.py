@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ábaco Holding — EEFF Consolidated Analysis Report Generator.
+"""Holding Group — EEFF Consolidated Analysis Report Generator.
 
 Executes all 10 recommendations from the Proyección EEFF Consolidado 2025-08 V08
 analysis and generates a comprehensive JSON report.
@@ -60,7 +60,7 @@ def _build_report() -> Dict[str, Any]:
     config = load_holding_config()
 
     report: Dict[str, Any] = {
-        "report_title": "Ábaco Holding — Análisis EEFF Consolidado 2025-08 V08",
+        "report_title": "Holding Group — Análisis EEFF Consolidado 2025-08 V08",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "version": config.get("version", "1.0.0"),
         "recommendations": {},
@@ -163,7 +163,7 @@ def _build_report() -> Dict[str, Any]:
     report["recommendations"]["07_af_at_migration"] = {
         "title": "Migración AF → AT — tracking estratégico",
         "migration": migration,
-        "strategy": config.get("entities", {}).get("abaco_financial", {}).get("migration_note", ""),
+        "strategy": config.get("entities", {}).get("financial_unit", {}).get("migration_note", ""),
     }
 
     # ── 8. D/EBITDA Sensitivity ───────────────────────────────────────────
@@ -247,7 +247,7 @@ class _DecimalEncoder(json.JSONEncoder):
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate Ábaco Holding EEFF Consolidated Analysis Report"
+        description="Generate Holding Group EEFF Consolidated Analysis Report"
     )
     parser.add_argument(
         "--output",
@@ -271,7 +271,7 @@ def main() -> None:
     # Print executive summary
     summary = report.get("executive_summary", {})
     print("\n" + "=" * 70)
-    print("RESUMEN EJECUTIVO — ÁBACO HOLDING EEFF CONSOLIDADO")
+    print("RESUMEN EJECUTIVO — HOLDING GROUP EEFF CONSOLIDADO")
     print("=" * 70)
     for level, items in summary.items():
         print(f"\n{'🔴' if level == 'critical' else '🟡' if level == 'moderate' else '🟢'} {level.upper()}:")

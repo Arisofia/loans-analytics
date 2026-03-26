@@ -1,5 +1,5 @@
 # ==============================================================================
-# Ábaco Holding — Proyección EEFF Consolidado 2025-2030
+# Holding Group — Proyección EEFF Consolidado 2025-2030
 # Configuración Central de Supuestos y Parámetros
 # Version: 1.0.0   |   Última actualización: 2026-03-26
 # ==============================================================================
@@ -12,7 +12,7 @@ base_currency: "USD"
 # ENTIDADES DEL GRUPO
 # ==============================================================================
 entities:
-  abaco_technologies:
+  technologies_unit:
     code: "AT"
     country: "SLV"
     status: "active"
@@ -21,7 +21,7 @@ entities:
     portfolio_aug_2025_usd: 6650000
     growth_ytd_pct: 193.0
 
-  abaco_financial:
+  financial_unit:
     code: "AF"
     country: "SLV"
     status: "active_migration"  # migrating to AT

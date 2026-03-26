@@ -30,6 +30,19 @@ try:
     from backend.python.middleware.rate_limiter import api_limiter, auth_limiter
     init_sentry(service_name='analytics-api')
     app: Optional[FastAPI] = FastAPI(title='Loans Analytics API')
+    # --- Decision Intelligence routes ---
+    from backend.python.apps.analytics.api.routes.metrics import router as metrics_router
+    from backend.python.apps.analytics.api.routes.agents import router as agents_router
+    from backend.python.apps.analytics.api.routes.decisions import router as decisions_router
+    from backend.python.apps.analytics.api.routes.scenarios import router as scenarios_router
+    from backend.python.apps.analytics.api.routes.reports import router as reports_router
+    from backend.python.apps.analytics.api.routes.quality import router as quality_router
+    app.include_router(metrics_router)
+    app.include_router(agents_router)
+    app.include_router(decisions_router)
+    app.include_router(scenarios_router)
+    app.include_router(reports_router)
+    app.include_router(quality_router)
 except ImportError:
 
     class HTTPException(Exception):  # type: ignore[no-redef]

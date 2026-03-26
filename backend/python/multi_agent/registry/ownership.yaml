@@ -1,0 +1,47 @@
+# Agent ownership map — maps agents to functional owners and escalation chains.
+
+ownership:
+  data_engineering:
+    agents: [data_quality]
+    primary_contact: "data-eng-lead"
+    escalation: "cto"
+
+  risk:
+    agents: [risk, cohort_vintage, concentration]
+    primary_contact: "chief-risk-officer"
+    escalation: "cfo"
+
+  finance:
+    agents: [pricing, revenue_strategy, cfo]
+    primary_contact: "cfo"
+    escalation: "ceo"
+
+  commercial:
+    agents: [sales, marketing, retention]
+    primary_contact: "commercial-director"
+    escalation: "coo"
+
+  operations:
+    agents: [collections]
+    primary_contact: "ops-manager"
+    escalation: "coo"
+
+  treasury:
+    agents: [liquidity]
+    primary_contact: "treasurer"
+    escalation: "cfo"
+
+  compliance:
+    agents: [covenant]
+    primary_contact: "compliance-officer"
+    escalation: "ceo"
+
+  executive:
+    agents: [narrative, decision_orchestrator]
+    primary_contact: "ceo"
+    escalation: "board"
+
+  analytics:
+    agents: [segmentation]
+    primary_contact: "analytics-lead"
+    escalation: "cto"

@@ -1,0 +1,37 @@
+# Agent cadence schedule — defines how often each agent runs.
+
+cadences:
+  per_pipeline_run:
+    description: "Runs every time the data pipeline completes"
+    agents:
+      - data_quality
+      - risk
+      - cohort_vintage
+      - concentration
+      - collections
+      - liquidity
+
+  daily:
+    description: "Runs once per business day"
+    agents:
+      - pricing
+      - segmentation
+      - sales
+      - marketing
+      - covenant
+
+  weekly:
+    description: "Runs once per week (Monday)"
+    agents:
+      - revenue_strategy
+      - retention
+      - narrative
+      - cfo
+      - decision_orchestrator
+
+  monthly:
+    description: "Runs for monthly reporting cycle"
+    agents:
+      - cfo
+      - narrative
+      - covenant

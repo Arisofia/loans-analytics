@@ -17,6 +17,9 @@ from .output import OutputPhase
 from .transformation import TransformationPhase
 from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
+
+# Decision Intelligence imports
+from backend.src.pipeline.decision_phase import DecisionPhase
 OTEL_AVAILABLE = True
 logger = get_logger(__name__)
 PIPELINE_STATUS_ATTR = 'pipeline.status'
@@ -39,6 +42,7 @@ class UnifiedPipeline:
         self.transformation = TransformationPhase(self.config.transformation, self.business_rules)
         self.calculation = CalculationPhase(self.config.calculation, self.kpi_definitions)
         self.output = OutputPhase(self.config.output)
+        self.decision = DecisionPhase()
         logger.info('All pipeline phases initialized successfully')
 
     def _start_span(self, name: str, attributes: Optional[Dict[str, Any]]=None):
@@ -174,6 +178,13 @@ class UnifiedPipeline:
                 phase4_results = self._execute_phase(phase_name='output', run_id=run_id, executor=self.output.execute, kwargs=self._build_output_phase_kwargs(phase2_results, phase3_results, run_dir))
                 self._record_phase_results(results, 'output', phase4_results)
                 self._fail_on_phase_error('output', 'Phase 4', phase4_results)
+                logger.info('\n%s', separator)
+                logger.info('PHASE 5: DECISION INTELLIGENCE')
+                logger.info('%s', separator)
+                phase5_results = self._execute_phase(phase_name='decision', run_id=run_id, executor=self.decision.execute, kwargs={'phase2_results': phase2_results, 'phase3_results': phase3_results, 'business_rules': self.business_rules, 'run_dir': run_dir})
+                self._record_phase_results(results, 'decision', phase5_results)
+                if phase5_results.get('status') != 'success':
+                    logger.warning('Phase 5 (Decision) finished with status: %s — non-blocking', phase5_results.get('status'))
                 final_results = self._finalize_results(results, run_dir)
                 self._finalize_pipeline_span(pipeline_span, final_results)
                 return final_results
@@ -194,7 +205,8 @@ class UnifiedPipeline:
         duration = (end - start).total_seconds()
         results['duration_seconds'] = duration
         if 'status' not in results:
-            all_success = all((phase.get('status') == 'success' for phase in results['phases'].values()))
+            core_phases = {k: v for k, v in results['phases'].items() if k != 'decision'}
+            all_success = all((phase.get('status') == 'success' for phase in core_phases.values()))
             results['status'] = 'success' if all_success else 'partial'
         manifest_path = run_dir / 'pipeline_results.json'
         with open(manifest_path, 'w') as f:

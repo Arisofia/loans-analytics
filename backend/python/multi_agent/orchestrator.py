@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 from backend.python.utils.usage_tracker import UsageTracker
-from .agents import ComplianceAgent, GrowthStrategistAgent, OpsOptimizerAgent, RiskAnalystAgent
+from ._llm_agents import ComplianceAgent, GrowthStrategistAgent, OpsOptimizerAgent, RiskAnalystAgent
 from .base_agent import BaseAgent
 from .config_historical import build_historical_context_provider
 from .historical_context import HistoricalContextProvider

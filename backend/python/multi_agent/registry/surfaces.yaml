@@ -1,0 +1,44 @@
+# Agent output surfaces — defines which reports/dashboards each agent feeds.
+
+surfaces:
+  executive_brief:
+    description: "Board-grade summary for C-suite and investors"
+    frequency: weekly
+    consumers: [narrative, cfo, decision_orchestrator]
+    format: pdf_or_json
+
+  investor_summary:
+    description: "Lender covenant compliance + portfolio health"
+    frequency: monthly
+    consumers: [covenant, risk, cfo]
+    format: pdf_or_json
+
+  lender_pack:
+    description: "Eligible portfolio, aging, covenant compliance"
+    frequency: monthly
+    consumers: [covenant, risk, collections]
+    format: pdf_or_json
+
+  weekly_operating_memo:
+    description: "Operational highlights, risk changes, action items"
+    frequency: weekly
+    consumers: [narrative, risk, collections, sales, liquidity]
+    format: markdown
+
+  kpi_dashboard:
+    description: "Live Streamlit dashboard — all metric tiles"
+    frequency: realtime
+    consumers: ["*"]
+    format: streamlit
+
+  data_quality_report:
+    description: "DQ scan results, anomalies, blocking status"
+    frequency: per_run
+    consumers: [data_quality]
+    format: json
+
+  scenario_strip:
+    description: "Base / downside / stress scenario comparison"
+    frequency: weekly
+    consumers: [decision_orchestrator, cfo]
+    format: json

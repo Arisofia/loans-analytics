@@ -1,0 +1,204 @@
+# Agent Registry — single source of truth for all decision agents.
+# Each entry defines: id, name, owner, layer, priority, dependencies,
+# metrics consumed, and blocking rules.
+
+agents:
+  # ── Layer 0 — Data Quality Gate ──────────────────────────────────────
+  - id: data_quality
+    name: "Data Quality Agent"
+    owner: data_engineering
+    layer: 0
+    priority: 1
+    dependencies: []
+    metrics_consumed:
+      - completeness_score
+      - duplicate_rate
+      - freshness_hours
+    blocking_rule: "quality_score < 0.85 blocks ALL downstream agents"
+
+  # ── Layer 1 — Core Analytics ─────────────────────────────────────────
+  - id: risk
+    name: "Risk Agent"
+    owner: risk
+    layer: 1
+    priority: 2
+    dependencies: [data_quality]
+    metrics_consumed:
+      - par_30
+      - par_60
+      - par_90
+      - npl_ratio
+      - default_rate
+      - expected_loss
+      - cost_of_risk
+      - cure_rate
+
+  - id: cohort_vintage
+    name: "Cohort & Vintage Agent"
+    owner: risk
+    layer: 1
+    priority: 3
+    dependencies: [data_quality]
+    metrics_consumed:
+      - vintage_default_rate
+      - vintage_delinquency_rate
+      - vintage_par30_rate
+
+  - id: concentration
+    name: "Concentration Agent"
+    owner: risk
+    layer: 1
+    priority: 4
+    dependencies: [data_quality]
+    metrics_consumed:
+      - hhi_index
+      - top_10_concentration
+
+  # ── Layer 2 — Strategy ───────────────────────────────────────────────
+  - id: pricing
+    name: "Pricing Agent"
+    owner: finance
+    layer: 2
+    priority: 5
+    dependencies: [risk]
+    metrics_consumed:
+      - portfolio_yield
+      - net_interest_margin
+      - cost_of_risk
+
+  - id: segmentation
+    name: "Segmentation Agent"
+    owner: analytics
+    layer: 2
+    priority: 6
+    dependencies: [risk, concentration]
+    metrics_consumed:
+      - segment_profiles
+      - hhi_index
+
+  - id: sales
+    name: "Sales Agent"
+    owner: commercial
+    layer: 2
+    priority: 7
+    dependencies: [risk, pricing, segmentation]
+    metrics_consumed:
+      - disbursement_volume_mtd
+      - new_loans_count_mtd
+      - avg_ticket
+      - repeat_borrower_rate
+
+  # ── Layer 3 — Operations ─────────────────────────────────────────────
+  - id: collections
+    name: "Collections Agent"
+    owner: operations
+    layer: 3
+    priority: 8
+    dependencies: [risk]
+    metrics_consumed:
+      - collection_rate
+      - cure_rate
+      - par_30
+      - par_60
+      - par_90
+
+  - id: marketing
+    name: "Marketing Agent"
+    owner: commercial
+    layer: 3
+    priority: 9
+    dependencies: [segmentation, sales]
+    metrics_consumed:
+      - repeat_borrower_rate
+      - new_loans_count_mtd
+      - segment_profiles
+
+  - id: liquidity
+    name: "Liquidity Agent"
+    owner: treasury
+    layer: 3
+    priority: 10
+    dependencies: [risk, collections]
+    metrics_consumed:
+      - liquidity_ratio
+      - collection_rate
+      - total_outstanding_balance
+
+  - id: covenant
+    name: "Covenant Agent"
+    owner: compliance
+    layer: 3
+    priority: 11
+    dependencies: [risk, liquidity]
+    metrics_consumed:
+      - par_30
+      - par_60
+      - par_90
+      - collection_rate
+      - liquidity_ratio
+      - top_10_concentration
+    blocking_rule: "covenant_breach blocks growth agents (sales, marketing)"
+
+  # ── Layer 4 — Executive ──────────────────────────────────────────────
+  - id: revenue_strategy
+    name: "Revenue Strategy Agent"
+    owner: finance
+    layer: 4
+    priority: 12
+    dependencies: [pricing, sales, collections]
+    metrics_consumed:
+      - portfolio_yield
+      - net_interest_margin
+      - disbursement_volume_mtd
+      - collection_rate
+
+  - id: retention
+    name: "Retention Agent"
+    owner: commercial
+    layer: 4
+    priority: 13
+    dependencies: [segmentation, collections]
+    metrics_consumed:
+      - repeat_borrower_rate
+      - cure_rate
+
+  - id: narrative
+    name: "Narrative Agent"
+    owner: executive
+    layer: 4
+    priority: 14
+    dependencies: [risk, revenue_strategy, liquidity]
+    metrics_consumed: ["*"]
+
+  - id: cfo
+    name: "CFO Agent"
+    owner: executive
+    layer: 4
+    priority: 15
+    dependencies: [risk, revenue_strategy, liquidity, covenant]
+    metrics_consumed:
+      - roe
+      - roa
+      - debt_to_equity
+      - covenant_status
+      - liquidity_ratio
+      - npl_ratio
+
+  - id: decision_orchestrator
+    name: "Decision Orchestrator"
+    owner: executive
+    layer: 5
+    priority: 16
+    dependencies: ["*"]
+    metrics_consumed: ["*"]
+    blocking_rule: "Resolves conflicts using priority hierarchy"
+
+# Priority hierarchy for conflict resolution:
+priority_hierarchy:
+  - data_integrity      # DQ blocks everything
+  - regulatory_covenant # Fund compliance
+  - liquidity           # Cash sufficiency
+  - risk                # Portfolio health
+  - margin              # Profitability
+  - growth              # Volume expansion
+  - expansion           # New segments

@@ -1,7 +1,7 @@
-"""Risk Intelligence — Expected Loss, Roll Rates, Vintage Analysis, Concentration HHI.
+"""Reports Center — Executive Brief, Investor Summary, Lender Pack, Weekly Memo.
 
-Institutional-grade risk analytics page that reads pipeline output artifacts
-and presents deep credit-risk intelligence with interactive visualizations.
+Report generation page that compiles decision intelligence outputs
+into board-grade reports for different stakeholder surfaces.
 """
 
 import json
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 LOGS_DIR = ROOT_DIR / "logs" / "runs"
 
-st.set_page_config(page_title="Risk Intelligence", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="Reports Center", page_icon="📝", layout="wide")
 
 
 # ──────────────────────────────────────────────────────────────────────

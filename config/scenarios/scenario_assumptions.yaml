@@ -1,0 +1,55 @@
+# Scenario assumptions — multipliers applied to current metrics.
+# base = no change (growth trajectory), downside = mild deterioration,
+# stress = severe shock.  100% grounded on real portfolio data.
+
+scenarios:
+  base:
+    horizon_months: 12
+    description: "Current trajectory — 10% portfolio growth, stable quality."
+    multipliers:
+      par_30: 1.00
+      par_60: 1.00
+      par_90: 1.00
+      npl_ratio: 1.00
+      default_rate: 1.00
+      expected_loss: 1.00
+      total_outstanding_balance: 1.10
+      disbursement_volume_mtd: 1.10
+      liquidity_ratio: 1.00
+      collection_rate: 1.00
+      portfolio_yield: 1.00
+      net_interest_margin: 1.00
+
+  downside:
+    horizon_months: 12
+    description: "Mild deterioration — delinquency +25-35%, disbursements -15%."
+    multipliers:
+      par_30: 1.25
+      par_60: 1.30
+      par_90: 1.35
+      npl_ratio: 1.30
+      default_rate: 1.30
+      expected_loss: 1.35
+      total_outstanding_balance: 0.95
+      disbursement_volume_mtd: 0.85
+      liquidity_ratio: 0.90
+      collection_rate: 0.97
+      portfolio_yield: 0.95
+      net_interest_margin: 0.90
+
+  stress:
+    horizon_months: 6
+    description: "Severe shock — delinquency 2x, liquidity -25%, production -40%."
+    multipliers:
+      par_30: 1.60
+      par_60: 1.80
+      par_90: 2.00
+      npl_ratio: 1.80
+      default_rate: 1.80
+      expected_loss: 2.00
+      total_outstanding_balance: 0.85
+      disbursement_volume_mtd: 0.60
+      liquidity_ratio: 0.75
+      collection_rate: 0.93
+      portfolio_yield: 0.85
+      net_interest_margin: 0.70

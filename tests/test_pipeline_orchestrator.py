@@ -4,11 +4,12 @@ from backend.src.pipeline.orchestrator import UnifiedPipeline
 
 @pytest.fixture
 def mock_pipeline_deps():
-    with patch('backend.src.pipeline.config.PipelineConfig.load') as mock_load, patch('backend.src.pipeline.config.load_business_rules') as mock_rules, patch('backend.src.pipeline.config.load_kpi_definitions') as mock_kpis, patch('backend.src.pipeline.orchestrator.IngestionPhase') as mock_ingestion, patch('backend.src.pipeline.orchestrator.TransformationPhase') as mock_trans, patch('backend.src.pipeline.orchestrator.CalculationPhase') as mock_calc, patch('backend.src.pipeline.orchestrator.OutputPhase') as mock_output:
+    with patch('backend.src.pipeline.config.PipelineConfig.load') as mock_load, patch('backend.src.pipeline.config.load_business_rules') as mock_rules, patch('backend.src.pipeline.config.load_kpi_definitions') as mock_kpis, patch('backend.src.pipeline.orchestrator.IngestionPhase') as mock_ingestion, patch('backend.src.pipeline.orchestrator.TransformationPhase') as mock_trans, patch('backend.src.pipeline.orchestrator.CalculationPhase') as mock_calc, patch('backend.src.pipeline.orchestrator.OutputPhase') as mock_output, patch('backend.src.pipeline.orchestrator.DecisionPhase') as mock_decision:
         mock_load.return_value = MagicMock(ingestion={}, transformation={}, calculation={}, output={})
         mock_rules.return_value = {}
         mock_kpis.return_value = {}
-        yield {'ingestion': mock_ingestion, 'transformation': mock_trans, 'calculation': mock_calc, 'output': mock_output}
+        mock_decision.return_value.execute.return_value = {'status': 'success'}
+        yield {'ingestion': mock_ingestion, 'transformation': mock_trans, 'calculation': mock_calc, 'output': mock_output, 'decision': mock_decision}
 
 def test_pipeline_init(mock_pipeline_deps):
     pipeline = UnifiedPipeline()

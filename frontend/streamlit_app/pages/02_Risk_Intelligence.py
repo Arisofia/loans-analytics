@@ -8,7 +8,7 @@ from backend.python.logging_config import get_logger
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 AGENT_OUTPUTS_DIR = ROOT_DIR / 'data' / 'agent_outputs'
 logger = get_logger(__name__)
-st.set_page_config(page_title='Agent Insights - Loans Analytics', page_icon='🤖', layout='wide')
+st.set_page_config(page_title='Risk Intelligence', page_icon='🛡️', layout='wide')
 AGENT_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
 def get_agent_output_files() -> list[Path]:

@@ -1,4 +1,4 @@
-from .agents import ComplianceAgent, GrowthStrategistAgent, RiskAnalystAgent
+from ._llm_agents import ComplianceAgent, GrowthStrategistAgent, RiskAnalystAgent
 from .base_agent import BaseAgent
 from .guardrails import Guardrails
 from .orchestrator import MultiAgentOrchestrator

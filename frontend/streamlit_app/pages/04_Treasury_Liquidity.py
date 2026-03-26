@@ -4,9 +4,9 @@ import streamlit as st
 from backend.python.config.theme import ANALYTICS_THEME
 from backend.python.utils.usage_tracker import UsageTracker
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-st.set_page_config(page_title='Usage Metrics', layout='wide')
+st.set_page_config(page_title='Treasury & Liquidity', page_icon='🏦', layout='wide')
 st.markdown(f"\n    <style>\n    .main {{\n        background-color: {ANALYTICS_THEME['colors']['background']};\n        color: {ANALYTICS_THEME['colors']['white']};\n    }}\n    </style>\n    ", unsafe_allow_html=True)
-st.title('📊 Usage Metrics Tracking')
+st.title('🏦 Treasury & Liquidity')
 tracker = UsageTracker()
 events = tracker.get_events()
 if not events:

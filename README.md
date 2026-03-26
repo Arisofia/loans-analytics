@@ -1,4 +1,4 @@
-# Ábaco Loans Analytics Platform
+# Loans Analytics — Decision Intelligence Platform
 
 [![Pipeline](https://img.shields.io/badge/Pipeline-Operational-brightgreen)]()
 [![KPIs](https://img.shields.io/badge/KPIs-40%2B_Production-blue)]()
@@ -31,14 +31,61 @@ Production-grade lending analytics platform powering portfolio intelligence for 
          ┌────────▼────────┐
          │  PHASE 4        │
          │  Output         │  Parquet/CSV/JSON exports, Supabase, Dashboard
+         └────────┬────────┘
+         ┌────────▼────────┐
+         │  PHASE 5        │
+         │  Decision       │  15 AI agents, data marts, scenario engine,
+         │  Intelligence   │  feature store, decision orchestrator
          └────────┴────────┘
                   │
     ┌─────────────┼─────────────────┐
     ▼             ▼                 ▼
  Streamlit    Multi-Agent       ML Models
- Dashboard    (9 agents,       (XGBoost PD,
-              22 scenarios)    Scorecard)
+ Dashboard    (15 decision +   (XGBoost PD,
+ (10 pages)   9 LLM agents)    Scorecard)
 ```
+
+## Decision Intelligence Platform
+
+Phase 5 transforms raw analytics into **controlled action selection** — answering: What is deteriorating? What is most profitable? What should we stop? What should we scale? What must be approved now?
+
+### Architecture Layers
+
+| Layer | Purpose | Components |
+|-------|---------|------------|
+| 0 — Data Quality | Gate-keep data integrity | `data_quality_agent` |
+| 1 — Risk Foundation | Risk metrics & vintage analysis | `risk`, `cohort_vintage`, `concentration` |
+| 2 — Margin & Segmentation | Pricing, segments, sales | `pricing`, `segmentation`, `sales` |
+| 3 — Operations | Collections, marketing, liquidity, covenants | `collections`, `marketing`, `liquidity`, `covenant` |
+| 4 — Strategy | Revenue, retention, executive narrative | `revenue_strategy`, `retention`, `narrative` |
+| 5 — CFO | Capital adequacy, covenant & ROE oversight | `cfo` |
+
+### Decision Flow
+
+```
+Canonical DataFrame → Data Marts (6) → Feature Store → Metrics Registry
+                                                              │
+                                      Scenario Engine ────────┤
+                                      (base/downside/stress)  │
+                                                              ▼
+                                      Decision Orchestrator ──→ DecisionCenterState
+                                      (15 agents, topological │
+                                       order, conflict         ▼
+                                       resolution)       AI Decision Center
+                                                         (Streamlit page 10)
+```
+
+### Priority Hierarchy
+
+Agents resolve conflicts using priority rules — higher priority agents block lower ones:
+
+1. **Data Integrity** — data_quality (blocks all if score < 0.85)
+2. **Regulatory / Covenant** — covenant (blocks growth agents on breach)
+3. **Liquidity** — liquidity (stress-scenario aware)
+4. **Risk** — risk, cohort_vintage, concentration
+5. **Margin** — pricing, revenue_strategy
+6. **Growth** — sales, marketing, retention
+7. **Expansion** — segmentation, narrative
 
 ## KPI Methodology
 
@@ -88,7 +135,7 @@ All KPIs computed across 7 dimensions: Company, Credit Line, KAM Hunter, KAM Far
 
 | Source | Connection | Status |
 |--------|-----------|--------|
-| Google Sheets | Service Account (`abaco-pipeline@...`) via Spreadsheet ID | Production |
+| Google Sheets | Service Account (pipeline SA) via Spreadsheet ID | Production |
 | CSV Upload | Pipeline `--input` flag or Streamlit upload | Production |
 | Supabase | PostgreSQL via `SUPABASE_URL` + `SUPABASE_KEY` | Optional |
 
@@ -127,12 +174,56 @@ make format         # Auto-format
 
 ```
 backend/
-├── src/pipeline/           # 4-phase ETL pipeline
-│   ├── orchestrator.py     # Pipeline orchestration
+├── src/pipeline/           # 5-phase ETL + Decision pipeline
+│   ├── orchestrator.py     # Pipeline orchestration (Phases 1-5)
 │   ├── ingestion.py        # Google Sheets / CSV / Parquet ingestion
 │   ├── transformation.py   # Column normalization, DPD, status mapping
 │   ├── calculation.py      # 40+ KPIs, EL, roll rates, vintage, HHI
-│   └── output.py           # Export: Parquet/CSV/JSON, Supabase
+│   ├── output.py           # Export: Parquet/CSV/JSON, Supabase
+│   └── decision_phase.py   # Phase 5: Decision Intelligence bridge
+├── src/contracts/          # Pydantic data contracts
+│   ├── raw_schema.py       # RawLoanRecord (post-ingestion)
+│   ├── mart_schema.py      # 6 domain mart record models
+│   ├── metric_schema.py    # MetricResult envelope
+│   ├── agent_schema.py     # AgentOutput, DecisionCenterState
+│   ├── types.py            # Type aliases (RunId, MetricId, AgentId, MartBundle)
+│   └── report_schema.py    # ExecutiveBrief, InvestorSummary, LenderPack, WeeklyMemo
+├── src/marts/              # Data mart builders (one per domain)
+│   ├── builder.py          # Utility helpers
+│   ├── portfolio_mart.py   # Loan-level mart
+│   ├── finance_mart.py     # P&L / balance sheet mart
+│   ├── sales_mart.py       # Origination / KAM mart
+│   ├── marketing_mart.py   # Channel / campaign mart
+│   ├── collections_mart.py # Delinquency / recovery mart
+│   ├── treasury_mart.py    # Aggregate cash-flow mart
+│   └── build_all_marts.py  # Assembly entrypoint (all 6)
+├── src/semantic/           # Semantic metrics layer
+│   ├── metrics_registry.py # MetricsRegistry (loads YAML)
+│   ├── metric_contracts.py # MetricContract, ThresholdBand, MetricUnit
+│   ├── business_dimensions.py # 9 standard business dimensions
+│   └── semantic_resolver.py   # Resolve raw → contracted metrics
+├── src/kpi_engine/         # KPI Engine v3 (Decimal, modular)
+│   ├── risk.py             # PAR, NPL, default, EL, roll rates, cure
+│   ├── revenue.py          # AUM, yield, NIM, collection rate
+│   ├── liquidity.py        # Liquidity ratio, funding utilization
+│   ├── concentration.py    # HHI, top-N obligor analysis
+│   ├── unit_economics.py   # Avg ticket, repeat rate, contribution margin
+│   ├── cohorts.py          # Vintage cohort builder
+│   ├── capital.py          # D/E, leverage, ROE, ROA, ROCE
+│   ├── covenants.py        # Eligible ratio, aging compliance, capital gap
+│   └── engine.py           # Unified run_metric_engine() facade
+├── src/scenario_engine/    # Scenario projection engine
+│   ├── engine.py           # ScenarioEngine class + ScenarioResult
+│   ├── assumptions.py      # YAML-driven assumption loader
+│   ├── base_case.py        # Base case scenario runner
+│   ├── downside_case.py    # Downside scenario with risk triggers
+│   └── stress_case.py      # Stress test with extreme triggers
+├── src/data_quality/       # Data quality gate engine
+│   ├── rules.py            # Severity enum, Rule/RuleResult dataclasses
+│   ├── validators.py       # 5 built-in validators
+│   ├── anomaly_detection.py # Z-score + IQR outlier detection
+│   ├── blocking_policy.py  # BLOCKING severity enforcement
+│   └── engine.py           # run_quality_engine() facade
 ├── python/
 │   ├── kpis/
 │   │   ├── engine.py              # KPIEngineV2 (SSOT, Decimal, audit trail)
@@ -143,9 +234,55 @@ backend/
 │   │   ├── ltv.py                 # LTV Sintético
 │   │   └── collection_rate.py     # Collection rate calculator
 │   ├── multi_agent/
-│   │   ├── orchestrator.py  # 22 scenarios, 9 agent roles
-│   │   ├── protocol.py      # Agent communication protocol
-│   │   └── guardrails.py    # PII redaction, input sanitization
+│   │   ├── orchestrator.py         # LLM-based: 22 scenarios, 9 agent roles
+│   │   ├── protocol.py             # Agent communication protocol
+│   │   ├── guardrails.py           # PII redaction, input sanitization
+│   │   ├── decision_orchestrator.py # Backward-compat monolithic orchestrator
+│   │   ├── orchestrator/           # Modular decision orchestrator subpackage
+│   │   │   ├── decision_orchestrator.py # Main orchestrator (15+ agents)
+│   │   │   ├── priority_rules.py       # 7-level priority hierarchy
+│   │   │   ├── dependency_graph.py     # Topological sort (Kahn's)
+│   │   │   └── action_router.py        # Handler registry + routing
+│   │   ├── agents/                 # Decision intelligence agents
+│   │   │   ├── decision_agent_base.py  # ABC base + AgentContext
+│   │   │   ├── data_quality_agent.py   # Layer 0: data gate-keep
+│   │   │   ├── risk_agent.py           # Layer 1: PAR/NPL/EL
+│   │   │   ├── cohort_vintage_agent.py # Layer 1: vintage analysis
+│   │   │   ├── concentration_agent.py  # Layer 1: HHI, top-N
+│   │   │   ├── pricing_agent.py        # Layer 2: yield/NIM/margin
+│   │   │   ├── segmentation_agent.py   # Layer 2: segment profiles
+│   │   │   ├── sales_agent.py          # Layer 2: disbursement targets
+│   │   │   ├── collections_agent.py    # Layer 3: collection rate
+│   │   │   ├── marketing_agent.py      # Layer 3: channel analysis
+│   │   │   ├── liquidity_agent.py      # Layer 3: stress-aware
+│   │   │   ├── covenant_agent.py       # Layer 3: 7-covenant check
+│   │   │   ├── revenue_strategy_agent.py # Layer 4: NIM strategy
+│   │   │   ├── retention_agent.py      # Layer 4: repeat customers
+│   │   │   ├── narrative_agent.py      # Layer 4: executive narrative
+│   │   │   └── cfo_agent.py            # Layer 5: CFO oversight
+│   │   ├── registry/
+│   │   │   ├── agents.yaml         # 16 agent definitions
+│   │   │   ├── surfaces.yaml       # 7 output surfaces
+│   │   │   ├── ownership.yaml      # Team ownership map
+│   │   │   └── cadences.yaml       # Execution cadences
+│   │   └── feature_store/          # Feature engineering
+│   │       ├── loan_features.py    # Per-loan features
+│   │       ├── customer_features.py # Per-customer aggregates
+│   │       ├── segment_features.py # Ticket/risk segments
+│   │       ├── campaign_features.py # Marketing channel features
+│   │       ├── treasury_features.py # Cash-flow features
+│   │       └── builder.py          # Feature orchestrator
+│   ├── apps/analytics/api/
+│   │   ├── main.py                # FastAPI app (20+ endpoints + decision routes)
+│   │   ├── service.py             # KPIService (portfolio analytics)
+│   │   ├── models.py             # Pydantic API models
+│   │   └── routes/               # Decision Intelligence API
+│   │       ├── metrics.py        # /decision/metrics/run
+│   │       ├── agents.py         # /decision/agents/*
+│   │       ├── decisions.py      # /decision/center/run
+│   │       ├── scenarios.py      # /decision/scenarios/*
+│   │       ├── reports.py        # /decision/reports/*
+│   │       └── quality.py        # /decision/quality/run
 │   └── models/
 │       └── default_risk_model.py  # XGBoost PD model
 
@@ -153,20 +290,30 @@ config/
 ├── business_rules.yaml       # Status mappings, DPD buckets, risk categories
 ├── business_parameters.yml   # Financial guardrails, 2026 targets
 ├── pipeline.yml              # Pipeline configuration
-└── kpis/kpi_definitions.yaml # 40+ KPI formulas and thresholds
+├── kpis/kpi_definitions.yaml # 40+ KPI formulas and thresholds
+├── metrics/metric_registry.yaml # 20 semantic metric definitions
+└── scenarios/scenario_assumptions.yaml # Base/downside/stress assumptions
 
 frontend/streamlit_app/
 ├── app.py                         # Executive dashboard
+├── decision_api_client.py         # Decision Intelligence API client
+├── decision_loader.py             # Pipeline artefact loaders
+├── components/
+│   ├── alert_cards.py             # Alert card components
+│   ├── decision_table.py          # Prioritised action table
+│   ├── scenario_strip.py          # Side-by-side scenario cards
+│   └── confidence_badge.py        # Confidence level badge
 ├── pages/
-│   ├── 1_New_Analysis.py          # Fresh analysis entry
-│   ├── 2_Agent_Insights.py        # Multi-agent output viewer
-│   ├── 3_Portfolio_Dashboard.py   # Portfolio deep-dive
-│   ├── 4_Usage_Metrics.py         # Platform usage tracking
-│   ├── 5_Monitoring_Control.py    # Real-time monitoring
-│   ├── 6_Historical_Context.py    # Trend analysis
-│   ├── 7_Predictive_Analytics.py  # XGBoost PD model control room
-│   ├── 8_Risk_Intelligence.py     # EL, Roll Rates, Vintage, HHI
-│   └── 9_Capital_Economics.py     # Unit economics, profitability
+│   ├── 01_Executive_Command_Center.py  # Business state + KPI strip
+│   ├── 02_Risk_Intelligence.py         # Risk metrics, EL, vintage
+│   ├── 03_Collections_Operations.py    # Collection rate, cures
+│   ├── 04_Treasury_Liquidity.py        # Cash-flow, liquidity
+│   ├── 05_Sales_Growth.py              # Origination, KAM tracking
+│   ├── 06_Agent_Insights.py            # Agent output viewer
+│   ├── 07_Scenario_Engine.py           # Base/downside/stress
+│   ├── 08_Reports_Center.py            # Report generation
+│   ├── 09_Data_Quality.py              # DQ rules, anomalies
+│   └── 10_AI_Decision_Center.py        # Decision Intelligence dashboard
 
 models/
 ├── risk/          # Risk model artifacts
@@ -197,8 +344,50 @@ Pipeline runs → `logs/runs/<run_id>/`:
 | `nsm_recurrent_tpv_output.json` | Recurrent client TPV |
 | `anomalies.json` | KPI anomaly detection |
 | `audit_metadata.json` | Full audit trail |
+| `decision/decision_center_state.json` | Decision Intelligence output (Phase 5) |
+| `decision/data_quality.json` | Data quality rule results & anomalies |
+| `decision/metrics.json` | Unified metric engine output |
+
+## Decision Intelligence API
+
+The FastAPI application exposes decision intelligence via `/decision/*` routes:
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/decision/metrics/run` | POST | Run unified metric engine |
+| `/decision/agents/` | GET | List all registered agents |
+| `/decision/agents/{id}` | GET | Single agent registry entry |
+| `/decision/center/run` | POST | Full orchestrator pipeline run |
+| `/decision/scenarios/{case}` | POST | Run base/downside/stress scenario |
+| `/decision/scenarios/compare` | POST | Compare all 3 scenarios |
+| `/decision/reports/{type}` | POST | Generate executive/investor/lender/weekly report |
+| `/decision/quality/run` | POST | Run data quality engine |
 
 ## Multi-Agent System
+
+### Decision Intelligence Agents (Rule-Based — Phase 5)
+
+15 agents organized in 6 layers, executing in topological order with priority-based conflict resolution:
+
+| Agent | Layer | Priority | Role |
+|-------|-------|----------|------|
+| `data_quality` | 0 | 1 | Completeness, duplicates, freshness gate |
+| `risk` | 1 | 4 | PAR, NPL, default rate, expected loss |
+| `cohort_vintage` | 1 | 4 | Vintage analysis, trend detection |
+| `concentration` | 1 | 4 | HHI, top-N obligor analysis |
+| `pricing` | 2 | 5 | Yield/NIM vs target APR band |
+| `segmentation` | 2 | 7 | Segment profiles, concentration |
+| `sales` | 2 | 6 | Disbursement MTD vs targets |
+| `collections` | 3 | 6 | Collection rate vs 98.5%, cure rate |
+| `marketing` | 3 | 6 | Channel analysis, repeat vs new |
+| `liquidity` | 3 | 3 | Ratio/utilization, stress scenario |
+| `covenant` | 3 | 2 | 7-covenant check, blocks growth |
+| `revenue_strategy` | 4 | 5 | NIM analysis, revenue leakage |
+| `retention` | 4 | 6 | Repeat rate, at-risk customers |
+| `narrative` | 4 | 7 | Board-ready executive narrative |
+| `cfo` | 5 | 15 | Capital adequacy, covenant & ROE oversight |
+
+### LLM-Based Agents (Scenarios)
 
 9 specialized agents across 22 analytical scenarios:
 
@@ -247,5 +436,5 @@ Providers: OpenAI, Anthropic, Gemini, Grok (xAI-compatible).
 
 ## License
 
-Proprietary — Ábaco Financial Services.
+Proprietary — All rights reserved.
 

@@ -1,4 +1,4 @@
-"""Ábaco Holding — Consolidated Financial Indicators Module.
+"""Holding Group — Consolidated Financial Indicators Module.
 
 Implements the 10 recommendations from the EEFF Consolidado 2025-08 V08 analysis:
 

@@ -1,7 +1,7 @@
-"""Capital & Economics — Unit Economics, Profitability, Financial Indicators.
+"""Data Quality — Rule Results, Anomaly Detection, Blocking Policy.
 
-Institutional-grade capital analytics page combining unit economics,
-holding financial indicators, and portfolio profitability analysis.
+Data quality dashboard showing validation results, detected anomalies,
+and blocking rule enforcement from the DQ engine.
 """
 
 import json
@@ -19,7 +19,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 LOGS_DIR = ROOT_DIR / "logs" / "runs"
 CONFIG_DIR = ROOT_DIR / "config"
 
-st.set_page_config(page_title="Capital & Economics", page_icon="💰", layout="wide")
+st.set_page_config(page_title="Data Quality", page_icon="✅", layout="wide")
 
 
 # ──────────────────────────────────────────────────────────────────────
