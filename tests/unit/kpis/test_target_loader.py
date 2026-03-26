@@ -12,15 +12,9 @@ class TestTargetLoaderBasics:
     def test_get_2026_targets_dict(self):
         """Verify hardcoded 2026 targets dict."""
         targets = get_2026_targets()
-        
-        # Verify all 12 months present
         assert len(targets) == 12
-        
-        # Verify boundary months
         assert targets["Jan"] == 8500000
         assert targets["Dec"] == 12000000
-        
-        # Verify mid-year month
         assert targets["Jul"] == 10500000
     
     def test_loader_get_target_by_month_number(self):
@@ -61,11 +55,9 @@ class TestVarianceCalculation:
     def test_variance_on_track_positive(self):
         """Positive variance (actual > target) within ON_TRACK band."""
         loader = TargetLoader()
-        actual = Decimal("8700000")  # +200k = +2.35%
+        actual = Decimal("8700000")
         target = Decimal("8500000")
-        
         result = loader.calculate_variance(actual, target)
-        
         assert result["status"] == "ON_TRACK"
         assert result["variance_amount"] == Decimal("200000")
         assert result["variance_pct"] == Decimal("2.35")
@@ -73,11 +65,9 @@ class TestVarianceCalculation:
     def test_variance_on_track_negative(self):
         """Negative variance (actual < target) within ON_TRACK band."""
         loader = TargetLoader()
-        actual = Decimal("8300000")  # -200k = -2.35%
+        actual = Decimal("8300000")
         target = Decimal("8500000")
-        
         result = loader.calculate_variance(actual, target)
-        
         assert result["status"] == "ON_TRACK"
         assert result["variance_amount"] == Decimal("-200000")
         assert result["variance_pct"] == Decimal("-2.35")
@@ -85,12 +75,9 @@ class TestVarianceCalculation:
     def test_variance_monitor(self):
         """Variance at boundary of AT_RISK (90-95% band)."""
         loader = TargetLoader()
-        actual = Decimal("8075000")  # -425k = -5.0% (boundary)
+        actual = Decimal("8075000")
         target = Decimal("8500000")
-        
         result = loader.calculate_variance(actual, target)
-        
-        # At exactly -5.0%, should be ON_TRACK (within -5% to +5% band)
         assert result["status"] == "ON_TRACK"
         assert result["variance_pct"] == Decimal("-5.00")
     
@@ -148,31 +135,23 @@ class TestDataFrameOperations:
         """Test exporting targets as DataFrame."""
         loader = TargetLoader()
         df = loader.export_targets_table()
-        
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 12
         assert "month_name" in df.columns
         assert "portfolio_target" in df.columns
-        
-        # Verify content
         assert df.loc[df["month_name"] == "Jan", "portfolio_target"].values[0] == Decimal("8500000")
         assert df.loc[df["month_name"] == "Dec", "portfolio_target"].values[0] == Decimal("12000000")
     
     def test_load_from_dataframe(self):
         """Test loading targets from DataFrame (simulating Google Sheets export)."""
         loader = TargetLoader()
-        
-        # Simulate Google Sheets export
         df = pd.DataFrame({
             "Month": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            "Portfolio_Target": [8500000, 9000000, 9300000, 9600000, 9900000, 10200000, 
-                                10500000, 10800000, 11100000, 11400000, 11700000, 12000000],
+            "Portfolio_Target": [8500000, 9000000, 9300000, 9600000, 9900000, 10200000, 10500000, 10800000, 11100000, 11400000, 11700000, 12000000],
             "NPL_Target": [2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4],
             "Default_Rate_Target": [1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
         })
-        
         result = loader.load_from_dataframe(df)
-        
         assert result.get("status") == "success"
         assert result.get("rows_loaded") == 12
         assert len(result.get("months_loaded", [])) == 12
@@ -180,23 +159,18 @@ class TestDataFrameOperations:
     def test_compare_actuals_vs_targets(self):
         """Test comparing actual values against targets."""
         loader = TargetLoader()
-        
         actuals = {
-            1: Decimal("8700000"),  # Jan: +200k
-            2: Decimal("8900000"),  # Feb: -100k
-            3: Decimal("9400000"),  # Mar: +100k
+            1: Decimal("8700000"),
+            2: Decimal("8900000"),
+            3: Decimal("9400000"),
         }
-        
         comparison = loader.compare_actuals_vs_targets(actuals)
-        
         assert isinstance(comparison, pd.DataFrame)
-        assert len(comparison) == 12  # Should have all 12 months
-        
-        # Verify Jan row
+        assert len(comparison) == 12
         jan_row = comparison[comparison["month"] == "Jan"].iloc[0]
         assert jan_row["actual_portfolio"] == Decimal("8700000")
-        assert jan_row["target"] == 8.5e6  # Note: exported as float
-        assert abs(jan_row["variance_pct"] - 2.35) < 0.01  # Float comparison
+        assert jan_row["target"] == 8.5e6
+        assert abs(jan_row["variance_pct"] - 2.35) < 0.01
 
 
 class TestTargetSequence:
@@ -205,11 +179,7 @@ class TestTargetSequence:
     def test_monthly_growth_consistent(self):
         """Verify monthly growth is consistent ($300k/month after Feb)."""
         loader = TargetLoader()
-        
-        # Jan to Feb is +500k
         assert loader.get_target(2) - loader.get_target(1) == Decimal("500000")
-        
-        # Feb to Dec should be +300k per month
         for month in range(3, 13):
             prev_target = loader.get_target(month - 1)
             curr_target = loader.get_target(month)
@@ -242,22 +212,15 @@ class TestEdgeCases:
     def test_variance_with_zero_target(self):
         """Test variance calculation doesn't divide by zero."""
         loader = TargetLoader()
-        
-        # This shouldn't happen in normal operation, but test defensive behavior
-        # The implementation returns INVALID_TARGET status instead of raising
         result = loader.calculate_variance(Decimal("1000"), Decimal("0"))
         assert result["status"] == "INVALID_TARGET"
     
     def test_large_variance(self):
         """Test variance for very large positive/negative swings."""
         loader = TargetLoader()
-        
-        # 100% above target
         result = loader.calculate_variance(Decimal("17000000"), Decimal("8500000"))
         assert result["variance_pct"] == Decimal("100.00")
         assert result["status"] == "EXCEEDED"
-        
-        # 50% below target
         result = loader.calculate_variance(Decimal("4250000"), Decimal("8500000"))
         assert result["variance_pct"] == Decimal("-50.00")
         assert result["status"] == "AT_RISK"

@@ -375,11 +375,6 @@ class TestSilentHandlerHardening:
             phase._run_advanced_clustering(df)
 
 
-# ---------------------------------------------------------------------------
-# Tests for KPIEngineV2.calculate_ltv — Decimal arithmetic
-# ---------------------------------------------------------------------------
-
-
 def test_calculate_ltv_uses_decimal_arithmetic():
     """Verify that calculate_ltv returns a Decimal and avoids float rounding."""
     df = pd.DataFrame({'loan_amount': [100.0], 'collateral_value': [300.0]})

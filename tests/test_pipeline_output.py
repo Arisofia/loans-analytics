@@ -132,11 +132,6 @@ def test_check_sla_is_fail_closed_for_malformed_audit_trail():
     assert output._check_sla({'par_30': 4.2}, kpi_engine=kpi_engine) is False
 
 
-# ---------------------------------------------------------------------------
-# Tests for _parse_bool_env helper
-# ---------------------------------------------------------------------------
-
-
 def test_parse_bool_env_unset_returns_default_true():
     with patch.dict(os.environ, {}, clear=True):
         assert _parse_bool_env('MISSING_VAR', default=True) is True
@@ -165,11 +160,6 @@ def test_parse_bool_env_raises_on_unrecognised_value():
             _parse_bool_env('MY_FLAG')
 
 
-# ---------------------------------------------------------------------------
-# Tests for _ensure_missing_kpi_definitions behaviour and compat shim
-# ---------------------------------------------------------------------------
-
-
 def _make_output(strict_kpi_definitions=None):
     db_cfg: dict = {'enabled': True, 'table': 'kpi_values'}
     if strict_kpi_definitions is not None:
@@ -192,7 +182,6 @@ def test_ensure_missing_kpi_raises_when_no_config_key_and_no_env(monkeypatch):
 
 def test_ensure_missing_kpi_disabled_via_config_false():
     output = _make_output(strict_kpi_definitions=False)
-    # Should warn, not raise
     with patch('backend.src.pipeline.output.logger') as mock_log:
         output._ensure_missing_kpi_definitions({'new_kpi'}, set())
     mock_log.warning.assert_called()

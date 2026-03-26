@@ -48,7 +48,6 @@ class TestKPICatalogProcessorStrategic(unittest.TestCase):
         self.assertIn('liquidation_rate', lending)
         self.assertIn('mype_decisions', lending)
         self.assertIn('treasury_capacity', lending)
-        # treasury_capacity is 'not_provided' when no cash_balance passed via get_all_kpis
         self.assertEqual(lending['treasury_capacity']['status'], 'not_provided')
 
     def test_forecast_prioritization_and_governance_are_populated(self):
@@ -115,7 +114,6 @@ class TestCashBalanceTreasury(unittest.TestCase):
     def test_pending_disbursements_reduce_available(self):
         from backend.python.kpis.lending_kpis import cash_balance_treasury
         result = cash_balance_treasury(cash_balance_usd=100_000.0, pending_disbursements_usd=40_000.0, reserve_ratio=0.10, avg_portfolio_apr=0.28)
-        # available = 100k - 10k reserve - 40k pending = 50k
         self.assertAlmostEqual(result['capacity']['available_to_disburse_usd'], 50_000.0, places=1)
 
     def test_opportunity_cost_is_positive(self):
@@ -267,7 +265,6 @@ class TestFinancingRateEIR(unittest.TestCase):
         r = financing_rate_eir(self._make_loans())
         self.assertEqual(r['status'], 'ok')
         self.assertEqual(r['eir_type'], 'rate_charged_to_clients')
-        # weighted: (0.36*10k + 0.38*20k + 0.34*30k) / 60k = 0.356...
         self.assertAlmostEqual(r['weighted_apr_pct'], 35.67, delta=0.5)
 
     def test_no_apr_col_returns_insufficient_data(self):
@@ -281,7 +278,6 @@ class TestFinancingRateEIR(unittest.TestCase):
         payments = pd.DataFrame({'true_interest_payment': [3000.0], 'true_fee_payment': [1000.0]})
         r = financing_rate_eir(self._make_loans(), payments_df=payments)
         self.assertIsNotNone(r['portfolio_yield_pct'])
-        # 4000 interest+fees / 60000 AUM = 6.67%
         self.assertAlmostEqual(r['portfolio_yield_pct'], 6.67, delta=0.2)
 
     def test_all_zero_rates_returns_no_valid_rates(self):
@@ -329,7 +325,6 @@ class TestCostOfDebtDSCR(unittest.TestCase):
         from backend.python.kpis.lending_kpis import cost_of_debt_dscr
         loans = self._make_loans()
         r = cost_of_debt_dscr(loans, cost_of_debt_pct=0.15)
-        # No payments → falls back to AUM × APR
         self.assertIn('estimated_aum_x_avg_apr', r['income_source'])
         self.assertGreater(r['dscr'], 0)
 
@@ -357,7 +352,6 @@ class TestGetReplines(unittest.TestCase):
         })
         r = self._make_processor(loans).get_replines()
         self.assertEqual(r['status'], 'ok')
-        # C1 has 2 loans on SME → 2 repline loans, 4 total
         self.assertEqual(r['repline_count'], 2)
         self.assertEqual(r['total_loans'], 4)
         self.assertAlmostEqual(r['repline_rate_pct'], 50.0)
@@ -375,7 +369,6 @@ class TestGetReplines(unittest.TestCase):
         self.assertFalse(r['breach'])
 
     def test_breach_when_rate_above_2pct(self):
-        # 3 of 4 loans are replines → 75% >> 2% limit
         loans = pd.DataFrame({
             'loan_id': ['L1', 'L2', 'L3', 'L4'],
             'customer_id': ['C1', 'C1', 'C1', 'C2'],
@@ -484,15 +477,13 @@ class TestCheckGuardrails(unittest.TestCase):
         self.assertIn('repline_rate', kpi_names)
 
     def test_no_breach_when_portfolio_clean(self):
-        # PAR-90: all DPD < 90
         results = self._make_processor().check_guardrails()
         par90 = next(r for r in results if r['kpi'] == 'par_90_rate')
         self.assertFalse(par90['breach'])
 
     def test_breach_flag_set_for_over_limit(self):
-        # Force top-1 concentration above 4% by making one obligor very large
         loans = self.loans_df.copy()
-        loans.loc[0, 'outstanding_loan_value'] = 10_000_000  # dominates
+        loans.loc[0, 'outstanding_loan_value'] = 10_000_000
         proc = KPICatalogProcessor(loans, self.payments_df, pd.DataFrame())
         results = proc.check_guardrails()
         top1 = next(r for r in results if r['kpi'] == 'top_1_obligor_concentration')
