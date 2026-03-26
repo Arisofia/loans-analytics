@@ -38,9 +38,9 @@ on:
   workflow_dispatch:
     inputs:
       input_csv:
-        description: "Path to input CSV (relative to repo root)"
+        description: "Path to input CSV or gsheets://TAB_NAME (default: Google Sheets DESEMBOLSOS)"
         required: false
-        default: "data/samples/loans_sample_data_20260202.csv"
+        default: "gsheets://DESEMBOLSOS"
       mode:
         description: "Pipeline mode"
         required: false
@@ -116,14 +116,15 @@ jobs:
             [ "$HOUR" = "08" ] && RTYPE="snapshot" || RTYPE="ingest"
           fi
 
-          # Default values
-          CSV="${CSV:-data/samples/loans_sample_data_20260202.csv}"
+          # Default values — Google Sheets is the primary data source
+          CSV="${CSV:-gsheets://DESEMBOLSOS}"
           MODE="${MODE:-full}"
           RTYPE="${RTYPE:-ingest}"
 
-          # If the input file is missing, fall back to dry-run to avoid a hard failure.
-          # This is done in the same step so the output is always consistent.
-          if [ "$MODE" != "dry-run" ] && [ ! -f "$CSV" ]; then
+          # For gsheets:// URIs no file check is needed; for local files, verify existence
+          if [[ "$CSV" == gsheets://* ]]; then
+            echo "✅ Google Sheets source: $CSV"
+          elif [ "$MODE" != "dry-run" ] && [ ! -f "$CSV" ]; then
             echo "⚠️  Input CSV '$CSV' not found — switching to dry-run mode"
             MODE="dry-run"
           else
@@ -214,10 +215,18 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          GOOGLE_SHEETS_CREDENTIALS_JSON: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS_JSON }}
           SNAPSHOT_MONTH: ${{ github.event.inputs.snapshot_month }}
           INPUT: ${{ needs.preflight.outputs.input_csv }}
           MODE: ${{ needs.preflight.outputs.mode }}
-        run: make etl-local
+        run: |
+          # Write Google Sheets credentials from secret if available
+          if [ -n "$GOOGLE_SHEETS_CREDENTIALS_JSON" ]; then
+            mkdir -p credentials
+            echo "$GOOGLE_SHEETS_CREDENTIALS_JSON" > credentials/google-service-account.json
+            echo "✅ Google Sheets credentials written from secret"
+          fi
+          make etl-local
 
       - name: Validate pipeline outputs
         if: success()

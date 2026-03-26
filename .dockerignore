@@ -66,6 +66,11 @@ coverage.xml
 .env.local
 .env.*
 
+# Exclude credentials and secrets
+credentials/
+*service-account*.json
+*google-credentials*.json
+
 # Exclude node_modules (if any)
 node_modules/
 

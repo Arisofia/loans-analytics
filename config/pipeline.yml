@@ -7,10 +7,10 @@ last_updated: "2026-01-29"
 # PHASE 1: INGESTION
 ingestion:
   # Data sources
-  # NOTE: Cascade API integration retired 2026-01. CSV and Supabase are primary sources.
+  # NOTE: CSV source disabled 2026-03. Google Sheets is the primary source.
   sources:
     - type: "csv"
-      enabled: true
+      enabled: false
       location: "data/raw/"
 
     - type: "supabase"
@@ -20,7 +20,9 @@ ingestion:
     - type: "google_sheets"
       enabled: true
       spreadsheet_id: "1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o"
-      worksheet: "DESEMBOLSOS"
+      worksheets:
+        - "DESEMBOLSOS"
+        - "INTERMEDIA"
 
   # Google Sheets Configuration
   google_sheets:

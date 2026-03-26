@@ -135,8 +135,19 @@ class DefaultRiskModel:
         model_path = path / 'default_risk_xgb.ubj'
         self.model.save_model(str(model_path))
         meta_path = path / 'default_risk_metadata.json'
+        import math
+
+        def _sanitize(obj: object) -> object:
+            if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+                return None
+            if isinstance(obj, dict):
+                return {k: _sanitize(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [_sanitize(v) for v in obj]
+            return obj
+
         with open(meta_path, 'w') as f:
-            json.dump(self.metadata, f, indent=2, default=str)
+            json.dump(_sanitize(self.metadata), f, indent=2, default=str)
         logger.info('Model saved to %s', model_path)
         return str(model_path)
 

@@ -9,12 +9,12 @@ on:
         description: "Snapshot date (YYYY-MM-DD). Defaults to today UTC."
         required: false
         default: ""
-      loan_tape_dir:
-        description: "Directory containing loan tape CSV files"
+      data_source:
+        description: "Data source: gsheets://DESEMBOLSOS or path to loan tape directory"
         required: false
-        default: "data/raw"
+        default: "gsheets://DESEMBOLSOS"
       control_mora_path:
-        description: "Optional control mora CSV file path"
+        description: "Optional control mora CSV file path (ignored when using Google Sheets)"
         required: false
         default: ""
 
@@ -39,11 +39,22 @@ jobs:
           fi
           echo "snapshot_month=$SNAPSHOT" >> "$GITHUB_OUTPUT"
 
-      - name: Check for loan tape data
+      - name: Check for data source
         id: check_loan_tape
         run: |
-          LOAN_TAPE_DIR="${{ github.event.inputs.loan_tape_dir || 'data/raw' }}"
-          echo "Using loan tape directory: $LOAN_TAPE_DIR"
+          DATA_SOURCE="${{ github.event.inputs.data_source || 'gsheets://DESEMBOLSOS' }}"
+          echo "Using data source: $DATA_SOURCE"
+
+          # Google Sheets sources are always available (credentials checked at runtime)
+          if [[ "$DATA_SOURCE" == gsheets://* ]]; then
+            echo "✅ Google Sheets source configured: $DATA_SOURCE"
+            echo "has_data=true" >> "$GITHUB_OUTPUT"
+            echo "source_type=gsheets" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Fallback: local CSV directory
+          LOAN_TAPE_DIR="$DATA_SOURCE"
           if [ ! -d "$LOAN_TAPE_DIR" ]; then
             echo "::warning::Loan tape directory '$LOAN_TAPE_DIR' does not exist — skipping local ETL run."
             echo "has_data=false" >> "$GITHUB_OUTPUT"
@@ -58,6 +69,7 @@ jobs:
 
           echo "Loan tape data found in '$LOAN_TAPE_DIR'; proceeding with local ETL."
           echo "has_data=true" >> "$GITHUB_OUTPUT"
+          echo "source_type=csv" >> "$GITHUB_OUTPUT"
 
   run-local-etl:
     needs: preflight
@@ -90,12 +102,30 @@ jobs:
           "$PYTHON_BIN" -m pip install -r requirements.prod.lock.txt
 
       - name: Run local ETL
+        env:
+          GOOGLE_SHEETS_CREDENTIALS_JSON: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS_JSON }}
         run: |
-          "$PYTHON_BIN" scripts/data/local_monthly_etl.py \
-            --loan-tape-dir "${{ github.event.inputs.loan_tape_dir || 'data/raw' }}" \
-            --control-mora "${{ github.event.inputs.control_mora_path }}" \
-            --snapshot-month "${{ needs.preflight.outputs.snapshot_month }}" \
-            --output-dir exports/local_star
+          # Write Google Sheets credentials from secret if available
+          if [ -n "$GOOGLE_SHEETS_CREDENTIALS_JSON" ]; then
+            mkdir -p credentials
+            echo "$GOOGLE_SHEETS_CREDENTIALS_JSON" > credentials/google-service-account.json
+            echo "✅ Google Sheets credentials written from secret"
+          fi
+
+          DATA_SOURCE="${{ github.event.inputs.data_source || 'gsheets://DESEMBOLSOS' }}"
+
+          if [[ "$DATA_SOURCE" == gsheets://* ]]; then
+            "$PYTHON_BIN" scripts/data/run_data_pipeline.py \
+              --input "$DATA_SOURCE" \
+              --mode full \
+              --verbose
+          else
+            "$PYTHON_BIN" scripts/data/local_monthly_etl.py \
+              --loan-tape-dir "$DATA_SOURCE" \
+              --control-mora "${{ github.event.inputs.control_mora_path }}" \
+              --snapshot-month "${{ needs.preflight.outputs.snapshot_month }}" \
+              --output-dir exports/local_star
+          fi
 
       - name: Validate unmatched records reason_code
         run: |

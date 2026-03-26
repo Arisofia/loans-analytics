@@ -2,7 +2,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 import pandas as pd
 logger = logging.getLogger(__name__)
 REASON_EXACT = 'exact_key_match'
@@ -10,15 +10,12 @@ REASON_FUZZY = 'fuzzy_name_date_match'
 REASON_UNMATCHED_TAPE = 'unmatched_loan_tape'
 REASON_UNMATCHED_MORA = 'unmatched_control_mora'
 REASON_NOT_SPECIFIED = 'not_specified'
-if TYPE_CHECKING:
-    from rapidfuzz import fuzz as _fuzz_type
-
 try:
     # Import lazily at runtime because rapidfuzz is optional in this project.
-    fuzz = __import__('rapidfuzz', fromlist=['fuzz']).fuzz
+    from rapidfuzz import fuzz  # type: ignore[import-untyped]
     _RAPIDFUZZ = True
-except Exception:
-    fuzz = None
+except Exception:  # pragma: no cover
+    fuzz = None  # type: ignore[assignment]
     _RAPIDFUZZ = False
 
 def _normalize(s: str) -> str:

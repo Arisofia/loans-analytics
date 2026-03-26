@@ -155,13 +155,13 @@ zero-cost-schema:
 etl-local:
 	@echo "Running local ETL pipeline..."
 	"$(PYTHON)" scripts/data/run_data_pipeline.py \
-		--input $(or $(INPUT), data/samples/loans_sample_data_20260202.csv) \
+		--input $(or $(INPUT), gsheets://DESEMBOLSOS) \
 		--mode  $(or $(MODE), full) \
 		--verbose
 
 snapshot-build:
 	@echo "Building monthly snapshot..."
-	INPUT=$(or $(INPUT), data/samples/loans_sample_data_20260202.csv) \
+	INPUT=$(or $(INPUT), gsheets://DESEMBOLSOS) \
 	MONTH=$(or $(MONTH),) \
 	"$(PYTHON)" scripts/data/build_snapshot.py
 
