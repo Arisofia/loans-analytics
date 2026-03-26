@@ -76,8 +76,7 @@ def api_request(url: str, *, method: str='GET', data: dict | None=None, token: s
         with urllib.request.urlopen(request) as response:  # nosec B310
             content = response.read()
     except urllib.error.HTTPError as error:
-        body = error.read().decode('utf-8', errors='ignore')
-        raise RuntimeError(f'HTTP {error.code} - {body}') from error
+        raise RuntimeError(f'HTTP {error.code}') from error
     return json.loads(content) if content else {}
 
 def ensure_pynacl() -> None:
