@@ -100,11 +100,11 @@ class TestPredictEndpoint:
         try:
             from fastapi.testclient import TestClient
             from backend.python.apps.analytics.api.main import app
-            if app is None:
-                pytest.skip('FastAPI app not initialized')
-            client = TestClient(app)
         except ImportError:
             pytest.skip('FastAPI not available')
+        if app is None:
+            pytest.skip('FastAPI app not initialized')
+        client = TestClient(app)
         from backend.python.apps.analytics.api import main as main_mod
         if hasattr(main_mod, '_risk_model_cache'):
             main_mod._risk_model_cache.clear()
@@ -116,11 +116,11 @@ class TestPredictEndpoint:
         try:
             from fastapi.testclient import TestClient
             from backend.python.apps.analytics.api.main import app
-            if app is None:
-                pytest.skip('FastAPI app not initialized')
-            client = TestClient(app)
         except ImportError:
             pytest.skip('FastAPI not available')
+        if app is None:
+            pytest.skip('FastAPI app not initialized')
+        client = TestClient(app)
         from backend.python.apps.analytics.api import main as main_mod
         mock_model = MagicMock()
         mock_model.predict_proba.return_value = 0.35

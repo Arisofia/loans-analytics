@@ -86,18 +86,18 @@ class TestUnitEconomicsEndpoint:
         client = TestClient(app)
         payload = {'loans': _mixed_portfolio(), 'cac': 100.0, 'monthly_arpu': 0.0}
         body = client.post('/analytics/unit-economics', json=payload).json()
-        assert body['payback']['payback_months'] is None
+        assert body['payback']['payback_months'] is None  # nosec B101
 
     def test_cure_rate_structure(self):
         client = TestClient(app)
         payload = {'loans': _mixed_portfolio()}
         body = client.post('/analytics/unit-economics', json=payload).json()
         cure = body['cure_rate']
-        assert 'cure_rate_pct' in cure
-        assert 'delinquent_count' in cure
-        assert 'curing_count' in cure
-        assert 'note' in cure
-        assert 0.0 <= cure['cure_rate_pct'] <= 100.0
+        assert 'cure_rate_pct' in cure  # nosec B101
+        assert 'delinquent_count' in cure  # nosec B101
+        assert 'curing_count' in cure  # nosec B101
+        assert 'note' in cure  # nosec B101
+        assert 0.0 <= cure['cure_rate_pct'] <= 100.0  # nosec B101
 
     def test_dpd_migration_structure(self):
         client = TestClient(app)

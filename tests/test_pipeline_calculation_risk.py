@@ -4,8 +4,9 @@ import pandas as pd
 import pytest
 import numpy as np
 import backend.src.pipeline.calculation as calc_module
-from backend.src.pipeline.calculation import CalculationPhase
 from backend.python.kpis.engine import KPIEngineV2
+
+CalculationPhase = calc_module.CalculationPhase
 
 def test_ltv_sintetico_basic_calculation():
     df = pd.DataFrame({'capital_desembolsado': [100.0, 200.0], 'valor_nominal_factura': [200.0, 500.0], 'tasa_dilucion': [0.1, 0.2]})

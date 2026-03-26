@@ -3,8 +3,9 @@ from datetime import datetime
 from pathlib import Path
 import pytest
 from backend.python.apps.analytics.api.models import LoanRecord
-from backend.python.apps.analytics.api.service import KPIService
 import backend.python.apps.analytics.api.service as service_module
+
+KPIService = service_module.KPIService
 
 def test_calculate_kpis_for_portfolio_includes_collection_rate():
     service = KPIService(actor='test_user')

@@ -202,8 +202,6 @@ class TestValidateForPipeline:
 import importlib.util as _ilu
 import os as _os
 from unittest.mock import patch as _patch
-import plotly.express
-import plotly.graph_objects
 for _attr in ['session_state', 'cache_data', 'cache_resource', 'spinner', 'tabs', 'plotly_chart', 'selectbox', 'checkbox', 'radio', 'text_input', 'number_input', 'caption', 'write', 'sidebar']:
     setattr(_st_stub, _attr, lambda *a, **k: None)
 setattr(_st_stub, 'session_state', {})
