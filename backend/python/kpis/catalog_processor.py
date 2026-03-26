@@ -595,6 +595,237 @@ class KPICatalogProcessor:
             cost_of_debt_pct=cost_of_debt_pct,
         )
 
+    def get_replines(self) -> dict:
+        """Repline rate: proportion of loans where the same client has ≥2 loans on the same credit line.
+
+        Uses ``categorialineacredito`` (or ``credit_line``) to group. Compares the repline rate
+        against ``max_replines_deviation`` from ``FinancialGuardrails`` (default 2%).
+        """
+        from backend.python.config import Settings
+
+        loan_cols = self._loan_columns()
+        cust_col = loan_cols.get('customer_id') or self._find_col(['customer_id', 'CodCliente', 'borrower_id'])
+        line_col = self._find_col(['categorialineacredito', 'credit_line', 'credit_line_type', 'linea_credito'])
+
+        if cust_col is None or line_col is None or self.loans_df.empty:
+            return {
+                'status': 'insufficient_data',
+                'repline_count': 0,
+                'total_loans': 0,
+                'repline_rate_pct': 0.0,
+                'deviation_from_target': None,
+                'breach': False,
+                'note': 'customer_id or credit_line column not found',
+            }
+
+        settings = Settings()
+        max_deviation: float = settings.financial.max_replines_deviation
+
+        df = self.loans_df[[cust_col, line_col]].copy()
+        df[cust_col] = df[cust_col].astype(str).str.strip()
+        df[line_col] = df[line_col].astype(str).str.strip()
+        df = df.dropna(subset=[cust_col, line_col])
+        df = df[(df[cust_col] != '') & (df[line_col] != '')]
+
+        total_loans = len(df)
+        if total_loans == 0:
+            return {
+                'status': 'no_data',
+                'repline_count': 0,
+                'total_loans': 0,
+                'repline_rate_pct': 0.0,
+                'deviation_from_target': None,
+                'breach': False,
+            }
+
+        # A repline exists when a (customer, credit_line) pair has more than 1 loan
+        pair_counts = df.groupby([cust_col, line_col]).size()
+        repline_pairs = (pair_counts > 1).sum()
+        # Count the loans that are part of repline pairs
+        repline_loans = int(pair_counts[pair_counts > 1].sum())
+        repline_rate = repline_loans / total_loans
+        deviation = repline_rate - max_deviation
+        breach = deviation > 0
+
+        return {
+            'status': 'ok',
+            'repline_count': int(repline_loans),
+            'repline_pair_count': int(repline_pairs),
+            'total_loans': total_loans,
+            'repline_rate_pct': round(repline_rate * 100, 2),
+            'max_deviation_pct': round(max_deviation * 100, 2),
+            'deviation_from_target': round(deviation * 100, 2),
+            'breach': bool(breach),
+        }
+
+    def get_ticket_segments(self) -> dict:
+        """Segment disbursement amounts into bands A-H via ``pd.cut()``.
+
+        Bands (USD):
+          A: 0–1 000, B: 1 000–2 000, C: 2 000–5 000, D: 5 000–10 000,
+          E: 10 000–20 000, F: 20 000–50 000, G: 50 000–100 000, H: 100 000+
+        """
+        loan_cols = self._loan_columns()
+        amount_col = loan_cols.get('principal') or self._find_col([
+            'disbursement_amount', 'principal_amount', 'tpv', 'MontoDesembolsado',
+        ])
+        bal_col = loan_cols.get('outstanding')
+
+        if amount_col is None or self.loans_df.empty:
+            return {
+                'status': 'insufficient_data',
+                'bands': [],
+                'note': 'disbursement_amount column not found',
+            }
+
+        bins = [0, 1_000, 2_000, 5_000, 10_000, 20_000, 50_000, 100_000, float('inf')]
+        labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+        amounts = pd.to_numeric(self.loans_df[amount_col], errors='coerce').fillna(0)
+        segments = pd.cut(amounts, bins=bins, labels=labels, right=True, include_lowest=True)
+
+        counts = segments.value_counts().sort_index()
+        total_loans = len(amounts)
+
+        if bal_col is not None:
+            balances = pd.to_numeric(self.loans_df[bal_col], errors='coerce').fillna(0)
+            aum_by_band = balances.groupby(segments, observed=False).sum()
+        else:
+            aum_by_band = amounts.groupby(segments, observed=False).sum()
+
+        total_aum = float(aum_by_band.sum()) or 1.0
+
+        label_names = [
+            '0–1k', '1k–2k', '2k–5k', '5k–10k',
+            '10k–20k', '20k–50k', '50k–100k', '100k+',
+        ]
+        bands = []
+        for label, name in zip(labels, label_names):
+            count = int(counts.get(label, 0))
+            aum = float(aum_by_band.get(label, 0.0))
+            bands.append({
+                'band': label,
+                'range_usd': name,
+                'loan_count': count,
+                'loan_count_pct': round(count / total_loans * 100, 1) if total_loans else 0.0,
+                'aum_usd': round(aum, 2),
+                'aum_pct': round(aum / total_aum * 100, 1),
+            })
+
+        return {
+            'status': 'ok',
+            'total_loans': total_loans,
+            'total_aum_usd': round(total_aum, 2),
+            'bands': bands,
+        }
+
+    def check_guardrails(self) -> list[dict]:
+        """Compare live KPI values against ``FinancialGuardrails`` thresholds.
+
+        Returns a list of ``GuardrailBreach`` dicts — one per KPI checked.
+        Each dict has keys: ``kpi``, ``current``, ``limit``, ``breach``, ``alert_level``.
+        """
+        from backend.python.config import Settings
+
+        settings = Settings()
+        g = settings.financial
+        results: list[dict] = []
+
+        def _check(
+            kpi: str,
+            current: float | None,
+            limit: float,
+            direction: str,  # 'above_bad' | 'below_bad'
+            alert_level: str = 'HIGH',
+            unit: str = 'pct',
+        ) -> None:
+            if current is None:
+                results.append({
+                    'kpi': kpi,
+                    'current': None,
+                    'limit': limit,
+                    'breach': False,
+                    'alert_level': 'UNKNOWN',
+                    'unit': unit,
+                })
+                return
+            if direction == 'above_bad':
+                breach = current > limit
+            else:
+                breach = current < limit
+            results.append({
+                'kpi': kpi,
+                'current': round(current, 4),
+                'limit': limit,
+                'breach': breach,
+                'alert_level': alert_level if breach else 'OK',
+                'unit': unit,
+            })
+
+        # 1. PAR-90 / max_default_rate
+        dpd_buckets = self.get_dpd_buckets()
+        par90 = dpd_buckets.get('dpd_90_plus_pct') or dpd_buckets.get('dpd_90_plus')
+        if par90 is not None:
+            par90 /= 100.0  # convert to ratio
+        _check('par_90_rate', par90, g.max_default_rate, 'above_bad', 'HIGH', 'ratio')
+
+        # 2. Top-1 obligor concentration
+        concentration = self.get_concentration()
+        top1_pct = concentration.get('top_1_pct')
+        top1_ratio = top1_pct / 100.0 if top1_pct is not None else None
+        _check('top_1_obligor_concentration', top1_ratio, g.max_single_obligor_concentration, 'above_bad', 'HIGH', 'ratio')
+
+        # 3. Top-10 obligor concentration
+        top10_pct = concentration.get('top_10_pct')
+        top10_ratio = top10_pct / 100.0 if top10_pct is not None else None
+        _check('top_10_obligor_concentration', top10_ratio, g.max_top_10_concentration, 'above_bad', 'MEDIUM', 'ratio')
+
+        # 4. Portfolio rotation (min target)
+        rotation = self.get_portfolio_rotation()
+        rotation_x = rotation.get('rotation_x')
+        _check('portfolio_rotation', rotation_x, g.min_rotation, 'below_bad', 'MEDIUM', 'x')
+
+        # 5. Collection efficiency 6M
+        lending = self.get_lending_kpis()
+        ce_6m = lending.get('collection_efficiency_6m', {})
+        ce_6m_val = ce_6m.get('ce_6m_pct')
+        ce_6m_ratio = ce_6m_val / 100.0 if ce_6m_val is not None else None
+        _check('collection_efficiency_6m', ce_6m_ratio, g.min_ce_6m, 'below_bad', 'HIGH', 'ratio')
+
+        # 6. Weighted APR vs target band
+        eir = lending.get('financing_rate_eir', {})
+        weighted_apr = eir.get('weighted_apr_pct')
+        apr_ratio = weighted_apr / 100.0 if weighted_apr is not None else None
+        if apr_ratio is not None:
+            results.append({
+                'kpi': 'weighted_apr',
+                'current': round(apr_ratio, 4),
+                'limit_min': g.target_apr_min,
+                'limit_max': g.target_apr_max,
+                'breach': not (g.target_apr_min <= apr_ratio <= g.target_apr_max),
+                'alert_level': 'MEDIUM' if not (g.target_apr_min <= apr_ratio <= g.target_apr_max) else 'OK',
+                'unit': 'ratio',
+            })
+        else:
+            results.append({
+                'kpi': 'weighted_apr', 'current': None,
+                'limit_min': g.target_apr_min, 'limit_max': g.target_apr_max,
+                'breach': False, 'alert_level': 'UNKNOWN', 'unit': 'ratio',
+            })
+
+        # 7. DSCR (min 1.2)
+        dscr_kpi = lending.get('cost_of_debt_dscr', {})
+        dscr_val = dscr_kpi.get('dscr')
+        _check('dscr', dscr_val, g.min_dscr, 'below_bad', 'HIGH', 'ratio')
+
+        # 8. Replines
+        replines = self.get_replines()
+        repline_rate = replines.get('repline_rate_pct')
+        repline_ratio = repline_rate / 100.0 if repline_rate is not None else None
+        _check('repline_rate', repline_ratio, g.max_replines_deviation, 'above_bad', 'MEDIUM', 'ratio')
+
+        return results
+
     def get_quarterly_scorecard(self) -> pd.DataFrame:
         if self.payments_df.empty:
             return pd.DataFrame()

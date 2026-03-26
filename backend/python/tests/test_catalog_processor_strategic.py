@@ -334,5 +334,165 @@ class TestCostOfDebtDSCR(unittest.TestCase):
         self.assertIn('15.0%', r['note'])
 
 
+class TestGetReplines(unittest.TestCase):
+
+    def _make_processor(self, loans_df: pd.DataFrame) -> KPICatalogProcessor:
+        return KPICatalogProcessor(
+            loans_df=loans_df,
+            payments_df=pd.DataFrame(),
+            customers_df=pd.DataFrame(),
+        )
+
+    def test_basic_repline_detected(self):
+        loans = pd.DataFrame({
+            'loan_id': ['L1', 'L2', 'L3', 'L4'],
+            'customer_id': ['C1', 'C1', 'C2', 'C3'],
+            'categorialineacredito': ['SME', 'SME', 'SME', 'Retail'],
+        })
+        r = self._make_processor(loans).get_replines()
+        self.assertEqual(r['status'], 'ok')
+        # C1 has 2 loans on SME → 2 repline loans, 4 total
+        self.assertEqual(r['repline_count'], 2)
+        self.assertEqual(r['total_loans'], 4)
+        self.assertAlmostEqual(r['repline_rate_pct'], 50.0)
+
+    def test_no_replines_when_all_unique(self):
+        loans = pd.DataFrame({
+            'loan_id': ['L1', 'L2', 'L3'],
+            'customer_id': ['C1', 'C2', 'C3'],
+            'categorialineacredito': ['SME', 'SME', 'Retail'],
+        })
+        r = self._make_processor(loans).get_replines()
+        self.assertEqual(r['status'], 'ok')
+        self.assertEqual(r['repline_count'], 0)
+        self.assertAlmostEqual(r['repline_rate_pct'], 0.0)
+        self.assertFalse(r['breach'])
+
+    def test_breach_when_rate_above_2pct(self):
+        # 3 of 4 loans are replines → 75% >> 2% limit
+        loans = pd.DataFrame({
+            'loan_id': ['L1', 'L2', 'L3', 'L4'],
+            'customer_id': ['C1', 'C1', 'C1', 'C2'],
+            'categorialineacredito': ['SME', 'SME', 'SME', 'Retail'],
+        })
+        r = self._make_processor(loans).get_replines()
+        self.assertTrue(r['breach'])
+
+    def test_missing_credit_line_col_returns_insufficient_data(self):
+        loans = pd.DataFrame({'loan_id': ['L1'], 'customer_id': ['C1']})
+        r = self._make_processor(loans).get_replines()
+        self.assertEqual(r['status'], 'insufficient_data')
+
+    def test_empty_loans_df_returns_insufficient_data(self):
+        r = self._make_processor(pd.DataFrame()).get_replines()
+        self.assertEqual(r['status'], 'insufficient_data')
+
+
+class TestGetTicketSegments(unittest.TestCase):
+
+    def _make_processor(self, loans_df: pd.DataFrame) -> KPICatalogProcessor:
+        return KPICatalogProcessor(
+            loans_df=loans_df,
+            payments_df=pd.DataFrame(),
+            customers_df=pd.DataFrame(),
+        )
+
+    def test_bands_abc_present_and_counts_correct(self):
+        loans = pd.DataFrame({
+            'loan_id': ['L1', 'L2', 'L3'],
+            'principal_amount': [500.0, 1_500.0, 3_000.0],
+            'outstanding_loan_value': [500.0, 1_500.0, 3_000.0],
+        })
+        r = self._make_processor(loans).get_ticket_segments()
+        self.assertEqual(r['status'], 'ok')
+        self.assertEqual(r['total_loans'], 3)
+        band_map = {b['band']: b for b in r['bands']}
+        self.assertEqual(band_map['A']['loan_count'], 1)
+        self.assertEqual(band_map['B']['loan_count'], 1)
+        self.assertEqual(band_map['C']['loan_count'], 1)
+
+    def test_all_bands_present_in_output(self):
+        loans = pd.DataFrame({'principal_amount': [500, 1500, 3000, 7000, 15000, 30000, 75000, 150000]})
+        r = self._make_processor(loans).get_ticket_segments()
+        self.assertEqual(len(r['bands']), 8)
+        labels = [b['band'] for b in r['bands']]
+        self.assertEqual(labels, list('ABCDEFGH'))
+
+    def test_pct_sums_to_100(self):
+        loans = pd.DataFrame({'principal_amount': [1000.0, 2000.0, 5000.0, 10000.0]})
+        r = self._make_processor(loans).get_ticket_segments()
+        total_pct = sum(b['aum_pct'] for b in r['bands'])
+        self.assertAlmostEqual(total_pct, 100.0, delta=0.5)
+
+    def test_missing_amount_col_returns_insufficient_data(self):
+        loans = pd.DataFrame({'loan_id': ['L1'], 'outstanding_loan_value': [1000.0]})
+        r = self._make_processor(loans).get_ticket_segments()
+        self.assertEqual(r['status'], 'insufficient_data')
+
+    def test_empty_df_returns_insufficient_data(self):
+        r = self._make_processor(pd.DataFrame()).get_ticket_segments()
+        self.assertEqual(r['status'], 'insufficient_data')
+
+
+class TestCheckGuardrails(unittest.TestCase):
+
+    def setUp(self):
+        self.loans_df = pd.DataFrame({
+            'loan_id': ['L1', 'L2', 'L3', 'L4', 'L5'],
+            'customer_id': ['C1', 'C2', 'C3', 'C4', 'C5'],
+            'origination_date': ['2025-01-10', '2025-02-12', '2025-03-15', '2025-04-11', '2025-05-09'],
+            'outstanding_loan_value': [10000, 15000, 12000, 8000, 20000],
+            'principal_amount': [10000, 15000, 12000, 8000, 20000],
+            'interest_rate_apr': [0.36, 0.36, 0.36, 0.36, 0.36],
+            'days_past_due': [0, 0, 0, 0, 5],
+            'Emisor': ['D1', 'D2', 'D3', 'D4', 'D5'],
+            'categorialineacredito': ['SME', 'SME', 'Retail', 'Retail', 'Auto'],
+        })
+        self.payments_df = pd.DataFrame({
+            'payment_date': ['2025-01-31', '2025-02-28', '2025-03-31', '2025-04-30', '2025-05-31'],
+            'customer_id': ['C1', 'C2', 'C3', 'C4', 'C5'],
+            'payment_amount': [1500, 2000, 1800, 1200, 2500],
+            'true_interest_payment': [900, 1300, 1100, 750, 1600],
+            'true_fee_payment': [600, 700, 700, 450, 900],
+        })
+
+    def _make_processor(self) -> KPICatalogProcessor:
+        return KPICatalogProcessor(self.loans_df, self.payments_df, pd.DataFrame())
+
+    def test_returns_list_of_dicts(self):
+        results = self._make_processor().check_guardrails()
+        self.assertIsInstance(results, list)
+        self.assertGreater(len(results), 0)
+        for item in results:
+            self.assertIn('kpi', item)
+            self.assertIn('breach', item)
+            self.assertIn('alert_level', item)
+
+    def test_known_kpis_are_present(self):
+        results = self._make_processor().check_guardrails()
+        kpi_names = {r['kpi'] for r in results}
+        self.assertIn('par_90_rate', kpi_names)
+        self.assertIn('top_1_obligor_concentration', kpi_names)
+        self.assertIn('portfolio_rotation', kpi_names)
+        self.assertIn('dscr', kpi_names)
+        self.assertIn('repline_rate', kpi_names)
+
+    def test_no_breach_when_portfolio_clean(self):
+        # PAR-90: all DPD < 90
+        results = self._make_processor().check_guardrails()
+        par90 = next(r for r in results if r['kpi'] == 'par_90_rate')
+        self.assertFalse(par90['breach'])
+
+    def test_breach_flag_set_for_over_limit(self):
+        # Force top-1 concentration above 4% by making one obligor very large
+        loans = self.loans_df.copy()
+        loans.loc[0, 'outstanding_loan_value'] = 10_000_000  # dominates
+        proc = KPICatalogProcessor(loans, self.payments_df, pd.DataFrame())
+        results = proc.check_guardrails()
+        top1 = next(r for r in results if r['kpi'] == 'top_1_obligor_concentration')
+        self.assertTrue(top1['breach'])
+        self.assertEqual(top1['alert_level'], 'HIGH')
+
+
 if __name__ == '__main__':
     unittest.main()

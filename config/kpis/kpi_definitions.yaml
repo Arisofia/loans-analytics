@@ -370,3 +370,138 @@ segment_kpis:
     implementability_status: "requires_new_data"
     priority: "high"
     notes: "Requires consecutive monthly snapshots; will be enabled once multi-period pipeline runs are stored"
+
+# NSM (North Star Metric) KPIs — recurrent client volume
+nsm_kpis:
+  recurrent_tpv_12m:
+    id: "recurrent_tpv_12m"
+    name: "Recurrent TPV (trailing 12 months)"
+    category: "growth"
+    definition: "Total disbursement volume originated by clients active in ≥2 of the last 12 months"
+    formula: "SUM(disbursement_amount WHERE client active in >= 2 of last 12 calendar months)"
+    inputs: ["disbursement_amount", "customer_id", "disbursement_date"]
+    unit: "USD"
+    implementability_status: "implement_now"
+    priority: "critical"
+    python_method: "get_customer_types().recurrent_tpv_12m_usd"
+    thresholds:
+      warning: 500000
+      target: 1000000
+
+  recurrent_rate_12m:
+    id: "recurrent_rate_12m"
+    name: "Recurrent Client Rate (12 months)"
+    category: "growth"
+    definition: "Percentage of ever-known clients who were active in ≥2 of the last 12 months"
+    formula: "COUNT(recurrent_clients_12m) / COUNT(ever_known_clients) * 100"
+    inputs: ["customer_id", "disbursement_date"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+    python_method: "get_customer_types().recurrent_rate_12m_pct"
+    thresholds:
+      warning: 40
+      target: 60
+
+# Concentration KPIs
+concentration_kpis:
+  top_1_obligor_concentration:
+    id: "top_1_obligor_concentration"
+    name: "Top-1 Obligor Concentration"
+    category: "risk"
+    definition: "Percentage of total outstanding balance held by the single largest obligor"
+    formula: "MAX(SUM(outstanding_balance) GROUP BY obligor) / SUM(outstanding_balance) * 100"
+    inputs: ["outstanding_balance", "debtor_id"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "critical"
+    python_method: "get_concentration().top_1_pct"
+    thresholds:
+      warning: 3
+      critical: 4
+
+  top_10_obligor_concentration:
+    id: "top_10_obligor_concentration"
+    name: "Top-10 Obligor Concentration"
+    category: "risk"
+    definition: "Percentage of total outstanding balance held by the 10 largest obligors"
+    formula: "SUM(top_10_outstanding_balance) / SUM(outstanding_balance) * 100"
+    inputs: ["outstanding_balance", "debtor_id"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+    python_method: "get_concentration().top_10_pct"
+    thresholds:
+      warning: 25
+      critical: 30
+
+  hhi_index:
+    id: "hhi_index"
+    name: "Herfindahl-Hirschman Index"
+    category: "risk"
+    definition: "Sum of squared market-share weights × 10 000; measures portfolio concentration"
+    formula: "SUM((outstanding_balance_i / total_outstanding) ^ 2) * 10000"
+    inputs: ["outstanding_balance", "debtor_id"]
+    unit: "index_points"
+    implementability_status: "implement_now"
+    priority: "medium"
+    python_method: "get_concentration().hhi"
+    thresholds:
+      warning: 1500
+      critical: 2500
+
+# Replines KPIs
+replines_kpis:
+  repline_rate:
+    id: "repline_rate"
+    name: "Repline Rate"
+    category: "underwriting"
+    definition: "Proportion of loans where the same client holds ≥2 loans on the same credit line category"
+    formula: "COUNT(loans IN repline_pairs) / COUNT(total_loans) * 100"
+    inputs: ["loan_id", "customer_id", "categorialineacredito"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+    python_method: "get_replines().repline_rate_pct"
+    thresholds:
+      warning: 1.5
+      critical: 2
+
+# Ticket Segmentation KPIs (disbursement-amount bands A–H)
+customer_segmentation_kpis:
+  ticket_band_distribution:
+    id: "ticket_band_distribution"
+    name: "Ticket Band Distribution (A–H)"
+    category: "portfolio"
+    definition: "Distribution of loans and AUM across eight disbursement-amount bands"
+    formula: "pd.cut(disbursement_amount, bins=[0,1k,2k,5k,10k,20k,50k,100k,inf], labels=A-H)"
+    inputs: ["disbursement_amount", "outstanding_balance"]
+    unit: "count + USD"
+    implementability_status: "implement_now"
+    priority: "high"
+    python_method: "get_ticket_segments().bands"
+    bands:
+      A: "0–1 000 USD"
+      B: "1 000–2 000 USD"
+      C: "2 000–5 000 USD"
+      D: "5 000–10 000 USD"
+      E: "10 000–20 000 USD"
+      F: "20 000–50 000 USD"
+      G: "50 000–100 000 USD"
+      H: "100 000+ USD"
+
+# Line Utilization KPIs
+line_utilization_kpis:
+  avg_credit_line_utilization_rate:
+    id: "avg_credit_line_utilization_rate"
+    name: "Average Credit Line Utilization Rate"
+    category: "risk"
+    definition: "Average percentage of the approved credit limit that is currently drawn down"
+    formula: "AVG(outstanding_balance / credit_limit) * 100"
+    inputs: ["outstanding_balance", "credit_limit", "customer_id"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "medium"
+    thresholds:
+      warning: 75
+      critical: 90
