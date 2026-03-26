@@ -32,11 +32,8 @@ class TestPathTraversalPrevention:
         test_file.write_text('test data')
         legitimate_paths = ['report.csv', 'data/report.csv', 'reports/2026/january.csv', 'analytics_data-2026.json']
         for path in legitimate_paths:
-            try:
-                resolved = _sanitize_and_resolve(path, tmp_path)
-                assert resolved.is_relative_to(tmp_path)
-            except ValueError:
-                pass
+            resolved = _sanitize_and_resolve(path, tmp_path)
+            assert resolved.is_relative_to(tmp_path)
 
     def test_resolved_path_within_allowed_dir(self, tmp_path):
         allowed_file = tmp_path / 'allowed.txt'

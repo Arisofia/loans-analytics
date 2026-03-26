@@ -1,5 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
@@ -97,14 +98,15 @@ class TestPredictionModels:
 class TestPredictEndpoint:
 
     def test_predict_default_no_model(self):
+        app: Any | None = None
         try:
             from fastapi.testclient import TestClient
             from backend.python.apps.analytics.api.main import app
-            if app is None:
-                pytest.skip('FastAPI app not initialized')
-            client = TestClient(app)
         except ImportError:
             pytest.skip('FastAPI not available')
+        if app is None:
+            pytest.skip('FastAPI app not initialized')
+        client = TestClient(app)
         from backend.python.apps.analytics.api import main as main_mod
         if hasattr(main_mod, '_risk_model_cache'):
             main_mod._risk_model_cache.clear()
@@ -113,14 +115,15 @@ class TestPredictEndpoint:
         assert resp.status_code == 503
 
     def test_predict_default_with_model(self):
+        app: Any | None = None
         try:
             from fastapi.testclient import TestClient
             from backend.python.apps.analytics.api.main import app
-            if app is None:
-                pytest.skip('FastAPI app not initialized')
-            client = TestClient(app)
         except ImportError:
             pytest.skip('FastAPI not available')
+        if app is None:
+            pytest.skip('FastAPI app not initialized')
+        client = TestClient(app)
         from backend.python.apps.analytics.api import main as main_mod
         mock_model = MagicMock()
         mock_model.predict_proba.return_value = 0.35

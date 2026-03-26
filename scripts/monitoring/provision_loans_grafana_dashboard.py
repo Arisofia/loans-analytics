@@ -276,7 +276,7 @@ def main() -> int:
     dashboard_uid = result.get("uid") or (uid or "loans-kpi-overview")
     dashboard_url = f"{base_url}/d/{dashboard_uid}"
 
-    print(f"AUTH_SOURCE={auth_source}")
+    print(f"AUTH_SOURCE={'basic_auth' if auth_source == 'basic_auth' else 'token'}")
     print(f"DATASOURCE_USED={ds.get('name')}|{ds_uid}|{ds_type}")
     print(f"DASHBOARD_UID={dashboard_uid}")
     print(f"DASHBOARD_URL={dashboard_url}")
