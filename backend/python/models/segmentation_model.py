@@ -11,7 +11,7 @@ from sklearn.preprocessing import RobustScaler
 warnings.filterwarnings('ignore', category=UserWarning)
 logger = logging.getLogger(__name__)
 
-# Business segment labels aligned with Ábaco client behavior profiles
+# Business segment labels aligned with Loans client behavior profiles
 SEGMENT_HIGH_VELOCITY = 'High Velocity / Low Risk'
 SEGMENT_SEASONAL = 'Seasonal Transactors'
 SEGMENT_STRUGGLING = 'Struggling Survivors'
@@ -31,7 +31,7 @@ _BEHAVIORAL_FEATURES = [
 
 class SegmentationModel:
     """
-    Unsupervised K-Means (or DBSCAN) behavioral segmentation model for Ábaco
+    Unsupervised K-Means (or DBSCAN) behavioral segmentation model for Loans
     loan portfolios.
 
     Clusters clients into three business-meaningful profiles drawn from the
@@ -381,7 +381,7 @@ class SegmentationModel:
         Parameters
         ----------
         loan_df:
-            Loan-level DataFrame (Google Control-de-Mora or Ábaco loan export).
+            Loan-level DataFrame (Google Control-de-Mora or Loans loan export).
         payment_df:
             Payment-level DataFrame (one row per payment event).
 

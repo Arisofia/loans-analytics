@@ -26,9 +26,9 @@ groups:
             Current value: {{ $value }}
             Threshold: {{ $labels.critical_threshold }}
             Status: CRITICAL
-          dashboard: "https://grafana.abaco.internal/d/kpi-dashboard?var-kpi={{ $labels.kpi_name }}"
+          dashboard: "https://grafana.analytics.internal/d/kpi-dashboard?var-kpi={{ $labels.kpi_name }}"
           action: |
-            1. Check dashboard: https://abaco-dashboard.internal
+            1. Check dashboard: https://analytics-dashboard.internal
             2. Review KPI definition: config/kpis/kpi_definitions.yaml#{{ $labels.kpi_name }}
             3. Open incident if required
             4. Contact {{ $labels.owner_email }}
@@ -49,7 +49,7 @@ groups:
             Current value: {{ $value }}
             Threshold: {{ $labels.warning_threshold }}
             Status: WARNING (monitor closely)
-          dashboard: "https://grafana.abaco.internal/d/kpi-dashboard?var-kpi={{ $labels.kpi_name }}"
+          dashboard: "https://grafana.analytics.internal/d/kpi-dashboard?var-kpi={{ $labels.kpi_name }}"
           action: |
             1. Monitor KPI trend: check if continuing to worsen
             2. Review recent operational changes
@@ -71,7 +71,7 @@ groups:
             Multiple KPIs ({{ $value }}) are in warning state simultaneously.
             This may indicate systematic operational issues.
             Review all warned KPIs in the dashboard.
-          dashboard: "https://grafana.abaco.internal/d/kpi-dashboard?var-status=warning"
+          dashboard: "https://grafana.analytics.internal/d/kpi-dashboard?var-status=warning"
 
       # Portfolio coverage alert (multiple critical breaches)
       - alert: CriticalPortfolioMetricsBreached
@@ -92,7 +92,7 @@ groups:
             2. Review portfolio composition: assets, concentrations, defaults
             3. Initiate emergency risk review meeting
             4. Prepare investor communication
-          runbook: "https://github.com/Arisofia/abaco-loans-analytics/wiki/Critical-Portfolio-Breach"
+          runbook: "https://github.com/Arisofia/loans-analytics/wiki/Critical-Portfolio-Breach"
 
       # Asset quality deterioration
       - alert: AssetQualityDeteriorated
@@ -113,7 +113,7 @@ groups:
             2. Assess default trajectory and recovery prospects
             3. Evaluate collection strategy effectiveness
             4. Consider proactive strategy adjustments
-          dashboard: "https://grafana.abaco.internal/d/asset-quality"
+          dashboard: "https://grafana.analytics.internal/d/asset-quality"
 
       # Collections performance alert
       - alert: CollectionsPerformanceBelowTarget

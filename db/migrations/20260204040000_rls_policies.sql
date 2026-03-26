@@ -103,7 +103,7 @@ CREATE POLICY "Authenticated users read financial statements" ON public.financia
   FOR SELECT
   USING (
     auth.jwt()->>'role' IN ('authenticated', 'service_role')
-    AND auth.jwt()->>'email' LIKE '%@abaco.%'  -- Internal domain only
+    AND auth.jwt()->>'email' LIKE '%@analytics.local%'  -- Internal domain only
   );
 
 -- Only service role can manage financial statements

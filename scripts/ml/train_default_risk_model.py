@@ -11,7 +11,7 @@ from backend.python.models.default_risk_model import DefaultRiskModel
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Train default-risk model (XGBoost)')
-    parser.add_argument('--input', type=Path, default=Path('data/samples/abaco_sample_data_20260202.csv'), help='CSV with training rows and status/current_status column')
+    parser.add_argument('--input', type=Path, default=Path('data/samples/loans_sample_data_20260202.csv'), help='CSV with training rows and status/current_status column')
     parser.add_argument('--output-dir', type=Path, default=Path('models/risk'), help='Directory where model and metadata are written')
     parser.add_argument('--exclude-days-past-due', action='store_true', help='Exclude days_past_due feature for origination-only scoring')
     return parser.parse_args()

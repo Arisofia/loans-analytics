@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document establishes the golden rules for how data is documented, stored, and referenced throughout the Abaco Technologies repository. It ensures that:
+This document establishes the golden rules for how data is documented, stored, and referenced throughout the Loans Technologies repository. It ensures that:
 
 - **Production workflows** always query live data sources
 - **Documentation files** describe processes, not static data

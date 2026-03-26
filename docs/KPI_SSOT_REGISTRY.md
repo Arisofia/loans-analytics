@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-This document establishes the KPI SSOT (Single Source of Truth) Registry—a unified, version-controlled, audit-logged system for defining, calculating, and governing KPIs across Abaco Loans Analytics.
+This document establishes the KPI SSOT (Single Source of Truth) Registry—a unified, version-controlled, audit-logged system for defining, calculating, and governing KPIs across Loans Loans Analytics.
 
 **Problem Solved**:
 - ❌ Multiple implementations of the same KPI across 14+ Python modules

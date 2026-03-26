@@ -1,11 +1,11 @@
-# Abaco Loans Analytics - Unified Pipeline Platform
+# Loans Analytics - Unified Pipeline Platform
 
 [![Pipeline](https://img.shields.io/badge/Pipeline-Operational-brightgreen)]()
 [![Structure](https://img.shields.io/badge/Structure-Validated-success)]()
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)]()
 [![License](https://img.shields.io/badge/License-Proprietary-red)]()
 
-This repository contains the Abaco financial analytics platform:
+This repository contains the financial analytics platform:
 
 - Unified 4-phase pipeline: Ingestion -> Transformation -> Calculation -> Output
 - Multi-agent analysis modules under `backend/python/multi_agent/`
@@ -35,8 +35,8 @@ Last reviewed: 2026-02-20
 1. Clone and enter repository
 
 ```bash
-git clone https://github.com/Arisofia/abaco-loans-analytics.git
-cd abaco-loans-analytics
+git clone https://github.com/Arisofia/loans-analytics.git
+cd loans-loans-analytics
 ```
 
 2. Create environment and install dependencies
@@ -63,17 +63,17 @@ make e2e
 ```bash
 # Full execution
 python3 scripts/data/run_data_pipeline.py \
-  --input data/samples/abaco_sample_data_20260202.csv \
+  --input data/samples/loans_sample_data_20260202.csv \
   --mode full
 
 # Ingestion-only check
 python3 scripts/data/run_data_pipeline.py \
-  --input data/samples/abaco_sample_data_20260202.csv \
+  --input data/samples/loans_sample_data_20260202.csv \
   --mode dry-run
 
 # Stop after transformation
 python3 scripts/data/run_data_pipeline.py \
-  --input data/samples/abaco_sample_data_20260202.csv \
+  --input data/samples/loans_sample_data_20260202.csv \
   --mode validate
 ```
 
@@ -201,5 +201,5 @@ Start here:
 
 ## License
 
-Proprietary - Abaco Financial Services.
+Proprietary - Loans Financial Services.
 

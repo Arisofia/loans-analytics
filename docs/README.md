@@ -1,6 +1,6 @@
 # Documentation Index
 
-This index contains only active documentation paths.
+This index contains only active documentation paths for the Loans Analytics platform.
 
 ## Start Here
 

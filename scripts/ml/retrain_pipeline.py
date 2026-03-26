@@ -60,7 +60,7 @@ def run_pipeline(loan_path: Path, payment_path: Optional[Path]=None, customer_pa
 
 def main():
     parser = argparse.ArgumentParser(description='Retrain PD model')
-    parser.add_argument('--loans', '--input', type=Path, default=Path('data/samples/abaco_sample_data_20260202.csv'))
+    parser.add_argument('--loans', '--input', type=Path, default=Path('data/samples/loans_sample_data_20260202.csv'))
     parser.add_argument('--payments', type=Path, default=None)
     parser.add_argument('--customers', type=Path, default=None)
     parser.add_argument('--output-dir', type=Path, default=Path('models/risk'))

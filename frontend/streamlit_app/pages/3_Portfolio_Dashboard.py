@@ -18,13 +18,13 @@ from frontend.streamlit_app.utils.security import sanitize_api_base
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 REPO_ROOT = Path(__file__).resolve().parents[2]
 logger = logging.getLogger(__name__)
-st.set_page_config(page_title='Abaco Loans Analytics', page_icon='📊', layout='wide', initial_sidebar_state='expanded')
+st.set_page_config(page_title='Loans Analytics', page_icon='📊', layout='wide', initial_sidebar_state='expanded')
 st.markdown('\n<style>\n    .main-header {\n        font-size: 2.5rem;\n        font-weight: bold;\n        color: #1f77b4;\n        text-align: center;\n        padding: 1rem 0;\n    }\n    .metric-card {\n        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n        padding: 1.5rem;\n        border-radius: 0.5rem;\n        color: white;\n        text-align: center;\n        margin: 0.5rem 0;\n    }\n    .metric-value {\n        font-size: 2rem;\n        font-weight: bold;\n    }\n    .metric-label {\n        font-size: 0.9rem;\n        opacity: 0.9;\n    }\n    .status-current {\n        background-color: #28a745;\n        color: white;\n        padding: 0.25rem 0.5rem;\n        border-radius: 0.25rem;\n    }\n    .status-delinquent {\n        background-color: #ffc107;\n        color: black;\n        padding: 0.25rem 0.5rem;\n        border-radius: 0.25rem;\n    }\n    .status-default {\n        background-color: #dc3545;\n        color: white;\n        padding: 0.25rem 0.5rem;\n        border-radius: 0.25rem;\n    }\n    .status-paid-off {\n        background-color: #17a2b8;\n        color: white;\n        padding: 0.25rem 0.5rem;\n        border-radius: 0.25rem;\n    }\n</style>\n', unsafe_allow_html=True)
 REQUIRED_COLUMNS = ['loan_id', 'borrower_name', 'borrower_email', 'borrower_id_number', 'principal_amount', 'interest_rate', 'term_months', 'origination_date', 'current_status', 'payment_history_json', 'risk_score', 'region']
 CORE_REQUIRED_COLUMNS = ['loan_id', 'principal_amount', 'interest_rate', 'term_months', 'origination_date', 'current_status']
 MONITORING_EVENTS_ENDPOINT = '/monitoring/events'
-ABACO_API_BASE = os.environ.get('ABACO_API_BASE', 'http://127.0.0.1:8000')
-ABACO_API_BASE_SAFE = sanitize_api_base(ABACO_API_BASE)
+API_BASE_URL = os.environ.get('API_BASE_URL', 'http://127.0.0.1:8000')
+API_BASE_SAFE = sanitize_api_base(API_BASE_URL)
 AGENT_OUTPUTS_DIR = REPO_ROOT / 'data' / 'agent_outputs'
 AGENT_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 KPI_EXPECTED_LOSS = 'Expected Loss'
@@ -43,9 +43,9 @@ _DEFAULTED_ALIASES = {'default', 'defaulted', 'charged_off', 'charge_off', 'writ
 STATUS_ALIAS_TO_CANONICAL = dict.fromkeys(_ACTIVE_ALIASES, 'active') | dict.fromkeys(_CLOSED_ALIASES, 'closed') | dict.fromkeys(_DELINQUENT_ALIASES, 'delinquent') | dict.fromkeys(_DEFAULTED_ALIASES, 'defaulted')
 
 def _build_monitoring_events_url() -> str | None:
-    if ABACO_API_BASE_SAFE is None:
+    if API_BASE_SAFE is None:
         return None
-    base = ABACO_API_BASE_SAFE.rstrip('/')
+    base = API_BASE_SAFE.rstrip('/')
     url = f'{base}{MONITORING_EVENTS_ENDPOINT}'
     parsed_url = urlparse(url)
     parsed_base = urlparse(base)
@@ -634,8 +634,8 @@ def _persist_and_notify_agent_results(results: dict[str, Any]) -> None:
         st.info(f'📝 Published {emitted_events} agent comments to monitoring feed (Grafana).')
     if emitted_kpi_events > 0:
         st.info('📊 Published KPI snapshot event to monitoring feed (Grafana).')
-    elif ABACO_API_BASE_SAFE is None:
-        st.caption('Agent comments were generated locally. Set ABACO_API_BASE to publish them to Monitoring/Grafana.')
+    elif API_BASE_SAFE is None:
+        st.caption('Agent comments were generated locally. Set API_BASE_URL to publish them to Monitoring/Grafana.')
     if saved_outputs > 0:
         st.caption(f'Saved {saved_outputs} agent output files to data/agent_outputs for Agent Insights.')
 
@@ -1106,10 +1106,10 @@ def _fetch_nsm_data(api_url: str) -> dict | None:
 
 def render_nsm_section() -> None:
     st.markdown('### 🌟 North Star Metric — Recurrent TPV')
-    if ABACO_API_BASE_SAFE is None:
-        st.warning('API base URL is not configured. Set ABACO_API_BASE to enable this section.')
+    if API_BASE_SAFE is None:
+        st.warning('API base URL is not configured. Set API_BASE_URL to enable this section.')
         return
-    nsm_url = f"{ABACO_API_BASE_SAFE.rstrip('/')}/analytics/nsm"
+    nsm_url = f"{API_BASE_SAFE.rstrip('/')}/analytics/nsm"
     data = _fetch_nsm_data(nsm_url)
     if data is None:
         st.info('NSM data not available.')
@@ -1137,7 +1137,7 @@ def render_nsm_section() -> None:
         st.line_chart(chart_df)
 
 def main():
-    st.markdown('<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">📊 Loans Analytics Dashboard</p>', unsafe_allow_html=True)
     with st.sidebar:
         uploaded_files = render_sidebar()
     if uploaded_files and not handle_file_upload(uploaded_files):

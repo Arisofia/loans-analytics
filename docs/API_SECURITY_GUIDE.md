@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers security implementation for the Abaco Loans Analytics API, including authentication, authorization, rate limiting, input validation, and compliance with financial data regulations.
+This guide covers security implementation for the Loans Analytics API, including authentication, authorization, rate limiting, input validation, and compliance with financial data regulations.
 
 **Security Framework**: Defense in depth with multiple layers (network, application, data)
 
@@ -113,7 +113,7 @@ def login():
 
 ```bash
 curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-     https://api.abaco.com/api/loans
+     https://api.loans.com/api/loans
 ```
 
 **3. Token Refresh** (before expiration):
@@ -454,7 +454,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 # Production: Restrict to specific origins
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://dashboard.abaco.com").split(",")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://dashboard.loans.com").split(",")
 
 CORS(app, resources={
     r"/api/*": {
@@ -471,11 +471,11 @@ CORS(app, resources={
 
 ```bash
 # Verify CORS headers
-curl -H "Origin: https://dashboard.abaco.com" \
+curl -H "Origin: https://dashboard.loans.com" \
      -H "Access-Control-Request-Method: POST" \
      -H "Access-Control-Request-Headers: Content-Type" \
      -X OPTIONS \
-     https://api.abaco.com/api/loans
+     https://api.loans.com/api/loans
 ```
 
 ## Security Headers
@@ -537,7 +537,7 @@ jwt_secret = client.get_secret("jwt-secret-key").value
 import boto3
 
 client = boto3.client("secretsmanager")
-response = client.get_secret_value(SecretId="prod/abaco/jwt-secret")
+response = client.get_secret_value(SecretId="prod/loans/jwt-secret")
 jwt_secret = response["SecretString"]
 ```
 

@@ -3,12 +3,12 @@ from pathlib import Path
 import pandas as pd
 
 def main():
-    parser = argparse.ArgumentParser(description='Analyze real Abaco data files')
+    parser = argparse.ArgumentParser(description='Analyze real Loans data files')
     parser.add_argument('--data-dir', type=Path, default=Path.home() / 'Downloads', help='Directory containing source CSV files (default: ~/Downloads)')
     args = parser.parse_args()
-    FILES = {'loan_data': args.data_dir / 'Abaco - Loan Tape_Loan Data_Table (3).csv', 'customer': args.data_dir / 'Abaco - Loan Tape_Customer Data_Table (3).csv', 'collateral': args.data_dir / 'Abaco - Loan Tape_Collateral_Table (3).csv', 'payment_schedule': args.data_dir / 'Abaco - Loan Tape_Payment Schedule_Table (3).csv', 'historic_payments': args.data_dir / 'Abaco - Loan Tape_Historic Real Payment_Table (3).csv'}
+    FILES = {'loan_data': args.data_dir / 'Loans - Loan Tape_Loan Data_Table (3).csv', 'customer': args.data_dir / 'Loans - Loan Tape_Customer Data_Table (3).csv', 'collateral': args.data_dir / 'Loans - Loan Tape_Collateral_Table (3).csv', 'payment_schedule': args.data_dir / 'Loans - Loan Tape_Payment Schedule_Table (3).csv', 'historic_payments': args.data_dir / 'Loans - Loan Tape_Historic Real Payment_Table (3).csv'}
     print('=' * 70)
-    print('📊 ABACO REAL DATA ANALYSIS')
+    print('📊 LOANS REAL DATA ANALYSIS')
     print('=' * 70)
     for name, filepath in FILES.items():
         try:

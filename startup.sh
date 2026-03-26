@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Startup script for Abaco Analytics Dashboard
+# Startup script for Loans Analytics Dashboard
 # This script runs the Streamlit application on a configurable port
 # Default: 8501
 # Override: set STREAMLIT_SERVER_PORT environment variable
 
 set -e
 
-echo "🚀 Starting Abaco Analytics Dashboard..."
+echo "🚀 Starting Loans Analytics Dashboard..."
 
 # Determine canonical port from environment or use default (8501)
 CANONICAL_PORT=${STREAMLIT_SERVER_PORT:-8501}

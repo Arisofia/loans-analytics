@@ -39,7 +39,7 @@ This checklist ensures all production deployments are safe, auditable, and compl
 ### Integration Tests
 - [ ] **Pipeline End-to-End**: Full pipeline executes on sample data
   ```bash
-  python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data.csv
+  python scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data.csv
   ```
 - [ ] **All 4 Phases**: Ingestion → Transformation → Calculation → Output complete
 - [ ] **Data Integrity**: Output balances to input ± expected rounding
@@ -73,7 +73,7 @@ This checklist ensures all production deployments are safe, auditable, and compl
 - [ ] **Monitoring**: Prometheus, Grafana dashboards connected
 
 ### Smoke Tests (Staging)
-- [ ] **API Health**: `curl https://staging-api.abaco.local/health` → 200 OK
+- [ ] **API Health**: `curl https://staging-api.loans.local/health` → 200 OK
 - [ ] **Dashboard Load**: Streamlit dashboard loads without errors
 - [ ] **Pipeline Execution**: Full pipeline runs on staging data
 - [ ] **KPI Calculation**: Compare staging KPIs vs. production (variance < 0.1%)
@@ -196,7 +196,7 @@ kubectl set service prod-api --image=prod:latest-stable
 python scripts/restore_supabase_backup.py --from-snapshot prod-before-release
 
 # 3. Verify
-curl https://api.abaco.local/health
+curl https://api.loans.local/health
 # Should return green
 
 # 4. Notify stakeholders

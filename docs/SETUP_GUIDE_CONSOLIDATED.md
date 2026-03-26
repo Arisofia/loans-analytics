@@ -26,8 +26,8 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/Arisofia/abaco-loans-analytics.git
-cd abaco-loans-analytics
+git clone https://github.com/Arisofia/loans-loans-analytics.git
+cd loans-loans-analytics
 
 # Setup Python environment
 make setup
@@ -48,8 +48,8 @@ make test
 1. **Clone and enter directory**
 
    ```bash
-   git clone https://github.com/Arisofia/abaco-loans-analytics.git
-   cd abaco-loans-analytics
+   git clone https://github.com/Arisofia/loans-loans-analytics.git
+   cd loans-loans-analytics
    ```
 
 2. **Create virtual environment**

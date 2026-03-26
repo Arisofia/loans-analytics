@@ -1,13 +1,13 @@
 openapi: 3.0.3
 info:
-  title: Abaco Loans Analytics API
+  title: Loans Loans Analytics API
   version: 1.0.0
   description: |
-    REST API for the Abaco Loans Analytics platform providing portfolio KPI calculations,
+    REST API for the Loans Loans Analytics platform providing portfolio KPI calculations,
     drilldown analytics, authentication, and data quality insights.
   contact:
-    name: Abaco Technology
-    email: support@abaco-tech.com
+    name: Loans Technology
+    email: support@loans-tech.com
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT

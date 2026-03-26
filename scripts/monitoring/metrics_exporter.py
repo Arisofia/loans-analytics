@@ -129,7 +129,7 @@ class MetricsRegistry:
             print(f'Error collecting KPI metrics: {e}')
 
     def render_prometheus_format(self) -> str:
-        lines = ['# Abaco Loans Analytics Pipeline Metrics', f'# Generated: {datetime.now().isoformat()}', '']
+        lines = ['# Loans Loans Analytics Pipeline Metrics', f'# Generated: {datetime.now().isoformat()}', '']
         metric_groups: Dict[str, list] = {}
         for metric_key, value in self.metrics.items():
             metric_name = metric_key.split('{')[0] if '{' in metric_key else metric_key
@@ -178,14 +178,14 @@ class MetricsHandler(BaseHTTPRequestHandler):
 def main() -> None:
     port = int(os.getenv('METRICS_PORT', '8000'))
     print('=' * 60)
-    print('ABACO LOANS ANALYTICS - METRICS EXPORTER')
+    print('LOANS LOANS ANALYTICS - METRICS EXPORTER')
     print('=' * 60)
     print(f'Starting metrics server on port {port}')
     print(f'Metrics endpoint: http://localhost:{port}/metrics')
     print(f'Health check: http://localhost:{port}/health')
     print('')
     print('Prometheus scrape config:')
-    print("  - job_name: 'abaco-pipeline'")
+    print("  - job_name: 'loans-pipeline'")
     print('    static_configs:')
     print(f"      - targets: ['localhost:{port}']")
     print('=' * 60)

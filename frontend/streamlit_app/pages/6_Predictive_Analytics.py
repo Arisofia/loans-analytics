@@ -3,10 +3,10 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from backend.python.config.theme import ABACO_THEME
+from backend.python.config.theme import ANALYTICS_THEME
 from backend.python.models.default_risk_model import DefaultRiskModel
-st.set_page_config(page_title='Predictive Analytics - Abaco', layout='wide')
-st.markdown(f"\n    <style>\n    .main {{\n        background-color: {ABACO_THEME['colors']['background']};\n        color: {ABACO_THEME['colors']['white']};\n    }}\n    .metric-container {{\n        background-color: #1e2130;\n        padding: 20px;\n        border-radius: 10px;\n        border: 1px solid #30363d;\n    }}\n    </style>\n    ", unsafe_allow_html=True)
+st.set_page_config(page_title='Predictive Analytics', layout='wide')
+st.markdown(f"\n    <style>\n    .main {{\n        background-color: {ANALYTICS_THEME['colors']['background']};\n        color: {ANALYTICS_THEME['colors']['white']};\n    }}\n    .metric-container {{\n        background-color: #1e2130;\n        padding: 20px;\n        border-radius: 10px;\n        border: 1px solid #30363d;\n    }}\n    </style>\n    ", unsafe_allow_html=True)
 st.title('🔮 Predictive Analytics')
 st.subheader('Probability of Default (PD) Model Control Room')
 MODEL_DIR = Path('models/risk')
@@ -56,7 +56,7 @@ else:
 st.divider()
 st.header('3. Retraining Pipeline')
 with st.expander('Pipeline Configuration'):
-    loan_file = st.text_input('Loan Data Path', 'data/samples/abaco_sample_data_20260202.csv')
+    loan_file = st.text_input('Loan Data Path', 'data/samples/loans_sample_data_20260202.csv')
     payment_file = st.text_input('Payment Data Path (Optional)', 'data/raw/real_payment.csv')
     customer_file = st.text_input('Customer Data Path (Optional)', 'data/raw/customer_data.csv')
     threshold = st.slider('Deployment Threshold (AUC)', 0.5, 1.0, 0.7)

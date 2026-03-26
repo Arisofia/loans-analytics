@@ -1,11 +1,11 @@
 from pathlib import Path
 import pandas as pd
 import streamlit as st
-from backend.python.config.theme import ABACO_THEME
+from backend.python.config.theme import ANALYTICS_THEME
 from backend.python.utils.usage_tracker import UsageTracker
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-st.set_page_config(page_title='Usage Metrics - Abaco', layout='wide')
-st.markdown(f"\n    <style>\n    .main {{\n        background-color: {ABACO_THEME['colors']['background']};\n        color: {ABACO_THEME['colors']['white']};\n    }}\n    </style>\n    ", unsafe_allow_html=True)
+st.set_page_config(page_title='Usage Metrics', layout='wide')
+st.markdown(f"\n    <style>\n    .main {{\n        background-color: {ANALYTICS_THEME['colors']['background']};\n        color: {ANALYTICS_THEME['colors']['white']};\n    }}\n    </style>\n    ", unsafe_allow_html=True)
 st.title('📊 Usage Metrics Tracking')
 tracker = UsageTracker()
 events = tracker.get_events()

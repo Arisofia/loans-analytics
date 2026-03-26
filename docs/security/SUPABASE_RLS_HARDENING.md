@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document describes the Row Level Security (RLS) implementation for Abaco Loans Analytics. All sensitive tables now have RLS enabled with least-privilege policies.
+This document describes the Row Level Security (RLS) implementation for Loans Loans Analytics. All sensitive tables now have RLS enabled with least-privilege policies.
 
 ## Tables with RLS Enabled
 
@@ -77,10 +77,10 @@ WITH CHECK (auth.jwt()->>'role' = 'service_role')
 **Pattern**: Internal domain restriction + service_role
 
 ```sql
--- Read: Only internal authenticated users (@abaco.* email)
+-- Read: Only internal authenticated users (@loans.* email)
 USING (
   auth.jwt()->>'role' IN ('authenticated', 'service_role')
-  AND auth.jwt()->>'email' LIKE '%@abaco.%'
+  AND auth.jwt()->>'email' LIKE '%@loans.%'
 )
 
 -- Write: Only service_role
@@ -102,7 +102,7 @@ WITH CHECK (auth.jwt()->>'role' = 'service_role')
 -- Internal users: Insert only (for manual corrections)
 WITH CHECK (
   auth.jwt()->>'role' = 'authenticated'
-  AND auth.jwt()->>'email' LIKE '%@abaco.%'
+  AND auth.jwt()->>'email' LIKE '%@loans.%'
 )
 
 -- All authenticated: Read-only
@@ -166,7 +166,7 @@ ALTER FUNCTION public.loan_data_broadcast_trigger()
 
 ```bash
 # Method 1: Supabase CLI (recommended)
-cd /path/to/abaco-loans-analytics
+cd /path/to/loans-loans-analytics
 supabase db push
 
 # Method 2: Manual via SQL Editor
@@ -245,7 +245,7 @@ SELECT auth.jwt();
 
 -- Common issues:
 -- - 'role' claim is 'anon' instead of 'authenticated'
--- - 'email' claim doesn't match @abaco.* pattern
+-- - 'email' claim doesn't match @loans.* pattern
 ```
 
 ### Issue: "new row violates row-level security policy"

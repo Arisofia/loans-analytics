@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 import pandas as pd
 import streamlit as st
-from backend.python.config.theme import ABACO_THEME
+from backend.python.config.theme import ANALYTICS_THEME
 from backend.python.config.tracing_setup import enable_auto_instrumentation, init_tracing
 from backend.python.kpis.catalog_processor import KPICatalogProcessor
 from backend.python.kpis.strategic_reporting import build_strategic_summary, write_strategic_report
@@ -192,7 +192,7 @@ def generate_kpi_exports(data: dict[str, pd.DataFrame], *, normalize_inputs: boo
         analytics_facts.to_csv(facts_path, index=False)
     return dashboard_path
 FONT_IMPORT_URL = 'https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&family=Poppins:wght@100;200;300;400;500;600;700&display=swap'
-st.markdown(f"""\n<style>\n    @import url("{FONT_IMPORT_URL}");\n    .main {{\n        background-color: {ABACO_THEME['colors']['background']};\n        color: {ABACO_THEME['colors']['white']};\n        font-family: '{ABACO_THEME['typography']['primary_font']}', sans-serif;\n    }}\n    .stMetric {{\n        background: {ABACO_THEME['gradients']['card_primary']};\n        padding: 20px;\n        border-radius: 10px;\n        border: 1px solid {ABACO_THEME['colors']['purple_dark']};\n    }}\n</style>\n""", unsafe_allow_html=True)
+st.markdown(f"""\n<style>\n    @import url("{FONT_IMPORT_URL}");\n    .main {{\n        background-color: {ANALYTICS_THEME['colors']['background']};\n        color: {ANALYTICS_THEME['colors']['white']};\n        font-family: '{ANALYTICS_THEME['typography']['primary_font']}', sans-serif;\n    }}\n    .stMetric {{\n        background: {ANALYTICS_THEME['gradients']['card_primary']};\n        padding: 20px;\n        border-radius: 10px;\n        border: 1px solid {ANALYTICS_THEME['colors']['purple_dark']};\n    }}\n</style>\n""", unsafe_allow_html=True)
 if 'loaded' not in st.session_state:
     st.session_state['loaded'] = False
 with st.sidebar:
@@ -254,12 +254,12 @@ with st.sidebar:
     target_loans = st.number_input('Target Loans', value=1000)
     st.session_state['target_outstanding'] = target_outstanding
     st.session_state['target_loans'] = target_loans
-st.title('💰 ABACO Financial Intelligence')
+st.title('💰 Loans Financial Intelligence')
 global_dashboard_metrics_var = load_kpi_dashboard()
 global_analytics_facts_var = load_analytics_facts()
 global_api_kpi_snapshot, global_api_snapshot_month, global_is_api_source = load_kpi_snapshot_from_api()
 with st.expander('🔗 Dashboard Links & Strategic Reporting', expanded=True):
-    deployed_dashboard_url = os.getenv('DASHBOARD_PUBLIC_URL', 'https://abaco-dashboard-app.kindocean-8ac70092.spaincentral.azurecontainerapps.io')
+    deployed_dashboard_url = os.getenv('DASHBOARD_PUBLIC_URL', 'https://analytics-dashboard-app.kindocean-8ac70092.spaincentral.azurecontainerapps.io')
     dashboard_local_url = os.getenv('DASHBOARD_URL', 'http://localhost:8501')
     grafana_local_url = os.getenv('GRAFANA_URL', 'https://jenineferderas.grafana.net/dashboards')
     st.markdown(f'- **Streamlit (Local):** {dashboard_local_url}')
@@ -319,4 +319,4 @@ with st.expander('View all computed KPIs'):
     else:
         st.info('No extended KPIs found.')
 st.divider()
-st.caption(f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+st.caption(f"Loans Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

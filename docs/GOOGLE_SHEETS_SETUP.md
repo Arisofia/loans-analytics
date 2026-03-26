@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to complete the Google Sheets data integration for the Abaco Loans Analytics pipeline. The spreadsheet ID `1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o` has been configured, but you need to provide valid Google Cloud service account credentials.
+This guide explains how to complete the Google Sheets data integration for the Loans Loans Analytics pipeline. The spreadsheet ID `1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o` has been configured, but you need to provide valid Google Cloud service account credentials.
 
 ## Credentials Status
 
@@ -18,7 +18,7 @@ This guide explains how to complete the Google Sheets data integration for the A
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Select project **cedar-league-465204-j0**
 3. Navigate to **IAM & Admin → Service Accounts**
-4. Find service account: `abaco-sheets-adapter@cedar-league-465204-j0.iam.gserviceaccount.com` (or create it if missing)
+4. Find service account: `loans-sheets-adapter@cedar-league-465204-j0.iam.gserviceaccount.com` (or create it if missing)
 5. Click **Keys** tab → **Add Key** → **Create new key**
 6. Choose **JSON** format
 7. Download the key file

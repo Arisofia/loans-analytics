@@ -28,7 +28,7 @@ def validate_inputs(loans: Path, payments: Path, customers: Path) -> None:
             raise FileNotFoundError(f'Required data file not found: {path}\nPlace loan_data.csv, real_payment.csv, and customer_data.csv in data/raw/ before running this script.')
 
 def build_executive_report(metrics: dict, iv_table: pd.DataFrame, scorecard_table: pd.DataFrame, output_path: Path) -> str:
-    lines = ['=' * 70, 'ABACO LOANS - CREDIT SCORECARD TRAINING REPORT', '=' * 70, '', '-- MODEL PERFORMANCE ------------------------------------------------', f"  AUC-ROC          : {metrics['auc_roc']:.4f}", f"  Gini Coefficient : {metrics['gini_coefficient']:.4f}", f"  KS Statistic     : {metrics['ks_statistic']:.4f}", f"  CV AUC (5-fold)  : {metrics['cv_auc_mean']:.4f} +/- {metrics['cv_auc_std']:.4f}", '', '  Interpretation:']
+    lines = ['=' * 70, 'LOANS LOANS - CREDIT SCORECARD TRAINING REPORT', '=' * 70, '', '-- MODEL PERFORMANCE ------------------------------------------------', f"  AUC-ROC          : {metrics['auc_roc']:.4f}", f"  Gini Coefficient : {metrics['gini_coefficient']:.4f}", f"  KS Statistic     : {metrics['ks_statistic']:.4f}", f"  CV AUC (5-fold)  : {metrics['cv_auc_mean']:.4f} +/- {metrics['cv_auc_std']:.4f}", '', '  Interpretation:']
     auc = metrics['auc_roc']
     if auc >= 0.75:
         lines.append('  + AUC >= 0.75 - Good discriminatory power for credit scoring')

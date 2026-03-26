@@ -32,7 +32,7 @@ def main():
     repo_root = Path(__file__).parent.parent.parent
     all_valid = True
     all_errors = []
-    print('[INFO] Validating port consistency across Abaco Loans Analytics...\n')
+    print('[INFO] Validating port consistency across Loans Loans Analytics...\n')
     print('[POLICY] Canonical Port Policy:')
     print(f'   - Dashboard: {CANONICAL_PORT_DASHBOARD} (via {DASHBOARD_PORT_VAR} env var)')
     print(f'   - API: {CANONICAL_PORT_API} (via {API_PORT_VAR} env var)')

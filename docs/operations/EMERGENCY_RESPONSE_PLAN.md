@@ -45,7 +45,7 @@ git push origin main
 **Timeline**: 30 minutes
 **Diagnosis Steps**:
 
-1. Azure Portal → App Services → `abaco-analytics-dashboard`
+1. Azure Portal → App Services → `loans-analytics-dashboard`
 2. Check "Overview" → Is status "Running"?
    - If **Stopped** → Click "Start"
    - If **Running** → Continue to step 3
@@ -58,7 +58,7 @@ git push origin main
    | `Port already in use` | Restart app service |
    | `Connection timeout` | Check Azure Storage/DB connection string in App Settings |
    | DNS NXDOMAIN | Check if custom domain configured, or use `*.azurewebsites.net` domain |
-   **Success Criteria**: Dashboard loads without DNS error at <https://abaco-analytics-dashboard.azurewebsites.net>
+   **Success Criteria**: Dashboard loads without DNS error at <https://loans-analytics-dashboard.azurewebsites.net>
 
 ---
 

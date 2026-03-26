@@ -1,5 +1,5 @@
 ###############################################################################
-# Abaco Loans Analytics — Unified Deployment Stack
+# Loans Analytics — Unified Deployment Stack
 #
 # Profiles:
 #   default (api + dashboard) : Core application stack
@@ -22,7 +22,7 @@ x-common-env: &common-env
   SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
   SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
   # Local PostgreSQL (backing store for analytics; uses the `db` service)
-  DATABASE_URL: ${DATABASE_URL:-postgresql://abaco:${DB_PASSWORD}@db:5432/abaco_analytics}
+  DATABASE_URL: ${DATABASE_URL:-postgresql://analytics_user:${DB_PASSWORD}@db:5432/loans_analytics}
   # DuckDB / Parquet storage paths
   DUCKDB_PATH: /app/data/duckdb/analytics.duckdb
   PARQUET_BASE_DIR: /app/data/duckdb
@@ -46,7 +46,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/arisofia/abaco-loans-analytics-api:local
+    image: ghcr.io/arisofia/loans-analytics-api:local
     ports:
       - "8000:8000"
     volumes:
@@ -72,7 +72,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dashboard
-    image: ghcr.io/arisofia/abaco-loans-analytics-dashboard:local
+    image: ghcr.io/arisofia/loans-analytics-dashboard:local
     ports:
       - "8501:8501"
     volumes:
@@ -82,7 +82,7 @@ services:
       <<: *common-env
       STREAMLIT_SERVER_PORT: "8501"
       STREAMLIT_SERVER_ADDRESS: 0.0.0.0
-      ABACO_API_BASE: http://api:8000
+      API_BASE_URL: http://api:8000
       DASHBOARD_URL: http://localhost:8501
       GRAFANA_URL: ${GRAFANA_BASE_URL:-https://jenineferderas.grafana.net}/dashboards
     healthcheck:
@@ -102,7 +102,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.pipeline
-    image: ghcr.io/arisofia/abaco-loans-analytics-pipeline:local
+    image: ghcr.io/arisofia/loans-analytics-pipeline:local
     volumes:
       - ./data:/app/data
       - ./config:/app/config
@@ -126,16 +126,16 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: abaco
+      POSTGRES_USER: analytics_user
       POSTGRES_PASSWORD: ${DB_PASSWORD:-localdev}
-      POSTGRES_DB: abaco_analytics
+      POSTGRES_DB: loans_analytics
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/star_schema/create_star_schema.sql:/docker-entrypoint-initdb.d/01_star_schema.sql:ro
       - ./db/star_schema/views/kpi_views.sql:/docker-entrypoint-initdb.d/02_kpi_views.sql:ro
       - ./db/migrations:/docker-entrypoint-initdb.d/migrations:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U abaco -d abaco_analytics"]
+      test: ["CMD-SHELL", "pg_isready -U analytics_user -d loans_analytics"]
       interval: 10s
       timeout: 5s
       retries: 5

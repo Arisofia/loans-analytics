@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers production deployment of the Abaco Loans Analytics platform across multiple cloud providers and configurations.
+This guide covers production deployment of the Loans Loans Analytics platform across multiple cloud providers and configurations.
 
 **Target Environments**: Azure Functions, AWS Lambda, GCP Cloud Run, Railway, Docker-based hosting
 
@@ -81,7 +81,7 @@ brew install azure-functions-core-tools@4  # macOS
 # OR: npm install -g azure-functions-core-tools@4
 
 # Deploy
-cd /path/to/abaco-loans-analytics
+cd /path/to/loans-loans-analytics
 func azure functionapp publish your-function-app-name --python
 
 # Configure app settings
@@ -215,7 +215,7 @@ railway up
 **serverless.yml** (create in repo root):
 
 ```yaml
-service: abaco-loans-analytics
+service: loans-loans-analytics
 
 provider:
   name: aws
@@ -256,11 +256,11 @@ serverless deploy --stage production
 
 ```bash
 # Build container
-gcloud builds submit --tag gcr.io/your-project/abaco-loans-analytics
+gcloud builds submit --tag gcr.io/your-project/loans-loans-analytics
 
 # Deploy
-gcloud run deploy abaco-loans-analytics \
-  --image gcr.io/your-project/abaco-loans-analytics \
+gcloud run deploy loans-loans-analytics \
+  --image gcr.io/your-project/loans-loans-analytics \
   --platform managed \
   --region us-central1 \
   --set-env-vars SUPABASE_URL=$SUPABASE_URL,SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
@@ -329,13 +329,13 @@ Import the pre-built dashboard:
 
 ```bash
 # From repo root
-cp grafana/dashboards/abaco-loans-analytics.json /path/to/grafana/provisioning/dashboards/
+cp grafana/dashboards/loans-loans-analytics.json /path/to/grafana/provisioning/dashboards/
 ```
 
 **Manual Import**:
 
 1. Navigate to Grafana → Dashboards → Import
-2. Upload `grafana/dashboards/abaco-loans-analytics.json`
+2. Upload `grafana/dashboards/loans-loans-analytics.json`
 3. Select Prometheus data source
 4. Verify panels load data
 
@@ -398,7 +398,7 @@ az functionapp deployment source config-zip \
 ```bash
 # Revert to previous image
 docker-compose -f docker-compose.prod.yml down
-docker pull your-registry/abaco-loans-analytics:v1.2.2  # Previous version
+docker pull your-registry/loans-loans-analytics:v1.2.2  # Previous version
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
@@ -526,7 +526,7 @@ Enable verbose logging:
 
 ```bash
 # Local testing
-python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv --verbose
+python scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv --verbose
 
 # Production (environment variable)
 export LOG_LEVEL=DEBUG

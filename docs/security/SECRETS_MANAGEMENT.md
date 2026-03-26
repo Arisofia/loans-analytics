@@ -1,6 +1,6 @@
 # Agent/Workflow Secrets Documentation
 
-All required secrets for the Abaco Multi-Agent Intelligence Ecosystem are managed
+All required secrets for the Loans Multi-Agent Intelligence Ecosystem are managed
 in Azure Key Vault or GitHub Secrets. No manual action is needed for runtime
 access.
 

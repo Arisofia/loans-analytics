@@ -1,5 +1,5 @@
 -- =====================================================================
--- Abaco Analytics - Pipeline lineage + audit tables (minimal)
+-- Loans Analytics - Pipeline lineage + audit tables (minimal)
 -- Schema: analytics
 -- Date: 2025-12-31
 --

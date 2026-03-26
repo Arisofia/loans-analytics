@@ -36,11 +36,11 @@ def verify_table_structure(supabase: Client) -> bool:
         return False
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description='Setup Supabase tables for the Abaco Loans Analytics pipeline.')
+    parser = argparse.ArgumentParser(description='Setup Supabase tables for the Loans Loans Analytics pipeline.')
     parser.add_argument('--verify-only', action='store_true', help='Only verify table structure; do not apply migrations.')
     args = parser.parse_args()
     print('=' * 60)
-    print('Abaco Loans Analytics - Supabase Setup')
+    print('Loans Loans Analytics - Supabase Setup')
     print('=' * 60)
     supabase_url, supabase_key = load_environment()
     print(f'Supabase URL: {supabase_url}')

@@ -319,7 +319,7 @@ def concentration_hhi(intermedia_df: pd.DataFrame, loans_df: pd.DataFrame | None
         if lt_hhi is not None:
             result['loan_tape_debtor_hhi'] = lt_hhi
     return result
-_BENCHMARKS = {'cac_fintech_b2b_usd': 1450, 'cac_saas_b2b_usd': 702, 'cac_target_abaco_usd': 500, 'ltv_cac_healthy_ratio': 3.0, 'npl_latam_pct': 4.8, 'npl_oecd_pct': 2.2, 'npl_target_abaco_pct': 3.5, 'loss_rate_abs_pct': 9.9}
+_BENCHMARKS = {'cac_fintech_b2b_usd': 1450, 'cac_saas_b2b_usd': 702, 'cac_target_usd': 500, 'ltv_cac_healthy_ratio': 3.0, 'npl_latam_pct': 4.8, 'npl_oecd_pct': 2.2, 'npl_target_pct': 3.5, 'loss_rate_abs_pct': 9.9}
 
 def calc_unit_economics(loans_df: pd.DataFrame, payments_df: pd.DataFrame, marketing_spend_usd: float | None=None, trailing_months: int=12) -> dict[str, Any]:
     disb_col = _col(loans_df, ['disbursement_date', 'FechaDesembolso'])
@@ -346,7 +346,7 @@ def calc_unit_economics(loans_df: pd.DataFrame, payments_df: pd.DataFrame, marke
     ltv_cac = ltv / cac if cac > 0 else 0.0
     hub_multiplier_assumption = 10
     effective_cac_if_hub = cac / hub_multiplier_assumption
-    return {'status': 'ok', 'trailing_months': trailing_months, 'new_clients_acquired': new_clients, 'total_clients': int(loans_df[cust_col].nunique()), 'marketing_spend_est_usd': round(float(marketing_val), 2), 'cac_usd': round(float(cac), 2), 'ltv_usd': round(float(ltv), 2), 'ltv_cac_ratio': round(float(ltv_cac), 2), 'avg_lifetime_months': round(float(avg_lifetime_months), 1), 'benchmarks': _BENCHMARKS, 'vs_benchmark': {'cac_vs_fintech_b2b': round(_BENCHMARKS['cac_fintech_b2b_usd'] / max(cac, 1), 1), 'cac_vs_target': 'ok' if cac <= _BENCHMARKS['cac_target_abaco_usd'] else 'above_target', 'ltv_cac_vs_3x': 'ok' if ltv_cac >= 3.0 else f'below_3x ({ltv_cac:.2f}x)'}, 'graph_strategy': {'effective_cac_via_hub_usd': round(effective_cac_if_hub, 2), 'hub_client_multiplier': hub_multiplier_assumption, 'explanation': f'If a hub client (centrality top 15%) refers {hub_multiplier_assumption} organics, effective CAC drops from ${cac:,.0f} to ${effective_cac_if_hub:,.0f}'}}
+    return {'status': 'ok', 'trailing_months': trailing_months, 'new_clients_acquired': new_clients, 'total_clients': int(loans_df[cust_col].nunique()), 'marketing_spend_est_usd': round(float(marketing_val), 2), 'cac_usd': round(float(cac), 2), 'ltv_usd': round(float(ltv), 2), 'ltv_cac_ratio': round(float(ltv_cac), 2), 'avg_lifetime_months': round(float(avg_lifetime_months), 1), 'benchmarks': _BENCHMARKS, 'vs_benchmark': {'cac_vs_fintech_b2b': round(_BENCHMARKS['cac_fintech_b2b_usd'] / max(cac, 1), 1), 'cac_vs_target': 'ok' if cac <= _BENCHMARKS['cac_target_usd'] else 'above_target', 'ltv_cac_vs_3x': 'ok' if ltv_cac >= 3.0 else f'below_3x ({ltv_cac:.2f}x)'}, 'graph_strategy': {'effective_cac_via_hub_usd': round(effective_cac_if_hub, 2), 'hub_client_multiplier': hub_multiplier_assumption, 'explanation': f'If a hub client (centrality top 15%) refers {hub_multiplier_assumption} organics, effective CAC drops from ${cac:,.0f} to ${effective_cac_if_hub:,.0f}'}}
 
 def viral_k_factor(loans_df: pd.DataFrame, conversion_rate: float | None=None) -> dict[str, Any]:
     cust_col = _col(loans_df, ['customer_id', 'CodCliente'])
@@ -393,7 +393,7 @@ def npl_benchmarks(intermedia_df: pd.DataFrame) -> dict[str, Any]:
     except Exception:
         lgd = 0.1
     loss_rate = npl_180 * lgd
-    return {'status': 'ok', 'npl_180_pct': round(npl_180, 2), 'npl_90_pct': round(npl_90, 2), 'loss_rate_est_pct': round(loss_rate, 2), 'lgd_assumption': lgd, 'benchmarks': {'npl_latam_pct': _BENCHMARKS['npl_latam_pct'], 'npl_oecd_pct': _BENCHMARKS['npl_oecd_pct'], 'npl_target_abaco_pct': _BENCHMARKS['npl_target_abaco_pct'], 'loss_rate_abs_kbra_pct': _BENCHMARKS['loss_rate_abs_pct']}, 'vs_benchmark': {'vs_latam': 'better' if npl_180 < _BENCHMARKS['npl_latam_pct'] else 'worse', 'vs_oecd': 'better' if npl_180 < _BENCHMARKS['npl_oecd_pct'] else 'worse', 'vs_target': 'ok' if npl_180 < _BENCHMARKS['npl_target_abaco_pct'] else 'breach'}}
+    return {'status': 'ok', 'npl_180_pct': round(npl_180, 2), 'npl_90_pct': round(npl_90, 2), 'loss_rate_est_pct': round(loss_rate, 2), 'lgd_assumption': lgd, 'benchmarks': {'npl_latam_pct': _BENCHMARKS['npl_latam_pct'], 'npl_oecd_pct': _BENCHMARKS['npl_oecd_pct'], 'npl_target_pct': _BENCHMARKS['npl_target_pct'], 'loss_rate_abs_kbra_pct': _BENCHMARKS['loss_rate_abs_pct']}, 'vs_benchmark': {'vs_latam': 'better' if npl_180 < _BENCHMARKS['npl_latam_pct'] else 'worse', 'vs_oecd': 'better' if npl_180 < _BENCHMARKS['npl_oecd_pct'] else 'worse', 'vs_target': 'ok' if npl_180 < _BENCHMARKS['npl_target_pct'] else 'breach'}}
 
 def build_graph_kpi_report(intermedia_df: pd.DataFrame, loans_df: pd.DataFrame, payments_df: pd.DataFrame) -> dict[str, Any]:
     for col in ['TotalSaldoVigente', 'MontoDesembolsado', 'ValorAprobado']:

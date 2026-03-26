@@ -13,7 +13,7 @@ BIN := $(VENV)/bin
 export PYTHONPATH := .:backend:frontend
 # Default target
 help:
-	@echo "Abaco Loans Analytics Automation"
+	@echo "Loans Loans Analytics Automation"
 	@echo "--------------------------------"
 	@echo "Canonical Entry Points:"
 	@echo "make api            - Start Analytics API (hot reload)"
@@ -122,7 +122,7 @@ agents:
 
 # KPI pipeline entry point
 kpis:
-	"$(PYTHON)" scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
+	"$(PYTHON)" scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv
 
 # Train scorecard model if required raw CSV files are present
 train-scorecard-if-ready:
@@ -181,14 +181,14 @@ zero-cost-schema:
 etl-local:
 	@echo "Running local ETL pipeline..."
 	"$(PYTHON)" scripts/data/run_data_pipeline.py \
-		--input $(or $(INPUT), data/samples/abaco_sample_data_20260202.csv) \
+		--input $(or $(INPUT), data/samples/loans_sample_data_20260202.csv) \
 		--mode  $(or $(MODE), full) \
 		--verbose
 
 ## Build monthly snapshot into DuckDB star schema
 snapshot-build:
 	@echo "Building monthly snapshot..."
-	INPUT=$(or $(INPUT), data/samples/abaco_sample_data_20260202.csv) \
+	INPUT=$(or $(INPUT), data/samples/loans_sample_data_20260202.csv) \
 	MONTH=$(or $(MONTH),) \
 	"$(PYTHON)" scripts/data/build_snapshot.py
 

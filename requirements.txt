@@ -1,4 +1,4 @@
-# Runtime dependencies for Abaco Loans Analytics
+# Runtime dependencies for Loans Loans Analytics
 
 # Multi-Agent / LLM stack
 openai==2.29.0

@@ -1,6 +1,6 @@
 # Configuration Files - Monitoring & Observability
 
-This directory contains production-ready configurations for monitoring the Abaco Loans Analytics platform.
+This directory contains production-ready configurations for monitoring the Loans Loans Analytics platform.
 
 ## 📁 Files Overview
 
@@ -99,8 +99,8 @@ tar xvfz prometheus-*.tar.gz
 cd prometheus-*
 
 # 2. Copy config
-cp /path/to/abaco-loans-analytics/config/prometheus.yml .
-cp -r /path/to/abaco-loans-analytics/config/rules .
+cp /path/to/loans-loans-analytics/config/prometheus.yml .
+cp -r /path/to/loans-loans-analytics/config/rules .
 
 # 3. Replace env vars
 sed -i "s/\${SUPABASE_PROJECT_REF}/$SUPABASE_PROJECT_REF/g" prometheus.yml
@@ -218,10 +218,10 @@ receivers:
 receivers:
   - name: "email-team"
     email_configs:
-      - to: "platform-team@abaco.com"
-        from: "alerts@abaco.com"
+      - to: "platform-team@loans.com"
+        from: "alerts@loans.com"
         smarthost: "smtp.gmail.com:587"
-        auth_username: "alerts@abaco.com"
+        auth_username: "alerts@loans.com"
         auth_password: "${SMTP_PASSWORD}"
 ```
 
@@ -301,7 +301,7 @@ python scripts/monitoring/metrics_exporter.py
 curl http://localhost:8000/metrics | grep pipeline_runs_total
 
 # 4. Verify Prometheus is scraping
-# Prometheus UI → Status → Targets → abaco-pipeline
+# Prometheus UI → Status → Targets → loans-pipeline
 ```
 
 ### Alerts Not Firing
@@ -346,4 +346,4 @@ curl http://localhost:9093/api/v1/alerts
 
 **Maintained by**: Platform Team  
 **Last Updated**: 2026-01-30  
-**Questions**: platform-team@abaco.co
+**Questions**: platform-team@loans.co

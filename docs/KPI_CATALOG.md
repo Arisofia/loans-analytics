@@ -1,4 +1,4 @@
-# KPI Catalog – Abaco Analytics
+# KPI Catalog – Loans Analytics
 
 This catalog defines the core KPIs implemented in:
 

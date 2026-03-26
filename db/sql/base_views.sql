@@ -1,4 +1,4 @@
--- Base Views for Abaco Financial Intelligence Platform
+-- Base Views for Loans Financial Intelligence Platform
 -- Version: 1.0
 -- View: v_loan_month_snapshot
 -- Builds a monthly snapshot for every loan with outstanding balance and DPD.

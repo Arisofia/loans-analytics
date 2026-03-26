@@ -1,4 +1,4 @@
-# Operational Runbook: Abaco Unified Pipeline
+# Operational Runbook: Loans Unified Pipeline
 
 > **⚠️ Deprecated Integrations (Retired 2026-01)**
 > References to `META_SYSTEM_USER_TOKEN` (Cascade) are no longer required.
@@ -21,14 +21,14 @@ This runbook covers deployment, execution, monitoring, incident response, and re
 ### Manual Run (Canonical)
 
 ```bash
-python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
+python scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv
 ```
 
 ### Configuration Override
 
 ```bash
 python scripts/data/run_data_pipeline.py \
-  --input data/samples/abaco_sample_data_20260202.csv \
+  --input data/samples/loans_sample_data_20260202.csv \
   --config config/pipeline.yml
 ```
 
@@ -64,7 +64,7 @@ python scripts/data/run_data_pipeline.py \
 1. Run pipeline with file input:
 
    ```bash
-   python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
+   python scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv
    ```
 
 2. Run tests:

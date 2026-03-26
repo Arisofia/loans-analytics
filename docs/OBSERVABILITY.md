@@ -7,7 +7,7 @@
 
 ## ðŸ“Š Overview
 
-ABACO Loans Analytics observability stack provides real-time monitoring of KPIs, system health, and data quality metrics through Grafana dashboards connected to Supabase.
+LOANS Loans Analytics observability stack provides real-time monitoring of KPIs, system health, and data quality metrics through Grafana dashboards connected to Supabase.
 
 ### Architecture
 
@@ -77,7 +77,7 @@ Required variables:
 
 ### Available Dashboards
 
-#### 1. **ABACO KPI Overview** (`/grafana/dashboards/kpi-overview.json`)
+#### 1. **LOANS KPI Overview** (`/grafana/dashboards/kpi-overview.json`)
 
 **Metrics Tracked:**
 
@@ -140,7 +140,7 @@ Configured automatically via provisioning:
 - Queries `monitoring.kpi_values` for threshold breaches
 - Checks: `red_threshold`, `yellow_threshold` from `kpi_definitions`
 - Sends alerts to:
-  - Email (`alerts@abaco.co`)
+  - Email (`alerts@loans.co`)
   - Email (owner_agent from kpi_definitions)
   - PagerDuty (critical only)
 
@@ -222,8 +222,8 @@ az keyvault secret list --vault-name aiagent-secrets-kv --query "[].name"
 Update App Settings to reference Key Vault:
 
 ```bash
-az webapp config appsettings set --name abaco-analytics-app \
-  --resource-group abaco-rg \
+az webapp config appsettings set --name loans-analytics-app \
+  --resource-group loans-rg \
   --settings \
     SUPABASE_URL="@Microsoft.KeyVault(VaultName=aiagent-secrets-kv;SecretName=SUPABASE-URL)" \
     SUPABASE_ANON_KEY="@Microsoft.KeyVault(VaultName=aiagent-secrets-kv;SecretName=SUPABASE-ANON-KEY)"
@@ -360,5 +360,5 @@ Before deploying to production:
 ---
 
 **Maintained by:** DevOps Team  
-**Support:** observability@abaco.co  
+**Support:** observability@loans.co  
 **Last Review:** 2026-01-29

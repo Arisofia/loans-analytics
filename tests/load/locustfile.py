@@ -3,7 +3,7 @@ import os
 from locust import HttpUser, between, task
 
 def _auth_headers() -> dict[str, str]:
-    token = os.getenv('ABACO_BEARER_TOKEN', '').strip()
+    token = os.getenv('LOANS_BEARER_TOKEN', '').strip()
     if not token:
         return {}
     return {'Authorization': f'Bearer {token}'}
@@ -13,7 +13,7 @@ def _sample_payload() -> dict:
 
 class AnalyticsApiUser(HttpUser):
     wait_time = between(1.0, 3.0)
-    host = os.getenv('ABACO_API_BASE_URL', 'http://localhost:8000')
+    host = os.getenv('API_BASE_URL', 'http://localhost:8000')
 
     @task(5)
     def health(self) -> None:

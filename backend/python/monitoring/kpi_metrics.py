@@ -12,7 +12,7 @@ class ThresholdMetricLabels:
     threshold_status: str
     category: str = 'general'
     severity: str = 'info'
-    owner_email: str = 'ops-team@abaco.local'
+    owner_email: str = 'ops-team@analytics.local'
     unit: str = 'unknown'
 
 class KPIMetricsExporter:
@@ -21,7 +21,7 @@ class KPIMetricsExporter:
         self.metrics: Dict[str, float] = {}
         self.metric_metadata: Dict[str, Dict[str, Any]] = {}
 
-    def publish_kpi_result(self, kpi_name: str, kpi_result: dict, category: str='general', owner_email: str='ops-team@abaco.local') -> None:
+    def publish_kpi_result(self, kpi_name: str, kpi_result: dict, category: str='general', owner_email: str='ops-team@analytics.local') -> None:
         if not isinstance(kpi_result, dict):
             logger.warning(f'Invalid KPI result type for {kpi_name}: {type(kpi_result)}')
             return

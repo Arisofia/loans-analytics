@@ -168,12 +168,12 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
 
     return {
         "uid": uid,
-        "title": "ABACO KPI Overview",
+        "title": "LOANS KPI Overview",
         "timezone": "browser",
         "schemaVersion": 40,
         "version": 1,
         "refresh": "30s",
-        "tags": ["abaco", "kpi", "production"],
+        "tags": ["loans", "kpi", "production"],
         "time": {"from": "now-90d", "to": "now"},
         "panels": [
             {
@@ -229,7 +229,7 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Provision ABACO KPI dashboard in Grafana")
+    parser = argparse.ArgumentParser(description="Provision LOANS KPI dashboard in Grafana")
     parser.add_argument("--token", dest="token", default=None, help="Grafana service account token")
     parser.add_argument("--base-url", dest="base_url", default=None, help="Grafana base URL")
     parser.add_argument("--uid", dest="uid", default=None, help="Dashboard UID")
@@ -244,7 +244,7 @@ def main() -> int:
         raise RuntimeError("GRAFANA_BASE_URL is required")
     base_url = base_url.rstrip("/")
 
-    uid = args.uid or _pick("GRAFANA_DASHBOARD_UID", env_file, env_local, "abaco-kpi-overview")
+    uid = args.uid or _pick("GRAFANA_DASHBOARD_UID", env_file, env_local, "loans-kpi-overview")
     preferred_ds_name = _pick("GRAFANA_DATASOURCE_NAME", env_file, env_local, "Supabase PostgreSQL")
 
     headers, auth, auth_source = _resolve_auth(env_file, env_local, cli_token=args.token)
@@ -260,7 +260,7 @@ def main() -> int:
     if not ds_uid or not ds_type:
         raise RuntimeError("Could not resolve datasource uid/type")
 
-    dashboard = _build_dashboard(uid=uid or "abaco-kpi-overview", datasource_uid=ds_uid, datasource_type=ds_type)
+    dashboard = _build_dashboard(uid=uid or "loans-kpi-overview", datasource_uid=ds_uid, datasource_type=ds_type)
     payload = {"dashboard": dashboard, "folderId": 0, "overwrite": True}
 
     upsert = _request("POST", f"{base_url}/api/dashboards/db", headers, auth, data=json.dumps(payload))
@@ -274,7 +274,7 @@ def main() -> int:
         raise RuntimeError(f"Dashboard upsert failed ({upsert.status_code}): {upsert.text}")
 
     result = upsert.json() if upsert.text else {}
-    dashboard_uid = result.get("uid") or (uid or "abaco-kpi-overview")
+    dashboard_uid = result.get("uid") or (uid or "loans-kpi-overview")
     dashboard_url = f"{base_url}/d/{dashboard_uid}"
 
     print(f"AUTH_SOURCE={auth_source}")

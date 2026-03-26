@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the active governance rules for `abaco-loans-analytics`.
+This document defines the active governance rules for `loans-loans-analytics`.
 It intentionally excludes deprecated tooling and non-existent workflows.
 
 ## Core Principles

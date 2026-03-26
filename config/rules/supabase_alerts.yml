@@ -16,7 +16,7 @@ groups:
         labels:
           severity: critical
           team: platform
-          runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/Runbook-DB-Connections
+          runbook: https://github.com/Arisofia/loans-loans-analytics/wiki/Runbook-DB-Connections
         annotations:
           summary: "Supabase connection pool at {{ $value | humanizePercentage }} capacity"
           description: "Database {{ $labels.datname }} is using {{ $value | humanizePercentage }} of max connections. Scale connection pool or investigate connection leaks."

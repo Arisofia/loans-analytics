@@ -20,7 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}  Abaco Monitoring Stack - Auto Start${NC}"
+echo -e "${BLUE}  Loans Monitoring Stack - Auto Start${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 

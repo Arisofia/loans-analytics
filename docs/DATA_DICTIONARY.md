@@ -1,4 +1,4 @@
-# Abaco Analytics - Data Dictionary
+# Loans Analytics - Data Dictionary
 
 ## data/raw/loan_data.csv
 

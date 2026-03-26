@@ -1,5 +1,5 @@
 # KPI Definitions - All Formulas and Thresholds
-# Version 3.0 — Aligned with abaco_real_data CSV schema
+# Version 3.0 — Aligned with real_data CSV schema
 #
 # Columns available after Phase 2 (Transformation):
 #   loan_id, borrower_id, principal_amount, outstanding_balance,
@@ -297,7 +297,7 @@ segment_kpis:
     id: "par_30_by_company"
     name: "PAR 30 by Company"
     category: "risk"
-    definition: "PAR30 disaggregated by company segment (Abaco Financial / Abaco Technologies)"
+    definition: "PAR30 disaggregated by company segment (Financial Services / Technology)"
     formula: "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100 GROUP BY company"
     inputs: ["outstanding_balance", "dpd", "company"]
     unit: "percentage"

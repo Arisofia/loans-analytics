@@ -1,5 +1,5 @@
 ======================================================================
-ABACO LOANS - CREDIT SCORECARD TRAINING REPORT
+LOANS LOANS - CREDIT SCORECARD TRAINING REPORT
 ======================================================================
 
 -- MODEL PERFORMANCE ------------------------------------------------
@@ -95,7 +95,7 @@ ABACO LOANS - CREDIT SCORECARD TRAINING REPORT
  'Fabricación de otros tipos de maquinaria de uso general'
  'Fabricación de partes, piezas y accesorios para vehículos automotores'
  'Fabricación de maquinaria de uso especial ncp'
- 'Fabricación de maquinaria para la elaboración de alimentos, bebidas y tabaco'
+ 'Fabricación de maquinaria para la elaboración de alimentos, bebidas y tloans'
  'Enseñanza superior no universitaria' 'Elaboración de productos de café'
  'Fabricación de lápices, bolígrafos, sellos y artículos de librería en generalOS'
  'Fabricación de jabones, detergentes y similares para limpieza'

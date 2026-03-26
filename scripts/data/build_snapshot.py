@@ -10,7 +10,7 @@ from backend.src.zero_cost.storage import ZeroCostStorage
 
 def main() -> None:
     parser = argparse.ArgumentParser(description='Build monthly snapshot into DuckDB star schema')
-    parser.add_argument('--input', default=os.environ.get('INPUT', 'data/samples/abaco_sample_data_20260202.csv'), help='Path to Control-de-Mora CSV file')
+    parser.add_argument('--input', default=os.environ.get('INPUT', 'data/samples/loans_sample_data_20260202.csv'), help='Path to Control-de-Mora CSV file')
     parser.add_argument('--month', default=os.environ.get('MONTH', ''), help='Snapshot month (YYYY-MM-DD or YYYY-MM).  Inferred from filename if omitted.')
     parser.add_argument('--duckdb', default='data/duckdb/analytics.duckdb', help='Path to DuckDB database file')
     parser.add_argument('--parquet-dir', default='data/duckdb', help='Base directory for Parquet outputs')

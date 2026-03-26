@@ -1,6 +1,6 @@
 # End-to-End (E2E) Testing
 
-This directory contains E2E tests for both the backend (FastAPI) and frontend (Streamlit) components of the Abaco Loans Analytics platform.
+This directory contains E2E tests for both the backend (FastAPI) and frontend (Streamlit) components of the Loans Loans Analytics platform.
 
 ## Purpose
 - Ensure robust, high-coverage testing of mission-critical finance workflows
@@ -54,14 +54,14 @@ python3 -m playwright install chromium
 # Use canonical port 8000 (can override with STREAMLIT_SERVER_PORT env var)
 export FRONTEND_BASE_URL="http://127.0.0.1:8000"
 export PYTHONPATH=.
-export CSV_PATH="data/samples/abaco_sample_data_20260202.csv"
+export CSV_PATH="data/samples/loans_sample_data_20260202.csv"
 mkdir -p data/agent_outputs
 BEFORE_COUNT="$(find data/agent_outputs -maxdepth 1 -type f -name '*_response.json' | wc -l | tr -d ' ')"
 
 nohup streamlit run streamlit_app/pages/3_Portfolio_Dashboard.py \
   --server.port=8000 \
   --server.address=127.0.0.1 \
-  > /tmp/abaco_e2e_dashboard.log 2>&1 &
+  > /tmp/loans_e2e_dashboard.log 2>&1 &
 DASH_PID=$!
 trap 'kill ${DASH_PID} >/dev/null 2>&1 || true' EXIT
 

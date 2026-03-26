@@ -88,12 +88,12 @@ class TestKPIMetricsExporter:
     def test_metadata_storage(self):
         exporter = KPIMetricsExporter()
         kpi_result = {'value': 88.5, 'threshold_status': 'normal', 'thresholds': {'critical': 85}, 'unit': 'percentage'}
-        exporter.publish_kpi_result('collection_rate', kpi_result, category='collections', owner_email='ops@abaco.local')
+        exporter.publish_kpi_result('collection_rate', kpi_result, category='collections', owner_email='ops@loans.local')
         assert 'collection_rate' in exporter.metric_metadata
         metadata = exporter.metric_metadata['collection_rate']
         assert metadata['threshold_status'] == 'normal'
         assert metadata['value'] == pytest.approx(88.5)
         assert metadata['category'] == 'collections'
-        assert metadata['owner_email'] == 'ops@abaco.local'
+        assert metadata['owner_email'] == 'ops@loans.local'
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -411,7 +411,7 @@ def _run_pipeline(df: pd.DataFrame, filename: str) -> None:
     status_text = st.empty()
     try:
         run_id = datetime.now().strftime('%Y%m%d_%H%M%S')
-        run_dir = Path(tempfile.mkdtemp(prefix=f'abaco_run_{run_id}_'))
+        run_dir = Path(tempfile.mkdtemp(prefix=f'analytics_run_{run_id}_'))
         upload_meta = _build_upload_metadata(df, filename)
         (run_dir / 'upload_metadata.json').write_text(json.dumps(upload_meta, indent=2, default=str))
         input_path = run_dir / filename
@@ -525,5 +525,5 @@ def _format_file_size(size_bytes: int) -> str:
 classify_loan_id_duplicates = _classify_loan_id_duplicates
 coerce_numeric = _coerce_numeric
 if __name__ == '__main__':
-    st.set_page_config(page_title='CSV Upload - ABACO Analytics', page_icon='📤', layout='wide')
+    st.set_page_config(page_title='CSV Upload - Analytics', page_icon='📤', layout='wide')
     render_csv_upload()

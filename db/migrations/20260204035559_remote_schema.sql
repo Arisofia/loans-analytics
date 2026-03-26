@@ -461,7 +461,7 @@ using ((auth.role() = 'authenticated'::text));
   as permissive
   for insert
   to public
-with check (((auth.role() = 'authenticated'::text) AND ((auth.jwt() ->> 'email'::text) ~~ '%@abaco.%'::text)));
+with check (((auth.role() = 'authenticated'::text) AND ((auth.jwt() ->> 'email'::text) ~~ '%@analytics.local%'::text)));
 
 
 

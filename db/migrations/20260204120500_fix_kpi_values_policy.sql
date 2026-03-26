@@ -45,7 +45,7 @@ BEGIN
 END $$;
 
 -- Policy 2: Authenticated internal users can insert (for manual corrections)
--- Restricted to @abaco.* email domain
+-- Restricted to @analytics.local email domain
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -58,7 +58,7 @@ BEGIN
           FOR INSERT
           WITH CHECK (
             auth.jwt()->>'role' = 'authenticated'
-            AND auth.jwt()->>'email' LIKE '%@abaco.%'
+            AND auth.jwt()->>'email' LIKE '%@analytics.local%'
           );
     END IF;
 END $$;

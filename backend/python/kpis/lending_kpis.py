@@ -542,10 +542,10 @@ def financing_rate_eir(
     payments_df: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     """
-    Tasa de Financiamiento / EIR — rate charged BY Abaco TO clients.
+    Tasa de Financiamiento / EIR — rate charged BY the platform TO clients.
 
     Weighted-average APR on the active portfolio (weighted by outstanding
-    balance).  This is the client-facing EIR, not Abaco's cost of funding.
+    balance).  This is the client-facing EIR, not the lender's cost of funding.
     """
     apr_col = _col(loans_df, ['interest_rate_apr', 'interest_rate', 'TasaInteres', 'fee_rate'])
     bal_col = _col(loans_df, ['outstanding_loan_value', 'outstanding_balance', 'principal_amount'])
@@ -619,7 +619,7 @@ def financing_rate_eir(
         'portfolio_yield_pct': portfolio_yield_pct,
         'portfolio_yield_note': yield_source,
         'note': (
-            'EIR = weighted-average APR charged by Abaco to factoring clients. '
+            'EIR = weighted-average APR charged by the platform to factoring clients. '
             f'Target band {round(target_min * 100):.0f}–{round(target_max * 100):.0f}% '
             'from business_parameters.yml (target_apr_min / target_apr_max).'
         ),

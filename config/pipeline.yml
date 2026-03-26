@@ -147,7 +147,7 @@ external_integrations:
 
   azure:
     enabled: true
-    storage_account: "abacowebstaticfree"
+    storage_account: "loansanalyticsstorage"
     container: "pipeline-data"
 
   github_actions:

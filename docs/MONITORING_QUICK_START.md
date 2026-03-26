@@ -30,7 +30,7 @@ make monitoring-health
 
 ### 4. View KPI Metrics
 
-In Grafana dashboard "Abaco KPI Overview":
+In Grafana dashboard "Loans KPI Overview":
 - PAR30, PAR90 trends
 - NPL ratio monitoring
 - Pipeline execution metrics

@@ -1,5 +1,5 @@
 -- =============================================================================
--- Star Schema — Abaco Loans Analytics
+-- Star Schema — Loans Analytics
 -- Target: Supabase / PostgreSQL (free tier)
 -- Version: 1.0  |  2026-03-16
 --

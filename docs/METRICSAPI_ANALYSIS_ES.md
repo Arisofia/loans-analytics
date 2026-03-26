@@ -7,14 +7,14 @@
 
 ## Descripción General
 
-Este documento proporciona análisis de métricas de KPI accesibles a través de la API de Abaco.
+Este documento proporciona análisis de métricas de KPI accesibles a través de la API de Loans.
 
 ## Endpoints de Métricas
 
 ### API Base
 
 ```
-https://api.abaco.local/v1
+https://api.loans.local/v1
 ```
 
 ### Métricas Disponibles
@@ -39,7 +39,7 @@ https://api.abaco.local/v1
 
 ```bash
 curl -H "Authorization: Bearer $API_KEY" \
-  https://api.abaco.local/v1/metrics/par30 \
+  https://api.loans.local/v1/metrics/par30 \
   -d '{"date": "2026-03-20"}' | jq .
 
 # Respuesta:

@@ -1,4 +1,4 @@
-# Abaco Loans Analytics - Repository Map
+# Loans Analytics - Repository Map
 
 **Last Updated**: 2026-03-21  
 **Audit Status**: Production Readiness Remediation Complete — Final Cleanup Pass

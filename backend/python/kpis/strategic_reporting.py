@@ -141,6 +141,6 @@ def generate_strategic_report(data_dir: str | Path, exports_dir: str | Path) -> 
     with dashboard_path.open('w', encoding='utf-8') as dashboard_file:
         json.dump(dashboard_payload, dashboard_file, indent=2, default=str)
     summary = build_strategic_summary(dashboard_payload)
-    links = {'streamlit_local': 'http://127.0.0.1:8501', 'grafana_local': 'http://127.0.0.1:3001/dashboards', 'streamlit_prod': 'https://abaco-analytics-dashboard.azurewebsites.net', 'dashboard_docs': 'docs/analytics/dashboards.md'}
+    links = {'streamlit_local': 'http://127.0.0.1:8501', 'grafana_local': 'http://127.0.0.1:3001/dashboards', 'streamlit_prod': 'https://analytics-dashboard.azurewebsites.net', 'dashboard_docs': 'docs/analytics/dashboards.md'}
     latest_json_path, latest_md_path = write_strategic_report(summary, links, exports_root)
     return {'dashboard_json': str(dashboard_path), 'strategic_report_json': str(latest_json_path), 'strategic_report_md': str(latest_md_path)}

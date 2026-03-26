@@ -9,7 +9,7 @@ GRAFANA_BASE_URL = os.getenv('GRAFANA_BASE_URL', 'http://localhost:3001').rstrip
 GRAFANA_USER = os.getenv('GRAFANA_USER', 'admin')
 GRAFANA_PASSWORD = os.getenv('GRAFANA_PASSWORD') or os.getenv('GRAFANA_ADMIN_PASSWORD')
 GRAFANA_DATASOURCE_NAME = os.getenv('GRAFANA_DATASOURCE_NAME', 'Supabase PostgreSQL')
-GRAFANA_DASHBOARD_UID = os.getenv('GRAFANA_DASHBOARD_UID', 'abaco-kpi-overview')
+GRAFANA_DASHBOARD_UID = os.getenv('GRAFANA_DASHBOARD_UID', 'loans-kpi-overview')
 EXPECT_GRAFANA_DATA = os.getenv('EXPECT_GRAFANA_DATA', '1') == '1'
 AUTH = (GRAFANA_USER, GRAFANA_PASSWORD or '')
 pytestmark = [
@@ -85,7 +85,7 @@ def _execute_dashboard_queries(datasource_uid: str, sql_targets: list[tuple[int,
 
 def _assert_expected_data_rows(total_rows: int) -> None:
     if EXPECT_GRAFANA_DATA:
-        assert total_rows > 0, "ABACO KPI Overview returned zero rows across all panel queries. This indicates global 'No data' (empty tables, wrong schema, or stale ingestion)."
+        assert total_rows > 0, "LOANS KPI Overview returned zero rows across all panel queries. This indicates global 'No data' (empty tables, wrong schema, or stale ingestion)."
 
 @pytest.fixture(scope='module')
 def datasource_uid() -> str:
@@ -103,13 +103,13 @@ def datasource_uid() -> str:
     return ds_uid
 
 @pytest.mark.skipif(not _grafana_up(), reason='Grafana is not reachable')
-def test_abaco_kpi_overview_queries(datasource_uid: str):
+def test_loans_kpi_overview_queries(datasource_uid: str):
     dash_resp = requests.get(f'{GRAFANA_BASE_URL}/api/dashboards/uid/{GRAFANA_DASHBOARD_UID}', auth=AUTH, timeout=15)
     assert dash_resp.status_code == 200, f"Dashboard UID '{GRAFANA_DASHBOARD_UID}' not found: {dash_resp.text}"
     dashboard = dash_resp.json().get('dashboard') or {}
     panels = _iter_panels(dashboard.get('panels') or [])
     sql_targets = _collect_sql_targets(panels)
-    assert sql_targets, 'No SQL targets found in ABACO KPI Overview dashboard'
+    assert sql_targets, 'No SQL targets found in LOANS KPI Overview dashboard'
     failures, total_rows = _execute_dashboard_queries(datasource_uid, sql_targets)
     assert not failures, 'Grafana panel queries failed:\n' + '\n'.join(failures)
     _assert_expected_data_rows(total_rows)

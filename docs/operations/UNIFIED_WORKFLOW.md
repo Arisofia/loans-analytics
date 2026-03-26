@@ -195,7 +195,7 @@ outputs:
 ### **Option 1: Manual CLI**
 
 ```bash
-cd /Users/jenineferderas/abaco-loans-analytics
+cd /Users/jenineferderas/loans-loans-analytics
 source .venv/bin/activate
 python scripts/data/run_data_pipeline.py
 ```

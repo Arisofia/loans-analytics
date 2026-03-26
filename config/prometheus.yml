@@ -1,11 +1,11 @@
-# Prometheus Configuration for Abaco Loans Analytics
+# Prometheus Configuration for Loans Analytics
 # Self-hosted Prometheus + Grafana setup for complete observability
 
 global:
   scrape_interval: 60s
   evaluation_interval: 60s
   external_labels:
-    cluster: "abaco-production"
+    cluster: "analytics-production"
     team: "platform"
 
 # Alertmanager configuration
@@ -55,7 +55,7 @@ scrape_configs:
   # ============================================
   # PIPELINE APPLICATION METRICS (FUTURE)
   # ============================================
-  - job_name: "abaco-pipeline"
+  - job_name: "analytics-pipeline"
     scrape_interval: 30s
     scrape_timeout: 10s
     static_configs:
@@ -75,7 +75,7 @@ scrape_configs:
   # ============================================
   # KPI THRESHOLD METRICS
   # ============================================
-  - job_name: "abaco-kpi-thresholds"
+  - job_name: "analytics-kpi-thresholds"
     scrape_interval: 30s
     scrape_timeout: 10s
     metrics_path: /metrics/kpis

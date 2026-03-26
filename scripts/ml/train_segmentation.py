@@ -20,7 +20,7 @@ logger = logging.getLogger('train_segmentation')
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description='Train Behavioural Segmentation Model (K-Means / DBSCAN) '
-        'on Ábaco / Google Control-de-Mora data'
+        'on Loans / Google Control-de-Mora data'
     )
     p.add_argument('--loans', type=Path, default=Path('data/raw/loan_data.csv'), help='Path to loan CSV')
     p.add_argument('--payments', type=Path, default=Path('data/raw/real_payment.csv'), help='Path to payments CSV (Control de Mora export)')
@@ -47,7 +47,7 @@ def build_segmentation_report(
 ) -> str:
     lines = [
         '=' * 70,
-        'ABACO LOANS - BEHAVIOURAL SEGMENTATION REPORT',
+        'LOANS LOANS - BEHAVIOURAL SEGMENTATION REPORT',
         '=' * 70,
         '',
         '-- CONFIGURATION ---------------------------------------------------',

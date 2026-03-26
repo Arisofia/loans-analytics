@@ -4,16 +4,16 @@ from uuid import UUID
 import pandas as pd
 import requests
 import streamlit as st
-from backend.python.config.theme import ABACO_THEME
+from backend.python.config.theme import ANALYTICS_THEME
 from frontend.streamlit_app.utils.security import sanitize_api_base
-st.set_page_config(page_title='Monitoring & Control - Abaco', layout='wide')
-st.markdown(f"\n    <style>\n    .main {{\n        background-color: {ABACO_THEME['colors']['background']};\n        color: {ABACO_THEME['colors']['white']};\n    }}\n    </style>\n    ", unsafe_allow_html=True)
+st.set_page_config(page_title='Monitoring & Control', layout='wide')
+st.markdown(f"\n    <style>\n    .main {{\n        background-color: {ANALYTICS_THEME['colors']['background']};\n        color: {ANALYTICS_THEME['colors']['white']};\n    }}\n    </style>\n    ", unsafe_allow_html=True)
 st.title('Monitoring & Control')
-API_BASE: str = os.environ.get('ABACO_API_BASE', 'http://127.0.0.1:8000')
+API_BASE: str = os.environ.get('API_BASE_URL', 'http://127.0.0.1:8000')
 API_BASE_SAFE = sanitize_api_base(API_BASE)
 if API_BASE_SAFE is None:
     st.sidebar.text('API: <invalid or untrusted>')
-    st.error('Invalid ABACO_API_BASE configuration. Contact your administrator.')
+    st.error('Invalid API_BASE_URL configuration. Contact your administrator.')
 else:
     st.sidebar.text(f'API: {API_BASE_SAFE}')
 MONITORING_EVENTS_ENDPOINT = '/monitoring/events'
