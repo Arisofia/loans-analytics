@@ -94,7 +94,7 @@ class TestMYPERotation:
 class TestMYPEFacilityApproval:
 
     def test_recommends_collateral_for_high_risk(self):
-        metrics = {'dpd': 45, 'utilization': 0.88, 'npl_ratio': 0.06, 'collection_rate': 0.8, 'revenue': 220000, 'avg_balance': 90000, 'industry': IndustryType.TRADE}
+        metrics = {'dpd': 45, 'utilization': 0.88, 'npl_ratio': 0.06, 'collection_rate': 0.8, 'revenue': 220000, 'avg_balance': 90000, 'industry': IndustryType.RETAIL}
         dec = MYPEBusinessRules.evaluate_facility_approval(200000, metrics, 50000)
         assert dec.approved is False
         assert dec.risk_level == RiskLevel.HIGH
@@ -111,7 +111,7 @@ class TestMYPEFacilityApproval:
         assert not dec.conditions
 
     def test_flags_critical_npl(self):
-        metrics = {'dpd': MYPEBusinessRules.NPL_DAYS_THRESHOLD + 10, 'utilization': 0.4, 'npl_ratio': 0.02, 'collection_rate': 0.9, 'revenue': 250000, 'avg_balance': 100000, 'industry': IndustryType.TRADE}
+        metrics = {'dpd': MYPEBusinessRules.NPL_DAYS_THRESHOLD + 10, 'utilization': 0.4, 'npl_ratio': 0.02, 'collection_rate': 0.9, 'revenue': 250000, 'avg_balance': 100000, 'industry': IndustryType.RETAIL}
         dec = MYPEBusinessRules.evaluate_facility_approval(100000, metrics, 20000)
         assert dec.approved is False
         assert dec.risk_level == RiskLevel.CRITICAL

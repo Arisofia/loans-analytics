@@ -11,8 +11,14 @@ class RiskLevel(str, Enum):
 
 class IndustryType(str, Enum):
     MANUFACTURING = 'MANUFACTURING'
-    TRADE = 'TRADE'
+    RETAIL = 'RETAIL'
     SERVICES = 'SERVICES'
+    GOVERNMENT = 'GOVERNMENT'
+    LOGISTICS = 'LOGISTICS'
+    TECH = 'TECH'
+    FINANCIAL = 'FINANCIAL'
+    CONSTRUCTION = 'CONSTRUCTION'
+    HEALTHCARE = 'HEALTHCARE'
     OTHER = 'OTHER'
 
 @dataclass
@@ -29,7 +35,18 @@ class MYPEBusinessRules:
     NPL_DAYS_THRESHOLD = 90
     TARGET_ROTATION = 4.5
     HIGH_RISK_CRITERIA = {'utilization': 0.85, 'npl_ratio': 0.05, 'collection_rate': 0.85}
-    INDUSTRY_MULTIPLIERS = {IndustryType.MANUFACTURING: 1.1, IndustryType.TRADE: 1.0, IndustryType.SERVICES: 0.95, IndustryType.OTHER: 0.9}
+    INDUSTRY_MULTIPLIERS = {
+        IndustryType.MANUFACTURING: 1.1,
+        IndustryType.RETAIL: 1.0,
+        IndustryType.SERVICES: 0.95,
+        IndustryType.GOVERNMENT: 1.15,
+        IndustryType.LOGISTICS: 1.0,
+        IndustryType.TECH: 0.95,
+        IndustryType.FINANCIAL: 1.05,
+        IndustryType.CONSTRUCTION: 1.0,
+        IndustryType.HEALTHCARE: 1.05,
+        IndustryType.OTHER: 0.9,
+    }
 
     @classmethod
     def classify_high_risk(cls, metrics: dict[str, Any]) -> tuple[bool, list[str]]:
@@ -51,7 +68,7 @@ class MYPEBusinessRules:
     @classmethod
     def calculate_industry_adjustment(cls, industry: IndustryType | str | None) -> float:
         try:
-            industry_key = industry if isinstance(industry, IndustryType) else IndustryType(str(industry))
+            industry_key = industry if isinstance(industry, IndustryType) else IndustryType(str(industry).upper())
         except Exception:
             industry_key = IndustryType.OTHER
         return cls.INDUSTRY_MULTIPLIERS.get(industry_key, cls.INDUSTRY_MULTIPLIERS[IndustryType.OTHER])
