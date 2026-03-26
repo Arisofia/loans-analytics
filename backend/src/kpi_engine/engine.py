@@ -1,102 +1,66 @@
-"""KPI engine entrypoint — single ``run_metric_engine`` facade.
-
-Calls every KPI module (risk, revenue, liquidity, concentration,
-unit_economics, cohorts, capital, covenants) and returns a flat dict
-of all computed metric values keyed by metric_id.
-"""
-
 from __future__ import annotations
 
-import logging
-from decimal import Decimal
-from typing import Any, Dict, Optional
+from datetime import date
+from typing import Any
 
 import pandas as pd
 
-from backend.src.kpi_engine import (
-    capital,
-    cohorts,
-    concentration,
-    covenants,
-    liquidity,
-    revenue,
-    risk,
-    unit_economics,
-)
+from backend.src.contracts.metric_schema import MetricResult
+from backend.src.kpi_engine import cohorts, revenue, risk, unit_economics
 
-logger = logging.getLogger(__name__)
+
+def _mr(metric_id: str, name: str, value: float, unit: str, mart: str, owner: str) -> MetricResult:
+    return MetricResult(
+        metric_id=metric_id,
+        metric_name=name,
+        value=value,
+        unit=unit,
+        as_of_date=date.today(),
+        source_mart=mart,
+        owner=owner,
+    )
 
 
 def run_metric_engine(
-    marts: Dict[str, pd.DataFrame],
-    *,
-    equity: Optional[Decimal] = None,
-    lgd: Decimal = Decimal("0.10"),
-    min_collection_rate: float = 98.5,
-) -> Dict[str, Any]:
-    """Execute the full KPI engine over the mart bundle.
-
-    Parameters
-    ----------
-    marts : dict
-        Keyed by mart name (``portfolio_mart``, ``finance_mart``, etc.).
-    equity : Decimal, optional
-        Explicit total equity for capital computations.
-    lgd : Decimal
-        Loss-given-default for expected-loss calculation.
-    min_collection_rate : float
-        Threshold for liquidity warning.
-
-    Returns
-    -------
-    dict
-        Flat dict ``{metric_id: value}`` with all computed metrics.
-    """
+    marts: dict[str, pd.DataFrame],
+    quality_result: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     portfolio = marts.get("portfolio_mart", pd.DataFrame())
     finance = marts.get("finance_mart", pd.DataFrame())
-    treasury = marts.get("treasury_mart", pd.DataFrame())
-    collections = marts.get("collections_mart", pd.DataFrame())
+    sales = marts.get("sales_mart", pd.DataFrame())
 
-    results: Dict[str, Any] = {}
+    executive: list[MetricResult] = []
+    risk_metrics: list[MetricResult] = []
+    pricing: list[MetricResult] = []
 
-    # ── Risk module ──────────────────────────────────────────────────────
-    if not portfolio.empty:
-        results.update(risk.compute_par(portfolio))
-        results.update(risk.compute_npl(portfolio))
-        results.update(risk.compute_default_rate(portfolio))
-        results.update(risk.compute_expected_loss(portfolio, lgd))
+    # Risk
+    risk_metrics.append(_mr("par30", "PAR 30", risk.compute_par30(portfolio), "ratio", "portfolio", "risk"))
+    risk_metrics.append(_mr("par60", "PAR 60", risk.compute_par60(portfolio), "ratio", "portfolio", "risk"))
+    risk_metrics.append(_mr("par90", "PAR 90", risk.compute_par90(portfolio), "ratio", "portfolio", "risk"))
+    risk_metrics.append(_mr("expected_loss", "Expected Loss", risk.compute_expected_loss(portfolio), "currency", "portfolio", "risk"))
 
-    # ── Revenue module ───────────────────────────────────────────────────
-    if not finance.empty:
-        results.update(revenue.compute_revenue_metrics(finance))
+    # Revenue / pricing
+    pricing.append(_mr("net_yield", "Net Yield", revenue.compute_net_yield(finance), "ratio", "finance", "cfo"))
+    pricing.append(_mr("spread", "Spread", revenue.compute_spread(finance), "ratio", "finance", "cfo"))
 
-    # ── Liquidity module ─────────────────────────────────────────────────
-    if not treasury.empty:
-        results.update(liquidity.compute_liquidity_metrics(treasury))
+    # Unit economics → executive
+    executive.append(_mr("avg_ticket", "Avg Ticket", unit_economics.compute_avg_ticket(sales), "currency", "sales", "commercial"))
+    executive.append(_mr("win_rate", "Win Rate", unit_economics.compute_win_rate(sales), "ratio", "sales", "commercial"))
+    executive.append(_mr("contribution_margin", "Contribution Margin", unit_economics.compute_contribution_margin(finance), "currency", "finance", "cfo"))
 
-    # ── Concentration module ─────────────────────────────────────────────
-    if not portfolio.empty:
-        results.update(concentration.compute_concentration_metrics(portfolio))
+    # Cohorts
+    cohort_curve = cohorts.build_cohort_default_curve(portfolio)
+    vintage_summary = cohorts.build_vintage_quality_summary(portfolio)
 
-    # ── Unit economics module ────────────────────────────────────────────
-    if not finance.empty:
-        results.update(unit_economics.compute_unit_economics(finance))
-
-    # ── Cohort module ────────────────────────────────────────────────────
-    if not portfolio.empty:
-        cohort_data = cohorts.compute_vintage_analysis(portfolio)
-        results["vintage_cohorts"] = cohort_data
-
-    # ── Capital module ───────────────────────────────────────────────────
-    if not finance.empty and not treasury.empty:
-        results.update(capital.compute_capital_metrics(finance, treasury, equity=equity))
-
-    # ── Covenants module ─────────────────────────────────────────────────
-    if not portfolio.empty:
-        _equity = equity if equity is not None else Decimal("0")
-        covenant_result = covenants.check_all_covenants(portfolio, equity=_equity)
-        results["covenant_status"] = covenant_result["covenant_status"]
-        results["covenant_breaches"] = covenant_result["breaches"]
+    return {
+        "executive_metrics": executive,
+        "risk_metrics": risk_metrics,
+        "pricing_metrics": pricing,
+        "cohort_outputs": {
+            "default_curve": cohort_curve,
+            "vintage_summary": vintage_summary,
+        },
+    }
         results["eligible_portfolio_ratio"] = covenant_result["eligible_portfolio"].get(
             "eligible_portfolio_ratio", 0.0
         )

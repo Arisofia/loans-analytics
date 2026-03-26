@@ -307,3 +307,31 @@ def main() -> int:
         return 1
 if __name__ == '__main__':
     sys.exit(main())
+
+
+def run_decision_slice(canonical_bundle: dict) -> dict:
+    """Run the first-live decision slice end-to-end."""
+    import pandas as pd
+
+    from backend.python.multi_agent.feature_store.builder import build_feature_store
+    from backend.python.multi_agent.orchestrator.decision_orchestrator import DecisionOrchestrator
+    from backend.python.multi_agent.orchestrator.run_first_live_agents import run_first_live_agents
+    from backend.src.data_quality.engine import run_data_quality
+    from backend.src.kpi_engine.engine import run_metric_engine
+    from backend.src.marts.build_all_marts import build_all_marts
+
+    marts = build_all_marts(canonical_bundle)
+    loans = canonical_bundle.get("loans", pd.DataFrame())
+    quality = run_data_quality(loans)
+    metrics_result = run_metric_engine(marts, quality)
+    features = build_feature_store(marts, metrics_result)
+
+    flat_metrics: dict = {}
+    for key in ("executive_metrics", "risk_metrics", "pricing_metrics"):
+        for mr in metrics_result.get(key, []):
+            flat_metrics[mr.metric_id] = mr.value
+
+    agent_outputs = run_first_live_agents(marts, flat_metrics, features, quality)
+    orchestrator = DecisionOrchestrator(agent_outputs, flat_metrics)
+
+    return orchestrator.run()

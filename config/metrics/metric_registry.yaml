@@ -1,164 +1,63 @@
 metrics:
-  # ─── Asset Quality ───
-  - metric_id: par_30
+  - metric_id: par30
     metric_name: PAR 30
     owner: risk
     mart: portfolio_mart
-    formula_ref: kpi_engine.risk.compute_par
-    unit: percent
-    description: Share of outstanding principal with days_past_due >= 30
-    threshold_warning: 3.0
-    threshold_critical: 5.0
+    formula_ref: backend.src.kpi_engine.risk.compute_par30
+    unit: ratio
 
-  - metric_id: par_60
+  - metric_id: par60
     metric_name: PAR 60
     owner: risk
     mart: portfolio_mart
-    formula_ref: kpi_engine.risk.compute_par
-    unit: percent
-    threshold_warning: 2.0
-    threshold_critical: 4.0
+    formula_ref: backend.src.kpi_engine.risk.compute_par60
+    unit: ratio
 
-  - metric_id: par_90
+  - metric_id: par90
     metric_name: PAR 90
     owner: risk
     mart: portfolio_mart
-    formula_ref: kpi_engine.risk.compute_par
-    unit: percent
-    threshold_warning: 1.0
-    threshold_critical: 2.0
-
-  - metric_id: npl_ratio
-    metric_name: NPL Ratio
-    owner: risk
-    mart: portfolio_mart
-    formula_ref: kpi_engine.risk.compute_npl
-    unit: percent
-    threshold_warning: 5.0
-    threshold_critical: 10.0
-
-  - metric_id: default_rate
-    metric_name: Default Rate
-    owner: risk
-    mart: portfolio_mart
-    formula_ref: kpi_engine.risk.compute_default_rate
-    unit: percent
-    threshold_warning: 2.0
-    threshold_critical: 5.0
+    formula_ref: backend.src.kpi_engine.risk.compute_par90
+    unit: ratio
 
   - metric_id: expected_loss
     metric_name: Expected Loss
     owner: risk
     mart: portfolio_mart
-    formula_ref: kpi_engine.risk.compute_expected_loss
-    unit: currency
-    threshold_warning: 3.0
-    threshold_critical: 5.0
-
-  - metric_id: cost_of_risk
-    metric_name: Cost of Risk
-    owner: risk
-    mart: portfolio_mart
-    formula_ref: kpi_engine.risk.compute_cost_of_risk
-    unit: percent
-    threshold_warning: 3.0
-    threshold_critical: 6.0
-
-  - metric_id: cure_rate
-    metric_name: Cure Rate
-    owner: collections
-    mart: collections_mart
-    formula_ref: kpi_engine.risk.compute_cure_rate
-    unit: percent
-    threshold_warning: 15.0
-
-  # ─── Revenue / Finance ───
-  - metric_id: total_outstanding_balance
-    metric_name: Total Outstanding Balance (AUM)
-    owner: finance
-    mart: portfolio_mart
-    formula_ref: kpi_engine.revenue.compute_aum
+    formula_ref: backend.src.kpi_engine.risk.compute_expected_loss
     unit: currency
 
-  - metric_id: portfolio_yield
-    metric_name: Portfolio Yield
+  - metric_id: net_yield
+    metric_name: Net Yield
     owner: finance
     mart: finance_mart
-    formula_ref: kpi_engine.revenue.compute_yield
-    unit: percent
-
-  - metric_id: net_interest_margin
-    metric_name: Net Interest Margin
-    owner: finance
-    mart: finance_mart
-    formula_ref: kpi_engine.revenue.compute_nim
-    unit: percent
-    threshold_warning: 5.0
-    threshold_critical: 2.0
-
-  - metric_id: collection_rate
-    metric_name: Collection Rate
-    owner: collections
-    mart: collections_mart
-    formula_ref: kpi_engine.revenue.compute_collection_rate
-    unit: percent
-    threshold_warning: 85.0
-
-  # ─── Liquidity ───
-  - metric_id: liquidity_ratio
-    metric_name: Liquidity Ratio
-    owner: treasury
-    mart: treasury_mart
-    formula_ref: kpi_engine.liquidity.compute_liquidity_ratio
+    formula_ref: backend.src.kpi_engine.revenue.compute_net_yield
     unit: ratio
-    threshold_warning: 0.05
-    threshold_critical: 0.03
 
-  # ─── Growth ───
-  - metric_id: disbursement_volume_mtd
-    metric_name: Disbursement Volume MTD
-    owner: sales
-    mart: sales_mart
-    formula_ref: kpi_engine.revenue.compute_disbursement_mtd
-    unit: currency
+  - metric_id: spread
+    metric_name: Spread
+    owner: finance
+    mart: finance_mart
+    formula_ref: backend.src.kpi_engine.revenue.compute_spread
+    unit: ratio
 
-  - metric_id: new_loans_count_mtd
-    metric_name: New Loans MTD
-    owner: sales
-    mart: sales_mart
-    formula_ref: kpi_engine.revenue.compute_new_loans_mtd
-    unit: count
-
-  # ─── Concentration ───
-  - metric_id: hhi_index
-    metric_name: HHI Concentration Index
-    owner: risk
-    mart: portfolio_mart
-    formula_ref: kpi_engine.concentration.compute_hhi
-    unit: index
-    threshold_warning: 1800
-    threshold_critical: 2500
-
-  - metric_id: top_10_concentration
-    metric_name: Top 10 Borrower Concentration
-    owner: risk
-    mart: portfolio_mart
-    formula_ref: kpi_engine.concentration.compute_top_n
-    unit: percent
-    threshold_warning: 25.0
-    threshold_critical: 30.0
-
-  # ─── Unit Economics ───
   - metric_id: avg_ticket
-    metric_name: Average Ticket Size
+    metric_name: Average Ticket
     owner: sales
     mart: sales_mart
-    formula_ref: kpi_engine.unit_economics.compute_avg_ticket
+    formula_ref: backend.src.kpi_engine.unit_economics.compute_avg_ticket
     unit: currency
 
-  - metric_id: repeat_borrower_rate
-    metric_name: Repeat Borrower Rate
+  - metric_id: win_rate
+    metric_name: Win Rate
     owner: sales
     mart: sales_mart
-    formula_ref: kpi_engine.unit_economics.compute_repeat_rate
-    unit: percent
+    formula_ref: backend.src.kpi_engine.unit_economics.compute_win_rate
+    unit: ratio
+
+  - metric_id: contribution_margin
+    metric_name: Contribution Margin
+    owner: finance
+    mart: finance_mart
+    formula_ref: backend.src.kpi_engine.unit_economics.compute_contribution_margin
+    unit: currency
