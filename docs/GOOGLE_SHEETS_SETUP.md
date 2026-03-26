@@ -41,7 +41,7 @@ The file should contain:
 
 ## Step 3: Verify Integration
 
-For all pipeline execution commands and Google Sheets integration examples, see **[Canonical Script Map - Data Pipeline](../operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)**.
+For all pipeline execution commands and Google Sheets integration examples, see **[Canonical Script Map - Data Pipeline](operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)**.
 
 **Quick test:**
 
@@ -62,7 +62,7 @@ ingestion:
     worksheet: "DESEMBOLSOS"
 ```
 
-Run the pipeline as documented in **[Canonical Script Map](../operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)**.
+Run the pipeline as documented in **[Canonical Script Map](operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)**.
 
 ## Expected Sheets Structure
 

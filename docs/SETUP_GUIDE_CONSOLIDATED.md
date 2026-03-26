@@ -439,7 +439,7 @@ After setup:
 2. **Start monitoring**: `make monitoring-start`
 3. **Explore dashboards**: <http://localhost:3001> (Grafana)
 4. **Run multi-agent**: See `python/multi_agent/README.md`
-5. **Read architecture**: [REPO_MAP.md](../REPO_MAP.md)
+5. **Read architecture**: `REPO_MAP.md`
 
 ---
 

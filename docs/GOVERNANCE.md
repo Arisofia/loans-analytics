@@ -50,7 +50,7 @@ The following workflows are the source of truth for repository governance:
 
 **CRITICAL**: Repository history and incoming pull requests must be scanned for secrets before merge.
 
-**Enforcement configuration**: [`SECURITY.md`](../SECURITY.md) and [`.gitleaks.toml`](../.gitleaks.toml)
+**Enforcement configuration**: [`SECURITY.md`](SECURITY.md) and `.gitleaks.toml`
 
 **Key Requirements** (summary):
 1. **CI/CD enforcement**: `.github/workflows/security-scan.yml` must run Gitleaks on push and pull request events.
