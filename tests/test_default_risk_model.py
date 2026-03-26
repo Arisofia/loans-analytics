@@ -1,5 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
@@ -97,6 +98,7 @@ class TestPredictionModels:
 class TestPredictEndpoint:
 
     def test_predict_default_no_model(self):
+        app: Any | None = None
         try:
             from fastapi.testclient import TestClient
             from backend.python.apps.analytics.api.main import app
@@ -113,6 +115,7 @@ class TestPredictEndpoint:
         assert resp.status_code == 503
 
     def test_predict_default_with_model(self):
+        app: Any | None = None
         try:
             from fastapi.testclient import TestClient
             from backend.python.apps.analytics.api.main import app
