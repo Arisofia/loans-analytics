@@ -292,7 +292,110 @@ def mype_approval_batch(loans_df: pd.DataFrame, payments_df: pd.DataFrame | None
     decisions.sort(key=lambda x: float(cast(float, x['pod'])), reverse=True)
     return {'status': 'ok', 'total_clients': len(decisions), 'summary': counts, 'approve_rate_pct': round(counts['APPROVE'] / max(len(decisions), 1) * 100, 1), 'high_risk_balance_usd': round(sum((float(cast(float, d['outstanding_usd'])) for d in decisions if str(cast(str, d['risk_level'])) in ('HIGH', 'CRITICAL'))), 2), 'decisions': decisions[:100], 'data_gaps': ['utilization = 0 (LineaCredito not in loan_data.csv)', 'collection_rate = proxy from disbursement (needs payment_schedule)']}
 
-def build_lending_kpi_report(loans_df: pd.DataFrame, payments_df: pd.DataFrame, customer_df: pd.DataFrame | None=None) -> dict[str, Any]:
+def cash_balance_treasury(
+    cash_balance_usd: float,
+    pending_disbursements_usd: float = 0.0,
+    loans_df: pd.DataFrame | None = None,
+    avg_portfolio_apr: float | None = None,
+    reserve_ratio: float = 0.10,
+) -> dict[str, Any]:
+    """Daily cash position, disbursement capacity, and opportunity cost.
+
+    Parameters
+    ----------
+    cash_balance_usd:
+        Total cash available in bank accounts today (manual daily entry).
+    pending_disbursements_usd:
+        Approved loans approved but not yet funded (sitting in the pipeline).
+    loans_df:
+        Loan tape used to derive weighted-average APR when avg_portfolio_apr is None.
+    avg_portfolio_apr:
+        Override for portfolio APR (e.g. 0.28 for 28%).  Calculated from loans_df
+        if not supplied.
+    reserve_ratio:
+        Fraction of cash held in reserve (not deployable).  Default 10%.
+    """
+    # --- derive APR from loan tape when not provided ---
+    if avg_portfolio_apr is None and loans_df is not None:
+        apr_col = _col(loans_df, ['interest_rate_apr', 'APR'])
+        if apr_col:
+            avg_portfolio_apr = float(_num(loans_df, apr_col).mean())
+    if avg_portfolio_apr is None:
+        avg_portfolio_apr = 0.28  # conservative LatAm fintech default
+
+    reserve_usd = cash_balance_usd * reserve_ratio
+    available_to_disburse_usd = max(cash_balance_usd - reserve_usd - pending_disbursements_usd, 0.0)
+    idle_cash_usd = max(cash_balance_usd - reserve_usd - pending_disbursements_usd, 0.0)
+
+    # --- opportunity cost: money sitting in bank vs deployed in loans ---
+    daily_rate = avg_portfolio_apr / 365.0
+    opp_cost_idle_daily_usd = idle_cash_usd * daily_rate
+    opp_cost_idle_monthly_usd = idle_cash_usd * (avg_portfolio_apr / 12.0)
+
+    # --- opportunity cost of pending disbursements not yet funded ---
+    opp_cost_pending_daily_usd = pending_disbursements_usd * daily_rate
+    opp_cost_pending_monthly_usd = pending_disbursements_usd * (avg_portfolio_apr / 12.0)
+
+    # --- utilisation ---
+    aum_usd = 0.0
+    if loans_df is not None:
+        bal_col = _col(loans_df, ['outstanding_loan_value', 'outstanding_balance'])
+        if bal_col:
+            aum_usd = float(_num(loans_df, bal_col).sum())
+
+    total_deployable_capital = aum_usd + cash_balance_usd
+    utilisation_rate_pct = round(aum_usd / max(total_deployable_capital, 1) * 100, 1)
+
+    # --- alerts ---
+    alerts: list[str] = []
+    if idle_cash_usd > 50_000:
+        alerts.append(f'HIGH_IDLE_CASH: ${idle_cash_usd:,.0f} sitting undeployed — opportunity cost ${opp_cost_idle_monthly_usd:,.0f}/mo')
+    if pending_disbursements_usd > cash_balance_usd * 0.5:
+        alerts.append(f'PIPELINE_EXCEEDS_50PCT_CASH: ${pending_disbursements_usd:,.0f} pending vs ${cash_balance_usd:,.0f} available')
+    if available_to_disburse_usd == 0 and pending_disbursements_usd > 0:
+        alerts.append('INSUFFICIENT_CASH: pending disbursements exceed deployable cash — funding gap detected')
+    if utilisation_rate_pct < 70:
+        alerts.append(f'LOW_UTILISATION: {utilisation_rate_pct}% — AUM/Capital ratio below 70% target')
+
+    return {
+        'status': 'ok',
+        'as_of': datetime.now(timezone.utc).date().isoformat(),
+        'inputs': {
+            'cash_balance_usd': round(cash_balance_usd, 2),
+            'pending_disbursements_usd': round(pending_disbursements_usd, 2),
+            'reserve_ratio_pct': round(reserve_ratio * 100, 1),
+            'avg_portfolio_apr': round(avg_portfolio_apr, 4),
+        },
+        'capacity': {
+            'reserve_held_usd': round(reserve_usd, 2),
+            'available_to_disburse_usd': round(available_to_disburse_usd, 2),
+            'aum_deployed_usd': round(aum_usd, 2),
+            'utilisation_rate_pct': utilisation_rate_pct,
+        },
+        'opportunity_cost': {
+            'idle_cash_usd': round(idle_cash_usd, 2),
+            'opp_cost_idle_daily_usd': round(opp_cost_idle_daily_usd, 2),
+            'opp_cost_idle_monthly_usd': round(opp_cost_idle_monthly_usd, 2),
+            'pending_dis_opp_cost_daily_usd': round(opp_cost_pending_daily_usd, 2),
+            'pending_dis_opp_cost_monthly_usd': round(opp_cost_pending_monthly_usd, 2),
+            'total_monthly_opp_cost_usd': round(opp_cost_idle_monthly_usd + opp_cost_pending_monthly_usd, 2),
+        },
+        'alerts': alerts,
+        'note': (
+            'cash_balance_usd is a required DAILY MANUAL INPUT from bank accounts. '
+            'Integrate bank feed (Belvo/Plaid) to automate. '
+            'pending_disbursements_usd = sum of approved-not-yet-funded loans from origination system.'
+        ),
+    }
+
+
+def build_lending_kpi_report(
+    loans_df: pd.DataFrame,
+    payments_df: pd.DataFrame,
+    customer_df: pd.DataFrame | None = None,
+    cash_balance_usd: float | None = None,
+    pending_disbursements_usd: float = 0.0,
+) -> dict[str, Any]:
     cdr = cdr_by_cohort(loans_df)
     liq = liquidation_rate(loans_df, payments_df)
     ecl = lgd_ecl_by_segment(loans_df, customer_df)
@@ -301,4 +404,24 @@ def build_lending_kpi_report(loans_df: pd.DataFrame, payments_df: pd.DataFrame, 
     cure = cure_rate_by_period(payments_df)
     ptp = promise_to_pay_metrics(payments_df)
     mype = mype_approval_batch(loans_df, payments_df)
-    return {'generated_at': datetime.now(timezone.utc).isoformat(), 'cdr_curves': cdr, 'liquidation_rate': liq, 'lgd_ecl': ecl, 'balance_sheet': bs, 'approval_metrics': appr, 'cure_rate': cure, 'promise_to_pay': ptp, 'mype_decisions': mype}
+    treasury = (
+        cash_balance_treasury(
+            cash_balance_usd=cash_balance_usd,
+            pending_disbursements_usd=pending_disbursements_usd,
+            loans_df=loans_df,
+        )
+        if cash_balance_usd is not None
+        else {'status': 'not_provided', 'note': 'Pass cash_balance_usd (daily bank balance) to activate treasury capacity view.'}
+    )
+    return {
+        'generated_at': datetime.now(timezone.utc).isoformat(),
+        'cdr_curves': cdr,
+        'liquidation_rate': liq,
+        'lgd_ecl': ecl,
+        'balance_sheet': bs,
+        'approval_metrics': appr,
+        'cure_rate': cure,
+        'promise_to_pay': ptp,
+        'mype_decisions': mype,
+        'treasury_capacity': treasury,
+    }
