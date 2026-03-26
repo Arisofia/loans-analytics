@@ -1,6 +1,7 @@
 from __future__ import annotations
 import hashlib
 import json
+import warnings
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple
@@ -70,6 +71,19 @@ class KPIEngineV2:
         }
 
     def _calc_par30_legacy(self) -> tuple[Decimal, str]:
+        """Legacy PAR30 from pre-bucketed DPD columns.
+
+        .. deprecated::
+            Prefer SSOT path via ``calculate_asset_quality_metrics``.
+            This fallback is retained for data schemas that lack a raw
+            ``dpd`` column but provide pre-bucketed USD columns.
+        """
+        warnings.warn(
+            "_calc_par30_legacy is deprecated; data should provide a raw 'dpd' column "
+            "so the SSOT path (ssot_asset_quality) is used instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
         if missing := [col for col in required if col not in self.df.columns]:
             raise ValueError(f"Missing required columns for PAR30: {', '.join(missing)}")
@@ -87,6 +101,19 @@ class KPIEngineV2:
         )
 
     def _calc_par90_legacy(self) -> tuple[Decimal, str]:
+        """Legacy PAR90 from pre-bucketed DPD columns.
+
+        .. deprecated::
+            Prefer SSOT path via ``calculate_asset_quality_metrics``.
+            This fallback is retained for data schemas that lack a raw
+            ``dpd`` column but provide pre-bucketed USD columns.
+        """
+        warnings.warn(
+            "_calc_par90_legacy is deprecated; data should provide a raw 'dpd' column "
+            "so the SSOT path (ssot_asset_quality) is used instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         required = ["dpd_90_plus_usd", "total_receivable_usd"]
         if missing := [col for col in required if col not in self.df.columns]:
             raise ValueError(f"Missing required columns for PAR90: {', '.join(missing)}")
@@ -114,6 +141,12 @@ class KPIEngineV2:
     ) -> tuple[Decimal, str]:
         balance_col, dpd_col = self._resolve_par_columns()
         if not dpd_col and legacy_column in self.df.columns:
+            logger.warning(
+                "PAR/%s: falling back to legacy bucket-based calculation — "
+                "data lacks a raw 'dpd' column. Migrate data to include 'dpd' "
+                "for SSOT-consistent results.",
+                metric_alias,
+            )
             return legacy_calculator()
         if balance_col and dpd_col:
             results = calculate_asset_quality_metrics(
@@ -125,6 +158,10 @@ class KPIEngineV2:
             )
             value = Decimal(str(round(results[metric_alias], 2))).quantize(Decimal("0.01"))
             return (value, "ssot_asset_quality")
+        logger.warning(
+            "PAR/%s: no SSOT columns available — falling back to legacy calculator.",
+            metric_alias,
+        )
         return legacy_calculator()
 
     def _build_par_context(self, threshold_days: int, method: str) -> Dict[str, Any]:
