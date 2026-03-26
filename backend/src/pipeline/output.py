@@ -474,11 +474,6 @@ class OutputPhase:
         db_config = self.config.get('database', {}) if isinstance(self.config.get('database', {}), dict) else {}
         raw_config_value = db_config.get('strict_kpi_definitions')
 
-        # Compatibility shim: legacy deployments that explicitly opted *in* via
-        # ``strict_kpi_definitions: true`` (or any truthy value) no longer need
-        # to set this flag because strict mode is now the default.  Log a
-        # deprecation warning so operators know they can clean up their config
-        # (or switch to ``false`` to disable).
         if raw_config_value is not None and raw_config_value is not False:
             logger.warning(
                 'Config key strict_kpi_definitions=%r is deprecated. '
@@ -489,10 +484,6 @@ class OutputPhase:
 
         strict_disabled_from_config = raw_config_value is False
 
-        # Use the centralised helper so that all boolean env flags in this
-        # module share the same parsing semantics.  Legacy truthy values
-        # (1/true/yes/on) no longer act as an opt-in; they are now a no-op
-        # because strict is the default — log a deprecation notice.
         env_raw = os.getenv('PIPELINE_STRICT_KPI_DEFINITIONS', '').strip().lower()
         if env_raw in _BOOL_ENV_TRUE:
             logger.warning(
@@ -501,7 +492,6 @@ class OutputPhase:
                 'Set PIPELINE_STRICT_KPI_DEFINITIONS=false to disable strict mode.',
                 os.getenv('PIPELINE_STRICT_KPI_DEFINITIONS'),
             )
-        # default=True: unset/empty env var keeps strict mode on.
         strict_disabled_from_env = not _parse_bool_env('PIPELINE_STRICT_KPI_DEFINITIONS', default=True)
 
         strict_mode = not (strict_disabled_from_config or strict_disabled_from_env)

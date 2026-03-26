@@ -89,7 +89,6 @@ class TargetLoader:
         variance_amount = actual - target
         variance_pct = (variance_amount / target * Decimal(100)).quantize(Decimal("0.01"))
         
-        # Determine status
         if variance_pct >= Decimal(5):
             status = "EXCEEDED"
         elif variance_pct >= Decimal(-5):
@@ -162,7 +161,6 @@ class TargetLoader:
         Returns:
             DataFrame with actual_portfolio, target, variance_pct, and status columns.
         """
-        # Normalise keys: convert int month numbers to month name strings
         normalised: Dict[str, Decimal] = {}
         for key, value in actual_by_month.items():
             if isinstance(key, int):

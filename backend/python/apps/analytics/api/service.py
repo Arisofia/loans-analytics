@@ -57,7 +57,7 @@ def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
     try:
         import hashlib
         with open(KPI_DEFINITIONS_PATH, 'rb') as f:
-            current_hash = hashlib.md5(f.read(), usedforsecurity=False).hexdigest()  # nosec B324
+            current_hash = hashlib.md5(f.read(), usedforsecurity=False).hexdigest()
         if current_hash == _CATALOG_STATE['file_hash']:
             return _CATALOG_STATE['cache']
         with open(KPI_DEFINITIONS_PATH, encoding='utf-8') as handle:
@@ -1105,7 +1105,6 @@ class KPIService:
             actor='api.service',
             metric_aliases=['par30', 'par60', 'par90'],
         )
-        # DPD bucket metrics are granular breakdowns not covered by SSOT
         dpd_1_30 = float(df[(df['dpd'] > 0) & (df['dpd'] <= 30)]['principal_balance'].sum()) / total_outstanding * 100 if total_outstanding > 0 else 0.0
         dpd_31_60 = float(df[(df['dpd'] > 30) & (df['dpd'] <= 60)]['principal_balance'].sum()) / total_outstanding * 100 if total_outstanding > 0 else 0.0
         dpd_61_90 = float(df[(df['dpd'] > 60) & (df['dpd'] <= 90)]['principal_balance'].sum()) / total_outstanding * 100 if total_outstanding > 0 else 0.0

@@ -44,7 +44,6 @@ class TestHistoricalKpisSupabaseIntegration:
         kpi_id = 'npl_ratio'
         end_date = datetime.now(timezone.utc).date()
         start_date = end_date - timedelta(days=30)
-        # Seed fresh data so the date range matches
         svc_headers = {'apikey': service_key, 'Authorization': f'Bearer {service_key}', 'Content-Type': 'application/json', 'Prefer': 'return=minimal'}
         seed_rows = [{'kpi_id': kpi_id, 'date': (start_date + timedelta(days=i)).isoformat(), 'value_numeric': 0.05 + i * 0.001} for i in range(30)]
         url = f'{backend.base_url}/rest/v1/{backend.table}'
@@ -75,7 +74,6 @@ class TestHistoricalKpisSupabaseIntegration:
         kpi_id = 'npl_ratio'
         end_date = datetime.now(timezone.utc).date()
         start_date = end_date - timedelta(days=30)
-        # Seed fresh data so the date range matches
         svc_headers = {'apikey': service_key, 'Authorization': f'Bearer {service_key}', 'Content-Type': 'application/json', 'Prefer': 'return=minimal'}
         seed_rows = [{'kpi_id': kpi_id, 'date': (start_date + timedelta(days=i)).isoformat(), 'value_numeric': 0.05 + i * 0.001} for i in range(30)]
         url = f'{backend.base_url}/rest/v1/{backend.table}'
@@ -89,7 +87,6 @@ class TestHistoricalKpisSupabaseIntegration:
             assert isinstance(history_real, list)
             assert len(history_mock) > 0, 'MOCK mode should generate synthetic data'
             assert history_real
-            # Both modes return objects with the same attributes
             mock_attrs = {a for a in dir(history_mock[0]) if not a.startswith('_')}
             real_attrs = {a for a in dir(history_real[0]) if not a.startswith('_')}
             assert mock_attrs == real_attrs

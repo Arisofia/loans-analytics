@@ -117,11 +117,6 @@ class KPIEngineV2:
         missing_columns = [col for col in required_columns if col not in self.df.columns]
         if missing_columns:
             raise ValueError(f"CRITICAL: {kpi_name} missing required columns: {', '.join(missing_columns)}")
-        # NOTE: Aggregate using Decimal end-to-end to avoid intermediate float
-        # rounding. We convert each non-missing value via str() to avoid
-        # Decimal(float) representation issues (e.g. Decimal(0.1) →
-        # 0.10000000000000000555...). Missing values are skipped, matching
-        # pandas' default skipna=True behavior for sum().
         total_loans = sum(
             (Decimal(str(v)) for v in self.df['loan_amount'] if pd.notna(v)),
             Decimal('0'),

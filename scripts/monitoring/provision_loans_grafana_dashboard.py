@@ -124,7 +124,6 @@ def _find_datasource(base_url: str, headers: Dict[str, str], auth: Optional[tupl
         if str(ds.get("name", "")).strip().lower() == preferred_name.strip().lower():
             return ds
 
-    # Fallback to first PostgreSQL-like datasource
     for ds in datasources:
         ds_type = str(ds.get("type", "")).lower()
         if "postgres" in ds_type:

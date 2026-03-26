@@ -203,7 +203,6 @@ def test_ensure_missing_kpi_legacy_truthy_config_logs_deprecation(monkeypatch):
     with patch('backend.src.pipeline.output.logger') as mock_log:
         with pytest.raises(RuntimeError, match='Missing KPI definitions'):
             output._ensure_missing_kpi_definitions({'new_kpi'}, set())
-    # Deprecation warning must have been logged
     warning_calls = [str(c) for c in mock_log.warning.call_args_list]
     assert any('deprecated' in w for w in warning_calls)
 
@@ -220,5 +219,4 @@ def test_ensure_missing_kpi_legacy_truthy_env_logs_deprecation(monkeypatch):
 
 def test_ensure_missing_kpi_no_op_when_all_present():
     output = _make_output()
-    # No error, no warning when nothing is missing
     output._ensure_missing_kpi_definitions({'kpi_a', 'kpi_b'}, {'kpi_a', 'kpi_b', 'kpi_c'})

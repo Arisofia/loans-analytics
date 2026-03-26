@@ -15,7 +15,6 @@ except ImportError as exc:
     print("Install/repair dependency with: python -m pip install \"psycopg[binary]\"")
     sys.exit(1)
 
-# Add backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 from backend.python.kpis.target_loader import TargetLoader
@@ -33,7 +32,6 @@ def get_actuals_by_month(conn, report_date: str) -> dict:
         Dict: {month_number: actual_value_decimal}
     """
     with conn.cursor(row_factory=dict_row) as cur:
-        # Query loans active in each month (to report_date)
         cur.execute("""
             SELECT 
                 EXTRACT(MONTH FROM COALESCE(disbursal_date, created_at))::int as month_num,
@@ -94,7 +92,6 @@ def generate_report(report_date: Optional[str] = None, database_url: Optional[st
         print("Check DATABASE_URL and ensure database is running")
         sys.exit(1)
     
-    # Build comparison table
     months = [
         (1, "Jan"), (2, "Feb"), (3, "Mar"), (4, "Apr"), (5, "May"), (6, "Jun"),
         (7, "Jul"), (8, "Aug"), (9, "Sep"), (10, "Oct"), (11, "Nov"), (12, "Dec")
@@ -139,11 +136,9 @@ def generate_report(report_date: Optional[str] = None, database_url: Optional[st
             "Status": status
         })
     
-    # Print header
     print(f"{'Month':<8} {'Target':>18} {'Actual':>18} {'Variance $':>18} {'Var %':>10} {'Status':<12}")
     print("-" * 100)
     
-    # Print rows
     for row in rows:
         month = row["Month"]
         target = row["Target"]
@@ -163,7 +158,6 @@ def generate_report(report_date: Optional[str] = None, database_url: Optional[st
     print(f"{'TOTAL':<8} ${total_target:>17,.0f} {actual_str:>18}")
     print("=" * 100)
     
-    # Summary statistics
     print("\n📊 SUMMARY STATISTICS\n")
     print(f"  Months with data: {len([r for r in rows if r['Status'] != 'NO_DATA'])}/12")
     print(f"  On track: {on_track_count}")
@@ -174,7 +168,6 @@ def generate_report(report_date: Optional[str] = None, database_url: Optional[st
         achievement_pct = (total_actual / total_target) * 100
         print(f"\n  Total Progress: {achievement_pct:.1f}% of target")
     
-    # Warnings
     if at_risk_count > 0:
         print(f"\n⚠️  WARNING: {at_risk_count} month(s) are AT_RISK (actual < 90% of target)")
         print("   Consider reviewing growth drivers and business strategy")

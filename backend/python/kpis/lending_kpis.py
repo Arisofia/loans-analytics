@@ -315,7 +315,6 @@ def cash_balance_treasury(
     reserve_ratio:
         Fraction of cash held in reserve (not deployable).  Default 10%.
     """
-    # --- derive APR from loan tape when not provided ---
     if avg_portfolio_apr is None and loans_df is not None:
         apr_col = _col(loans_df, ['interest_rate_apr', 'APR'])
         if apr_col:
@@ -327,16 +326,13 @@ def cash_balance_treasury(
     available_to_disburse_usd = max(cash_balance_usd - reserve_usd - pending_disbursements_usd, 0.0)
     idle_cash_usd = max(cash_balance_usd - reserve_usd - pending_disbursements_usd, 0.0)
 
-    # --- opportunity cost: money sitting in bank vs deployed in loans ---
     daily_rate = avg_portfolio_apr / 365.0
     opp_cost_idle_daily_usd = idle_cash_usd * daily_rate
     opp_cost_idle_monthly_usd = idle_cash_usd * (avg_portfolio_apr / 12.0)
 
-    # --- opportunity cost of pending disbursements not yet funded ---
     opp_cost_pending_daily_usd = pending_disbursements_usd * daily_rate
     opp_cost_pending_monthly_usd = pending_disbursements_usd * (avg_portfolio_apr / 12.0)
 
-    # --- utilisation ---
     aum_usd = 0.0
     if loans_df is not None:
         bal_col = _col(loans_df, ['outstanding_loan_value', 'outstanding_balance'])
@@ -346,7 +342,6 @@ def cash_balance_treasury(
     total_deployable_capital = aum_usd + cash_balance_usd
     utilisation_rate_pct = round(aum_usd / max(total_deployable_capital, 1) * 100, 1)
 
-    # --- alerts ---
     alerts: list[str] = []
     if idle_cash_usd > 50_000:
         alerts.append(f'HIGH_IDLE_CASH: ${idle_cash_usd:,.0f} sitting undeployed — opportunity cost ${opp_cost_idle_monthly_usd:,.0f}/mo')
@@ -590,7 +585,6 @@ def financing_rate_eir(
 
     breach = weighted_apr < target_min or weighted_apr > target_max
 
-    # Optional: observed portfolio yield from actual interest receipts
     portfolio_yield_pct: float | None = None
     yield_source: str | None = None
     if payments_df is not None and total_bal > 0:
@@ -686,7 +680,6 @@ def cost_of_debt_dscr(
                 annual_interest_income = raw_income
                 income_source = 'payments_total_no_date'
 
-    # Fallback: AUM × avg APR estimate
     if annual_interest_income == 0 and aum_usd > 0:
         apr_col = _col(loans_df, ['interest_rate_apr', 'interest_rate'])
         if apr_col:

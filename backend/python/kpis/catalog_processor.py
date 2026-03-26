@@ -641,10 +641,8 @@ class KPICatalogProcessor:
                 'breach': False,
             }
 
-        # A repline exists when a (customer, credit_line) pair has more than 1 loan
         pair_counts = df.groupby([cust_col, line_col]).size()
         repline_pairs = (pair_counts > 1).sum()
-        # Count the loans that are part of repline pairs
         repline_loans = int(pair_counts[pair_counts > 1].sum())
         repline_rate = repline_loans / total_loans
         deviation = repline_rate - max_deviation
@@ -765,37 +763,31 @@ class KPICatalogProcessor:
                 'unit': unit,
             })
 
-        # 1. PAR-90 / max_default_rate
         dpd_buckets = self.get_dpd_buckets()
         par90 = dpd_buckets.get('dpd_90_plus_pct') or dpd_buckets.get('dpd_90_plus')
         if par90 is not None:
             par90 /= 100.0  # convert to ratio
         _check('par_90_rate', par90, g.max_default_rate, 'above_bad', 'HIGH', 'ratio')
 
-        # 2. Top-1 obligor concentration
         concentration = self.get_concentration()
         top1_pct = concentration.get('top_1_pct')
         top1_ratio = top1_pct / 100.0 if top1_pct is not None else None
         _check('top_1_obligor_concentration', top1_ratio, g.max_single_obligor_concentration, 'above_bad', 'HIGH', 'ratio')
 
-        # 3. Top-10 obligor concentration
         top10_pct = concentration.get('top_10_pct')
         top10_ratio = top10_pct / 100.0 if top10_pct is not None else None
         _check('top_10_obligor_concentration', top10_ratio, g.max_top_10_concentration, 'above_bad', 'MEDIUM', 'ratio')
 
-        # 4. Portfolio rotation (min target)
         rotation = self.get_portfolio_rotation()
         rotation_x = rotation.get('rotation_x')
         _check('portfolio_rotation', rotation_x, g.min_rotation, 'below_bad', 'MEDIUM', 'x')
 
-        # 5. Collection efficiency 6M
         lending = self.get_lending_kpis()
         ce_6m = lending.get('collection_efficiency_6m', {})
         ce_6m_val = ce_6m.get('ce_6m_pct')
         ce_6m_ratio = ce_6m_val / 100.0 if ce_6m_val is not None else None
         _check('collection_efficiency_6m', ce_6m_ratio, g.min_ce_6m, 'below_bad', 'HIGH', 'ratio')
 
-        # 6. Weighted APR vs target band
         eir = lending.get('financing_rate_eir', {})
         weighted_apr = eir.get('weighted_apr_pct')
         apr_ratio = weighted_apr / 100.0 if weighted_apr is not None else None
@@ -816,12 +808,10 @@ class KPICatalogProcessor:
                 'breach': False, 'alert_level': 'UNKNOWN', 'unit': 'ratio',
             })
 
-        # 7. DSCR (min 1.2)
         dscr_kpi = lending.get('cost_of_debt_dscr', {})
         dscr_val = dscr_kpi.get('dscr')
         _check('dscr', dscr_val, g.min_dscr, 'below_bad', 'HIGH', 'ratio')
 
-        # 8. Replines
         replines = self.get_replines()
         repline_rate = replines.get('repline_rate_pct')
         repline_ratio = repline_rate / 100.0 if repline_rate is not None else None

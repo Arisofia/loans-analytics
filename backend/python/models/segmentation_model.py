@@ -11,13 +11,11 @@ from sklearn.preprocessing import RobustScaler
 warnings.filterwarnings('ignore', category=UserWarning)
 logger = logging.getLogger(__name__)
 
-# Business segment labels aligned with Loans client behavior profiles
 SEGMENT_HIGH_VELOCITY = 'High Velocity / Low Risk'
 SEGMENT_SEASONAL = 'Seasonal Transactors'
 SEGMENT_STRUGGLING = 'Struggling Survivors'
 SEGMENT_UNKNOWN = 'Unclassified'
 
-# Behavioral feature columns produced by build_behavioral_features()
 _BEHAVIORAL_FEATURES = [
     'tpv',
     'days_past_due',
@@ -75,10 +73,6 @@ class SegmentationModel:
         self.metadata: Dict[str, Any] = {}
         self._train_scaled: Optional[np.ndarray] = None
 
-    # ------------------------------------------------------------------ #
-    #  Column helpers (same pattern as ScorecardModel)                    #
-    # ------------------------------------------------------------------ #
-
     @staticmethod
     def _normalize_columns(df: pd.DataFrame) -> None:
         df.columns = [str(c).strip().lower().replace(' ', '_') for c in df.columns]
@@ -90,10 +84,6 @@ class SegmentationModel:
                 if pat in col:
                     return col
         return None
-
-    # ------------------------------------------------------------------ #
-    #  Feature engineering                                                 #
-    # ------------------------------------------------------------------ #
 
     @staticmethod
     def _extract_tpv(payment_df: pd.DataFrame, loan_id_col: str) -> pd.Series:
@@ -295,10 +285,6 @@ class SegmentationModel:
         )
         return feat.reset_index()
 
-    # ------------------------------------------------------------------ #
-    #  Clustering                                                          #
-    # ------------------------------------------------------------------ #
-
     def _select_available_features(self, feat_df: pd.DataFrame) -> List[str]:
         return [c for c in _BEHAVIORAL_FEATURES if c in feat_df.columns]
 
@@ -498,14 +484,10 @@ class SegmentationModel:
             if self.algorithm == 'kmeans':
                 raw_labels = self.cluster_model.predict(x_scaled)
             else:
-                # DBSCAN has no predict() for unseen data.
-                # Use nearest-neighbor lookup against training core samples to
-                # assign each new point to its closest existing cluster.
                 from sklearn.neighbors import NearestNeighbors
                 core_sample_indices = self.cluster_model.core_sample_indices_
                 training_labels = self.cluster_model.labels_
                 core_labels = training_labels[core_sample_indices]
-                # Retrieve the scaled training data stored during fit
                 train_scaled = getattr(self, '_train_scaled', None)
                 if train_scaled is None or len(core_sample_indices) == 0:
                     raw_labels = np.full(len(x_scaled), -1, dtype=int)
@@ -520,10 +502,6 @@ class SegmentationModel:
             ]
 
         return result
-
-    # ------------------------------------------------------------------ #
-    #  Persistence                                                         #
-    # ------------------------------------------------------------------ #
 
     def save(self, model_dir: str = 'models/segmentation') -> str:
         import joblib

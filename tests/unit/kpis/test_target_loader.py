@@ -123,7 +123,6 @@ class TestVarianceCalculation:
         
         result = loader.calculate_variance(actual, target)
         
-        # Should maintain precision
         assert isinstance(result["variance_amount"], Decimal)
         assert isinstance(result["variance_pct"], Decimal)
 
