@@ -30,7 +30,7 @@ class SupabaseConnectionPool:
     def _normalize_database_url(self, url: str) -> str:
         if url.startswith('postgres://') and (not url.startswith('postgresql://')):
             url = url.replace('postgres://', 'postgresql://', 1)
-        pooler_pattern = 'postgresql://postgres\\.([^:]+):([^@]+)@(.+)'
+        pooler_pattern = 'postgresql://postgres\\.([^:]+):([^@]+)@(.+)'  # gitleaks:allow
         match = re.match(pooler_pattern, url)
         if match:
             project_ref = match.group(1)

@@ -75,8 +75,8 @@ def generate_report(report_date: Optional[str] = None, database_url: Optional[st
         database_url = os.getenv("DATABASE_URL")
         if not database_url:
             print("ERROR: DATABASE_URL environment variable not set")
-            print("Set it in PowerShell: $env:DATABASE_URL='postgresql://user:pass@host/db'")
-            print("Set it in Bash: export DATABASE_URL='postgresql://user:pass@host/db'")
+            print("Set it in PowerShell: $env:DATABASE_URL='postgresql://user:pass@host/db'")  # gitleaks:allow
+            print("Set it in Bash: export DATABASE_URL='postgresql://user:pass@host/db'")  # gitleaks:allow
             sys.exit(1)
     
     print("\n" + "=" * 100)
