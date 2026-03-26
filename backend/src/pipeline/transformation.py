@@ -165,12 +165,12 @@ class TransformationPhase:
     def _run_transformation_pipeline(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         transformation_metrics: Dict[str, Any] = {}
         df = self._normalize_column_names(df)
+        df = self._collapse_duplicate_columns(df)
         df = self._map_canonical_semantic_layer(df)
         df, structural_filter_metrics = self._drop_structurally_empty_rows(df)
         transformation_metrics["structural_row_filter"] = structural_filter_metrics
         df, control_metrics = self._derive_control_mora_fields(df)
         transformation_metrics["control_derivations"] = control_metrics
-        df = self._collapse_duplicate_columns(df)
         df, null_metrics = self._handle_nulls(df)
         transformation_metrics["null_handling"] = null_metrics
         df, type_metrics = self._normalize_types(df)
@@ -211,10 +211,21 @@ class TransformationPhase:
         return (cleaned_df, metrics)
 
     def _normalize_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
+        # Surface normalisation: lowercase, strip, spaces → underscores.
+        # Handles Google Sheets columns like "Fecha actual" → "fecha_actual".
+        surface = {
+            col: col.strip().lower().replace(" ", "_")
+            for col in df.columns
+            if col != col.strip().lower().replace(" ", "_")
+        }
+        if surface:
+            df = df.rename(columns=surface)
+            logger.info("Surface-normalised %d column names", len(surface))
         column_mapping = {
             "days_past_due": "dpd",
             "dias_vencido": "dpd",
             "mora_en_dias": "dpd",
+            "diias_mora_m": "dpd",
             "principal_amount": "amount",
             "current_status": "status",
             "loan_status": "status",
@@ -248,6 +259,8 @@ class TransformationPhase:
             "dias_en_pagar": "days_to_pay",
             "numerodesembolsos": "disbursement_count",
             "valoraprobado": "approved_value",
+            "totalsaldovigente": "current_balance",
+            "garantiaretenida": "guarantee_retained",
             "fecha_actual": "as_of_date",
             "term_max": "term_months",
             "term_ponderado": "term_months",
@@ -262,6 +275,9 @@ class TransformationPhase:
         }:
             df = df.rename(columns=rename_dict)
             logger.info("Renamed columns: %s", rename_dict)
+        # Collapse duplicates created by surface normalisation + rename
+        # (e.g. FechaDesembolso and "Fecha de Desembolso" both → origination_date)
+        df = self._collapse_duplicate_columns(df)
         if "loan_id" in df.columns and "origination_date" in df.columns:
             dates = pd.to_datetime(df["origination_date"], errors="coerce").dt.strftime("%Y%m%d")
             df["loan_uid"] = df["loan_id"].astype(str) + "_" + dates.fillna("00000000")
@@ -459,14 +475,15 @@ class TransformationPhase:
             else pd.Series(np.nan, index=df.index, dtype=float)
         )
         term_months_from_days = (term_days / 30.0).round(2)
-        final_term_months = existing_term_months.where(
-            existing_term_months.notna(), raw_term_months
+        # Ensure all components are plain float64 to avoid Int64/object cast errors
+        final_term_months = existing_term_months.astype("float64").where(
+            existing_term_months.notna(), raw_term_months.astype("float64")
         )
-        final_term_months = final_term_months.where(
+        final_term_months = final_term_months.astype("float64").where(
             (final_term_months > 0) & (final_term_months <= 240)
         )
-        final_term_months = final_term_months.where(
-            final_term_months.notna(), term_months_from_days
+        final_term_months = final_term_months.astype("float64").where(
+            final_term_months.notna(), term_months_from_days.astype("float64")
         )
         df["term_months"] = final_term_months
         self._track_derived_field(
