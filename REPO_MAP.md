@@ -78,10 +78,8 @@
 - `PRODUCTION_DEPLOYMENT_GUIDE.md` — Production rollout checklist
 - `FINANCIAL_PRECISION_GOVERNANCE.md` — Decimal/rounding rules for currency
 - `DATA_GOVERNANCE.md` — Data quality, lineage, PII handling
-- `KPI_CATALOG.md` — Complete list of all KPIs with definitions
-- `KPI_SSOT_REGISTRY.md` — Single Source of Truth for KPI formulas
-- `KPI-Operating-Model.md` — *(DocumentationP8)* KPI ownership & update procedures
-- `kpi_lineage.md` — *(DocumentationP8)* KPI dependency graph & upstream sources
+- `KPI.md` — Canonical KPI reference (definitions, governance, formulas)
+- `kpi_lineage.md` — KPI dependency graph & upstream sources
 - `API_SECURITY_GUIDE.md` — API endpoint hardening
 - `operations/` — Operational procedures
   - `SCRIPT_CANONICAL_MAP.md` — All production-ready scripts & their purpose
@@ -149,9 +147,8 @@
 3. `FINANCIAL_PRECISION_GOVERNANCE.md` — Decimal/money calculation rules
 
 **KPI Development:**
-1. `KPI_CATALOG.md` — All KPI definitions
-2. `KPI_SSOT_REGISTRY.md` — Formula registry
-3. `KPI-Operating-Model.md` — Ownership & update procedures
+1. `KPI.md` — Canonical KPI reference (definitions, governance, formulas)
+2. `kpi_lineage.md` — KPI lineage and dependency graph
 
 ---
 

@@ -2,10 +2,7 @@
 
 This is the canonical KPI document for the Loans Analytics repository.
 
-It consolidates content previously spread across multiple files:
-- KPI_CATALOG.md
-- KPI_SSOT_REGISTRY.md
-- KPI-Operating-Model.md
+It consolidates content previously in KPI_CATALOG.md, KPI_SSOT_REGISTRY.md, and KPI-Operating-Model.md (all removed).
 
 ## Scope
 
@@ -68,6 +65,3 @@ This reference defines:
 
 - docs/kpi_lineage.md
 - docs/GOVERNANCE.md
-- docs/KPI_CATALOG.md (compatibility pointer)
-- docs/KPI_SSOT_REGISTRY.md (compatibility pointer)
-- docs/KPI-Operating-Model.md (compatibility pointer)

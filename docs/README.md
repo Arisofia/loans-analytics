@@ -4,55 +4,41 @@ This index contains only active documentation paths for the Loans Analytics plat
 
 ## Start Here
 
-- `docs/SETUP_GUIDE_CONSOLIDATED.md` - Local setup and bootstrap flow
-- `docs/OPERATIONS.md` - Day-to-day operations guidance
-- `docs/GOVERNANCE.md` - Repository governance and quality controls
-- `docs/OBSERVABILITY.md` - Monitoring, alerts, and telemetry
+- [SETUP_GUIDE_CONSOLIDATED.md](SETUP_GUIDE_CONSOLIDATED.md) - Local setup and bootstrap flow
+- [OPERATIONS.md](OPERATIONS.md) - Day-to-day operations guidance
+- [GOVERNANCE.md](GOVERNANCE.md) - Repository governance and quality controls
+- [OBSERVABILITY.md](OBSERVABILITY.md) - Monitoring, alerts, and telemetry
 
 ## Deployment
 
-- `docs/PRODUCTION_DEPLOYMENT_GUIDE.md`
-- `docs/SUPABASE_SETUP_GUIDE.md`
-- `docs/API_SECURITY_GUIDE.md`
+- [PRODUCTION_DEPLOYMENT_GUIDE.md](PRODUCTION_DEPLOYMENT_GUIDE.md)
+- [API_SECURITY_GUIDE.md](API_SECURITY_GUIDE.md)
 
 ## Data and KPI
 
-- `docs/DATA_GOVERNANCE.md`
-- `docs/DATA_DICTIONARY.md`
-- `docs/KPI.md`
-- `docs/HISTORICAL_KPIS_SUPABASE.md`
-- `docs/TARGETS_2026.md`
+- [DATA_GOVERNANCE.md](DATA_GOVERNANCE.md)
+- [DATA_DICTIONARY.md](DATA_DICTIONARY.md)
+- [KPI.md](KPI.md) - Canonical KPI reference (definitions, governance, formulas)
+- [kpi_lineage.md](kpi_lineage.md)
+- [TARGETS_2026.md](TARGETS_2026.md)
 
-## Operations and Runbooks
+## Operations
 
-- `docs/operations/UNIFIED_WORKFLOW.md`
-- `docs/operations/SCRIPT_CANONICAL_MAP.md`
-- `docs/operations/EMERGENCY_RESPONSE_PLAN.md`
-- `docs/runbooks/README.md`
-- `docs/runbooks/monitoring-guide.md`
-- `docs/runbooks/deployment-blocked.md`
-- `docs/runbooks/dashboard-down.md`
+- [operations/UNIFIED_WORKFLOW.md](operations/UNIFIED_WORKFLOW.md)
+- [operations/SCRIPT_CANONICAL_MAP.md](operations/SCRIPT_CANONICAL_MAP.md)
+- [operations/EMERGENCY_RESPONSE_PLAN.md](operations/EMERGENCY_RESPONSE_PLAN.md)
 
 ## Security
 
-- `docs/SECURITY.md`
-- `docs/GITHUB_ACTIONS_SECURITY.md`
-- `docs/security/SECRETS_MANAGEMENT.md`
-- `docs/security/SECURITY_PATH_VALIDATION.md`
-- `docs/security/SUPABASE_RLS_HARDENING.md`
+- [SECURITY.md](SECURITY.md) - Security topics index
+- [security/SECRETS_MANAGEMENT.md](security/SECRETS_MANAGEMENT.md)
+- [security/SECURITY_PATH_VALIDATION.md](security/SECURITY_PATH_VALIDATION.md)
+- [security/SUPABASE_RLS_HARDENING.md](security/SUPABASE_RLS_HARDENING.md)
 
-## Planning and Architecture
+## Financial
 
-- `docs/Integrations-and-Agents.md`
-- `docs/planning/AGENTS.md`
-- `docs/planning/TECH_SPEC_V2.md`
-- `docs/architecture/CLAUDE.md`
-
-## Testing
-
-- `docs/testing/README.md`
-- `docs/testing/V2_ENHANCEMENTS.md`
-- `docs/checklists/REVIEWER_CHECKLIST.md`
+- [FINANCIAL_PRECISION_GOVERNANCE.md](FINANCIAL_PRECISION_GOVERNANCE.md)
+- [GOOGLE_SHEETS_SETUP.md](GOOGLE_SHEETS_SETUP.md)
 
 ## Maintenance Rule
 

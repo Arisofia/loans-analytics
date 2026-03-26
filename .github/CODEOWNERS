@@ -5,9 +5,8 @@ REPO_MAP.md @Arisofia
 .github/workflows/* @Arisofia
 
 # KPI Governance & Operations
-/docs/KPI-Operating-Model.md @Arisofia
+/docs/KPI.md @Arisofia
 /docs/kpi_lineage.md @Arisofia
-/docs/KPI_SSOT_REGISTRY.md @Arisofia
 /config/kpis/ @Arisofia
 
 # Deployment & Release
@@ -15,12 +14,7 @@ REPO_MAP.md @Arisofia
 /docs/PRODUCTION_DEPLOYMENT_GUIDE.md @Arisofia
 
 # Observability & Monitoring
-/docs/SUPABASE_METRICS_INTEGRATION.md @Arisofia
-/docs/MONITORING_QUICK_START.md @Arisofia
 /docs/OBSERVABILITY.md @Arisofia
-
-# Analytics & Reporting
-/docs/METRICSAPI_ANALYSIS_ES.md @Arisofia
 
 # Documentation Tools & Automation
 /tools/validate_doc_links.py @Arisofia

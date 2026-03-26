@@ -220,7 +220,7 @@ Before each release, review these files for changes:
 1. `backend/python/kpis/ssot_asset_quality.py` — Formula changes?
 2. `config/kpis/` — KPI definition updates?
 3. `db/migrations/` — Schema changes applied correctly?
-4. `docs/KPI-Operating-Model.md` — Ownership/approval changes?
+4. `docs/KPI.md` — KPI ownership/approval/governance changes?
 5. `CHANGELOG.md` — User-facing summary complete?
 6. `.github/workflows/` — Any CI/CD changes?
 

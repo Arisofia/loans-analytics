@@ -240,7 +240,7 @@ make monitoring-stop
      }]'
    ```
 
-**See**: [MONITORING_QUICK_START.md](MONITORING_QUICK_START.md) for details
+**See**: [OBSERVABILITY.md](OBSERVABILITY.md) for details
 
 ---
 
@@ -352,7 +352,7 @@ supabase db push
 python scripts/data/load_sample_kpis_supabase.py
 ```
 
-**See**: [SUPABASE_METRICS_INTEGRATION.md](SUPABASE_METRICS_INTEGRATION.md) for detailed steps
+**See**: [OBSERVABILITY.md](OBSERVABILITY.md) for Supabase metrics integration details
 
 ---
 

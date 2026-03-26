@@ -138,11 +138,11 @@ The following workflows are the source of truth for repository governance:
 
 **CRITICAL**: KPIs must have single canonical implementations. Multiple implementations of the same KPI cause data integrity failures and operational confusion.
 
-**Complete governance framework**: [`docs/KPI_SSOT_REGISTRY.md`](KPI_SSOT_REGISTRY.md)
+**Complete governance framework**: [`docs/KPI.md`](KPI.md)
 
-**Inventory of fragmentation**: [`docs/KPI_SSOT_REGISTRY.md`](KPI_SSOT_REGISTRY.md)
+**Inventory of fragmentation**: [`docs/KPI.md`](KPI.md)
 
-**Change control procedures**: [`docs/KPI-Operating-Model.md`](KPI-Operating-Model.md)
+**Change control procedures**: [`docs/KPI.md`](KPI.md)
 
 **Key Requirements** (summary):
 1. **Registry**: All KPIs defined in `config/kpis/kpi_definitions.yaml` with versioning and audit trail
@@ -168,9 +168,7 @@ The following workflows are the source of truth for repository governance:
 - `docs/MIGRATION_STANDARDIZATION_PLAN.md` (Migration naming standardization and execution plan)
 - `docs/MANUAL_OVERRIDES_GOVERNANCE.md` (Approval, audit, and review framework for manual overrides)
 - `docs/operations/SCRIPT_CANONICAL_MAP.md`
-- `docs/KPI_SSOT_REGISTRY.md` (KPI consolidation framework and architecture)
-- `docs/KPI_IMPLEMENTATION_INVENTORY.md` (Current fragmentation audit and consolidation roadmap)
-- `docs/KPI_CHANGE_CONTROL_CHECKLIST.md` (Change control procedures with examples)
+- `docs/KPI.md` (KPI canonical reference — definitions, governance, formulas)
 - `docs/REPOSITORY_MAINTENANCE.md`
-- `docs/SECURITY.md`
+- `SECURITY.md` (root — full security policy)
 - `docs/OPERATIONS.md`

@@ -327,9 +327,7 @@ curl http://localhost:9093/api/v1/alerts
 
 ## 📚 Documentation
 
-- **Full Integration Guide**: `../docs/SUPABASE_METRICS_INTEGRATION.md`
-- **5-Min Quick Start**: `../docs/MONITORING_QUICK_START.md`
-- **Analysis (ES)**: `../docs/METRICSAPI_ANALYSIS_ES.md`
+- **Full Observability Guide**: `../docs/OBSERVABILITY.md`
 - **Metrics Exporter**: `../scripts/monitoring/metrics_exporter.py`
 - **Connection Pool**: `../python/supabase_pool.py`
 

@@ -201,5 +201,5 @@ CSV Input File
 
 ---
 
-**For complete KPI definitions**, see `KPI_CATALOG.md`.  
-**For ownership & change procedures**, see `KPI-Operating-Model.md`.
+**For complete KPI definitions**, see `KPI.md`.  
+**For ownership & change procedures**, see `KPI.md`.
