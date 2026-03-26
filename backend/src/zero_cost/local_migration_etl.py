@@ -127,6 +127,9 @@ class LocalMonthlySnapshotETL:
         dim_loan['contractual_apr'] = dim_loan['interest_rate'].apply(contractual_apr)
         xirr_eligible = dim_loan[dim_loan['disbursement_date'].notna() & (dim_loan['original_principal'] > 0)]
         loan_xirr_series = portfolio_xirr(xirr_eligible, fact_real_payment)
+        nan_count = loan_xirr_series.isna().sum()
+        if nan_count > 0:
+            logger.warning('XIRR did not converge for %d of %d loans — stored as NaN', nan_count, len(loan_xirr_series))
         fact_monthly_snapshot = snapshots.merge(dim_loan[['loan_id', 'contractual_apr']], on='loan_id', how='left')
         fact_monthly_snapshot = fact_monthly_snapshot.merge(loan_xirr_series.rename('realized_xirr'), left_on='loan_id', right_index=True, how='left')
         reconciliation, unmatched_reconciliation = reconcile_payments(fact_schedule, fact_real_payment)

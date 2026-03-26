@@ -132,6 +132,7 @@ def _compute_pd_calibration(y: pd.Series, pd_scores: Any) -> float | None:
         frac_pos, mean_pred = calibration_curve(y, pd_scores, n_bins=5)
         return float(npfit(mean_pred, frac_pos, 1)[1]) if len(frac_pos) > 1 else 1.0
     except Exception:
+        logger.warning('PD calibration failed — returning None', exc_info=True)
         return None
 
 def build_pd_model(loans_df: pd.DataFrame, min_defaults: int=30, min_non_defaults: int=30, cv_folds: int=5) -> dict[str, Any]:
@@ -202,6 +203,7 @@ def _par_history_series(loans_df: pd.DataFrame, dpd_col: str | None, disb_col: s
             par30_value = quality['par30']
             par90_value = quality['par90']
         except Exception:
+            logger.warning('SSOT asset quality failed for month %s — using manual DPD fallback', month, exc_info=True)
             monthly_total = float(month_df['_bal'].sum())
             par30_value = float(month_df.loc[month_df['_dpd'] >= 30, '_bal'].sum() / monthly_total * 100) if monthly_total > 0 else 0.0
             par90_value = float(month_df.loc[month_df['_dpd'] >= 90, '_bal'].sum() / monthly_total * 100) if monthly_total > 0 else 0.0
@@ -230,6 +232,7 @@ def _default_guardrails() -> dict[str, float]:
         from backend.python.config import settings
         return {'rotation_x': settings.financial.min_rotation, 'top1_concentration_pct': settings.financial.max_single_obligor_concentration * 100, 'top10_concentration_pct': settings.financial.max_top_10_concentration * 100, 'par30_pct': 5.0, 'par90_pct': settings.financial.max_default_rate * 100 / 2, 'npl_180_pct': settings.financial.max_default_rate * 100, 'utilization_pct_min': settings.financial.utilization_min * 100, 'utilization_pct_max': settings.financial.utilization_max * 100, 'apr_pct_min': settings.financial.target_apr_min * 100, 'apr_pct_max': settings.financial.target_apr_max * 100, 'ce_6m_pct': settings.financial.min_ce_6m * 100, 'dscr': settings.financial.min_dscr}
     except Exception:
+        logger.warning('Failed to load guardrails from settings — using empty defaults', exc_info=True)
         return {}
 
 def _default_owners() -> dict[str, str]:
@@ -263,6 +266,7 @@ def _compute_quality_metrics_or_fallback(bal: pd.Series, dpd: pd.Series, status_
         quality_metrics = _calculate_ssot_asset_quality_metrics(bal, dpd, status_series)
         return (quality_metrics['par30'], quality_metrics['par90'], quality_metrics['npl180'])
     except Exception:
+        logger.warning('SSOT quality metrics failed — using manual DPD fallback', exc_info=True)
         par30 = float(bal[dpd >= 30].sum() / total_bal * 100) if total_bal > 0 else 0.0
         par90 = float(bal[dpd >= 90].sum() / total_bal * 100) if total_bal > 0 else 0.0
         npl180 = float(bal[dpd >= 180].sum() / total_bal * 100) if total_bal > 0 else 0.0
