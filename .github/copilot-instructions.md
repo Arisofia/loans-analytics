@@ -1,4 +1,4 @@
-# Abaco Loans Analytics - Copilot Instructions
+# Loans Analytics - Copilot Instructions
 
 ## Repository Scope
 
@@ -26,7 +26,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # Pipeline
-python scripts/data/run_data_pipeline.py --input data/samples/abaco_sample_data_20260202.csv
+python scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv
 python scripts/data/run_data_pipeline.py --mode validate
 python scripts/data/run_data_pipeline.py --mode dry-run
 

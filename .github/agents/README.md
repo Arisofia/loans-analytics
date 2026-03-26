@@ -1,6 +1,6 @@
 # GitHub Copilot Agents
 
-This directory contains custom GitHub Copilot agent configurations for the Abaco Loans Analytics platform.
+This directory contains custom GitHub Copilot agent configurations for the Loans Analytics platform.
 
 ## Available Agents
 

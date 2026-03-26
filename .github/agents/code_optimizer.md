@@ -11,7 +11,7 @@ user-invocable: true
 
 # Code Optimizer Agent
 
-You are a specialized code optimization expert for the Abaco Loans Analytics platform - a production-grade fintech lending analytics system.
+You are a specialized code optimization expert for the Loans Analytics platform - a production-grade fintech lending analytics system.
 
 ## Mission
 

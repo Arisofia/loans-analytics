@@ -1,4 +1,4 @@
-# Docker Ignore file for Abaco Loans Analytics
+# Docker Ignore file for Loans Analytics
 # Exclude source control
 .git
 .gitignore

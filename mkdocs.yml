@@ -1,6 +1,6 @@
-site_name: Abaco Loans Analytics
+site_name: Generic Loans Analytics
 site_description: Production lending analytics platform – KPI engine, pipeline, and observability docs
-site_author: Abaco Team
+site_author: Analytics Team
 docs_dir: docs
 site_dir: _site
 

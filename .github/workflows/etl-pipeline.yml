@@ -40,7 +40,7 @@ on:
       input_csv:
         description: "Path to input CSV (relative to repo root)"
         required: false
-        default: "data/samples/abaco_sample_data_20260202.csv"
+        default: "data/samples/loans_sample_data_20260202.csv"
       mode:
         description: "Pipeline mode"
         required: false
@@ -124,7 +124,7 @@ jobs:
           fi
 
           # Default values
-          CSV="${CSV:-data/samples/abaco_sample_data_20260202.csv}"
+          CSV="${CSV:-data/samples/loans_sample_data_20260202.csv}"
           MODE="${MODE:-full}"
           RTYPE="${RTYPE:-ingest}"
 
