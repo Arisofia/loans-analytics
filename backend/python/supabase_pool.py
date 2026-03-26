@@ -3,12 +3,14 @@ import asyncio
 import logging
 import re
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 from urllib.parse import urlparse
 try:
     import asyncpg
 except ImportError:
     asyncpg = None
+if TYPE_CHECKING:
+    import asyncpg as asyncpg_types
 from backend.python.config import settings
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,7 @@ class SupabaseConnectionPool:
         self.command_timeout = command_timeout or self.pool_config.command_timeout
         self.max_idle_time = max_idle_time or self.pool_config.max_idle_time
         self.max_lifetime = max_lifetime or self.pool_config.max_lifetime
-        self._pool: Optional[asyncpg.Pool] = None
+        self._pool: Optional['asyncpg_types.Pool'] = None
         self._metrics = {'total_connections': 0, 'active_connections': 0, 'failed_connections': 0, 'queries_executed': 0, 'queries_failed': 0}
 
     def _normalize_database_url(self, url: str) -> str:
@@ -77,12 +79,12 @@ class SupabaseConnectionPool:
             self._pool = None
 
     @asynccontextmanager
-    async def acquire(self) -> AsyncGenerator[asyncpg.Connection, None]:
+    async def acquire(self) -> AsyncGenerator['asyncpg_types.Connection', None]:
         if not self._pool:
             raise RuntimeError('Connection pool not initialized. Call initialize() first.')
         max_retries = self.pool_config.max_retries
         retry_delay = self.pool_config.retry_delay
-        connection: Optional[asyncpg.Connection] = None
+        connection: Optional['asyncpg_types.Connection'] = None
         for attempt in range(max_retries):
             try:
                 connection = await self._pool.acquire()
@@ -123,7 +125,7 @@ class SupabaseConnectionPool:
             logger.error('Query execution failed: %s', e, exc_info=True)
             raise
 
-    async def fetch(self, query: str, *args: Any) -> list[asyncpg.Record]:
+    async def fetch(self, query: str, *args: Any) -> list['asyncpg_types.Record']:
         try:
             async with self.acquire() as conn:
                 result = await asyncio.wait_for(conn.fetch(query, *args), timeout=self.command_timeout)
@@ -138,7 +140,7 @@ class SupabaseConnectionPool:
             logger.error('Query fetch failed: %s', e, exc_info=True)
             raise
 
-    async def fetchrow(self, query: str, *args: Any) -> Optional[asyncpg.Record]:
+    async def fetchrow(self, query: str, *args: Any) -> Optional['asyncpg_types.Record']:
         try:
             async with self.acquire() as conn:
                 result = await asyncio.wait_for(conn.fetchrow(query, *args), timeout=self.command_timeout)

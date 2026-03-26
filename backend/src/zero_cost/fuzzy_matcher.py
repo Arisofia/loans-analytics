@@ -6,7 +6,9 @@ from typing import Optional
 import pandas as pd
 logger = logging.getLogger(__name__)
 try:
-    from rapidfuzz import fuzz, process
+    rapidfuzz_module = __import__('rapidfuzz', fromlist=['fuzz', 'process'])
+    fuzz = rapidfuzz_module.fuzz
+    process = rapidfuzz_module.process
     RAPIDFUZZ_AVAILABLE = True
     logger.debug('RapidFuzz available — using optimised fuzzy matching')
 except ImportError:

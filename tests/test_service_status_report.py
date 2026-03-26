@@ -1,8 +1,7 @@
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-sys.path.insert(0, str(Path(__file__).parent.parent / 'scripts' / 'maintenance'))
-from generate_service_status_report import ServiceStatusChecker, generate_markdown_report
+from scripts.maintenance.generate_service_status_report import ServiceStatusChecker, generate_markdown_report
 
 class TestServiceStatusChecker:
 
