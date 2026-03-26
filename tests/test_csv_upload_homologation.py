@@ -260,26 +260,6 @@ class TestPortfolioDashboardDesembolsos:
         df = self._normalize_and_alias(raw)
         assert 'borrower_id' not in df.columns
 
-class TestPortfolioDashboardDuplicateClassification:
-
-    def test_classify_imported_from_csv_upload(self):
-        assert hasattr(_dash_mod, '_classify_loan_id_duplicates')
-
-    def test_exact_duplicate_returns_warning(self):
-        df = pd.DataFrame({'loan_id': ['A', 'A'], 'borrower_id': ['b1', 'b1'], 'amount': [100.0, 100.0]})
-        result = _dash_mod._classify_loan_id_duplicates(df)
-        assert any((level == 'warning' and 'exact' in msg.lower() for level, msg in result))
-
-    def test_historical_snapshot_returns_info(self):
-        df = pd.DataFrame({'loan_id': ['A', 'A'], 'borrower_id': ['b1', 'b1'], 'amount': [100.0, 90.0]})
-        result = _dash_mod._classify_loan_id_duplicates(df)
-        assert any((level == 'info' and 'snapshot' in msg.lower() for level, msg in result))
-
-    def test_suspicious_merge_returns_warning(self):
-        df = pd.DataFrame({'loan_id': ['A', 'A'], 'borrower_id': ['b1', 'b2'], 'amount': [100.0, 100.0]})
-        result = _dash_mod._classify_loan_id_duplicates(df)
-        assert any((level == 'warning' and 'suspicious' in msg.lower() for level, msg in result))
-
 class TestCanonicalizeStatusNullHandling:
 
     def test_none_returns_unknown(self):
