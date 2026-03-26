@@ -580,8 +580,20 @@ class KPICatalogProcessor:
     def get_portfolio_analytics(self) -> dict[str, Any]:
         return build_portfolio_analytics_report(loans_df=self.loans_df, payments_df=self.payments_df, schedule_df=self.schedule_df, customer_df=self.customers_df, collateral_df=self.collateral_df)
 
-    def get_lending_kpis(self, cash_balance_usd: float | None = None, pending_disbursements_usd: float = 0.0) -> dict[str, Any]:
-        return build_lending_kpi_report(loans_df=self.loans_df, payments_df=self.payments_df, customer_df=self.customers_df, cash_balance_usd=cash_balance_usd, pending_disbursements_usd=pending_disbursements_usd)
+    def get_lending_kpis(
+        self,
+        cash_balance_usd: float | None = None,
+        pending_disbursements_usd: float = 0.0,
+        cost_of_debt_pct: float = 0.15,
+    ) -> dict[str, Any]:
+        return build_lending_kpi_report(
+            loans_df=self.loans_df,
+            payments_df=self.payments_df,
+            customer_df=self.customers_df,
+            cash_balance_usd=cash_balance_usd,
+            pending_disbursements_usd=pending_disbursements_usd,
+            cost_of_debt_pct=cost_of_debt_pct,
+        )
 
     def get_quarterly_scorecard(self) -> pd.DataFrame:
         if self.payments_df.empty:

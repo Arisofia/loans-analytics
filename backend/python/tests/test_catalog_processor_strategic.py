@@ -165,5 +165,174 @@ class TestCashBalanceTreasury(unittest.TestCase):
         self.assertIn('opportunity_cost', report['treasury_capacity'])
 
 
+class TestCollectionEfficiency6M(unittest.TestCase):
+
+    def _make_loans(self, due_offset_days: list[int], balances: list[float], collected: list[float] | None = None) -> pd.DataFrame:
+        today = pd.Timestamp.now()
+        data: dict = {
+            'loan_id': [f'L{i}' for i in range(len(due_offset_days))],
+            'due_date': [(today - pd.Timedelta(days=d)).strftime('%Y-%m-%d') for d in due_offset_days],
+            'outstanding_loan_value': balances,
+        }
+        if collected is not None:
+            data['capital_collected'] = collected
+        return pd.DataFrame(data)
+
+    def test_full_collection_returns_100_pct(self):
+        loans = self._make_loans([30, 60, 90], [1000.0, 2000.0, 3000.0], collected=[1000.0, 2000.0, 3000.0])
+        from backend.python.kpis.lending_kpis import collection_efficiency_6m
+        r = collection_efficiency_6m(loans)
+        self.assertEqual(r['status'], 'ok')
+        self.assertAlmostEqual(r['ce_6m_pct'], 100.0, places=1)
+        self.assertFalse(r['breach'])
+        self.assertEqual(r['data_source'], 'direct_capital_collected')
+
+    def test_partial_collection_breach(self):
+        loans = self._make_loans([30, 60], [1000.0, 1000.0], collected=[500.0, 500.0])
+        from backend.python.kpis.lending_kpis import collection_efficiency_6m
+        r = collection_efficiency_6m(loans, target_ce=0.96)
+        self.assertTrue(r['breach'])
+        self.assertAlmostEqual(r['ce_6m_pct'], 50.0, places=1)
+
+    def test_no_due_col_returns_insufficient_data(self):
+        loans = pd.DataFrame({'loan_id': ['L1'], 'outstanding_loan_value': [1000.0]})
+        from backend.python.kpis.lending_kpis import collection_efficiency_6m
+        r = collection_efficiency_6m(loans)
+        self.assertEqual(r['status'], 'insufficient_data')
+        self.assertIsNone(r['ce_6m_pct'])
+
+    def test_loans_outside_window_returns_no_loans(self):
+        loans = self._make_loans([400], [5000.0], collected=[5000.0])  # 400 days ago = outside 180d
+        from backend.python.kpis.lending_kpis import collection_efficiency_6m
+        r = collection_efficiency_6m(loans)
+        self.assertEqual(r['status'], 'no_loans_in_window')
+
+    def test_payments_df_fallback(self):
+        loans = self._make_loans([45], [2000.0])  # no capital_collected column
+        payments = pd.DataFrame({'loan_id': ['L0'], 'true_principal_payment': [1800.0]})
+        from backend.python.kpis.lending_kpis import collection_efficiency_6m
+        r = collection_efficiency_6m(loans, payments_df=payments)
+        self.assertEqual(r['status'], 'ok')
+        self.assertAlmostEqual(r['ce_6m_pct'], 90.0, places=1)
+        self.assertEqual(r['data_source'], 'payments_df_principal')
+
+
+class TestSLATargets(unittest.TestCase):
+
+    def test_target_mode_returns_targets(self):
+        from backend.python.kpis.lending_kpis import sla_targets
+        r = sla_targets()
+        self.assertEqual(r['status'], 'ok')
+        self.assertIn('targets', r)
+        self.assertIn('decision_sla_hours', r['targets'])
+        self.assertIn('funding_sla_hours', r['targets'])
+        self.assertEqual(r['data_source'], 'target_only')
+
+    def test_proxy_from_app_to_disbursement(self):
+        from backend.python.kpis.lending_kpis import sla_targets
+        loans = pd.DataFrame({
+            'application_date': ['2025-01-01', '2025-02-01'],
+            'disbursement_date': ['2025-01-02', '2025-02-02'],  # 24h each
+        })
+        r = sla_targets(loans)
+        self.assertIn('actual', r)
+        self.assertEqual(r['data_source'], 'proxy_app_to_disbursement')
+        self.assertAlmostEqual(r['actual']['median_app_to_disbursement_hours'], 24.0, delta=1.0)
+
+    def test_missing_app_date_stays_target_only(self):
+        from backend.python.kpis.lending_kpis import sla_targets
+        loans = pd.DataFrame({'disbursement_date': ['2025-01-02']})
+        r = sla_targets(loans)
+        self.assertEqual(r['data_source'], 'target_only')
+        self.assertNotIn('actual', r)
+
+
+class TestFinancingRateEIR(unittest.TestCase):
+
+    def _make_loans(self) -> pd.DataFrame:
+        return pd.DataFrame({
+            'loan_id': ['L1', 'L2', 'L3'],
+            'interest_rate_apr': [0.36, 0.38, 0.34],
+            'outstanding_loan_value': [10_000.0, 20_000.0, 30_000.0],
+        })
+
+    def test_weighted_apr_computed(self):
+        from backend.python.kpis.lending_kpis import financing_rate_eir
+        r = financing_rate_eir(self._make_loans())
+        self.assertEqual(r['status'], 'ok')
+        self.assertEqual(r['eir_type'], 'rate_charged_to_clients')
+        # weighted: (0.36*10k + 0.38*20k + 0.34*30k) / 60k = 0.356...
+        self.assertAlmostEqual(r['weighted_apr_pct'], 35.67, delta=0.5)
+
+    def test_no_apr_col_returns_insufficient_data(self):
+        from backend.python.kpis.lending_kpis import financing_rate_eir
+        loans = pd.DataFrame({'loan_id': ['L1'], 'outstanding_loan_value': [1000.0]})
+        r = financing_rate_eir(loans)
+        self.assertEqual(r['status'], 'insufficient_data')
+
+    def test_portfolio_yield_from_payments(self):
+        from backend.python.kpis.lending_kpis import financing_rate_eir
+        payments = pd.DataFrame({'true_interest_payment': [3000.0], 'true_fee_payment': [1000.0]})
+        r = financing_rate_eir(self._make_loans(), payments_df=payments)
+        self.assertIsNotNone(r['portfolio_yield_pct'])
+        # 4000 interest+fees / 60000 AUM = 6.67%
+        self.assertAlmostEqual(r['portfolio_yield_pct'], 6.67, delta=0.2)
+
+    def test_all_zero_rates_returns_no_valid_rates(self):
+        from backend.python.kpis.lending_kpis import financing_rate_eir
+        loans = pd.DataFrame({'loan_id': ['L1'], 'outstanding_loan_value': [1000.0], 'interest_rate_apr': [0.0]})
+        r = financing_rate_eir(loans)
+        self.assertEqual(r['status'], 'no_valid_rates')
+
+
+class TestCostOfDebtDSCR(unittest.TestCase):
+
+    def _make_loans(self) -> pd.DataFrame:
+        return pd.DataFrame({
+            'loan_id': ['L1', 'L2'],
+            'outstanding_loan_value': [500_000.0, 500_000.0],
+            'interest_rate_apr': [0.36, 0.36],
+        })
+
+    def _make_payments(self) -> pd.DataFrame:
+        return pd.DataFrame({
+            'true_interest_payment': [30_000.0, 30_000.0],
+            'true_fee_payment': [5_000.0, 5_000.0],
+            'true_payment_date': ['2025-01-31', '2025-06-30'],
+        })
+
+    def test_dscr_above_target(self):
+        from backend.python.kpis.lending_kpis import cost_of_debt_dscr
+        r = cost_of_debt_dscr(self._make_loans(), self._make_payments(), cost_of_debt_pct=0.15)
+        self.assertEqual(r['status'], 'ok')
+        self.assertGreater(r['dscr'], 1.0)
+        self.assertAlmostEqual(r['cost_of_debt_pct_used'], 15.0, places=1)
+        self.assertEqual(r['data_source'], 'proxy')
+
+    def test_dscr_breach_when_income_low(self):
+        from backend.python.kpis.lending_kpis import cost_of_debt_dscr
+        loans = pd.DataFrame({'outstanding_loan_value': [1_000_000.0], 'interest_rate_apr': [0.05]})
+        payments = pd.DataFrame({
+            'true_interest_payment': [1_000.0],
+            'true_payment_date': ['2025-06-30'],
+        })
+        r = cost_of_debt_dscr(loans, payments, cost_of_debt_pct=0.15)
+        self.assertTrue(r['dscr_breach'])
+
+    def test_fallback_to_aum_x_apr(self):
+        from backend.python.kpis.lending_kpis import cost_of_debt_dscr
+        loans = self._make_loans()
+        r = cost_of_debt_dscr(loans, cost_of_debt_pct=0.15)
+        # No payments → falls back to AUM × APR
+        self.assertIn('estimated_aum_x_avg_apr', r['income_source'])
+        self.assertGreater(r['dscr'], 0)
+
+    def test_proxy_note_in_output(self):
+        from backend.python.kpis.lending_kpis import cost_of_debt_dscr
+        r = cost_of_debt_dscr(self._make_loans())
+        self.assertIn('PROXY', r['note'])
+        self.assertIn('15.0%', r['note'])
+
+
 if __name__ == '__main__':
     unittest.main()

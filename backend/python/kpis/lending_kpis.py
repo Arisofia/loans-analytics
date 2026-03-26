@@ -389,12 +389,343 @@ def cash_balance_treasury(
     }
 
 
+def collection_efficiency_6m(
+    loans_df: pd.DataFrame,
+    payments_df: pd.DataFrame | None = None,
+    window_days: int = 180,
+    target_ce: float | None = None,
+) -> dict[str, Any]:
+    """CE 6M proxy using due_date / fechapagoprogramado from the loan tape."""
+    if target_ce is None:
+        try:
+            from backend.python.config import settings
+            target_ce = settings.guardrails.min_ce_6m
+        except Exception:
+            target_ce = 0.96
+
+    due_col = _col(loans_df, ['due_date', 'fechapagoprogramado', 'fecha_vencimiento', 'fecha_de_vencimiento'])
+    bal_col = _col(loans_df, ['outstanding_loan_value', 'principal_amount', 'disbursement_amount'])
+    cap_col = _col(loans_df, ['capital_collected', 'capitalcobrado'])
+    loan_id_col = _col(loans_df, ['loan_id'])
+
+    if due_col is None or bal_col is None:
+        return {
+            'status': 'insufficient_data',
+            'ce_6m_pct': None,
+            'target_ce_pct': round(target_ce * 100, 1),
+            'note': 'Requires due_date (fechapagoprogramado) and outstanding_loan_value columns.',
+        }
+
+    df = loans_df.copy()
+    df['_due'] = pd.to_datetime(df[due_col], errors='coerce')
+    df['_bal'] = pd.to_numeric(df[bal_col], errors='coerce').fillna(0)
+
+    today = pd.Timestamp.now()
+    cutoff = today - pd.Timedelta(days=window_days)
+    window_df = df[(df['_due'] >= cutoff) & (df['_due'] <= today)].copy()
+
+    if window_df.empty:
+        return {
+            'status': 'no_loans_in_window',
+            'ce_6m_pct': None,
+            'target_ce_pct': round(target_ce * 100, 1),
+            'window_days': window_days,
+            'note': f'No loans with due_date between {cutoff.date()} and {today.date()}.',
+        }
+
+    scheduled_usd = float(window_df['_bal'].sum())
+    collected_usd = 0.0
+    data_source = 'no_payment_data'
+
+    # Method 1: direct capital_collected column on the loan tape
+    if cap_col and cap_col in window_df.columns:
+        window_df['_cap'] = pd.to_numeric(window_df[cap_col], errors='coerce').fillna(0)
+        collected_usd = float(window_df['_cap'].sum())
+        if collected_usd > 0:
+            data_source = 'direct_capital_collected'
+
+    # Method 2: match payments_df by loan_id for loans in the window
+    if collected_usd == 0 and payments_df is not None and loan_id_col:
+        pay_lid = _col(payments_df, ['loan_id'])
+        pay_amt = _col(payments_df, ['true_principal_payment', 'true_total_payment'])
+        pay_date_col = _col(payments_df, ['true_payment_date'])
+        if pay_lid and pay_amt:
+            window_ids = set(window_df[loan_id_col].astype(str))
+            flt = payments_df[payments_df[pay_lid].astype(str).isin(window_ids)].copy()
+            if pay_date_col:
+                flt['_pdate'] = pd.to_datetime(flt[pay_date_col], errors='coerce')
+                flt = flt[(flt['_pdate'] >= cutoff) & (flt['_pdate'] <= today)]
+            collected_usd = float(pd.to_numeric(flt[pay_amt], errors='coerce').fillna(0).sum())
+            if collected_usd > 0:
+                data_source = 'payments_df_principal'
+
+    ce_6m = collected_usd / max(scheduled_usd, 1)
+    breach = ce_6m < target_ce
+
+    return {
+        'status': 'ok',
+        'ce_6m_pct': round(ce_6m * 100, 2),
+        'target_ce_pct': round(target_ce * 100, 1),
+        'breach': breach,
+        'scheduled_usd': round(scheduled_usd, 2),
+        'collected_usd': round(collected_usd, 2),
+        'gap_usd': round(max(scheduled_usd * target_ce - collected_usd, 0), 2),
+        'loans_in_window': int(len(window_df)),
+        'window_days': window_days,
+        'data_source': data_source,
+        'note': (
+            'Uses due_date / fechapagoprogramado as scheduled payment proxy. '
+            f'Target CE {round(target_ce * 100, 1)}% from business_parameters.yml (min_ce_6m).'
+        ),
+    }
+
+
+def sla_targets(loans_df: pd.DataFrame | None = None) -> dict[str, Any]:
+    """
+    SLA Decisión / Fondeo — targets from business_parameters.yml.
+
+    Without per-loan origination timestamps the metric runs in *target mode*
+    and shows the committed SLA goals.  If the loan tape contains both
+    application_date and disbursement_date the function also computes a proxy
+    median tap-to-fund time.
+    """
+    try:
+        from backend.python.config import settings
+        decision_hrs = settings.sla.decision_sla_hours
+        funding_hrs = settings.sla.funding_sla_hours
+        compliance_target = settings.sla.sla_compliance_target
+    except Exception:
+        decision_hrs = 24
+        funding_hrs = 48
+        compliance_target = 0.90
+
+    actual_median_hrs: float | None = None
+    data_source = 'target_only'
+
+    if loans_df is not None:
+        app_col = _col(loans_df, ['application_date', 'fechasolicitado'])
+        orig_col = _col(loans_df, ['origination_date', 'disbursement_date', 'fechadesembolso'])
+        if app_col and orig_col:
+            tmp = loans_df.copy()
+            tmp['_app'] = pd.to_datetime(tmp[app_col], errors='coerce')
+            tmp['_orig'] = pd.to_datetime(tmp[orig_col], errors='coerce')
+            tmp['_hrs'] = (tmp['_orig'] - tmp['_app']).dt.total_seconds() / 3600
+            valid = tmp['_hrs'].dropna()
+            positive = valid[valid > 0]
+            if len(positive) > 0:
+                actual_median_hrs = round(float(positive.median()), 1)
+                data_source = 'proxy_app_to_disbursement'
+
+    result: dict[str, Any] = {
+        'status': 'ok',
+        'targets': {
+            'decision_sla_hours': decision_hrs,
+            'funding_sla_hours': funding_hrs,
+            'compliance_rate_target_pct': round(compliance_target * 100, 1),
+        },
+        'data_source': data_source,
+        'note': (
+            'Full SLA tracking requires per-loan application_date + approval_date + disbursement_date '
+            'from the origination system. Add those columns to unlock actual compliance measurement.'
+        ),
+    }
+    if actual_median_hrs is not None:
+        result['actual'] = {
+            'median_app_to_disbursement_hours': actual_median_hrs,
+            'within_funding_target': actual_median_hrs <= funding_hrs,
+        }
+    return result
+
+
+def financing_rate_eir(
+    loans_df: pd.DataFrame,
+    payments_df: pd.DataFrame | None = None,
+) -> dict[str, Any]:
+    """
+    Tasa de Financiamiento / EIR — rate charged BY Abaco TO clients.
+
+    Weighted-average APR on the active portfolio (weighted by outstanding
+    balance).  This is the client-facing EIR, not Abaco's cost of funding.
+    """
+    apr_col = _col(loans_df, ['interest_rate_apr', 'interest_rate', 'TasaInteres', 'fee_rate'])
+    bal_col = _col(loans_df, ['outstanding_loan_value', 'outstanding_balance', 'principal_amount'])
+
+    if apr_col is None:
+        return {
+            'status': 'insufficient_data',
+            'weighted_apr_pct': None,
+            'note': 'Requires interest_rate_apr column in loan tape.',
+        }
+
+    df = loans_df.copy()
+    df['_apr'] = pd.to_numeric(df[apr_col], errors='coerce')
+    df = df[df['_apr'].notna() & (df['_apr'] > 0)].copy()
+
+    if df.empty:
+        return {
+            'status': 'no_valid_rates',
+            'weighted_apr_pct': None,
+            'note': f'Column {apr_col} found but all values are zero or null.',
+        }
+
+    total_bal = 0.0
+    if bal_col:
+        df['_bal'] = pd.to_numeric(df[bal_col], errors='coerce').fillna(0)
+        total_bal = float(df['_bal'].sum())
+        weighted_apr = (
+            float((df['_apr'] * df['_bal']).sum() / total_bal)
+            if total_bal > 0
+            else float(df['_apr'].mean())
+        )
+    else:
+        weighted_apr = float(df['_apr'].mean())
+
+    try:
+        from backend.python.config import settings
+        target_min = settings.guardrails.target_apr_min
+        target_max = settings.guardrails.target_apr_max
+    except Exception:
+        target_min = 0.34
+        target_max = 0.40
+
+    breach = weighted_apr < target_min or weighted_apr > target_max
+
+    # Optional: observed portfolio yield from actual interest receipts
+    portfolio_yield_pct: float | None = None
+    yield_source: str | None = None
+    if payments_df is not None and total_bal > 0:
+        pay_int = _col(payments_df, ['true_interest_payment'])
+        pay_fee = _col(payments_df, ['true_fee_payment'])
+        if pay_int or pay_fee:
+            total_receipts = 0.0
+            if pay_int:
+                total_receipts += float(pd.to_numeric(payments_df[pay_int], errors='coerce').fillna(0).sum())
+            if pay_fee:
+                total_receipts += float(pd.to_numeric(payments_df[pay_fee], errors='coerce').fillna(0).sum())
+            if total_receipts > 0:
+                portfolio_yield_pct = round(total_receipts / total_bal * 100, 2)
+                yield_source = 'total_interest_fees_over_outstanding'
+
+    return {
+        'status': 'ok',
+        'eir_type': 'rate_charged_to_clients',
+        'weighted_apr_pct': round(weighted_apr * 100, 2),
+        'min_apr_pct': round(float(df['_apr'].min()) * 100, 2),
+        'max_apr_pct': round(float(df['_apr'].max()) * 100, 2),
+        'target_range_pct': f'{round(target_min * 100):.0f}–{round(target_max * 100):.0f}%',
+        'breach': breach,
+        'total_outstanding_usd': round(total_bal, 2),
+        'loan_count': int(len(df)),
+        'portfolio_yield_pct': portfolio_yield_pct,
+        'portfolio_yield_note': yield_source,
+        'note': (
+            'EIR = weighted-average APR charged by Abaco to factoring clients. '
+            f'Target band {round(target_min * 100):.0f}–{round(target_max * 100):.0f}% '
+            'from business_parameters.yml (target_apr_min / target_apr_max).'
+        ),
+    }
+
+
+def cost_of_debt_dscr(
+    loans_df: pd.DataFrame,
+    payments_df: pd.DataFrame | None = None,
+    cost_of_debt_pct: float = 0.15,
+) -> dict[str, Any]:
+    """
+    Costo de Deuda / DSCR proxy.
+
+    DSCR = Annual Interest Income / Annual Debt Service
+    Annual Debt Service = AUM × cost_of_debt_pct
+
+    Uses 15 % proxy while EEFF are pending.  Replace cost_of_debt_pct with
+    the actual weighted funding cost once financial statements are received.
+    """
+    try:
+        from backend.python.config import settings
+        min_dscr = settings.guardrails.min_dscr
+        max_cod = settings.guardrails.max_cost_of_debt
+    except Exception:
+        min_dscr = 1.2
+        max_cod = 0.13
+
+    bal_col = _col(loans_df, ['outstanding_loan_value', 'outstanding_balance'])
+    aum_usd = (
+        float(pd.to_numeric(loans_df[bal_col], errors='coerce').fillna(0).sum())
+        if bal_col
+        else 0.0
+    )
+
+    annual_interest_income = 0.0
+    income_source = 'not_computed'
+
+    if payments_df is not None:
+        pay_int = _col(payments_df, ['true_interest_payment'])
+        pay_fee = _col(payments_df, ['true_fee_payment'])
+        pay_tax = _col(payments_df, ['true_tax_payment'])
+        pay_date_col = _col(payments_df, ['true_payment_date'])
+
+        if pay_int or pay_fee:
+            raw_income = 0.0
+            if pay_int:
+                raw_income += float(pd.to_numeric(payments_df[pay_int], errors='coerce').fillna(0).sum())
+            if pay_fee:
+                raw_income += float(pd.to_numeric(payments_df[pay_fee], errors='coerce').fillna(0).sum())
+            if pay_tax:
+                raw_income -= float(pd.to_numeric(payments_df[pay_tax], errors='coerce').fillna(0).sum())
+
+            if pay_date_col:
+                dates = pd.to_datetime(payments_df[pay_date_col], errors='coerce').dropna()
+                if len(dates) > 1:
+                    months_covered = max(1.0, (dates.max() - dates.min()).days / 30)
+                    annual_interest_income = raw_income / months_covered * 12
+                    income_source = f'payments_annualized_{round(months_covered, 1)}_months'
+                else:
+                    annual_interest_income = raw_income
+                    income_source = 'payments_total_single_period'
+            else:
+                annual_interest_income = raw_income
+                income_source = 'payments_total_no_date'
+
+    # Fallback: AUM × avg APR estimate
+    if annual_interest_income == 0 and aum_usd > 0:
+        apr_col = _col(loans_df, ['interest_rate_apr', 'interest_rate'])
+        if apr_col:
+            apr_vals = pd.to_numeric(loans_df[apr_col], errors='coerce').dropna()
+            if len(apr_vals) > 0:
+                avg_apr = float(apr_vals.mean())
+                annual_interest_income = aum_usd * avg_apr
+                income_source = f'estimated_aum_x_avg_apr_{round(avg_apr * 100, 1)}pct'
+
+    annual_debt_service = aum_usd * cost_of_debt_pct
+    dscr = annual_interest_income / max(annual_debt_service, 1)
+
+    return {
+        'status': 'ok',
+        'dscr': round(dscr, 3),
+        'dscr_target_min': min_dscr,
+        'dscr_breach': dscr < min_dscr,
+        'cost_of_debt_pct_used': round(cost_of_debt_pct * 100, 1),
+        'cost_of_debt_max_pct': round(max_cod * 100, 1),
+        'annual_interest_income_usd': round(annual_interest_income, 2),
+        'annual_debt_service_usd': round(annual_debt_service, 2),
+        'aum_usd': round(aum_usd, 2),
+        'income_source': income_source,
+        'data_source': 'proxy',
+        'note': (
+            f'PROXY: {round(cost_of_debt_pct * 100, 1)}% cost of debt assumed until EEFF are received. '
+            f'Config max_cost_of_debt = {round(max_cod * 100, 1)}%. '
+            'Pass actual weighted funding cost via cost_of_debt_pct once EEFF are available.'
+        ),
+    }
+
+
 def build_lending_kpi_report(
     loans_df: pd.DataFrame,
     payments_df: pd.DataFrame,
     customer_df: pd.DataFrame | None = None,
     cash_balance_usd: float | None = None,
     pending_disbursements_usd: float = 0.0,
+    cost_of_debt_pct: float = 0.15,
 ) -> dict[str, Any]:
     cdr = cdr_by_cohort(loans_df)
     liq = liquidation_rate(loans_df, payments_df)
@@ -413,6 +744,10 @@ def build_lending_kpi_report(
         if cash_balance_usd is not None
         else {'status': 'not_provided', 'note': 'Pass cash_balance_usd (daily bank balance) to activate treasury capacity view.'}
     )
+    ce_6m = collection_efficiency_6m(loans_df, payments_df)
+    sla = sla_targets(loans_df)
+    eir = financing_rate_eir(loans_df, payments_df)
+    dscr = cost_of_debt_dscr(loans_df, payments_df, cost_of_debt_pct=cost_of_debt_pct)
     return {
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'cdr_curves': cdr,
@@ -424,4 +759,8 @@ def build_lending_kpi_report(
         'promise_to_pay': ptp,
         'mype_decisions': mype,
         'treasury_capacity': treasury,
+        'collection_efficiency_6m': ce_6m,
+        'sla_targets': sla,
+        'financing_rate_eir': eir,
+        'cost_of_debt_dscr': dscr,
     }
