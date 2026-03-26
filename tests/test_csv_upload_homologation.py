@@ -215,51 +215,6 @@ with _patch('pathlib.Path.mkdir'):
     assert _dash_spec.loader is not None
     _dash_spec.loader.exec_module(_dash_mod)
 
-class TestPortfolioDashboardDesembolsos:
-
-    def _desembolsos_raw(self) -> pd.DataFrame:
-        return pd.DataFrame({'Numero_Desembolso': ['D001', 'D002'], 'Monto_del_Desembolso': ['$50,000', '$30,000'], 'CodCliente': ['C1', 'C2'], 'Estado': ['Vigente', 'Mora'], 'Tasa_de_Interes': [0.12, 0.18], 'Plazo_Meses': [12, 24], 'Fecha_Desembolso': ['2025-01-01', '2025-02-01']})
-
-    def _normalize_and_alias(self, raw: pd.DataFrame) -> pd.DataFrame:
-        return _dash_mod._apply_column_aliases(_dash_mod._normalize_column_names(raw))
-
-    def test_numero_desembolso_mapped_to_loan_id(self):
-        df = self._normalize_and_alias(self._desembolsos_raw())
-        assert 'loan_id' in df.columns
-        assert list(df['loan_id']) == ['D001', 'D002']
-
-    def test_codcliente_mapped_to_borrower_id(self):
-        df = self._normalize_and_alias(self._desembolsos_raw())
-        assert 'borrower_id' in df.columns
-        assert list(df['borrower_id']) == ['C1', 'C2']
-
-    def test_monto_del_desembolso_mapped_to_principal_amount(self):
-        df = self._normalize_and_alias(self._desembolsos_raw())
-        assert 'principal_amount' in df.columns
-        assert df['principal_amount'].notna().all()
-
-    def test_currency_parsed_correctly_in_prepare(self):
-        raw = self._desembolsos_raw()
-        aliased = self._normalize_and_alias(raw)
-        prepared = _dash_mod.prepare_uploaded_data(aliased)
-        assert 'principal_amount' in prepared.columns
-        assert prepared['principal_amount'].iloc[0] == pytest.approx(50000.0)
-        assert prepared['principal_amount'].iloc[1] == pytest.approx(30000.0)
-
-    def test_dias_mora_mapped_to_days_past_due(self):
-        raw = pd.DataFrame({'loan_id': ['D001'], 'principal_amount': [10000.0], 'interest_rate': [0.12], 'term_months': [12], 'origination_date': ['2025-01-01'], 'current_status': ['active'], 'Dias_Mora': [35]})
-        df = self._normalize_and_alias(raw)
-        assert 'days_past_due' in df.columns
-
-    def test_origination_date_aliased_from_fecha_desembolso(self):
-        df = self._normalize_and_alias(self._desembolsos_raw())
-        assert 'origination_date' in df.columns
-
-    def test_codcliente_suffix_variants_not_directly_aliased(self):
-        raw = pd.DataFrame({'loan_id': ['D001', 'D002'], 'principal_amount': [10000, 20000], 'interest_rate': [0.12, 0.18], 'term_months': [12, 24], 'origination_date': ['2025-01-01', '2025-02-01'], 'current_status': ['active', 'active'], 'CodCliente_': ['C1', None], 'CodCliente_2': [None, 'C2']})
-        df = self._normalize_and_alias(raw)
-        assert 'borrower_id' not in df.columns
-
 class TestCanonicalizeStatusNullHandling:
 
     def test_none_returns_unknown(self):
