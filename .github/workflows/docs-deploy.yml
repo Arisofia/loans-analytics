@@ -82,6 +82,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Save the built site BEFORE switching branches — git checkout rewrites
+          # the workspace and would delete _site otherwise.
+          cp -r _site /tmp/_site
+
           if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
             git fetch origin gh-pages
             git checkout -B gh-pages origin/gh-pages
@@ -91,7 +95,7 @@ jobs:
           fi
 
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          cp -r _site/. .
+          cp -r /tmp/_site/. .
 
           touch .nojekyll
           git add -A

@@ -20,8 +20,7 @@ try:
     from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request, WebSocket
     from starlette.websockets import WebSocketDisconnect
     from fastapi.responses import JSONResponse, Response
-    from backend.python.apps.analytics.api.models import AdvancedRiskResponse, CohortAnalyticsRequest, CohortAnalyticsResponse, DataQualityResponse, DecisionDashboardResponse, DefaultPredictionRequest, DefaultPredictionResponse, ExecutiveAnalyticsRequest, ExecutiveAnalyticsResponse, FullAnalysisResponse, KpiCoverageResponse, KpiResponse, KpiSingleResponse, LoanPortfolioRequest, NSMRecurrentTPVResponse, RiskAlertsResponse, RiskHeatmapResponse, RiskLoan, RiskStratificationResponse, RollRateAnalyticsRequest, RollRateAnalyticsResponse, SegmentAnalyticsRequest, SegmentAnalyticsResponse, StressTestRequest, StressTestResponse, UnitEconomicsRequest, UnitEconomicsResponse, ValidationResponse, VintageCurveResponse
-        from backend.python.apps.analytics.api.models import AdvancedRiskResponse, CohortAnalyticsRequest, CohortAnalyticsResponse, DataQualityResponse, DecisionDashboardResponse, DefaultPredictionRequest, DefaultPredictionResponse, ExecutiveAnalyticsRequest, ExecutiveAnalyticsResponse, FullAnalysisResponse, GuardrailsResponse, KpiCoverageResponse, KpiResponse, KpiSingleResponse, LoanPortfolioRequest, NSMRecurrentTPVResponse, RiskAlertsResponse, RiskHeatmapResponse, RiskLoan, RiskStratificationResponse, RollRateAnalyticsRequest, RollRateAnalyticsResponse, SegmentAnalyticsRequest, SegmentAnalyticsResponse, StressTestRequest, StressTestResponse, UnitEconomicsRequest, UnitEconomicsResponse, ValidationResponse, VintageCurveResponse
+    from backend.python.apps.analytics.api.models import AdvancedRiskResponse, CohortAnalyticsRequest, CohortAnalyticsResponse, DataQualityResponse, DecisionDashboardResponse, DefaultPredictionRequest, DefaultPredictionResponse, ExecutiveAnalyticsRequest, ExecutiveAnalyticsResponse, FullAnalysisResponse, GuardrailsResponse, KpiCoverageResponse, KpiResponse, KpiSingleResponse, LoanPortfolioRequest, NSMRecurrentTPVResponse, RiskAlertsResponse, RiskHeatmapResponse, RiskLoan, RiskStratificationResponse, RollRateAnalyticsRequest, RollRateAnalyticsResponse, SegmentAnalyticsRequest, SegmentAnalyticsResponse, StressTestRequest, StressTestResponse, UnitEconomicsRequest, UnitEconomicsResponse, ValidationResponse, VintageCurveResponse
     from backend.python.apps.analytics.api.monitoring_models import CommandCreate, CommandsListResponse, CommandStatus, CommandUpdate, EventAcknowledgeRequest, EventSeverity, EventsListResponse, OperationalEventCreate
     from backend.python.apps.analytics.api.monitoring_service import MonitoringService
     from backend.python.apps.analytics.api.service import KPIService
@@ -380,26 +379,16 @@ if app is not None:
             logger.error('Error in get_kpi_coverage: %s', e)
             raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
-    @app.post('/analytics/kpis/{kpi_id}', response_model=KpiSingleResponse)
-        @app.post('/analytics/guardrails', response_model=GuardrailsResponse)
-        async def check_portfolio_guardrails(request: LoanPortfolioRequest=Body(...), service: KPIService=Depends(get_kpi_service)):
-            try:
-                result = await service.calculate_guardrails(request.loans or [], request.payments, request.customers, request.schedule)
-                return GuardrailsResponse(**result)
-            except Exception as e:
-                logger.error('Error in check_portfolio_guardrails: %s', e)
-                    @app.post('/analytics/guardrails', response_model=GuardrailsResponse)
-                    async def check_portfolio_guardrails(request: ExecutiveAnalyticsRequest=Body(...), service: KPIService=Depends(get_kpi_service)):
-                        try:
-                            result = await service.calculate_guardrails(request.loans, request.payments, request.customers, request.schedule)
-                            return GuardrailsResponse(**result)
-                        except Exception as e:
-                            logger.error('Error in check_portfolio_guardrails: %s', e)
-                            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
-                raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
+    @app.post('/analytics/guardrails', response_model=GuardrailsResponse)
+    async def check_portfolio_guardrails(request: LoanPortfolioRequest=Body(...), service: KPIService=Depends(get_kpi_service)):
+        try:
+            result = await service.calculate_guardrails(request.loans or [], request.payments, request.customers, request.schedule)
+            return GuardrailsResponse(**result)
+        except Exception as e:
+            logger.error('Error in check_portfolio_guardrails: %s', e)
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
-        @app.post('/analytics/kpis/{kpi_id}', response_model=KpiSingleResponse)
-    async def get_single_kpi(kpi_id: str, request: LoanPortfolioRequest=Body(...), service: KPIService=Depends(get_kpi_service)):
+    @app.post('/analytics/kpis/{kpi_id}', response_model=KpiSingleResponse)
         kpi_key_map = {'par30': 'PAR30', 'par90': 'PAR90', 'collection-rate': 'COLLECTION_RATE', 'default-rate': 'DEFAULT_RATE', 'total-loans-count': 'TOTAL_LOANS_COUNT', 'loss-rate': 'LOSS_RATE', 'recovery-rate': 'RECOVERY_RATE', 'cash-on-hand': 'CASH_ON_HAND', 'cac': 'CAC', 'gross-margin-pct': 'GROSS_MARGIN_PCT', 'revenue-forecast-6m': 'REVENUE_FORECAST_6M', 'churn-90d': 'CHURN_90D', 'portfolio-health': 'PORTFOLIO_HEALTH', 'active-borrowers': 'ACTIVE_BORROWERS', 'repeat-borrower-rate': 'REPEAT_BORROWER_RATE', 'automation-rate': 'AUTOMATION_RATE', 'average-loan-size': 'AVERAGE_LOAN_SIZE', 'processing-time-avg': 'PROCESSING_TIME_AVG', 'disbursement-volume-mtd': 'DISBURSEMENT_VOLUME_MTD', 'new-loans-count-mtd': 'NEW_LOANS_COUNT_MTD', 'customer-lifetime-value': 'CUSTOMER_LIFETIME_VALUE', 'ltv': 'AVG_LTV', 'avg-ltv': 'AVG_LTV', 'dti': 'AVG_DTI', 'avg-dti': 'AVG_DTI', 'portfolio-yield': 'PORTFOLIO_YIELD', 'par60': 'PAR60', 'par-60': 'PAR60', 'dpd-1-30': 'DPD_1_30', 'dpd_1_30': 'DPD_1_30', 'dpd-31-60': 'DPD_31_60', 'dpd_31_60': 'DPD_31_60', 'dpd-61-90': 'DPD_61_90', 'dpd_61_90': 'DPD_61_90', 'dpd-90-plus': 'DPD_90_PLUS', 'dpd_90_plus': 'DPD_90_PLUS', 'npl': 'NPL', 'npl-ratio': 'NPL', 'lgd': 'LGD', 'cor': 'COR', 'cost-of-risk': 'COR', 'nim': 'NIM', 'net-interest-margin': 'NIM', 'cure-rate': 'CURERATE', 'curerate': 'CURERATE'}
         known_db_keys = set(kpi_key_map.values())
         db_key = kpi_key_map.get(kpi_id.lower())
