@@ -26,8 +26,8 @@ def main() -> None:
         st.info("Run the pipeline to populate this page.")
         st.stop()
 
-    tab_metrics, tab_alerts, tab_actions, tab_opps = st.tabs(
-        ["Executive Metrics", "Alerts", "Actions", "Opportunities"]
+    tab_metrics, tab_alerts, tab_actions, tab_opps, tab_covenants = st.tabs(
+        ["Executive Metrics", "Alerts", "Actions", "Opportunities", "Covenants"]
     )
 
     # ── Executive Metrics ────────────────────────────────────────────
@@ -99,6 +99,32 @@ def main() -> None:
                     st.caption(f"Expected impact: {impact}")
         else:
             st.info("No opportunities identified in the latest run.")
+
+    # ── Covenants ────────────────────────────────────────────────────
+    with tab_covenants:
+        all_alerts = state.get("critical_alerts", []) + state.get("ranked_alerts", [])
+        covenant_alerts = [
+            a for a in all_alerts
+            if (a.get("alert_id") or "").startswith("covenant.")
+        ]
+        covenant_status = statuses.get("covenant", "not_run")
+
+        if covenant_status == "ok" and not covenant_alerts:
+            st.success("✅ All covenants within thresholds.")
+        elif covenant_alerts:
+            st.error(f"⚠️ {len(covenant_alerts)} covenant breach(es)")
+            for ca in covenant_alerts:
+                sev = ca.get("severity", "warning")
+                icon = _severity_color(sev)
+                st.markdown(f"{icon} **{ca.get('title', 'Breach')}**")
+                if ca.get("description"):
+                    st.caption(ca["description"])
+                val = ca.get("current_value")
+                thr = ca.get("threshold")
+                if val and thr:
+                    st.caption(f"Current: `{val}` · Limit: `{thr}`")
+        else:
+            st.info("Covenant agent has not run yet.")
 
     # ── Agent statuses ──────────────────────────────────────────────
     statuses = state.get("agent_statuses", {})

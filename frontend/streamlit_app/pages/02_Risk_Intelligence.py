@@ -1,136 +1,159 @@
-import json
-from datetime import date, datetime
-from pathlib import Path
-from typing import Any
-import pandas as pd
+"""02 — Risk Intelligence.
+
+Displays structured outputs from the Risk, Cohort/Vintage, and
+Concentration decision agents: PAR curves, vintage deterioration,
+HHI / top-N exposure, and associated alerts & actions.
+"""
+
+from __future__ import annotations
+
 import streamlit as st
-from backend.python.logging_config import get_logger
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-AGENT_OUTPUTS_DIR = ROOT_DIR / 'data' / 'agent_outputs'
-logger = get_logger(__name__)
-st.set_page_config(page_title='Risk Intelligence', page_icon='🛡️', layout='wide')
-AGENT_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
-def get_agent_output_files() -> list[Path]:
-    if not AGENT_OUTPUTS_DIR.exists():
-        return []
-    files = list(AGENT_OUTPUTS_DIR.glob('*_response.json'))
-    return sorted(files, key=lambda f: f.stat().st_mtime, reverse=True)
+st.set_page_config(page_title="Risk Intelligence", page_icon="🛡️", layout="wide")
 
-def parse_agent_output(file_path: Path) -> dict[str, Any]:
-    try:
-        with open(file_path, encoding='utf-8') as f:
-            data = json.load(f)
-        filename = file_path.stem
-        parts = filename.split('_')
-        timestamp_str = parts[0] if len(parts) > 0 else 'unknown'
-        agent_name = parts[1] if len(parts) > 1 else 'unknown'
-        try:
-            timestamp = datetime.fromisoformat(timestamp_str)
-            formatted_time = timestamp.strftime('%Y-%m-%d %H:%M:%S')
-        except (ValueError, OSError):
-            formatted_time = timestamp_str
-        return {'timestamp': formatted_time, 'agent': agent_name.replace('-', ' ').title(), 'query': data.get('query', 'N/A'), 'response': data.get('response', 'N/A'), 'status': data.get('status', 'unknown'), 'tokens': data.get('tokens_used', 0), 'cost': data.get('cost_usd', 0.0), 'raw_data': data}
-    except Exception as exc:
-        logger.exception('Error parsing agent output file %s: %s', file_path, exc)
-        return {'timestamp': 'Error', 'agent': 'Error', 'query': 'Failed to parse file', 'response': str(exc), 'status': 'error', 'tokens': 0, 'cost': 0.0, 'raw_data': {}}
-st.title('🤖 Agent Insights')
-st.markdown('View AI agent feedback, conversation history, and recommendations from the multi-agent system.')
-st.sidebar.header('Filters')
-output_files = get_agent_output_files()
-if not output_files:
-    st.warning('No agent outputs found. Run agents using:\n\n```bash\npython -m src.agents.multi_agent.cli \\\n  --agent risk \\\n  --query "Your question here"\n```')
-    with st.expander('📖 How to Use Multi-Agent System'):
-        st.markdown('\n        ### Available Agents\n\n        1. **Risk Analyst** - Portfolio risk assessment\n        2. **Growth Strategist** - Expansion opportunities\n        3. **Operations Optimizer** - Process efficiency\n        4. **Compliance Officer** - Regulatory adherence\n        5. **Collections Specialist** - Recovery strategies\n        6. **Fraud Detection** - Anomaly identification\n        7. **Pricing Strategist** - Rate optimization\n        8. **Retention Specialist** - Customer lifecycle\n        9. **Database Designer** - Schema optimization\n\n        ### CLI Usage\n\n        ```bash\n        # Activate environment\n        source .venv/bin/activate\n\n        # Run single agent\n        python -m src.agents.multi_agent.cli \\\n          --agent risk \\\n          --query "Analyze portfolio with DPD > 30"\n\n        # Run pre-built scenario\n        python -m src.agents.multi_agent.cli \\\n          --scenario "monthly_portfolio_health"\n\n        # List scenarios\n        python -m src.agents.multi_agent.cli --list-scenarios\n        ```\n\n        ### Output Location\n\n        Agent responses are saved to:\n        ```\n        data/agent_outputs/<timestamp>_<agent_name>_response.json\n        ```\n\n        This page automatically loads and displays all saved agent interactions.\n        ')
-    st.stop()
-parsed_outputs = [parse_agent_output(f) for f in output_files]
-agents = sorted({output['agent'] for output in parsed_outputs})
-selected_agents = st.sidebar.multiselect('Select Agents', options=agents, default=agents)
-min_date = datetime.now().date()
-if parsed_outputs:
-    try:
-        dates = [datetime.fromisoformat(output['timestamp']).date() for output in parsed_outputs if output['timestamp'] != 'Error']
-        if dates:
-            min_date = min(dates)
-    except (ValueError, OSError):
-        logger.warning('Failed to parse one or more agent interaction timestamps; using default date filter of %s', min_date)
-date_filter = st.sidebar.date_input('Show interactions since', value=min_date, max_value=datetime.now().date())
-filtered_outputs = [output for output in parsed_outputs if output['agent'] in selected_agents]
-if date_filter:
-    filtered_outputs = [output for output in filtered_outputs if output['timestamp'] != 'Error' and datetime.fromisoformat(output['timestamp']).date() >= date_filter]
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric('Total Interactions', len(filtered_outputs))
-with col2:
-    total_tokens = sum((output['tokens'] for output in filtered_outputs))
-    st.metric('Total Tokens Used', f'{total_tokens:,}')
-with col3:
-    total_cost = sum((output['cost'] for output in filtered_outputs))
-    st.metric('Total Cost', f'${total_cost:.4f}')
-with col4:
-    success_count = sum((o['status'] == 'success' for o in filtered_outputs))
-    success_rate = success_count / len(filtered_outputs) * 100 if filtered_outputs else 0
-    st.metric('Success Rate', f'{success_rate:.1f}%')
-st.markdown('---')
-display_mode = st.radio('Display Mode', options=['💬 Conversations', '📊 Summary Table', '📈 Analytics'], horizontal=True)
-if display_mode == '💬 Conversations':
-    st.subheader('Agent Conversations')
-    for i, output in enumerate(filtered_outputs):
-        with st.expander(f"🤖 {output['agent']} - {output['timestamp']} ({('✅' if output['status'] == 'success' else '❌')})", expanded=i == 0):
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.caption(f"**Agent:** {output['agent']}")
-            with col2:
-                st.caption(f"**Tokens:** {output['tokens']}")
-            with col3:
-                st.caption(f"**Cost:** ${output['cost']:.4f}")
-            st.markdown('**Query:**')
-            st.info(output['query'])
-            st.markdown('**Response:**')
-            if output['status'] == 'success':
-                st.success(output['response'])
-            else:
-                st.error(output['response'])
-            with st.expander('🔍 View Raw JSON'):
-                st.json(output['raw_data'])
-elif display_mode == '📊 Summary Table':
-    st.subheader('Summary Table')
-    df = pd.DataFrame([{'Timestamp': output['timestamp'], 'Agent': output['agent'], 'Status': output['status'], 'Query': output['query'][:100] + '...' if len(output['query']) > 100 else output['query'], 'Tokens': output['tokens'], 'Cost ($)': output['cost']} for output in filtered_outputs])
-    st.dataframe(df, width='stretch', hide_index=True)
-    if st.button('📥 Export to CSV'):
-        csv = df.to_csv(index=False)
-        st.download_button(label='Download CSV', data=csv, file_name=f"agent_insights_{datetime.now().strftime('%Y%m%d')}.csv", mime='text/csv')
-else:
-    st.subheader('Agent Analytics')
-    if not filtered_outputs:
-        st.info('No data to display')
-    else:
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown('#### Interactions by Agent')
-            agent_counts: dict[str, int] = {}
-            for output in filtered_outputs:
-                agent_counts[output['agent']] = agent_counts.get(output['agent'], 0) + 1
-            agent_df = pd.DataFrame([{'Agent': agent, 'Count': count} for agent, count in agent_counts.items()]).sort_values('Count', ascending=False)
-            st.bar_chart(agent_df.set_index('Agent'))
-        with col2:
-            st.markdown('#### Cost by Agent')
-            agent_costs: dict[str, float] = {}
-            for output in filtered_outputs:
-                agent_costs[output['agent']] = agent_costs.get(output['agent'], 0) + output['cost']
-            cost_df = pd.DataFrame([{'Agent': agent, 'Cost ($)': cost} for agent, cost in agent_costs.items()]).sort_values('Cost ($)', ascending=False)
-            st.bar_chart(cost_df.set_index('Agent'))
-        st.markdown('#### Interaction Timeline')
-        timeline_data: dict[date, int] = {}
-        for output in filtered_outputs:
-            if output['timestamp'] != 'Error':
-                try:
-                    date_key = datetime.fromisoformat(output['timestamp']).date()
-                    timeline_data[date_key] = timeline_data.get(date_key, 0) + 1
-                except (ValueError, OSError):
-                    continue
-        if timeline_data:
-            timeline_df = pd.DataFrame([{'Date': date, 'Interactions': count} for date, count in sorted(timeline_data.items())])
-            st.line_chart(timeline_df.set_index('Date'))
-st.markdown('---')
-st.caption('💡 Tip: Agent outputs are saved automatically to `data/agent_outputs/`')
+from frontend.streamlit_app.decision_loader import load_decision_state
+
+_RISK_AGENTS = {"risk", "cohort_vintage", "concentration"}
+_RISK_KEYWORDS = {"par30", "par_30", "par 30", "expected loss", "hhi", "concentration", "vintage", "default rate", "covenant"}
+
+
+def _filter_by_agent(items: list[dict], agents: set[str]) -> list[dict]:
+    """Return items whose id prefix matches one of *agents*."""
+    out = []
+    for item in items:
+        aid = item.get("alert_id") or item.get("action_id") or item.get("rec_id") or ""
+        prefix = aid.split(".")[0] if "." in aid else ""
+        if prefix in agents:
+            out.append(item)
+    return out
+
+
+def _severity_icon(severity: str) -> str:
+    return {"critical": "🔴", "warning": "🟡", "info": "🔵"}.get(severity, "⚪")
+
+
+def main() -> None:
+    st.title("🛡️ Risk Intelligence")
+
+    state = load_decision_state()
+    if state is None:
+        st.warning("No decision state found. Run the pipeline first.")
+        return
+
+    # ── Agent status strip ──────────────────────────────────────────
+    statuses = state.get("agent_statuses", {})
+    status_cols = st.columns(len(_RISK_AGENTS))
+    for idx, agent_id in enumerate(sorted(_RISK_AGENTS)):
+        with status_cols[idx]:
+            status = statuses.get(agent_id, "not_run")
+            label = agent_id.replace("_", " ").title()
+            icon = "✅" if status == "ok" else "⚠️" if status == "blocked" else "⛔" if status == "error" else "⏳"
+            st.metric(label, f"{icon} {status}")
+
+    st.divider()
+
+    # ── Collect items ───────────────────────────────────────────────
+    all_alerts = state.get("critical_alerts", []) + state.get("ranked_alerts", [])
+    all_actions = state.get("ranked_actions", [])
+    all_opps = state.get("opportunities", [])
+
+    risk_alerts = _filter_by_agent(all_alerts, _RISK_AGENTS)
+    risk_actions = _filter_by_agent(all_actions, _RISK_AGENTS)
+    risk_recs = _filter_by_agent(all_opps, _RISK_AGENTS)
+
+    # Include keyword-matched alerts without explicit agent prefix
+    for item in all_alerts:
+        if item not in risk_alerts:
+            title = (item.get("title") or "").lower()
+            if any(kw in title for kw in _RISK_KEYWORDS):
+                risk_alerts.append(item)
+
+    # ── Tabs ────────────────────────────────────────────────────────
+    tab_overview, tab_alerts, tab_actions, tab_recs = st.tabs(
+        ["Risk Overview", "Alerts", "Actions", "Recommendations"],
+    )
+
+    # ── Overview ────────────────────────────────────────────────────
+    with tab_overview:
+        st.subheader("Risk Agent Outputs")
+
+        cols = st.columns(3)
+        _agent_labels = {
+            "cohort_vintage": ("Cohort / Vintage", "Origination vintage analysis and trend detection"),
+            "concentration": ("Concentration", "HHI, top-N exposure, single obligor cap"),
+            "risk": ("Risk", "PAR30 monitoring, expected loss"),
+        }
+        for col_idx, aid in enumerate(sorted(_RISK_AGENTS)):
+            with cols[col_idx]:
+                label, desc = _agent_labels.get(aid, (aid, ""))
+                st.markdown(f"#### {label}")
+                st.caption(desc)
+                s = statuses.get(aid)
+                if s == "ok":
+                    st.success("Completed")
+                elif s == "blocked":
+                    st.error("Blocked by upstream agent")
+                elif s == "error":
+                    st.error("Agent error")
+                elif s == "skipped":
+                    st.warning("Skipped — dependencies not met")
+                else:
+                    st.info("Not yet run")
+
+        critical_count = sum(1 for a in risk_alerts if a.get("severity") == "critical")
+        warning_count = sum(1 for a in risk_alerts if a.get("severity") == "warning")
+        if critical_count:
+            st.error(f"🔴 {critical_count} critical risk alert(s)")
+        if warning_count:
+            st.warning(f"🟡 {warning_count} warning(s)")
+        if not critical_count and not warning_count:
+            st.success("No risk alerts — portfolio within thresholds.")
+
+    # ── Alerts ──────────────────────────────────────────────────────
+    with tab_alerts:
+        st.subheader("Risk Alerts")
+        if risk_alerts:
+            for alert in risk_alerts:
+                sev = alert.get("severity", "info")
+                st.markdown(f"{_severity_icon(sev)} **[{sev.upper()}]** {alert.get('title', 'Alert')}")
+                if alert.get("description"):
+                    st.caption(alert["description"])
+                val = alert.get("current_value")
+                thr = alert.get("threshold")
+                if val and thr:
+                    st.caption(f"Current: `{val}` · Threshold: `{thr}`")
+        else:
+            st.success("No active risk alerts.")
+
+    # ── Actions ─────────────────────────────────────────────────────
+    with tab_actions:
+        st.subheader("Risk Actions")
+        if risk_actions:
+            for action in risk_actions:
+                confidence = action.get("confidence", 0)
+                st.markdown(
+                    f"**{action.get('title', 'Action')}**  \n"
+                    f"Owner: `{action.get('owner', '—')}` · "
+                    f"Urgency: `{action.get('urgency', 'medium')}` · "
+                    f"Confidence: `{confidence:.0%}`"
+                )
+                if action.get("details"):
+                    st.caption(action["details"])
+        else:
+            st.info("No pending risk actions.")
+
+    # ── Recommendations ─────────────────────────────────────────────
+    with tab_recs:
+        st.subheader("Risk Recommendations")
+        if risk_recs:
+            for rec in risk_recs:
+                st.markdown(f"💡 **{rec.get('title', '')}**")
+                st.caption(rec.get("rationale", ""))
+                if rec.get("expected_impact"):
+                    st.caption(f"Expected impact: {rec['expected_impact']}")
+        else:
+            st.info("No recommendations from risk agents.")
+
+
+if __name__ == "__main__":
+    main()

@@ -28,8 +28,23 @@ def main() -> None:
     biz_state = state.get("business_state", "unknown")
     state_colors = {
         "healthy": "🟢", "attention": "🟡", "critical": "🔴", "data_blocked": "⛔",
+        "covenant_watch": "🟠",
     }
     st.header(f"{state_colors.get(biz_state, '⚪')} Business State: {biz_state.replace('_', ' ').title()}")
+
+    # ── Covenant status strip ───────────────────────────────────────
+    all_alerts = state.get("critical_alerts", []) + state.get("ranked_alerts", [])
+    covenant_alerts = [
+        a for a in all_alerts
+        if (a.get("alert_id") or "").startswith("covenant.")
+    ]
+    if covenant_alerts:
+        breach_count = len(covenant_alerts)
+        st.error(f"⚠️ **Covenant Monitor:** {breach_count} breach(es) detected")
+        for ca in covenant_alerts:
+            st.caption(f"🔴 {ca.get('title', '')} — {ca.get('description', '')}")
+    else:
+        st.success("✅ **Covenant Monitor:** All covenants within thresholds")
 
     # Confidence
     render_confidence_badge(state.get("confidence", "medium"))

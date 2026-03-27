@@ -43,6 +43,19 @@ class AgentAction(BaseModel):
     details: str = ""
 
 
+class DecisionCenterState(BaseModel):
+    """Aggregated state consumed by the AI Decision Center frontend."""
+
+    timestamp: str = Field(default_factory=_utc_now_iso)
+    business_state: str = "unknown"
+    critical_alerts: List[Dict[str, Any]] = Field(default_factory=list)
+    ranked_actions: List[Dict[str, Any]] = Field(default_factory=list)
+    blocked_actions: List[Dict[str, Any]] = Field(default_factory=list)
+    opportunities: List[Dict[str, Any]] = Field(default_factory=list)
+    scenario_summary: Dict[str, Any] = Field(default_factory=dict)
+    agent_statuses: Dict[str, str] = Field(default_factory=dict)
+
+
 class AgentOutput(BaseModel):
     agent_id: str
     status: str

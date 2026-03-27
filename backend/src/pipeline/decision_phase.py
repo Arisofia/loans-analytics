@@ -112,6 +112,19 @@ class DecisionPhase:
             metrics_seed.update(engine_metrics)
             logger.info("Metric engine produced %d metrics", len(engine_metrics))
 
+            # ── Default rate reconciliation (F10) ───────────────────────
+            try:
+                from backend.python.kpis.holding_financial_indicators import reconcile_default_rates
+
+                reconciliation = reconcile_default_rates()
+                metrics_seed["default_rate_reconciliation"] = reconciliation
+                logger.info(
+                    "Default rate reconciliation: reconciled=%s",
+                    reconciliation.get("reconciled"),
+                )
+            except Exception as exc:
+                logger.warning("reconcile_default_rates skipped: %s", exc)
+
             # ── Run scenario engine ─────────────────────────────────────
             from backend.src.scenario_engine.engine import ScenarioEngine
 
@@ -147,6 +160,10 @@ class DecisionPhase:
             dq_path = decision_dir / "data_quality.json"
             with open(dq_path, "w", encoding="utf-8") as fh:
                 json.dump(dq_results, fh, indent=2, default=str)
+
+            metrics_path = decision_dir / "metrics.json"
+            with open(metrics_path, "w", encoding="utf-8") as fh:
+                json.dump(metrics_seed, fh, indent=2, default=str)
 
             logger.info(
                 "Decision phase complete — state=%s, alerts=%d, actions=%d",

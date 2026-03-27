@@ -1,140 +1,138 @@
-import os
-from urllib.parse import urlparse
-from uuid import UUID
-import pandas as pd
-import requests
+"""05 — Sales & Growth Intelligence.
+
+Surfaces outputs from the Sales, Segmentation, and Pricing decision
+agents: win-rate, segment risk, spread adequacy, and associated
+alerts / recommendations.
+"""
+
+from __future__ import annotations
+
 import streamlit as st
-from backend.python.config.theme import ANALYTICS_THEME
-from frontend.streamlit_app.utils.security import sanitize_api_base
-st.set_page_config(page_title='Sales & Growth', page_icon='📈', layout='wide')
-st.markdown(f"\n    <style>\n    .main {{\n        background-color: {ANALYTICS_THEME['colors']['background']};\n        color: {ANALYTICS_THEME['colors']['white']};\n    }}\n    </style>\n    ", unsafe_allow_html=True)
-st.title('📈 Sales & Growth')
-API_BASE: str = os.environ.get('API_BASE_URL', 'http://127.0.0.1:8000')
-API_BASE_SAFE = sanitize_api_base(API_BASE)
-if API_BASE_SAFE is None:
-    st.sidebar.text('API: <invalid or untrusted>')
-    st.error('Invalid API_BASE_URL configuration. Contact your administrator.')
-else:
-    st.sidebar.text(f'API: {API_BASE_SAFE}')
-MONITORING_EVENTS_ENDPOINT = '/monitoring/events'
-MONITORING_EVENTS_ACK_ENDPOINT = '/monitoring/events/ack'
-MONITORING_COMMANDS_ENDPOINT = '/monitoring/commands'
-ALLOWED_ENDPOINTS = {MONITORING_EVENTS_ENDPOINT, MONITORING_EVENTS_ACK_ENDPOINT, MONITORING_COMMANDS_ENDPOINT}
 
-def _build_api_url(path: str) -> str | None:
-    base = API_BASE_SAFE
-    if base is None:
-        st.error('API is not configured or is untrusted. Aborting request.')
-        return None
-    if path not in ALLOWED_ENDPOINTS:
-        st.error('SSRF Protection: endpoint is not in the allowed API route list.')
-        return None
-    normalized_base = base.rstrip('/')
-    url = f'{normalized_base}{path}'
-    parsed_url = urlparse(url)
-    parsed_base = urlparse(normalized_base)
-    if parsed_url.netloc != parsed_base.netloc or parsed_url.scheme != parsed_base.scheme:
-        st.error('SSRF Protection: URL host or scheme mismatch.')
-        return None
-    return url
+st.set_page_config(page_title="Sales & Growth", page_icon="📈", layout="wide")
 
-def _request_json(method: str, path: str, *, params: dict | None=None, json_body: dict | None=None):
-    url = _build_api_url(path)
-    if url is None:
-        return None
-    try:
-        resp = requests.request(method, url, params=params, json=json_body, timeout=5)
-        resp.raise_for_status()
-        return resp.json()
-    except Exception as e:
-        st.error(f'API error: {e}')
-        return None
+from frontend.streamlit_app.decision_loader import load_decision_state
 
-def _api_get_events(params: dict | None=None):
-    return _request_json('GET', MONITORING_EVENTS_ENDPOINT, params=params)
+_SALES_AGENTS = {"sales", "segmentation", "pricing"}
+_SALES_KEYWORDS = {"win rate", "win_rate", "spread", "pricing", "segment", "dpd"}
 
-def _api_ack_event(event_id: str):
-    return _request_json('POST', MONITORING_EVENTS_ACK_ENDPOINT, json_body={'event_id': event_id})
 
-def _api_create_command(json_body: dict | None=None):
-    return _request_json('POST', MONITORING_COMMANDS_ENDPOINT, json_body=json_body)
+def _filter_by_agent(items: list[dict], agents: set[str]) -> list[dict]:
+    """Return items whose ``alert_id``, ``action_id``, or ``rec_id`` belongs to an agent."""
+    out = []
+    for item in items:
+        aid = item.get("alert_id") or item.get("action_id") or item.get("rec_id") or ""
+        prefix = aid.split(".")[0] if "." in aid else ""
+        if prefix in agents:
+            out.append(item)
+    return out
 
-def _api_get_commands(params: dict | None=None):
-    return _request_json('GET', MONITORING_COMMANDS_ENDPOINT, params=params)
-st.header('Live Event Feed')
-col_sev, col_src, col_limit = st.columns(3)
-with col_sev:
-    severity_filter = st.selectbox('Severity', ['all', 'info', 'warning', 'critical'], index=0)
-with col_src:
-    source_filter = st.text_input('Source filter', value='')
-with col_limit:
-    event_limit = st.number_input('Limit', min_value=1, max_value=500, value=50)
-if st.button('Refresh Events', key='refresh_events'):
-    event_params: dict = {'limit': event_limit}
-    if severity_filter != 'all':
-        event_params['severity'] = severity_filter
-    if source_filter:
-        event_params['source'] = source_filter
-    data = _api_get_events(params=event_params)
-    if data and data.get('events'):
-        st.session_state['events_data'] = data['events']
-    elif data:
-        st.info('No events found.')
-if 'events_data' in st.session_state and st.session_state['events_data']:
-    events = st.session_state['events_data']
-    df = pd.DataFrame(events)
-    display_cols = [c for c in ['created_at', 'severity', 'event_type', 'source', 'id', 'acknowledged_at'] if c in df.columns]
-    st.dataframe(df[display_cols].sort_values('created_at', ascending=False), width='stretch')
-    st.subheader('Acknowledge Event')
-    event_id_to_ack = st.text_input('Event ID to acknowledge')
-    if st.button('Acknowledge', key='ack_btn'):
-        if event_id_to_ack:
-            event_id_clean = event_id_to_ack.strip()
-            try:
-                UUID(event_id_clean)
-            except ValueError:
-                st.error('Invalid event ID format. Use a UUID value.')
-            else:
-                if (result := _api_ack_event(event_id_clean)):
-                    st.success(f'Event {event_id_clean} acknowledged.')
+
+def _severity_icon(severity: str) -> str:
+    return {"critical": "🔴", "warning": "🟡", "info": "🔵"}.get(severity, "⚪")
+
+
+def main() -> None:
+    st.title("📈 Sales & Growth Intelligence")
+
+    state = load_decision_state()
+    if state is None:
+        st.warning("No decision state found. Run the pipeline first.")
+        return
+
+    # ── Agent status strip ──────────────────────────────────────────
+    statuses = state.get("agent_statuses", {})
+    status_cols = st.columns(len(_SALES_AGENTS))
+    for idx, agent_id in enumerate(sorted(_SALES_AGENTS)):
+        with status_cols[idx]:
+            status = statuses.get(agent_id, "not_run")
+            icon = "✅" if status == "ok" else "⚠️" if status == "blocked" else "⛔" if status == "error" else "⏳"
+            st.metric(agent_id.replace("_", " ").title(), f"{icon} {status}")
+
+    st.divider()
+
+    # ── Collect agent-specific items ────────────────────────────────
+    all_alerts = state.get("critical_alerts", []) + state.get("ranked_alerts", [])
+    all_actions = state.get("ranked_actions", [])
+    all_opps = state.get("opportunities", [])
+
+    sales_alerts = _filter_by_agent(all_alerts, _SALES_AGENTS)
+    sales_actions = _filter_by_agent(all_actions, _SALES_AGENTS)
+    sales_recs = _filter_by_agent(all_opps, _SALES_AGENTS)
+
+    # Include keyword-matched alerts without explicit agent prefix
+    for item in all_alerts:
+        if item not in sales_alerts:
+            title = (item.get("title") or "").lower()
+            if any(kw in title for kw in _SALES_KEYWORDS):
+                sales_alerts.append(item)
+
+    # ── Tabs ────────────────────────────────────────────────────────
+    tab_overview, tab_alerts, tab_actions, tab_recs = st.tabs(
+        ["Overview", "Alerts", "Actions", "Recommendations"],
+    )
+
+    with tab_overview:
+        st.subheader("Commercial Intelligence Summary")
+        cols = st.columns(3)
+        for col_idx, aid in enumerate(sorted(_SALES_AGENTS)):
+            with cols[col_idx]:
+                st.markdown(f"#### {aid.replace('_', ' ').title()} Agent")
+                s = statuses.get(aid)
+                if s == "ok":
+                    st.success("Monitored — within thresholds")
+                elif s == "blocked":
+                    st.error("Blocked by covenant breach")
+                else:
+                    st.info("Not yet run")
+
+        if sales_alerts:
+            st.warning(f"{len(sales_alerts)} active alert(s) from commercial agents.")
         else:
-            st.warning('Enter an event ID first.')
-st.divider()
-st.header('Command Panel')
-cmd_col1, cmd_col2 = st.columns(2)
-with cmd_col1:
-    cmd_type = st.selectbox('Command Type', ['rerun_pipeline', 'notify_team', 'scale_up', 'acknowledge_alert'])
-with cmd_col2:
-    cmd_requester = st.selectbox('Requested By', ['operator', 'n8n', 'auto_rule'])
-cmd_event_id = st.text_input('Related Event ID (optional)', value='')
-cmd_params_raw = st.text_area('Parameters (JSON)', value='{}', height=80)
-if st.button('Create Command', key='create_cmd'):
-    import json
-    try:
-        params_dict = json.loads(cmd_params_raw)
-    except json.JSONDecodeError:
-        st.error('Invalid JSON in parameters field.')
-        params_dict = None
-    if params_dict is not None:
-        body = {'command_type': cmd_type, 'requested_by': cmd_requester, 'parameters': params_dict}
-        if cmd_event_id:
-            body['event_id'] = cmd_event_id
-        if (result := _api_create_command(json_body=body)):
-            st.success(f'Command created: {result}')
-st.divider()
-st.header('Command Status')
-status_filter = st.selectbox('Status filter', ['all', 'pending', 'running', 'completed', 'failed'], index=0)
-if st.button('Refresh Commands', key='refresh_cmds'):
-    cmd_query_params: dict[str, int | str] = {'limit': 50}
-    if status_filter != 'all':
-        cmd_query_params['status'] = status_filter
-    data = _api_get_commands(params=cmd_query_params)
-    if data and data.get('commands'):
-        st.session_state['commands_data'] = data['commands']
-    elif data:
-        st.info('No commands found.')
-if 'commands_data' in st.session_state and st.session_state['commands_data']:
-    cmds = st.session_state['commands_data']
-    df_cmds = pd.DataFrame(cmds)
-    display_cols = [c for c in ['created_at', 'command_type', 'status', 'requested_by', 'id', 'completed_at'] if c in df_cmds.columns]
-    st.dataframe(df_cmds[display_cols].sort_values('created_at', ascending=False), width='stretch')
+            st.success("No commercial alerts — all metrics within thresholds.")
+
+    with tab_alerts:
+        st.subheader("Sales & Growth Alerts")
+        if sales_alerts:
+            for alert in sales_alerts:
+                sev = alert.get("severity", "info")
+                st.markdown(f"{_severity_icon(sev)} **[{sev.upper()}]** {alert.get('title', 'Alert')}")
+                if alert.get("description"):
+                    st.caption(alert["description"])
+                val = alert.get("current_value")
+                thr = alert.get("threshold")
+                if val and thr:
+                    st.caption(f"Current: `{val}` · Threshold: `{thr}`")
+        else:
+            st.success("No active alerts for Sales / Segmentation / Pricing.")
+
+    with tab_actions:
+        st.subheader("Pending Actions")
+        if sales_actions:
+            for action in sales_actions:
+                confidence = action.get("confidence", 0)
+                st.markdown(
+                    f"**{action.get('title', 'Action')}**  \n"
+                    f"Owner: `{action.get('owner', '—')}` · "
+                    f"Urgency: `{action.get('urgency', 'medium')}` · "
+                    f"Confidence: `{confidence:.0%}`"
+                )
+                if action.get("details"):
+                    st.caption(action["details"])
+        else:
+            st.info("No pending commercial actions.")
+
+    with tab_recs:
+        st.subheader("Recommendations")
+        if sales_recs:
+            for rec in sales_recs:
+                st.markdown(f"💡 **{rec.get('title', '')}**")
+                st.caption(rec.get("rationale", ""))
+                if rec.get("expected_impact"):
+                    st.caption(f"Expected impact: {rec['expected_impact']}")
+        else:
+            st.info("No recommendations from commercial agents.")
+
+
+if __name__ == "__main__":
+    main()
