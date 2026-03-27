@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from backend.src.semantic.business_dimensions import DIMENSIONS, Dimension
+from backend.src.semantic.business_dimensions import DIMENSIONS
 from backend.src.semantic.metric_contracts import MetricContract, MetricUnit
 from backend.src.semantic.metrics_registry import MetricsRegistry
 

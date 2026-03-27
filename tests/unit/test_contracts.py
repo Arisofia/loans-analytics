@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-import pytest
 
 from backend.src.contracts.types import RunId, MetricId, AgentId
 from backend.src.contracts.report_schema import (

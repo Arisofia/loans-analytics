@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from backend.python.multi_agent.orchestrator.priority_rules import (
     PRIORITY_HIERARCHY,

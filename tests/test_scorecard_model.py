@@ -226,7 +226,6 @@ class TestPersistence:
         assert 'metrics' in meta
         assert 'features' in meta
         assert meta['metrics']['auc_roc'] > 0
-from backend.python.models.scorecard_model import ScorecardModel
 if __name__ == '__main__':
     import pytest as pt
     pt.main([__file__, '-v'])

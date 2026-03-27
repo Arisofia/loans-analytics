@@ -6,7 +6,6 @@ and blocking rule enforcement from the DQ engine.
 
 import json
 import logging
-from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 

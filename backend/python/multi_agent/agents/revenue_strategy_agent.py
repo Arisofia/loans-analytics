@@ -30,7 +30,6 @@ class RevenueStrategyAgent(DecisionAgent):
 
         # ── Revenue health check ────────────────────────────────────────
         nim = m.get("net_interest_margin")
-        cost_of_debt = guardrails.get("max_cost_of_debt", 0.13)
         portfolio_yield = m.get("portfolio_yield")
         collection_rate = m.get("collection_rate")
 

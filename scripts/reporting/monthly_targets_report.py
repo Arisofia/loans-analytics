@@ -78,7 +78,7 @@ def generate_report(report_date: Optional[str] = None, database_url: Optional[st
             sys.exit(1)
     
     print("\n" + "=" * 100)
-    print(f"PORTFOLIO TARGETS VARIANCE REPORT — 2026")
+    print("PORTFOLIO TARGETS VARIANCE REPORT — 2026")
     print(f"Report Date: {report_date}")
     print("=" * 100 + "\n")
     

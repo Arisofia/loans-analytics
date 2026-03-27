@@ -5,7 +5,6 @@ Centralises assumption management for all scenario modules.
 
 from __future__ import annotations
 
-from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, Optional
 

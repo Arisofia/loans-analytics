@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List
 
 from backend.python.multi_agent.agents.decision_agent_base import (
     AgentContext,
@@ -189,7 +189,6 @@ class DecisionOrchestrator:
             state = "healthy"
 
         # ── Narrative summary ───────────────────────────────────────────
-        narrative_output = agent_outputs.get("narrative")
         scenario_summary = {}
         for sc in scenarios:
             scenario_summary[sc.get("scenario", "unknown")] = {

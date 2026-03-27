@@ -7,7 +7,7 @@ Every feature is computed from the canonical DataFrame produced by
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import pandas as pd
 

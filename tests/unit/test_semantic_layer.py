@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import date
 from decimal import Decimal
 
-import pytest
 
 from backend.src.semantic.metric_contracts import MetricUnit, MetricContract, ThresholdBand
 from backend.src.semantic.business_dimensions import (

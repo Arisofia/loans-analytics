@@ -10,7 +10,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Executive Command Center", page_icon="📊", layout="wide")
 
-from frontend.streamlit_app.decision_loader import load_decision_state, load_metrics
+from frontend.streamlit_app.decision_loader import load_decision_state
 from frontend.streamlit_app.components.alert_cards import render_alert_list
 from frontend.streamlit_app.components.decision_table import render_decision_table
 from frontend.streamlit_app.components.confidence_badge import render_confidence_badge

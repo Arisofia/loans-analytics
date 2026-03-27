@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 
 from backend.src.contracts.agent_schema import AgentOutput
-from backend.src.contracts.metric_schema import MetricResult
 
 
 class DecisionOrchestrator:

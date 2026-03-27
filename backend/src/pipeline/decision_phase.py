@@ -146,7 +146,7 @@ class DecisionPhase:
 
             dq_path = decision_dir / "data_quality.json"
             with open(dq_path, "w", encoding="utf-8") as fh:
-                json.dump(dq_result, fh, indent=2, default=str)
+                json.dump(dq_results, fh, indent=2, default=str)
 
             logger.info(
                 "Decision phase complete — state=%s, alerts=%d, actions=%d",

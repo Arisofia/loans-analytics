@@ -15,7 +15,7 @@ def _make_mock_classifier(proba_values):
 class TestDefaultRiskModel:
 
     def test_import(self):
-        from backend.python.models.default_risk_model import FEATURE_COLUMNS, DefaultRiskModel
+        from backend.python.models.default_risk_model import FEATURE_COLUMNS
         assert len(FEATURE_COLUMNS) > 0
 
     def test_load_file_not_found(self):

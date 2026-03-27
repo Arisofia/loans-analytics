@@ -22,7 +22,6 @@ from __future__ import annotations
 import logging
 import os
 from datetime import date
-from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from backend.src.contracts.raw_schema import CanonicalAdSpendRecord

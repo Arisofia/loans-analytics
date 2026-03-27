@@ -23,7 +23,6 @@ class MarketingAgent(DecisionAgent):
         return ["segmentation", "sales"]
 
     def run(self, ctx: AgentContext) -> AgentOutput:
-        sales = ctx.marts.get("sales_mart", pd.DataFrame())
         marketing = ctx.marts.get("marketing_mart", pd.DataFrame())
         seg_profiles = ctx.features.get("segment_profiles", {})
         alerts = []
