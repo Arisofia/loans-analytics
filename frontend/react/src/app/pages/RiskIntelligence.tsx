@@ -51,7 +51,7 @@ export default function RiskIntelligence() {
           title="PAR 30"
           value={`${metrics.par30.toFixed(1)}%`}
           icon={AlertTriangle}
-          status={metrics.par30 > 10 ? "critical" : metrics.par30 > 5 ? "warning" : "good"}
+          status={metrics.par30 >= 8 ? "critical" : metrics.par30 >= 5 ? "warning" : "good"}
         />
         <MetricCard
           title="PAR 60"

@@ -10,6 +10,9 @@ import { SalesGrowth } from "./pages/SalesGrowth";
 import { VintageAnalysis } from "./pages/VintageAnalysis";
 import { UnitEconomics } from "./pages/UnitEconomics";
 import { CovenantCompliance } from "./pages/CovenantCompliance";
+import AIDecisionCenter from "./pages/AIDecisionCenter";
+import InvestorRoom from "./pages/InvestorRoom";
+import MarketingIntelligence from "./pages/MarketingIntelligence";
 import { NotFound } from "./pages/NotFound";
 
 export const router = createBrowserRouter([
@@ -27,6 +30,9 @@ export const router = createBrowserRouter([
       { path: "vintage", Component: VintageAnalysis },
       { path: "unit-economics", Component: UnitEconomics },
       { path: "covenants", Component: CovenantCompliance },
+      { path: "ai-decision-center", Component: AIDecisionCenter },
+      { path: "investor-room", Component: InvestorRoom },
+      { path: "marketing", Component: MarketingIntelligence },
       { path: "*", Component: NotFound },
     ],
   },
