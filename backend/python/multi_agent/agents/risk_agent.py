@@ -28,11 +28,11 @@ class RiskAgent(BaseAgent):
         par30 = compute_par30(portfolio)
         el = compute_expected_loss(portfolio)
 
-        if par30 > 0.10:
+        if par30 > 0.05:
             alerts.append(AgentAlert(
                 severity="critical",
-                title=f"PAR30 {par30:.2%} exceeds 10%",
-                description="Portfolio at risk above tolerance.",
+                title=f"PAR30 {par30:.2%} exceeds 5%",
+                description="Portfolio at risk above covenant tolerance.",
                 metric_id="par30",
             ))
             recs.append(AgentRecommendation(

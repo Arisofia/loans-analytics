@@ -167,6 +167,7 @@ def _build_treasury_mart(df: pd.DataFrame) -> pd.DataFrame:
         "total_portfolio_balance": balance.sum(),
         "total_disbursed": amount.sum(),
         "total_collected": total_coll,
+        "cash_on_hand": total_coll - amount.sum(),
         "total_scheduled": total_sched,
         "active_loan_count": int(active_mask.sum()),
         "delinquent_loan_count": int(delinquent_mask.sum()),

@@ -56,12 +56,31 @@ def compute_par90(portfolio_mart: pd.DataFrame) -> float:
     return float(overdue / total)
 
 
-def compute_expected_loss(portfolio_mart: pd.DataFrame) -> float:
+def compute_expected_loss(
+    portfolio_mart: pd.DataFrame,
+    scorecard_df: pd.DataFrame | None = None,
+) -> float:
     df = portfolio_mart.copy()
+    if scorecard_df is not None and "loan_id" in scorecard_df.columns and "loan_id" in df.columns:
+        sc_cols = ["loan_id"]
+        if "pd" in scorecard_df.columns:
+            sc_cols.append("pd")
+        if "lgd" in scorecard_df.columns:
+            sc_cols.append("lgd")
+        df = df.merge(scorecard_df[sc_cols], on="loan_id", how="left", suffixes=("", "_sc"))
+        for col in ("pd", "lgd"):
+            sc_col = f"{col}_sc"
+            if sc_col in df.columns:
+                df[col] = df[sc_col].fillna(df.get(col, pd.Series(dtype=float)))
+                df.drop(columns=[sc_col], inplace=True)
     if "pd" not in df.columns:
         df["pd"] = 0.03
+    else:
+        df["pd"] = df["pd"].fillna(0.03)
     if "lgd" not in df.columns:
         df["lgd"] = 0.45
+    else:
+        df["lgd"] = df["lgd"].fillna(0.45)
     if "ead" not in df.columns:
         df["ead"] = df["outstanding_principal"].fillna(0)
     return float((df["pd"] * df["lgd"] * df["ead"]).sum())

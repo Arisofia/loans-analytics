@@ -40,3 +40,15 @@ def test_expected_loss_defaults(portfolio_mart: pd.DataFrame) -> None:
     # pd=0.03, lgd=0.45, ead=sum(outstanding_principal)=10_000
     expected = 0.03 * 0.45 * 10_000.0
     assert el == pytest.approx(expected)
+
+
+def test_expected_loss_with_scorecard(portfolio_mart: pd.DataFrame) -> None:
+    scorecard_df = pd.DataFrame({
+        "loan_id": ["L1", "L2", "L3", "L4"],
+        "pd": [0.05, 0.10, 0.20, 0.30],
+        "lgd": [0.40, 0.40, 0.50, 0.60],
+    })
+    el = compute_expected_loss(portfolio_mart, scorecard_df=scorecard_df)
+    # L1: 0.05*0.40*1000, L2: 0.10*0.40*2000, L3: 0.20*0.50*3000, L4: 0.30*0.60*4000
+    expected = (0.05 * 0.40 * 1000) + (0.10 * 0.40 * 2000) + (0.20 * 0.50 * 3000) + (0.30 * 0.60 * 4000)
+    assert el == pytest.approx(expected)

@@ -16,17 +16,17 @@ _MIN_LIQUIDITY_FLOOR_USD = 200_000
 
 
 def compute_liquidity_ratio(treasury: pd.DataFrame) -> Dict[str, Any]:
-    """Liquidity ratio = total_collected / total_portfolio_balance."""
+    """Liquidity ratio = cash_on_hand / total_portfolio_balance."""
     if treasury.empty:
         return {"liquidity_ratio": 0.0, "status": "no_data"}
 
     row = treasury.iloc[0]
     portfolio = float(row.get("total_portfolio_balance", 0) or 0)
-    collected = float(row.get("total_collected", 0) or 0)
+    cash = float(row.get("cash_on_hand", 0) or 0)
 
-    ratio = collected / portfolio if portfolio > 0 else 0.0
+    ratio = cash / portfolio if portfolio > 0 else 0.0
     reserve_required = portfolio * _MIN_LIQUIDITY_RESERVE_PCT
-    reserve_gap = max(0, reserve_required - collected)
+    reserve_gap = max(0, reserve_required - cash)
 
     status = "healthy"
     if ratio < _MIN_LIQUIDITY_RESERVE_PCT:
@@ -36,7 +36,7 @@ def compute_liquidity_ratio(treasury: pd.DataFrame) -> Dict[str, Any]:
 
     return {
         "liquidity_ratio": round(ratio, 4),
-        "total_collected": round(collected, 2),
+        "cash_on_hand": round(cash, 2),
         "total_portfolio_balance": round(portfolio, 2),
         "reserve_required_usd": round(reserve_required, 2),
         "reserve_gap_usd": round(reserve_gap, 2),
