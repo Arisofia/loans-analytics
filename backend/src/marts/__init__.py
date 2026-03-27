@@ -9,3 +9,4 @@ from backend.src.marts import (  # noqa: F401 — re-export individual mart modu
     treasury_mart,
 )
 from backend.src.marts.build_all_marts import build_all_marts  # noqa: F401
+from backend.src.marts.builder import build_all_marts as build_all_marts_v2  # noqa: F401

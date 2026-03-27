@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List
 
-from backend.src.contracts.agent_schema import AgentAction, AgentAlert, AgentOutput, AgentRecommendation
+from backend.src.contracts.agent_schema import AgentOutput
 from backend.python.multi_agent.agents.decision_agent_base import AgentContext, DecisionAgent
 
 logger = logging.getLogger(__name__)
@@ -29,9 +29,9 @@ class CFOAgent(DecisionAgent):
 
     def run(self, ctx: AgentContext) -> AgentOutput:
         metrics = ctx.metrics
-        alerts: List[AgentAlert] = []
-        recommendations: List[AgentRecommendation] = []
-        actions: List[AgentAction] = []
+        alerts = []
+        recommendations = []
+        actions = []
 
         # ── Capital adequacy ─────────────────────────────────────────────
         roe = metrics.get("roe")
@@ -49,50 +49,66 @@ class CFOAgent(DecisionAgent):
 
         # Covenant breach alert
         if covenant_status == "breach":
-            alerts.append(AgentAlert(
-                severity="critical",
-                message=f"Covenant breach detected: {', '.join(breaches)}",
+            alerts.append(self._alert(
+                "covenant_breach", "critical",
+                f"Covenant breach detected: {', '.join(breaches)}",
+                "Active covenant breach requires immediate action.",
                 metric_id="covenant_status",
             ))
-            actions.append(AgentAction(
-                action_type="restrict_growth",
-                description="Halt new disbursements until covenant cure",
-                priority=1,
+            actions.append(self._action(
+                "restrict_growth",
+                "Halt new disbursements until covenant cure",
+                owner="treasury",
+                urgency="critical",
+                impact="high",
             ))
 
         # ROE/ROA monitoring
         if roe is not None and roe < 8.0:
-            alerts.append(AgentAlert(
-                severity="warning",
-                message=f"ROE at {roe:.1f}% — below 8% target",
+            alerts.append(self._alert(
+                "low_roe", "warning",
+                f"ROE at {roe:.1f}% — below 8% target",
+                "Return on equity is below the minimum board-approved threshold.",
                 metric_id="roe",
+                current_value=roe,
+                threshold=8.0,
             ))
-            recommendations.append(AgentRecommendation(
-                recommendation="Review pricing strategy to improve return on equity",
+            recommendations.append(self._recommendation(
+                "improve_roe",
+                "Review pricing strategy to improve return on equity",
+                rationale="ROE below 8% target erodes shareholder value.",
+                expected_impact="Restore ROE above target within 2 quarters",
                 confidence=0.8,
-                impact="medium",
             ))
 
         # Leverage check
         if d_e is not None and d_e > 4.0:
-            alerts.append(AgentAlert(
-                severity="warning",
-                message=f"D/E ratio at {d_e:.2f} — above 4x threshold",
+            alerts.append(self._alert(
+                "high_leverage", "warning",
+                f"D/E ratio at {d_e:.2f} — above 4x threshold",
+                "Leverage exceeds prudential limit.",
                 metric_id="debt_to_equity",
+                current_value=d_e,
+                threshold=4.0,
             ))
 
         # Liquidity check
         liq = metrics.get("liquidity_ratio")
         if liq is not None and liq < 5.0:
-            alerts.append(AgentAlert(
-                severity="critical",
-                message=f"Liquidity ratio at {liq:.1f}% — below 5% minimum",
+            alerts.append(self._alert(
+                "low_liquidity", "critical",
+                f"Liquidity ratio at {liq:.1f}% — below 5% minimum",
+                "Liquidity ratio is critically low — escalation required.",
                 metric_id="liquidity_ratio",
+                current_value=liq,
+                threshold=5.0,
             ))
-            actions.append(AgentAction(
-                action_type="liquidity_alert",
-                description="Escalate to treasury for immediate funding review",
-                priority=2,
+            actions.append(self._action(
+                "liquidity_alert",
+                "Escalate to treasury for immediate funding review",
+                owner="treasury",
+                urgency="high",
+                impact="high",
             ))
 
         # NPL trend
@@ -100,10 +116,12 @@ class CFOAgent(DecisionAgent):
         if npl is not None:
             evidence["npl_ratio"] = npl
             if npl > 10.0:
-                recommendations.append(AgentRecommendation(
-                    recommendation="NPL above 10% — recommend provisioning review",
+                recommendations.append(self._recommendation(
+                    "npl_provision",
+                    "NPL above 10% — recommend provisioning review",
+                    rationale=f"NPL ratio at {npl:.1f}% exceeds 10% threshold.",
+                    expected_impact="Adequate provisioning protects capital base",
                     confidence=0.85,
-                    impact="high",
                 ))
 
         # Summary
