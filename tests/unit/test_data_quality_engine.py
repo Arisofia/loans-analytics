@@ -31,7 +31,7 @@ class TestRuleRegistry:
 
     def test_all_rules_have_ids(self):
         for rule in RULE_REGISTRY:
-            assert rule.id, "Rule must have a non-empty id"
+            assert rule.rule_id, "Rule must have a non-empty id"
 
 
 class TestAnomalyDetection:
@@ -51,15 +51,17 @@ class TestBlockingPolicy:
             RuleResult(rule_id="r1", severity=Severity.INFO, passed=True),
             RuleResult(rule_id="r2", severity=Severity.WARNING, passed=True),
         ]
-        blocked = evaluate_blocking(results)
-        assert len(blocked) == 0
+        result = evaluate_blocking(results)
+        assert not result["blocked"]
+        assert len(result["blocking_rules"]) == 0
 
     def test_blocking_on_severity(self):
         results = [
             RuleResult(rule_id="r1", severity=Severity.BLOCKING, passed=False),
         ]
-        blocked = evaluate_blocking(results)
-        assert len(blocked) >= 1
+        result = evaluate_blocking(results)
+        assert result["blocked"]
+        assert len(result["blocking_rules"]) >= 1
 
 
 class TestQualityEngine:

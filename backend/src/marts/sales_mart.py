@@ -44,3 +44,6 @@ def build_sales_mart(leads_df: pd.DataFrame) -> pd.DataFrame:
         "funded_flag",
         "days_to_close",
     ]].drop_duplicates(subset=["lead_id"])
+
+
+build = build_sales_mart

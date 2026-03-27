@@ -9,6 +9,7 @@ from __future__ import annotations
 import pandas as pd
 
 from backend.src.data_quality.rules import Rule, RuleResult, Severity, register
+from backend.src.data_quality.rules import RULE_REGISTRY  # noqa: F401
 
 
 # ── Completeness checks ─────────────────────────────────────────────────

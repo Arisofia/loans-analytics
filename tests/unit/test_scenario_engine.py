@@ -8,6 +8,7 @@ from backend.src.scenario_engine.base_case import run as run_base
 from backend.src.scenario_engine.downside_case import run as run_downside
 from backend.src.scenario_engine.stress_case import run as run_stress
 from backend.src.scenario_engine.assumptions import load_assumptions
+from backend.src.scenario_engine.engine import ScenarioResult
 
 
 @pytest.fixture()
@@ -32,32 +33,32 @@ class TestAssumptions:
 
 
 class TestBaseCase:
-    def test_returns_dict(self, current_metrics: dict):
+    def test_returns_scenario_result(self, current_metrics: dict):
         result = run_base(current_metrics)
-        assert isinstance(result, dict)
-        assert "projected_metrics" in result or "triggers" in result
+        assert isinstance(result, ScenarioResult)
+        assert hasattr(result, "projected_metrics") or hasattr(result, "triggers")
 
-    def test_has_narrative(self, current_metrics: dict):
+    def test_has_triggers(self, current_metrics: dict):
         result = run_base(current_metrics)
-        assert "narrative" in result
+        assert hasattr(result, "triggers")
 
 
 class TestDownsideCase:
-    def test_returns_dict(self, current_metrics: dict):
+    def test_returns_scenario_result(self, current_metrics: dict):
         result = run_downside(current_metrics)
-        assert isinstance(result, dict)
+        assert isinstance(result, ScenarioResult)
 
     def test_triggers_present(self, current_metrics: dict):
         result = run_downside(current_metrics)
-        assert "triggers" in result
-        assert isinstance(result["triggers"], list)
+        assert hasattr(result, "triggers")
+        assert isinstance(result.triggers, list)
 
 
 class TestStressCase:
-    def test_returns_dict(self, current_metrics: dict):
+    def test_returns_scenario_result(self, current_metrics: dict):
         result = run_stress(current_metrics)
-        assert isinstance(result, dict)
+        assert isinstance(result, ScenarioResult)
 
     def test_stress_triggers_present(self, current_metrics: dict):
         result = run_stress(current_metrics)
-        assert "triggers" in result
+        assert hasattr(result, "triggers")

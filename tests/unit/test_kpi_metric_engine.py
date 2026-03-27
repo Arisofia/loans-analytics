@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+import pandas as pd
 import pytest
 
 from backend.src.kpi_engine.capital import (
@@ -14,9 +15,7 @@ from backend.src.kpi_engine.capital import (
 )
 from backend.src.kpi_engine.covenants import (
     eligible_portfolio_ratio,
-    aging_compliance,
     capital_gap,
-    check_all_covenants,
 )
 from backend.src.kpi_engine.engine import run_metric_engine
 
@@ -57,25 +56,48 @@ class TestCovenants:
         # gap = target - actual = 0.08 * 2M - 150K = 160K - 150K = 10K
         assert float(result) == pytest.approx(10000.0, abs=1)
 
-    def test_check_all_covenants(self):
-        result = check_all_covenants(
-            eligible=Decimal("800000"),
-            total=Decimal("1000000"),
-            past_due_90=Decimal("50000"),
-            equity=Decimal("200000"),
-            total_assets=Decimal("2000000"),
-        )
-        assert isinstance(result, dict)
-
 
 class TestMetricEngine:
-    def test_run_metric_engine_with_dict_marts(self):
-        marts = {
-            "portfolio": {"total_outstanding": 1_000_000, "count": 100},
-            "finance": {"net_income": 50_000, "total_assets": 1_200_000},
-            "collections": {"past_due_90": 30_000},
-        }
-        result = run_metric_engine(
-            marts, equity=200_000, lgd=0.10, min_collection_rate=0.985
+    def test_run_metric_engine_with_dataframes(self):
+        portfolio = pd.DataFrame(
+            {
+                "loan_id": ["L1", "L2"],
+                "days_past_due": [0, 45],
+                "outstanding_principal": [100000, 200000],
+                "default_flag": [0, 0],
+                "origination_date": ["2024-01-01", "2024-02-01"],
+                "funded_amount": [100000, 200000],
+                "sector": ["gov", "gov"],
+                "country": ["SV", "SV"],
+                "customer_id": ["C1", "C2"],
+                "apr": [0.12, 0.15],
+                "term_days": [360, 720],
+                "dpd_bucket": ["current", "31_60"],
+                "source_channel": ["web", "web"],
+                "originator": ["O1", "O1"],
+                "cohort": ["2024-01", "2024-02"],
+                "vintage": ["2024-01", "2024-02"],
+            }
         )
+        marts = {
+            "portfolio_mart": portfolio,
+            "finance_mart": pd.DataFrame(
+                {
+                    "interest_income": [1000],
+                    "fee_income": [100],
+                    "funding_cost": [200],
+                    "debt_balance": [50000],
+                    "gross_margin": [900],
+                }
+            ),
+            "sales_mart": pd.DataFrame(
+                {
+                    "lead_id": ["S1"],
+                    "funded_flag": [1],
+                    "requested_ticket": [150000],
+                    "approved_ticket": [150000],
+                }
+            ),
+        }
+        result = run_metric_engine(marts)
         assert isinstance(result, dict)

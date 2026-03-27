@@ -1,6 +1,42 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Callable, Dict, List
+
 import pandas as pd
+
+
+class Severity(str, Enum):
+    BLOCKING = "blocking"
+    CRITICAL = "critical"
+    WARNING = "warning"
+    INFO = "info"
+
+
+@dataclass
+class RuleResult:
+    rule_id: str
+    passed: bool
+    severity: Severity = Severity.INFO
+    detail: Dict[str, Any] = field(default_factory=dict)
+    affected_rows: int = 0
+
+
+@dataclass
+class Rule:
+    rule_id: str
+    description: str
+    severity: Severity
+    check_fn: Callable
+    mart: str = ""
+
+
+RULE_REGISTRY: List[Rule] = []
+
+
+def register(rule: Rule) -> None:
+    RULE_REGISTRY.append(rule)
 
 
 def find_missing_required_ids(loans_df: pd.DataFrame) -> list[str]:

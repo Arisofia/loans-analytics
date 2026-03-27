@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime
+
 import pytest
 
 from backend.src.contracts.types import RunId, MetricId, AgentId
@@ -34,17 +36,26 @@ class TestReportSchema:
     def test_executive_brief_creation(self):
         brief = ExecutiveBrief(
             sections=[ReportSection(title="KPIs", body="All good")],
+            generated_at=datetime.now(),
+            as_of_date=date.today(),
+            business_state="healthy",
         )
         assert len(brief.sections) == 1
 
     def test_investor_summary_creation(self):
-        summary = InvestorSummary(sections=[])
+        summary = InvestorSummary(
+            sections=[], generated_at=datetime.now(), as_of_date=date.today(),
+        )
         assert isinstance(summary.sections, list)
 
     def test_lender_pack_creation(self):
-        pack = LenderPack(sections=[])
+        pack = LenderPack(
+            sections=[], generated_at=datetime.now(), as_of_date=date.today(),
+        )
         assert isinstance(pack.sections, list)
 
     def test_weekly_memo_creation(self):
-        memo = WeeklyOperatingMemo(sections=[])
+        memo = WeeklyOperatingMemo(
+            sections=[], generated_at=datetime.now(), week_ending=date.today(),
+        )
         assert isinstance(memo.sections, list)

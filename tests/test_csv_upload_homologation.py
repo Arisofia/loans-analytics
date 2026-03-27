@@ -206,7 +206,7 @@ for _attr in ['session_state', 'cache_data', 'cache_resource', 'spinner', 'tabs'
     setattr(_st_stub, _attr, lambda *a, **k: None)
 setattr(_st_stub, 'session_state', {})
 _os.environ.setdefault('API_BASE_URL', 'http://localhost:8000')
-_dash_spec = _ilu.spec_from_file_location('_portfolio_dashboard_test', str(__import__('pathlib').Path(__file__).parent.parent / 'frontend' / 'streamlit_app' / 'pages' / '3_Portfolio_Dashboard.py'))
+_dash_spec = _ilu.spec_from_file_location('_portfolio_dashboard_test', str(__import__('pathlib').Path(__file__).parent.parent / 'frontend' / 'streamlit_app' / 'pages' / '03_Collections_Operations.py'))
 assert _dash_spec is not None
 _dash_mod = _ilu.module_from_spec(_dash_spec)
 with _patch('pathlib.Path.mkdir'):

@@ -45,3 +45,6 @@ def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
         "equity_balance",
     ]
     return grouped[ordered]
+
+
+build = build_finance_mart

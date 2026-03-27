@@ -15,7 +15,7 @@ def _mr(metric_id: str, name: str, value: float, unit: str, mart: str, owner: st
         metric_name=name,
         value=value,
         unit=unit,
-        as_of_date=date.today(),
+        as_of_date=str(date.today()),
         source_mart=mart,
         owner=owner,
     )
@@ -61,9 +61,3 @@ def run_metric_engine(
             "vintage_summary": vintage_summary,
         },
     }
-        results["eligible_portfolio_ratio"] = covenant_result["eligible_portfolio"].get(
-            "eligible_portfolio_ratio", 0.0
-        )
-
-    logger.info("KPI engine computed %d metrics", len(results))
-    return results

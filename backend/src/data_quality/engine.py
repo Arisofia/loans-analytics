@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, List
 
 import pandas as pd
 
 from backend.src.data_quality.rules import (
+    RULE_REGISTRY,
+    RuleResult,
     find_duplicate_loans,
     find_impossible_dpd,
     find_missing_required_ids,
@@ -35,3 +37,15 @@ def run_data_quality(loans_df: pd.DataFrame) -> dict[str, Any]:
         "blocking_issues": blocking_issues,
         "warnings": warnings,
     }
+
+
+def run_quality_engine(df: pd.DataFrame) -> List[RuleResult]:
+    """Run all registered DQ rules and return list of RuleResult."""
+    # Ensure validators are registered
+    import backend.src.data_quality.validators  # noqa: F401
+
+    results: List[RuleResult] = []
+    for rule in RULE_REGISTRY:
+        result = rule.check_fn(df)
+        results.append(result)
+    return results

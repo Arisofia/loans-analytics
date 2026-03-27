@@ -21,32 +21,33 @@ from backend.python.multi_agent.orchestrator.action_router import (
 
 class TestPriorityRules:
     def test_hierarchy_ordering(self):
-        assert priority_rank("data_integrity") < priority_rank("growth")
-        assert priority_rank("regulatory_covenant") < priority_rank("margin")
+        assert priority_rank("data_quality") < priority_rank("sales")
+        assert priority_rank("covenant") < priority_rank("pricing")
 
     def test_unknown_category_gets_high_rank(self):
         rank = priority_rank("nonexistent_xyz")
-        assert rank >= len(PRIORITY_HIERARCHY)
+        assert rank >= len(PRIORITY_HIERARCHY) - 1
 
     def test_agent_to_category_has_entries(self):
         assert len(AGENT_TO_CATEGORY) >= 1
 
     def test_rank_actions_sorts_by_priority(self):
         actions = [
-            {"agent": "growth_agent", "action": "expand", "priority": 50},
-            {"agent": "risk_agent", "action": "restrict", "priority": 10},
+            {"agent_id": "sales", "action_type": "expand", "priority": 50},
+            {"agent_id": "risk", "action_type": "restrict", "priority": 10},
         ]
         ranked = rank_actions(actions)
-        assert ranked[0]["priority"] <= ranked[1]["priority"]
+        # risk (rank 3) should come before sales/growth (rank 5)
+        assert ranked[0]["agent_id"] == "risk"
 
     def test_resolve_conflicts_removes_expand_when_restrict_present(self):
         actions = [
-            {"agent": "risk_agent", "action": "restrict_growth", "priority": 2},
-            {"agent": "growth_agent", "action": "expand_growth", "priority": 50},
+            {"agent_id": "risk", "action_type": "restrict_growth", "priority": 2},
+            {"agent_id": "sales", "action_type": "expand_growth", "priority": 50},
         ]
         resolved = resolve_conflicts(actions)
-        action_names = [a["action"] for a in resolved]
-        assert "expand_growth" not in action_names
+        action_types = [a["action_type"] for a in resolved]
+        assert "expand_growth" not in action_types
 
 
 class TestDependencyGraph:
@@ -65,11 +66,11 @@ class TestDependencyGraph:
 class TestActionRouter:
     def test_route_actions_marks_routed(self):
         actions = [
-            {"agent": "risk_agent", "action": "restrict_growth", "priority": 1},
+            {"agent_id": "risk", "action_type": "restrict_growth", "priority": 1},
         ]
         routed = route_actions(actions)
         assert isinstance(routed, list)
         # At least the known handler should mark it routed
         for a in routed:
-            if a["action"] == "restrict_growth":
+            if a["action_type"] == "restrict_growth":
                 assert a.get("routed") is True

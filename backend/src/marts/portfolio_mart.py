@@ -59,3 +59,6 @@ def build_portfolio_mart(loans_df: pd.DataFrame) -> pd.DataFrame:
             df[column] = None
 
     return df[required_columns].drop_duplicates(subset=["loan_id"])
+
+
+build = build_portfolio_mart

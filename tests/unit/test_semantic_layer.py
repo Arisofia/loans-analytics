@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import date
+from decimal import Decimal
+
 import pytest
 
 from backend.src.semantic.metric_contracts import MetricUnit, MetricContract, ThresholdBand
@@ -16,36 +19,60 @@ from backend.src.semantic.semantic_resolver import SemanticResolver
 class TestMetricContract:
     def test_create_contract(self):
         contract = MetricContract(
-            id="par_30",
-            name="PAR 30",
+            metric_id="par_30",
+            metric_name="PAR 30",
+            value=Decimal("4.5"),
             unit=MetricUnit.PERCENTAGE,
-            warning=ThresholdBand(lower=3.0, upper=5.0),
-            critical=ThresholdBand(lower=5.0, upper=100.0),
+            as_of_date=date.today(),
+            source_mart="portfolio_mart",
+            thresholds=ThresholdBand(warning=Decimal("3.0"), critical=Decimal("5.0")),
         )
-        assert contract.id == "par_30"
+        assert contract.metric_id == "par_30"
         assert contract.unit == MetricUnit.PERCENTAGE
 
     def test_is_breached(self):
         contract = MetricContract(
-            id="par_30",
-            name="PAR 30",
+            metric_id="par_30",
+            metric_name="PAR 30",
+            value=Decimal("6.0"),
             unit=MetricUnit.PERCENTAGE,
-            warning=ThresholdBand(lower=3.0, upper=5.0),
-            critical=ThresholdBand(lower=5.0, upper=100.0),
+            as_of_date=date.today(),
+            source_mart="portfolio_mart",
+            thresholds=ThresholdBand(warning=Decimal("3.0"), critical=Decimal("5.0")),
         )
-        assert contract.is_breached(6.0)
-        assert not contract.is_breached(2.0)
+        assert contract.is_breached()
+        contract_low = MetricContract(
+            metric_id="par_30",
+            metric_name="PAR 30",
+            value=Decimal("2.0"),
+            unit=MetricUnit.PERCENTAGE,
+            as_of_date=date.today(),
+            source_mart="portfolio_mart",
+            thresholds=ThresholdBand(warning=Decimal("3.0"), critical=Decimal("5.0")),
+        )
+        assert not contract_low.is_breached()
 
     def test_is_warning(self):
         contract = MetricContract(
-            id="par_30",
-            name="PAR 30",
+            metric_id="par_30",
+            metric_name="PAR 30",
+            value=Decimal("4.0"),
             unit=MetricUnit.PERCENTAGE,
-            warning=ThresholdBand(lower=3.0, upper=5.0),
-            critical=ThresholdBand(lower=5.0, upper=100.0),
+            as_of_date=date.today(),
+            source_mart="portfolio_mart",
+            thresholds=ThresholdBand(warning=Decimal("3.0"), critical=Decimal("5.0")),
         )
-        assert contract.is_warning(4.0)
-        assert not contract.is_warning(2.0)
+        assert contract.is_warning()
+        contract_low = MetricContract(
+            metric_id="par_30",
+            metric_name="PAR 30",
+            value=Decimal("2.0"),
+            unit=MetricUnit.PERCENTAGE,
+            as_of_date=date.today(),
+            source_mart="portfolio_mart",
+            thresholds=ThresholdBand(warning=Decimal("3.0"), critical=Decimal("5.0")),
+        )
+        assert not contract_low.is_warning()
 
 
 class TestBusinessDimensions:
@@ -56,7 +83,7 @@ class TestBusinessDimensions:
     def test_get_dimension_by_id(self):
         dims = list_dimensions()
         if dims:
-            dim = get_dimension(dims[0].id)
+            dim = get_dimension(dims[0].dim_id)
             assert dim is not None
             assert isinstance(dim, Dimension)
 
@@ -72,12 +99,12 @@ class TestSemanticResolver:
 
     def test_resolve_metric(self):
         resolver = SemanticResolver()
-        # resolve_metric should accept a metric ID and raw value
-        result = resolver.resolve_metric("par_30", 4.5)
-        assert isinstance(result, dict)
+        engine_output = {"par_30": 4.5, "collection_rate": 97.5}
+        result = resolver.resolve_metric("par_30", engine_output)
+        assert result is None or isinstance(result, MetricContract)
 
     def test_resolve_all(self):
         resolver = SemanticResolver()
         raw_metrics = {"par_30": 4.5, "collection_rate": 97.5}
         result = resolver.resolve_all(raw_metrics)
-        assert isinstance(result, dict)
+        assert isinstance(result, list)

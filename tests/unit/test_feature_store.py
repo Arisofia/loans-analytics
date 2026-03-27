@@ -37,11 +37,11 @@ def mart_data() -> dict:
 
 
 class TestCampaignFeatures:
-    def test_returns_dict(self, mart_data: dict):
+    def test_returns_dataframe(self, mart_data: dict):
         result = build_campaign_features(mart_data.get("marketing"))
-        assert isinstance(result, dict)
+        assert isinstance(result, pd.DataFrame)
 
-    def test_has_expected_keys(self, mart_data: dict):
+    def test_has_rows(self, mart_data: dict):
         result = build_campaign_features(mart_data.get("marketing"))
         assert len(result) >= 1
 

@@ -399,9 +399,11 @@ class KPIFormulaEngine:
         )
         try:
             return self._safe_eval_numeric_expression(expression)
-        except Exception as exc:
-            logger.debug("Arithmetic formula evaluation failed for '%s': %s", formula, exc)
+        except ZeroDivisionError:
+            logger.warning("Division by zero in arithmetic formula '%s'; returning Decimal('0.0')", formula)
             return Decimal("0.0")
+        except Exception as exc:
+            raise KPIFormulaError(f"Arithmetic formula evaluation failed for '{formula}': {exc}") from exc
 
     def _replace_aggregation_match(self, match: re.Match) -> str:
         return str(self._execute_simple_formula(match[0]))
@@ -478,7 +480,7 @@ class KPIFormulaEngine:
                 column, raw_value = parsed
                 return self._build_binary_mask(column, operator, raw_value)
         except Exception as exc:
-            logger.debug("WHERE clause failed: %s - %s", condition, str(exc))
+            logger.warning("WHERE clause failed for condition '%s': %s", condition, exc)
         return self._false_mask()
 
     @staticmethod

@@ -20,19 +20,33 @@ def loan_df() -> pd.DataFrame:
     return pd.DataFrame(
         {
             "loan_id": ["L001", "L002", "L003"],
-            "monto_desembolsado": [10_000, 20_000, 30_000],
-            "saldo_actual": [9_000, 18_000, 25_000],
-            "tasa_interes": [0.12, 0.15, 0.18],
-            "plazo_meses": [12, 24, 36],
-            "estado": ["active", "active", "defaulted"],
-            "fecha_desembolso": ["2024-01-15", "2024-02-20", "2024-03-10"],
+            "customer_id": ["C1", "C2", "C3"],
+            "borrower_id": ["C1", "C2", "C3"],
+            "amount": [10_000, 20_000, 30_000],
+            "funded_amount": [10_000, 20_000, 30_000],
+            "outstanding_principal": [9_000, 18_000, 25_000],
+            "current_balance": [9_000, 18_000, 25_000],
+            "interest_rate": [0.12, 0.15, 0.18],
+            "apr": [0.12, 0.15, 0.18],
+            "term_days": [360, 720, 1080],
+            "status": ["active", "active", "defaulted"],
+            "origination_date": ["2024-01-15", "2024-02-20", "2024-03-10"],
+            "days_past_due": [0, 15, 95],
+            "default_flag": [0, 0, 1],
+            "country": ["SV", "SV", "SV"],
+            "sector": ["gov", "edu", "gov"],
+            "originator": ["O1", "O1", "O1"],
+            "source_channel": ["web", "branch", "web"],
+            "dpd": [0, 15, 95],
+            "tpv": [10_000, 20_000, 30_000],
+            "advisory_channel": ["web", "branch", "web"],
             "kam_hunter": ["KAM1", "KAM2", "KAM1"],
             "kam_farmer": ["KAM3", "KAM3", "KAM4"],
-            "canal_origen": ["web", "branch", "web"],
-            "dias_mora": [0, 15, 95],
-            "cuota_mensual": [900, 950, 1100],
-            "pagos_realizados": [5, 10, 8],
-            "pagos_esperados": [5, 12, 12],
+            "last_payment_amount": [900, 950, 1100],
+            "total_payment_received": [4500, 9500, 8800],
+            "capital_collected": [4000, 8500, 7500],
+            "total_scheduled": [5400, 11400, 13200],
+            "credit_line": ["A", "B", "A"],
         }
     )
 
@@ -52,7 +66,21 @@ class TestFinanceMart:
 
 class TestSalesMart:
     def test_build_returns_dataframe(self, loan_df: pd.DataFrame):
-        result = build_sales(loan_df)
+        leads = pd.DataFrame(
+            {
+                "lead_id": ["S1", "S2"],
+                "created_at": ["2024-01-01", "2024-02-01"],
+                "owner": ["KAM1", "KAM2"],
+                "stage": ["won", "lost"],
+                "source_channel": ["web", "branch"],
+                "sector": ["gov", "gov"],
+                "country": ["SV", "SV"],
+                "requested_ticket": [10000, 20000],
+                "approved_ticket": [10000, 0],
+                "funded_flag": [1, 0],
+            }
+        )
+        result = build_sales(leads)
         assert isinstance(result, pd.DataFrame)
 
 
@@ -76,7 +104,22 @@ class TestTreasuryMart:
 
 class TestBuildAllMarts:
     def test_returns_dict_with_keys(self, loan_df: pd.DataFrame):
-        result = build_all_marts(loan_df)
+        leads_df = pd.DataFrame(
+            {
+                "lead_id": ["S1", "S2"],
+                "created_at": ["2024-01-01", "2024-02-01"],
+                "owner": ["KAM1", "KAM2"],
+                "stage": ["won", "lost"],
+                "source_channel": ["web", "branch"],
+                "sector": ["gov", "gov"],
+                "country": ["SV", "SV"],
+                "requested_ticket": [10000, 20000],
+                "approved_ticket": [10000, 0],
+                "funded_flag": [1, 0],
+            }
+        )
+        bundle = {"loans": loan_df, "leads": leads_df}
+        result = build_all_marts(bundle)
         assert isinstance(result, dict)
-        expected_keys = {"portfolio", "finance", "sales", "marketing", "collections", "treasury"}
+        expected_keys = {"portfolio_mart", "finance_mart", "sales_mart"}
         assert expected_keys.issubset(set(result.keys()))

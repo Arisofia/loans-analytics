@@ -114,3 +114,28 @@ def compute_capital_metrics(
     results.update(compute_roe(net_interest, _equity))
     results.update(compute_roa(net_interest, portfolio_balance))
     return results
+
+
+# ── Thin wrappers returning raw Decimal for unit testing ─────────────────
+def debt_to_equity(total_debt: Decimal, total_equity: Decimal) -> Decimal:
+    if total_equity <= _ZERO:
+        return Decimal("Inf")
+    return (total_debt / total_equity).quantize(Decimal("0.0001"))
+
+
+def leverage_ratio(total_assets: Decimal, total_equity: Decimal) -> Decimal:
+    if total_equity <= _ZERO:
+        return Decimal("Inf")
+    return (total_assets / total_equity).quantize(Decimal("0.0001"))
+
+
+def return_on_equity(net_income: Decimal, total_equity: Decimal) -> Decimal:
+    if total_equity <= _ZERO:
+        return _ZERO
+    return (net_income / total_equity).quantize(Decimal("0.0001"))
+
+
+def return_on_assets(net_income: Decimal, total_assets: Decimal) -> Decimal:
+    if total_assets <= _ZERO:
+        return _ZERO
+    return (net_income / total_assets).quantize(Decimal("0.0001"))

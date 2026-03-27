@@ -102,3 +102,22 @@ def run_anomaly_scan(
         if col in df.columns:
             reports.append(detect_fn(df[col]))
     return reports
+
+
+def detect_anomalies(
+    df: pd.DataFrame,
+    column: str,
+    threshold: float = 3.0,
+) -> List[int]:
+    """Return list of row indices flagged as outliers by z-score."""
+    if column not in df.columns:
+        return []
+    numeric = pd.to_numeric(df[column], errors="coerce").dropna()
+    if len(numeric) < 5:
+        return []
+    mean = numeric.mean()
+    std = numeric.std()
+    if std == 0:
+        return []
+    z = np.abs((numeric - mean) / std)
+    return numeric[z > threshold].index.tolist()
