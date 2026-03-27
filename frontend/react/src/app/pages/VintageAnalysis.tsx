@@ -15,7 +15,7 @@ interface VintageData {
   };
   vintage_curves: Array<Record<string, number | string>>;
   vintage_lines: Array<{
-    key: string;
+    dataKey: string;
     name: string;
     color: string;
   }>;

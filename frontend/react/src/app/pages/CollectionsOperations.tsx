@@ -134,8 +134,8 @@ export default function CollectionsOperations() {
           data={collections_trend}
           xKey="month"
           lines={[
-            { key: "collected", name: "Collected", color: "#a78bfa" },
-            { key: "target", name: "Target", color: "#6b7280" },
+            { dataKey: "collected", name: "Collected", color: "#a78bfa" },
+            { dataKey: "target", name: "Target", color: "#6b7280" },
           ]}
           height={280}
         />

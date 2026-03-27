@@ -100,9 +100,9 @@ export default function RiskIntelligence() {
           data={delinquency_trend}
           xKey="month"
           lines={[
-            { key: "par30", name: "PAR 30", color: "#f59e0b" },
-            { key: "par60", name: "PAR 60", color: "#f97316" },
-            { key: "par90", name: "PAR 90", color: "#ef4444" },
+            { dataKey: "par30", name: "PAR 30", color: "#f59e0b" },
+            { dataKey: "par60", name: "PAR 60", color: "#f97316" },
+            { dataKey: "par90", name: "PAR 90", color: "#ef4444" },
           ]}
           height={320}
         />

@@ -100,6 +100,14 @@ def main() -> None:
         else:
             st.info("No opportunities identified in the latest run.")
 
+    # ── Agent statuses ──────────────────────────────────────────────
+    statuses = state.get("agent_statuses", {})
+    if statuses:
+        with st.expander("Agent Run Statuses"):
+            for agent_id, status in statuses.items():
+                emoji = "✅" if status == "ok" else "⚠️"
+                st.write(f"{emoji} **{agent_id}**: {status}")
+
     # ── Covenants ────────────────────────────────────────────────────
     with tab_covenants:
         all_alerts = state.get("critical_alerts", []) + state.get("ranked_alerts", [])
@@ -125,14 +133,6 @@ def main() -> None:
                     st.caption(f"Current: `{val}` · Limit: `{thr}`")
         else:
             st.info("Covenant agent has not run yet.")
-
-    # ── Agent statuses ──────────────────────────────────────────────
-    statuses = state.get("agent_statuses", {})
-    if statuses:
-        with st.expander("Agent Run Statuses"):
-            for agent_id, status in statuses.items():
-                emoji = "✅" if status == "ok" else "⚠️"
-                st.write(f"{emoji} **{agent_id}**: {status}")
 
 
 main()

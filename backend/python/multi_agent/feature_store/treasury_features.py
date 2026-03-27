@@ -31,7 +31,6 @@ def build_treasury_features(treasury: pd.DataFrame) -> dict:
     total_balance = _d(row.get("total_portfolio_balance", 0))
     total_disbursed = _d(row.get("total_disbursed", 0))
     total_collected = _d(row.get("total_collected", 0))
-    total_scheduled = _d(row.get("total_scheduled", 0))
     active_count = int(row.get("active_loan_count", 0))
     delinquent_count = int(row.get("delinquent_loan_count", 0))
     defaulted_count = int(row.get("defaulted_loan_count", 0))

@@ -6,16 +6,18 @@ export function useSection<T = unknown>(section: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const load = () => {
     setLoading(true);
     setError(null);
     fetchSection<T>(section)
-      .then((d) => { if (!cancelled) setData(d); })
-      .catch((e) => { if (!cancelled) setError(String(e)); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .then((d) => { setData(d); })
+      .catch((e) => { setError(String(e)); })
+      .finally(() => { setLoading(false); });
+  };
+
+  useEffect(() => {
+    load();
   }, [section]);
 
-  return { data, loading, error };
+  return { data, loading, error, refetch: load };
 }

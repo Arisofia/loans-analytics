@@ -267,11 +267,6 @@ def classify_customer_type(
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
     df = df.dropna(subset=[date_col])
 
-    if snapshot_date is None:
-        snapshot_dt = df[date_col].max()
-    else:
-        snapshot_dt = pd.Timestamp(snapshot_date)
-
     # Aggregate per customer
     agg = (
         df.groupby(customer_col)[date_col]

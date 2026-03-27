@@ -48,8 +48,10 @@ export const chartColors = {
 // ─── TrendChart ───────────────────────────────────────────────────────────────
 
 interface TrendChartProps {
-  data: Array<{ name: string; value?: number; target?: number; [key: string]: any }>;
+  data: Array<Record<string, any>>;
   dataKey?: string;
+  xKey?: string;
+  yKey?: string;
   color?: string;
   height?: number;
   showTarget?: boolean;
@@ -57,26 +59,29 @@ interface TrendChartProps {
 
 export function TrendChart({
   data,
-  dataKey = "value",
+  dataKey,
+  xKey = "name",
+  yKey,
   color = chartColors.primary,
   height = 300,
   showTarget = false,
 }: TrendChartProps) {
   const stableData = useMemo(() => data, [data]);
+  const resolvedDataKey = dataKey ?? yKey ?? "value";
 
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={stableData}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(95,72,150,0.2)" />
-        <XAxis dataKey="name" stroke="#9EA9B3" style={{ fontSize: "12px" }} />
+        <XAxis dataKey={xKey} stroke="#9EA9B3" style={{ fontSize: "12px" }} />
         <YAxis stroke="#9EA9B3" style={{ fontSize: "12px" }} />
         <Tooltip content={<CustomTooltip />} />
         <Legend wrapperStyle={{ color: "#CED4D9" }} />
         <Line
-          key={`trendline-${dataKey}`}
+          key={`trendline-${resolvedDataKey}`}
           type="monotone"
-          dataKey={dataKey}
-          name={dataKey}
+          dataKey={resolvedDataKey}
+          name={resolvedDataKey}
           stroke={color}
           strokeWidth={3}
           dot={{ r: 4 }}
@@ -101,8 +106,10 @@ export function TrendChart({
 // ─── AreaChartComponent ───────────────────────────────────────────────────────
 
 interface AreaChartComponentProps {
-  data: Array<any>;
-  areas: Array<{ dataKey: string; name: string; color: string }>;
+  data: Array<Record<string, any>>;
+  areas?: Array<{ dataKey: string; name: string; color: string }>;
+  xKey?: string;
+  yKey?: string;
   height?: number;
   stacked?: boolean;
 }
@@ -110,20 +117,23 @@ interface AreaChartComponentProps {
 export function AreaChartComponent({
   data,
   areas,
+  xKey = "name",
+  yKey,
   height = 300,
   stacked = false,
 }: AreaChartComponentProps) {
   const stableData = useMemo(() => data, [data]);
+  const resolvedAreas = areas ?? (yKey ? [{ dataKey: yKey, name: yKey, color: chartColors.primary }] : []);
 
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={stableData}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(95,72,150,0.2)" />
-        <XAxis dataKey="name" stroke="#9EA9B3" style={{ fontSize: "12px" }} />
+        <XAxis dataKey={xKey} stroke="#9EA9B3" style={{ fontSize: "12px" }} />
         <YAxis stroke="#9EA9B3" style={{ fontSize: "12px" }} />
         <Tooltip content={<CustomTooltip />} />
         <Legend wrapperStyle={{ color: "#CED4D9" }} />
-        {areas.map((area) => (
+        {resolvedAreas.map((area) => (
           <Area
             key={`area-${area.dataKey}`}
             type="monotone"
@@ -143,8 +153,10 @@ export function AreaChartComponent({
 // ─── BarChartComponent ────────────────────────────────────────────────────────
 
 interface BarChartComponentProps {
-  data: Array<any>;
-  bars: Array<{ dataKey: string; name: string; color: string }>;
+  data: Array<Record<string, any>>;
+  bars?: Array<{ dataKey: string; name: string; color: string }>;
+  xKey?: string;
+  yKey?: string;
   height?: number;
   horizontal?: boolean;
 }
@@ -152,17 +164,20 @@ interface BarChartComponentProps {
 export function BarChartComponent({
   data,
   bars,
+  xKey = "name",
+  yKey,
   height = 300,
   horizontal = false,
 }: BarChartComponentProps) {
   const stableData = useMemo(() => data, [data]);
+  const resolvedBars = bars ?? (yKey ? [{ dataKey: yKey, name: yKey, color: chartColors.primary }] : []);
 
   const xAxisProps = horizontal
     ? { type: "number" as const }
-    : { type: "category" as const, dataKey: "name" };
+    : { type: "category" as const, dataKey: xKey };
 
   const yAxisProps = horizontal
-    ? { type: "category" as const, dataKey: "name", width: 120 }
+    ? { type: "category" as const, dataKey: xKey, width: 120 }
     : { type: "number" as const };
 
   return (
@@ -173,7 +188,7 @@ export function BarChartComponent({
         <YAxis {...yAxisProps} stroke="#9EA9B3" style={{ fontSize: "12px" }} />
         <Tooltip content={<CustomTooltip />} />
         <Legend wrapperStyle={{ color: "#CED4D9" }} />
-        {bars.map((bar) => (
+        {resolvedBars.map((bar) => (
           <Bar
             key={`bar-${bar.dataKey}`}
             dataKey={bar.dataKey}
@@ -208,7 +223,7 @@ export function DonutChart({ data, height = 300 }: DonutChartProps) {
           outerRadius={100}
           paddingAngle={2}
           dataKey="value"
-          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+          label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(1)}%`}
           labelStyle={{ fill: "#CED4D9", fontSize: "12px" }}
         >
           {stableData.map((entry, idx) => (
@@ -224,19 +239,20 @@ export function DonutChart({ data, height = 300 }: DonutChartProps) {
 // ─── MultiLineChart ───────────────────────────────────────────────────────────
 
 interface MultiLineChartProps {
-  data: Array<any>;
+  data: Array<Record<string, any>>;
   lines: Array<{ dataKey: string; name: string; color: string }>;
+  xKey?: string;
   height?: number;
 }
 
-export function MultiLineChart({ data, lines, height = 300 }: MultiLineChartProps) {
+export function MultiLineChart({ data, lines, xKey = "name", height = 300 }: MultiLineChartProps) {
   const stableData = useMemo(() => data, [data]);
 
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={stableData}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(95,72,150,0.2)" />
-        <XAxis dataKey="name" stroke="#9EA9B3" style={{ fontSize: "12px" }} />
+        <XAxis dataKey={xKey} stroke="#9EA9B3" style={{ fontSize: "12px" }} />
         <YAxis stroke="#9EA9B3" style={{ fontSize: "12px" }} />
         <Tooltip content={<CustomTooltip />} />
         <Legend wrapperStyle={{ color: "#CED4D9" }} />

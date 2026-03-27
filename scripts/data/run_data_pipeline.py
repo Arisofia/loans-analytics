@@ -4,8 +4,8 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parents[2]
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
-from backend.python.logging_config import get_logger, init_sentry
-from backend.src.pipeline.orchestrator import UnifiedPipeline
+from backend.python.logging_config import get_logger, init_sentry  # noqa: E402
+from backend.src.pipeline.orchestrator import UnifiedPipeline  # noqa: E402
 init_sentry(service_name='data_pipeline')
 logger = get_logger(__name__)
 

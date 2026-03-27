@@ -17,11 +17,13 @@ export function LoadingState({ message = "Loading data from Supabase..." }: Load
 }
 
 interface ErrorStateProps {
-  error: string;
+  error?: string;
+  message?: string;
   onRetry?: () => void;
 }
 
-export function ErrorState({ error, onRetry }: ErrorStateProps) {
+export function ErrorState({ error, message, onRetry }: ErrorStateProps) {
+  const displayError = error ?? message ?? "Unknown error";
   return (
     <div className="min-h-screen flex items-center justify-center p-8">
       <div
@@ -31,7 +33,7 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
         <p className="text-sm font-semibold mb-2" style={{ color: "var(--error)" }}>
           ⚠ Failed to load data
         </p>
-        <p className="text-xs mb-4" style={{ color: "var(--medium-gray)" }}>{error}</p>
+        <p className="text-xs mb-4" style={{ color: "var(--medium-gray)" }}>{displayError}</p>
         {onRetry && (
           <button
             onClick={onRetry}

@@ -7,14 +7,16 @@ interface MetricCardProps {
   change?: string;
   changeType?: "positive" | "negative" | "neutral";
   icon?: LucideIcon;
-  status?: "normal" | "warning" | "critical" | "not-configured";
+  status?: "normal" | "warning" | "critical" | "not-configured" | "good" | "neutral";
   subtitle?: string;
 }
 
 const statusConfig = {
   normal: { emoji: "✅", color: "var(--success)" },
+  good: { emoji: "✅", color: "var(--success)" },
   warning: { emoji: "⚠️", color: "var(--warning)" },
   critical: { emoji: "🔴", color: "var(--error)" },
+  neutral: { emoji: "⊙", color: "var(--medium-gray)" },
   "not-configured": { emoji: "⊙", color: "var(--medium-gray)" },
 };
 
@@ -98,7 +100,7 @@ export function MetricCard({
 
 interface AlertCardProps {
   type: "critical" | "warning" | "info";
-  title: string;
+  title?: string;
   message: string;
   timestamp?: string;
   actions?: ReactNode;
@@ -140,17 +142,19 @@ export function AlertCard({ type, title, message, timestamp, actions }: AlertCar
 }
 
 interface ConfidenceBadgeProps {
-  level: "high" | "medium" | "low";
+  level?: "high" | "medium" | "low";
+  confidence?: number;
 }
 
-export function ConfidenceBadge({ level }: ConfidenceBadgeProps) {
+export function ConfidenceBadge({ level, confidence }: ConfidenceBadgeProps) {
+  const resolvedLevel = level ?? (confidence != null ? (confidence >= 80 ? "high" : confidence >= 50 ? "medium" : "low") : "medium");
   const config = {
     high: { emoji: "🟢", label: "High Confidence", color: "var(--success)" },
     medium: { emoji: "🟡", label: "Medium Confidence", color: "var(--warning)" },
     low: { emoji: "🔴", label: "Low Confidence", color: "var(--error)" },
   };
 
-  const { emoji, label, color } = config[level];
+  const { emoji, label, color } = config[resolvedLevel];
 
   return (
     <span

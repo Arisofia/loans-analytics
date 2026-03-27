@@ -160,7 +160,6 @@ class IngestionPhase:
         )
         # Merge into main dataframe
         df['_merge_id'] = df['loan_id'].astype(str).str.strip()
-        before_cols = set(df.columns)
         df = df.merge(bal_lookup, on='_merge_id', how='left', suffixes=('', '_intermedia'))
         df.drop(columns=['_merge_id'], inplace=True, errors='ignore')
         matched = df['outstanding_balance'].notna().sum() if 'outstanding_balance' in df.columns else 0

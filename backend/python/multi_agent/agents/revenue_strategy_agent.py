@@ -22,7 +22,6 @@ class RevenueStrategyAgent(DecisionAgent):
 
     def run(self, ctx: AgentContext) -> AgentOutput:
         m = ctx.metrics
-        guardrails = ctx.business_params.get("financial_guardrails", {})
         alerts = []
         recommendations = []
         actions = []
