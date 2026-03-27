@@ -40,11 +40,26 @@ out/
 
 # Local one-off scripts and manifests
 pipeline_output.yaml
+pipeline_output.txt
+_pipeline_output.txt
+pipeline_output.log
 migrate_test.py
 test_dashboard_local.py
 tracked_files_manifest.txt
 _git_info.txt
 _git_remote.txt
+
+# Security audit artifacts
+pip-audit.json
+pip-audit-lock.json
+safety-local-lock.json
+
+# Generated lock files
+requirements.lock.txt
+requirements.prod.lock.txt
+
+# Obsolete local instructions
+.env.local.INSTRUCTIONS
 
 # Local environment / secrets
 .env
@@ -75,6 +90,7 @@ data/raw/*.csv
 backend/data/usage_metrics/
 backend/data/samples/*.csv
 exports/
+backend/exports/
 outputs/
 reports/
 .streamlit/
