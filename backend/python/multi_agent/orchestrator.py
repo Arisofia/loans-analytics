@@ -1,12 +1,21 @@
 import logging
 from typing import Any, Dict, List, Optional
 from backend.python.utils.usage_tracker import UsageTracker
-from ._llm_agents import ComplianceAgent, GrowthStrategistAgent, OpsOptimizerAgent, RiskAnalystAgent
+from .llm_agents import (
+    CollectionsAgent,
+    ComplianceAgent,
+    CustomerRetentionAgent,
+    DatabaseDesignerAgent,
+    FraudDetectionAgent,
+    GrowthStrategistAgent,
+    OpsOptimizerAgent,
+    PricingAgent,
+    RiskAnalystAgent,
+)
 from .base_agent import BaseAgent
 from .config_historical import build_historical_context_provider
 from .historical_context import HistoricalContextProvider
 from .protocol import AgentRequest, AgentResponse, AgentRole, LLMProvider, Message, MessageRole, Scenario, ScenarioStep
-from .specialized_agents import CollectionsAgent, CustomerRetentionAgent, DatabaseDesignerAgent, FraudDetectionAgent, PricingAgent
 from .tracing import AgentTracer
 logger = logging.getLogger(__name__)
 
