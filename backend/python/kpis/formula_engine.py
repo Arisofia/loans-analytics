@@ -390,31 +390,58 @@ class KPIFormulaEngine:
         )
         return (current_balance, previous_balance)
 
+    @staticmethod
+    def _extract_balanced_aggregations(formula: str) -> List[tuple[int, int]]:
+        """Find aggregation calls respecting balanced parentheses."""
+        spans: List[tuple[int, int]] = []
+        for m in re.finditer(r"(SUM|AVG|COUNT)\s*\(", formula, re.IGNORECASE):
+            start = m.start()
+            depth = 0
+            for i in range(m.end() - 1, len(formula)):
+                if formula[i] == "(":
+                    depth += 1
+                elif formula[i] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        spans.append((start, i + 1))
+                        break
+        return spans
+
     def _execute_arithmetic_formula(self, formula: str) -> Decimal:
-        expression = re.sub(
-            "(SUM|AVG|COUNT)\\([^)]+\\)",
-            self._replace_aggregation_match,
-            formula,
-            flags=re.IGNORECASE,
-        )
+        spans = self._extract_balanced_aggregations(formula)
+        expression = formula
+        for start, end in reversed(spans):
+            token = formula[start:end]
+            replacement = str(self._execute_simple_formula(token))
+            expression = expression[:start] + replacement + expression[end:]
         try:
             return self._safe_eval_numeric_expression(expression)
         except ZeroDivisionError:
             logger.warning("Division by zero in arithmetic formula '%s'; returning Decimal('0.0')", formula)
             return Decimal("0.0")
         except Exception as exc:
+            logger.error("Arithmetic formula evaluation failed for '%s': %s", formula, exc)
             raise KPIFormulaError(f"Arithmetic formula evaluation failed for '{formula}': {exc}") from exc
-
-    def _replace_aggregation_match(self, match: re.Match) -> str:
-        return str(self._execute_simple_formula(match[0]))
 
     def _execute_simple_formula(self, formula: str) -> Decimal:
         result = Decimal("0.0")
-        agg_match = re.match("(SUM|AVG|COUNT)\\((.+?)\\)", formula, re.IGNORECASE)
+        agg_match = re.match("(SUM|AVG|COUNT)\\s*\\(", formula, re.IGNORECASE)
         if not agg_match:
             return result
         agg_func = agg_match[1].upper()
-        content = agg_match[2].strip()
+        # Extract content inside balanced parentheses
+        depth = 0
+        paren_start = agg_match.end() - 1
+        paren_end = len(formula)
+        for i in range(paren_start, len(formula)):
+            if formula[i] == "(":
+                depth += 1
+            elif formula[i] == ")":
+                depth -= 1
+                if depth == 0:
+                    paren_end = i
+                    break
+        content = formula[paren_start + 1:paren_end].strip()
         distinct = False
         if content.startswith("DISTINCT "):
             distinct = True
@@ -533,7 +560,7 @@ class KPIFormulaEngine:
         return parts
 
     def _parse_in_condition(self, condition: str) -> Optional[pd.Series]:
-        match = re.match("(.+?)\\s+IN\\s+\\[(.+?)\\]", condition, re.IGNORECASE)
+        match = re.match(r"(.+?)\s+IN\s+[\[\(](.+?)[\]\)]", condition, re.IGNORECASE)
         if not match:
             return None
         column = match[1].strip()

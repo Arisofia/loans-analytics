@@ -10,6 +10,15 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# Load .env so integration tests (RUN_REAL_SUPABASE_TESTS, etc.) are not skipped locally
+try:
+    from dotenv import load_dotenv
+    _env_file = ROOT / ".env"
+    if _env_file.exists():
+        load_dotenv(_env_file, override=False)
+except ImportError:
+    pass
+
 
 def _build_portfolio(n: int = 50, seed: int = 42) -> pd.DataFrame:
     """Deterministic realistic lending portfolio DataFrame."""

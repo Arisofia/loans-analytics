@@ -163,6 +163,17 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
         "ORDER BY 1"
     )
 
+    par_trend_sql = (
+        "SELECT as_of_date::timestamp AS time, "
+        "MAX(CASE WHEN kpi_key = 'par_30' THEN value_num END) AS par_30, "
+        "MAX(CASE WHEN kpi_key = 'par_60' THEN value_num END) AS par_60, "
+        "MAX(CASE WHEN kpi_key = 'par_90' THEN value_num END) AS par_90 "
+        "FROM monitoring.kpi_values "
+        "WHERE kpi_key IN ('par_30', 'par_60', 'par_90') "
+        "GROUP BY as_of_date "
+        "ORDER BY 1"
+    )
+
     datasource = {"uid": datasource_uid, "type": datasource_type}
 
     return {
@@ -175,53 +186,129 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
         "tags": ["loans", "kpi", "production"],
         "time": {"from": "now-90d", "to": "now"},
         "panels": [
+            # Row 1: Asset Quality stats (y=0)
             {
                 "id": 1,
                 "title": "NPL Ratio (%)",
                 "type": "stat",
                 "datasource": datasource,
                 "targets": [{"refId": "A", "rawSql": stat_sql("npl_ratio"), "format": "table"}],
-                "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+                "gridPos": {"h": 6, "w": 4, "x": 0, "y": 0},
             },
             {
                 "id": 2,
+                "title": "PAR 30 (%)",
+                "type": "stat",
+                "datasource": datasource,
+                "targets": [{"refId": "A", "rawSql": stat_sql("par_30"), "format": "table"}],
+                "gridPos": {"h": 6, "w": 4, "x": 4, "y": 0},
+            },
+            {
+                "id": 3,
                 "title": "PAR 60 (%)",
                 "type": "stat",
                 "datasource": datasource,
                 "targets": [{"refId": "A", "rawSql": stat_sql("par_60"), "format": "table"}],
-                "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0},
+                "gridPos": {"h": 6, "w": 4, "x": 8, "y": 0},
             },
             {
-                "id": 3,
+                "id": 4,
+                "title": "PAR 90 (%)",
+                "type": "stat",
+                "datasource": datasource,
+                "targets": [{"refId": "A", "rawSql": stat_sql("par_90"), "format": "table"}],
+                "gridPos": {"h": 6, "w": 4, "x": 12, "y": 0},
+            },
+            {
+                "id": 5,
                 "title": "Default Rate (%)",
                 "type": "stat",
                 "datasource": datasource,
                 "targets": [{"refId": "A", "rawSql": stat_sql("default_rate"), "format": "table"}],
-                "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0},
+                "gridPos": {"h": 6, "w": 4, "x": 16, "y": 0},
             },
             {
-                "id": 4,
+                "id": 6,
                 "title": "Cure Rate (%)",
                 "type": "stat",
                 "datasource": datasource,
                 "targets": [{"refId": "A", "rawSql": stat_sql("cure_rate"), "format": "table"}],
-                "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0},
+                "gridPos": {"h": 6, "w": 4, "x": 20, "y": 0},
+            },
+            # Row 2: Portfolio & Cash Flow stats (y=6)
+            {
+                "id": 7,
+                "title": "Total AUM",
+                "type": "stat",
+                "datasource": datasource,
+                "targets": [{"refId": "A", "rawSql": stat_sql("total_outstanding_balance"), "format": "table"}],
+                "gridPos": {"h": 6, "w": 4, "x": 0, "y": 6},
             },
             {
-                "id": 5,
+                "id": 8,
+                "title": "Recovery Rate (%)",
+                "type": "stat",
+                "datasource": datasource,
+                "targets": [{"refId": "A", "rawSql": stat_sql("recovery_rate"), "format": "table"}],
+                "gridPos": {"h": 6, "w": 4, "x": 4, "y": 6},
+            },
+            {
+                "id": 9,
+                "title": "Collections Rate (%)",
+                "type": "stat",
+                "datasource": datasource,
+                "targets": [{"refId": "A", "rawSql": stat_sql("collections_rate"), "format": "table"}],
+                "gridPos": {"h": 6, "w": 4, "x": 8, "y": 6},
+            },
+            {
+                "id": 10,
+                "title": "Portfolio Yield (%)",
+                "type": "stat",
+                "datasource": datasource,
+                "targets": [{"refId": "A", "rawSql": stat_sql("portfolio_yield"), "format": "table"}],
+                "gridPos": {"h": 6, "w": 4, "x": 12, "y": 6},
+            },
+            {
+                "id": 11,
+                "title": "Repeat Borrower Rate (%)",
+                "type": "stat",
+                "datasource": datasource,
+                "targets": [{"refId": "A", "rawSql": stat_sql("repeat_borrower_rate"), "format": "table"}],
+                "gridPos": {"h": 6, "w": 4, "x": 16, "y": 6},
+            },
+            {
+                "id": 12,
+                "title": "New Loans MTD",
+                "type": "stat",
+                "datasource": datasource,
+                "targets": [{"refId": "A", "rawSql": stat_sql("new_loans_count_mtd"), "format": "table"}],
+                "gridPos": {"h": 6, "w": 4, "x": 20, "y": 6},
+            },
+            # Row 3: Trend charts (y=12)
+            {
+                "id": 13,
                 "title": "NPL Ratio Trend",
                 "type": "timeseries",
                 "datasource": datasource,
                 "targets": [{"refId": "A", "rawSql": ts_sql, "format": "time_series"}],
-                "gridPos": {"h": 10, "w": 24, "x": 0, "y": 8},
+                "gridPos": {"h": 10, "w": 12, "x": 0, "y": 12},
             },
             {
-                "id": 6,
+                "id": 14,
+                "title": "PAR Trend (30/60/90)",
+                "type": "timeseries",
+                "datasource": datasource,
+                "targets": [{"refId": "A", "rawSql": par_trend_sql, "format": "time_series"}],
+                "gridPos": {"h": 10, "w": 12, "x": 12, "y": 12},
+            },
+            # Row 4: Full snapshot table (y=22)
+            {
+                "id": 15,
                 "title": "Latest KPI Snapshot",
                 "type": "table",
                 "datasource": datasource,
                 "targets": [{"refId": "A", "rawSql": kpi_table_sql, "format": "table"}],
-                "gridPos": {"h": 12, "w": 24, "x": 0, "y": 18},
+                "gridPos": {"h": 12, "w": 24, "x": 0, "y": 22},
             },
         ],
     }

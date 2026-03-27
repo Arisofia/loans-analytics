@@ -79,7 +79,7 @@ asset_quality_kpis:
     description: "Delinquency 31-60 days"
 
   npl_ratio:
-    formula: "SUM(outstanding_balance WHERE dpd >= 30 OR status IN ('delinquent','defaulted')) / SUM(outstanding_balance) * 100"
+    formula: "SUM(outstanding_balance WHERE dpd >= 30 OR status IN ['delinquent','defaulted']) / SUM(outstanding_balance) * 100"
     unit: "percentage"
     description: "Non-Performing Loan ratio (broad) - balance-weighted early-warning exposure to delinquent and defaulted accounts (DPD >= 30)"
     thresholds:
@@ -108,7 +108,7 @@ asset_quality_kpis:
     description: "Outstanding balance at risk as percentage of disbursed principal"
 
   lgd:
-    formula: "(defaulted_balance - recovered_amount) / defaulted_balance * 100"
+    formula: "(SUM(outstanding_balance WHERE status = 'defaulted') - SUM(last_payment_amount WHERE status = 'defaulted')) / SUM(outstanding_balance WHERE status = 'defaulted') * 100"
     unit: "percentage"
     description: "Loss Given Default - % of defaulted exposure not recovered"
     thresholds:
@@ -116,7 +116,7 @@ asset_quality_kpis:
       critical: 80
 
   cost_of_risk:
-    formula: "NPL_ratio * LGD / 100"
+    formula: "SUM(outstanding_balance WHERE status = 'defaulted') / SUM(outstanding_balance) * 100"
     unit: "percentage"
     description: "Expected credit loss as % of total portfolio balance (Cost of Risk)"
     thresholds:
@@ -124,7 +124,7 @@ asset_quality_kpis:
       critical: 6
 
   cure_rate:
-    formula: "delinquent_loans_with_recent_payment / total_delinquent_loans * 100"
+    formula: "COUNT(loan_id WHERE dpd > 0 AND last_payment_amount > 0) / COUNT(loan_id WHERE dpd > 0) * 100"
     unit: "percentage"
     description: "Proxy cure rate: delinquent loans showing payment activity (requires T/T-1 snapshot for precision)"
     thresholds:
@@ -156,7 +156,7 @@ cash_flow_kpis:
     description: "Total current cash position across portfolio"
 
   net_interest_margin:
-    formula: "(weighted_interest_yield - funding_cost_rate) * 100"
+    formula: "AVG(interest_rate) * 100"
     unit: "percentage"
     description: "Net Interest Margin - spread between portfolio gross yield and assumed funding cost (default 8%)"
     thresholds:
@@ -165,9 +165,9 @@ cash_flow_kpis:
       critical: 2
 
   payback_period:
-    formula: "CAC / monthly_ARPU"
+    formula: "SUM(principal_amount) / SUM(last_payment_amount) * 100"
     unit: "months"
-    description: "CAC Payback Period - months to recover customer acquisition cost from monthly revenue"
+    description: "Payback period proxy — ratio of total principal to total payments received (higher = slower payback)"
     thresholds:
       target: 12
       warning: 18

@@ -47,3 +47,39 @@ class CanonicalLeadRecord(BaseModel):
     source_channel: Optional[str] = None
     sector: Optional[str] = None
     country: Optional[str] = None
+
+
+class CanonicalAdSpendRecord(BaseModel):
+    """Canonical contract for a single Meta Ads (Facebook/Instagram) daily ad record.
+
+    One row = one ad × one day of delivery data. Aggregation to campaign/adset/account
+    level happens in the marketing mart, not here.
+    """
+
+    date_start: date
+    date_stop: date
+    account_id: str
+    campaign_id: str
+    campaign_name: str
+    adset_id: Optional[str] = None
+    adset_name: Optional[str] = None
+    ad_id: Optional[str] = None
+    ad_name: Optional[str] = None
+    # Delivery metrics
+    impressions: int = Field(ge=0)
+    reach: int = Field(ge=0)
+    clicks: int = Field(ge=0)
+    spend: float = Field(ge=0, description="Ad spend in account currency (USD)")
+    # Conversion metrics — sourced from Meta pixel / lead objective
+    leads: int = Field(default=0, ge=0, description="Lead form completions reported by Meta")
+    # Derived ratios — populated by adapter, not API
+    ctr: Optional[float] = Field(default=None, ge=0, description="clicks / impressions")
+    cpl: Optional[float] = Field(default=None, ge=0, description="spend / leads; None when leads == 0")
+    cpc: Optional[float] = Field(default=None, ge=0, description="spend / clicks; None when clicks == 0")
+
+    @field_validator("account_id", "campaign_id", "campaign_name")
+    @classmethod
+    def validate_non_empty(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("Required identifier is empty")
+        return value.strip()

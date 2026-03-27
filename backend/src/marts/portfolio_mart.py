@@ -52,6 +52,8 @@ def build_portfolio_mart(loans_df: pd.DataFrame) -> pd.DataFrame:
         "sector",
         "originator",
         "source_channel",
+        "segment",
+        "kam_hunter",
     ]
 
     for column in required_columns:

@@ -380,6 +380,13 @@ class KPIEngineV2:
                         kpi_name,
                     )
                     continue
+                if "Unsupported expression node" in str(e) or "not found in registry" in str(e):
+                    logger.warning(
+                        "Skipping dynamic KPI %s: formula incompatible with current data schema: %s",
+                        kpi_name,
+                        e,
+                    )
+                    continue
                 logger.error("Dynamic KPI %s failed: %s", kpi_name, e)
                 raise ValueError(f"CRITICAL: Dynamic KPI {kpi_name} calculation failed: {e}") from e
         return kpis

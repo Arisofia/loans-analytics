@@ -84,14 +84,22 @@ def _validate_db_config(host: Optional[str], user: Optional[str], password: Opti
 
 
 def _build_db_config(env_file: Dict[str, str]) -> Dict[str, str]:
-    if database_url := _pick("SUPABASE_DATABASE_URL", env_file) or _pick("DATABASE_URL", env_file):
-        return _parse_database_url(database_url)
-
     host = _get_host_from_env(env_file)
     port = _pick("SUPABASE_DB_PORT", env_file, "5432")
     database = _pick("SUPABASE_DB_NAME", env_file, "postgres")
     user = _pick("SUPABASE_DB_USER", env_file, "postgres")
     password = _pick("SUPABASE_DB_PASSWORD", env_file) or _pick("PGPASSWORD", env_file)
+
+    # Prefer explicit DB fields when provided (e.g., Supabase pooler host/user)
+    # and only fall back to DATABASE_URL parsing when these are not configured.
+    explicit_fields_present = bool(
+        _pick("SUPABASE_DB_HOST", env_file)
+        or _pick("SUPABASE_DB_USER", env_file)
+        or _pick("SUPABASE_DB_PASSWORD", env_file)
+    )
+    if not explicit_fields_present:
+        if database_url := _pick("SUPABASE_DATABASE_URL", env_file) or _pick("DATABASE_URL", env_file):
+            return _parse_database_url(database_url)
 
     if missing := _validate_db_config(host, user, password, database):
         raise RuntimeError("Missing PostgreSQL settings: " + ", ".join(missing))
