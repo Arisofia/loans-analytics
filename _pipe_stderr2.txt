@@ -1,4 +1,0 @@
-Removed 344 structurally empty rows before null handling
-Skipping dynamic KPI portfolio_growth_rate due to zero-division math (e.g., missing previous month data).
-C:\Users\IvónYamilethRiveraDe\AppData\Local\Programs\Python\Python312\Lib\site-packages\umap\umap_.py:1952: UserWarning: n_jobs value 1 overridden to 1 by setting random_state. Use no seed for parallelism.
-  warn(

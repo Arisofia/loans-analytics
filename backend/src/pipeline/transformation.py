@@ -167,6 +167,7 @@ class TransformationPhase:
         df = self._normalize_column_names(df)
         df = self._collapse_duplicate_columns(df)
         df = self._map_canonical_semantic_layer(df)
+        df = self._derive_canonical_financial_columns(df)
         df, structural_filter_metrics = self._drop_structurally_empty_rows(df)
         transformation_metrics["structural_row_filter"] = structural_filter_metrics
         df, control_metrics = self._derive_control_mora_fields(df)
@@ -316,6 +317,105 @@ class TransformationPhase:
         }:
             df = df.rename(columns=rename_dict)
             logger.info("Canonical semantic layer applied: %s", rename_dict)
+        return df
+
+    def _derive_canonical_financial_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Derive canonical financial columns from Spanish source columns.
+
+        Creates outstanding_balance, principal_amount, interest_rate, and
+        status when they are missing or empty, using the actual source data
+        (montodesembolsado, valororiginal, tasainteres, dpd).
+        """
+        derived: List[str] = []
+
+        # --- outstanding_balance ---
+        if "outstanding_balance" not in df.columns or df["outstanding_balance"].isna().all():
+            balance = self._coalesce_numeric_columns(
+                df,
+                [
+                    "montodesembolsado",
+                    "totalsaldovigente",
+                    "valororiginal",
+                    "approved_value",
+                    "current_balance",
+                    "amount",
+                ],
+            )
+            if balance.notna().any():
+                df["outstanding_balance"] = balance
+                derived.append("outstanding_balance")
+
+        # --- principal_amount ---
+        if "principal_amount" not in df.columns or df["principal_amount"].isna().all():
+            principal = self._coalesce_numeric_columns(
+                df,
+                [
+                    "montodesembolsado",
+                    "valororiginal",
+                    "approved_value",
+                    "amount",
+                ],
+            )
+            if principal.notna().any():
+                df["principal_amount"] = principal
+                derived.append("principal_amount")
+
+        # --- current_balance (backfill when all-NaN) ---
+        if "current_balance" in df.columns and df["current_balance"].isna().all():
+            cb = self._coalesce_numeric_columns(
+                df,
+                [
+                    "outstanding_balance",
+                    "montodesembolsado",
+                    "totalsaldovigente",
+                    "valororiginal",
+                    "approved_value",
+                ],
+            )
+            if cb.notna().any():
+                df["current_balance"] = cb
+                derived.append("current_balance")
+
+        # --- interest_rate from tasainteres ("1.50%" → 0.015) ---
+        if "interest_rate" not in df.columns or df["interest_rate"].isna().all():
+            for rate_col in ("tasainteres", "tasa_interes", "tasa_de_interes"):
+                if rate_col in df.columns:
+                    raw = df[rate_col].astype(str).str.strip()
+                    raw = raw.str.replace("%", "", regex=False)
+                    raw = raw.str.replace(",", ".", regex=False)
+                    numeric_rate = pd.to_numeric(raw, errors="coerce")
+                    # Rates > 1 are likely percentages; convert to decimal
+                    numeric_rate = numeric_rate.where(
+                        numeric_rate <= 1, numeric_rate / 100
+                    )
+                    if numeric_rate.notna().any():
+                        df["interest_rate"] = numeric_rate
+                        derived.append("interest_rate")
+                        break
+
+        # --- status derived from dpd when empty ---
+        if "status" in df.columns and "dpd" in df.columns:
+            empty_status = (
+                df["status"].isna()
+                | (df["status"].astype(str).str.strip() == "")
+            )
+            if empty_status.mean() > 0.5:
+                dpd_vals = pd.to_numeric(df["dpd"], errors="coerce").fillna(0)
+                status_from_dpd = pd.Series("active", index=df.index, dtype="object")
+                status_from_dpd.loc[dpd_vals > 0] = "delinquent"
+                status_from_dpd.loc[dpd_vals > 90] = "defaulted"
+                df.loc[empty_status, "status"] = status_from_dpd.loc[empty_status]
+                derived.append("status")
+        elif "status" not in df.columns and "dpd" in df.columns:
+            dpd_vals = pd.to_numeric(df["dpd"], errors="coerce").fillna(0)
+            status_from_dpd = pd.Series("active", index=df.index, dtype="object")
+            status_from_dpd.loc[dpd_vals > 0] = "delinquent"
+            status_from_dpd.loc[dpd_vals > 90] = "defaulted"
+            df["status"] = status_from_dpd
+            derived.append("status")
+
+        if derived:
+            logger.info("Derived canonical financial columns: %s", derived)
         return df
 
     @staticmethod
