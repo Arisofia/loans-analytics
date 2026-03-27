@@ -231,7 +231,9 @@ class TransformationPhase:
             "current_status": "status",
             "loan_status": "status",
             "principal_balance": "current_balance",
+            "outstanding_loan_value": "current_balance",
             "loan_amount": "amount",
+            "disbursement_amount": "amount",
             "fechadesembolso": "origination_date",
             "fecha_de_desembolso": "origination_date",
             "fechapagoprogramado": "due_date",
@@ -337,16 +339,14 @@ class TransformationPhase:
         derived: List[str] = []
 
         # --- outstanding_balance ---
+        # Use only actual balance columns; disbursement/approved amounts are
+        # NOT outstanding balances (paid-off loans would get phantom balance).
         if "outstanding_balance" not in df.columns or df["outstanding_balance"].isna().all():
             balance = self._coalesce_numeric_columns(
                 df,
                 [
-                    "montodesembolsado",
-                    "totalsaldovigente",
-                    "valororiginal",
-                    "approved_value",
                     "current_balance",
-                    "amount",
+                    "totalsaldovigente",
                 ],
             )
             if balance.notna().any():

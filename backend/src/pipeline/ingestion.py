@@ -113,6 +113,61 @@ class IngestionPhase:
         df = pd.DataFrame(records)
         df = self._coerce_google_sheets_schema(df)
         logger.info("Loaded %d rows from Google Sheets adapter tab '%s'", len(df), target_tab)
+
+        # Merge outstanding balance from INTERMEDIA tab when loading DESEMBOLSOS
+        if target_tab.upper() == 'DESEMBOLSOS':
+            df = self._enrich_with_intermedia(df, adapter)
+
+        return df
+
+    def _enrich_with_intermedia(self, df: pd.DataFrame, adapter: ControlMoraSheetsAdapter) -> pd.DataFrame:
+        """Merge TotalSaldoVigente (outstanding balance) from INTERMEDIA tab."""
+        try:
+            intermedia_records = adapter.fetch_intermedia_raw()
+        except Exception as exc:
+            logger.warning("Could not load INTERMEDIA tab for balance enrichment: %s", exc)
+            return df
+        if not intermedia_records:
+            logger.warning("INTERMEDIA tab returned zero records; skipping balance enrichment")
+            return df
+        intermedia_df = pd.DataFrame(intermedia_records)
+        # Find the loan ID column in INTERMEDIA
+        id_col = None
+        for candidate in ('NumeroInterno', 'numerointerno', 'loan_id'):
+            if candidate in intermedia_df.columns:
+                id_col = candidate
+                break
+        if id_col is None:
+            logger.warning("INTERMEDIA tab has no loan ID column; skipping balance enrichment")
+            return df
+        # Find balance column
+        bal_col = None
+        for candidate in ('TotalSaldoVigente', 'totalsaldovigente'):
+            if candidate in intermedia_df.columns:
+                bal_col = candidate
+                break
+        if bal_col is None:
+            logger.warning("INTERMEDIA tab has no TotalSaldoVigente column; skipping balance enrichment")
+            return df
+        # Prepare merge key
+        intermedia_df['_merge_id'] = intermedia_df[id_col].astype(str).str.strip()
+        intermedia_df['outstanding_balance'] = pd.to_numeric(intermedia_df[bal_col], errors='coerce')
+        # Keep latest non-null balance per loan
+        bal_lookup = (
+            intermedia_df[['_merge_id', 'outstanding_balance']]
+            .dropna(subset=['outstanding_balance'])
+            .drop_duplicates(subset=['_merge_id'], keep='last')
+        )
+        # Merge into main dataframe
+        df['_merge_id'] = df['loan_id'].astype(str).str.strip()
+        before_cols = set(df.columns)
+        df = df.merge(bal_lookup, on='_merge_id', how='left', suffixes=('', '_intermedia'))
+        df.drop(columns=['_merge_id'], inplace=True, errors='ignore')
+        matched = df['outstanding_balance'].notna().sum() if 'outstanding_balance' in df.columns else 0
+        logger.info(
+            "INTERMEDIA enrichment: merged outstanding_balance for %d/%d loans",
+            matched, len(df),
+        )
         return df
 
     def _coerce_google_sheets_schema(self, df: pd.DataFrame) -> pd.DataFrame:

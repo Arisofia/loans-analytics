@@ -139,10 +139,10 @@ def _find_datasource(base_url: str, headers: Dict[str, str], auth: Optional[tupl
 
 def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dict[str, Any]:
     kpi_table_sql = (
-        "SELECT kpi_key, value_num, as_of_date "
+        "SELECT DISTINCT ON (kpi_key) kpi_key, value_num, as_of_date "
         "FROM monitoring.kpi_values "
         "WHERE as_of_date = (SELECT MAX(as_of_date) FROM monitoring.kpi_values) "
-        "ORDER BY kpi_key"
+        "ORDER BY kpi_key, computed_at DESC"
     )
 
     def stat_sql(kpi_key: str) -> str:
@@ -157,14 +157,14 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
         )
 
     ts_sql = (
-        "SELECT as_of_date::timestamp AS time, value_num AS value "
+        "SELECT as_of_date::timestamptz AS time, value_num AS value "
         "FROM monitoring.kpi_values "
         "WHERE kpi_key = 'npl_ratio' "
         "ORDER BY 1"
     )
 
     par_trend_sql = (
-        "SELECT as_of_date::timestamp AS time, "
+        "SELECT as_of_date::timestamptz AS time, "
         "MAX(CASE WHEN kpi_key = 'par_30' THEN value_num END) AS par_30, "
         "MAX(CASE WHEN kpi_key = 'par_60' THEN value_num END) AS par_60, "
         "MAX(CASE WHEN kpi_key = 'par_90' THEN value_num END) AS par_90 "
@@ -175,7 +175,7 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
     )
 
     mom_yoy_sql = (
-        "SELECT as_of_date::timestamp AS time, "
+        "SELECT as_of_date::timestamptz AS time, "
         "MAX(CASE WHEN kpi_key = 'mom_growth_pct' THEN value_num END) AS mom_growth, "
         "MAX(CASE WHEN kpi_key = 'yoy_growth_pct' THEN value_num END) AS yoy_growth "
         "FROM monitoring.kpi_values "
@@ -185,7 +185,7 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
     )
 
     monthly_volume_sql = (
-        "SELECT date_trunc('month', disbursement_date)::timestamp AS time, "
+        "SELECT date_trunc('month', disbursement_date)::timestamptz AS time, "
         "COUNT(*) AS loan_count, "
         "SUM(disbursement_amount) AS total_disbursed "
         "FROM public.loan_data "
@@ -203,7 +203,7 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
         "version": 1,
         "refresh": "30s",
         "tags": ["loans", "kpi", "production"],
-        "time": {"from": "now-90d", "to": "now"},
+        "time": {"from": "now-3y", "to": "now"},
         "panels": [
             # Row 1: Asset Quality stats (y=0)
             {
@@ -260,7 +260,7 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
                 "title": "Total AUM",
                 "type": "stat",
                 "datasource": datasource,
-                "targets": [{"refId": "A", "rawSql": stat_sql("total_outstanding_balance"), "format": "table"}],
+                "targets": [{"refId": "A", "rawSql": stat_sql("total_aum"), "format": "table"}],
                 "gridPos": {"h": 6, "w": 4, "x": 0, "y": 6},
             },
             {
@@ -276,7 +276,7 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
                 "title": "Collections Rate (%)",
                 "type": "stat",
                 "datasource": datasource,
-                "targets": [{"refId": "A", "rawSql": stat_sql("collections_rate"), "format": "table"}],
+                "targets": [{"refId": "A", "rawSql": stat_sql("collection_rate_6m"), "format": "table"}],
                 "gridPos": {"h": 6, "w": 4, "x": 8, "y": 6},
             },
             {
@@ -300,7 +300,7 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
                 "title": "New Loans MTD",
                 "type": "stat",
                 "datasource": datasource,
-                "targets": [{"refId": "A", "rawSql": stat_sql("new_loans_count_mtd"), "format": "table"}],
+                "targets": [{"refId": "A", "rawSql": stat_sql("new_loans"), "format": "table"}],
                 "gridPos": {"h": 6, "w": 4, "x": 20, "y": 6},
             },
             # Row 3: Trend charts (y=12)
