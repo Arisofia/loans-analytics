@@ -174,6 +174,25 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
         "ORDER BY 1"
     )
 
+    mom_yoy_sql = (
+        "SELECT as_of_date::timestamp AS time, "
+        "MAX(CASE WHEN kpi_key = 'mom_growth_pct' THEN value_num END) AS mom_growth, "
+        "MAX(CASE WHEN kpi_key = 'yoy_growth_pct' THEN value_num END) AS yoy_growth "
+        "FROM monitoring.kpi_values "
+        "WHERE kpi_key IN ('mom_growth_pct', 'yoy_growth_pct') "
+        "GROUP BY as_of_date "
+        "ORDER BY 1"
+    )
+
+    monthly_volume_sql = (
+        "SELECT date_trunc('month', disbursement_date)::timestamp AS time, "
+        "COUNT(*) AS loan_count, "
+        "SUM(disbursement_amount) AS total_disbursed "
+        "FROM public.loan_data "
+        "WHERE disbursement_date IS NOT NULL "
+        "GROUP BY 1 ORDER BY 1"
+    )
+
     datasource = {"uid": datasource_uid, "type": datasource_type}
 
     return {
@@ -309,6 +328,23 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
                 "datasource": datasource,
                 "targets": [{"refId": "A", "rawSql": kpi_table_sql, "format": "table"}],
                 "gridPos": {"h": 12, "w": 24, "x": 0, "y": 22},
+            },
+            # Row 5: MoM/YoY Growth & Monthly Volume (y=34)
+            {
+                "id": 16,
+                "title": "MoM / YoY Growth (%)",
+                "type": "timeseries",
+                "datasource": datasource,
+                "targets": [{"refId": "A", "rawSql": mom_yoy_sql, "format": "time_series"}],
+                "gridPos": {"h": 10, "w": 12, "x": 0, "y": 34},
+            },
+            {
+                "id": 17,
+                "title": "Monthly Disbursement Volume",
+                "type": "timeseries",
+                "datasource": datasource,
+                "targets": [{"refId": "A", "rawSql": monthly_volume_sql, "format": "time_series"}],
+                "gridPos": {"h": 10, "w": 12, "x": 12, "y": 34},
             },
         ],
     }

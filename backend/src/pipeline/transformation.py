@@ -276,6 +276,14 @@ class TransformationPhase:
         }:
             df = df.rename(columns=rename_dict)
             logger.info("Renamed columns: %s", rename_dict)
+        # Overwrite targets that exist but are all-null with non-null source
+        for source, target in column_mapping.items():
+            if source in df.columns and target in df.columns and source != target:
+                target_valid = df[target].notna().sum()
+                source_valid = df[source].notna().sum()
+                if target_valid == 0 and source_valid > 0:
+                    df[target] = df[source]
+                    logger.info("Overwrote empty %s with %s (%d values)", target, source, source_valid)
         # Collapse duplicates created by surface normalisation + rename
         # (e.g. FechaDesembolso and "Fecha de Desembolso" both → origination_date)
         df = self._collapse_duplicate_columns(df)
@@ -522,7 +530,7 @@ class TransformationPhase:
         self, df: pd.DataFrame, metrics: Dict[str, Any]
     ) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
         inferred_origination = self._coalesce_datetime_columns(
-            df, ["origination_date", "disbursement_date", "fecha_de_desembolso", "fechadesembolso"]
+            df, ["origination_date", "funded_at", "disbursement_date", "fecha_de_desembolso", "fechadesembolso", "fechaoriginal"]
         )
         existing_origination = (
             self._to_datetime_mixed(df["origination_date"])

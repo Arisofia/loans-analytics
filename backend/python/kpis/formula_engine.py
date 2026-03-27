@@ -247,7 +247,7 @@ class KPIFormulaEngine:
             raise KPIFormulaError(f"Formula evaluation failed for '{formula}': {exc}") from exc
 
     def _is_comparison_formula(self, formula: str) -> bool:
-        return "current_month" in formula or "previous_month" in formula
+        return any(kw in formula for kw in ("current_month", "previous_month", "current_year", "previous_year"))
 
     def _is_arithmetic_formula(self, formula: str) -> bool:
         return any((op in formula for op in [" + ", " - ", " * ", " / "])) and "(" in formula
@@ -305,9 +305,12 @@ class KPIFormulaEngine:
 
     def _build_comparison_context(self) -> Dict[str, Decimal]:
         current_balance, previous_balance = self._resolve_monthly_balances()
+        current_year, previous_year = self._resolve_yearly_balances()
         return {
             "current_month_balance": current_balance,
             "previous_month_balance": previous_balance,
+            "current_year_balance": current_year,
+            "previous_year_balance": previous_year,
         }
 
     def _resolve_monthly_balances(self) -> tuple[Decimal, Decimal]:
@@ -321,16 +324,25 @@ class KPIFormulaEngine:
             "data_ingest_ts",
         ]
         date_column = next(
-            (col for col in snapshot_date_candidates if col in self.df.columns), None
+            (col for col in snapshot_date_candidates
+             if col in self.df.columns
+             and pd.to_datetime(self.df[col], errors="coerce").nunique(dropna=True) > 1),
+            None,
         )
-        if date_column is None and os.getenv("KPI_ENGINE_ALLOW_ORIGINATION_FALLBACK", "0") == "1":
+        if date_column is None:
             fallback_candidates = [
                 "origination_date",
                 "disbursement_date",
+                "funded_at",
                 "last_payment_date",
                 "maturity_date",
             ]
-            date_column = next((col for col in fallback_candidates if col in self.df.columns), None)
+            date_column = next(
+                (col for col in fallback_candidates
+                 if col in self.df.columns
+                 and pd.to_datetime(self.df[col], errors="coerce").nunique(dropna=True) > 1),
+                None,
+            )
         if date_column is None:
             logger.info(
                 "Monthly comparison skipped: no snapshot date column found (set KPI_ENGINE_ALLOW_ORIGINATION_FALLBACK=1 to enable legacy fallback)."
@@ -387,6 +399,41 @@ class KPIFormulaEngine:
         )
         previous_balance = Decimal(
             str(period_df.loc[period_df["period"] == previous_period, "balance"].sum())
+        )
+        return (current_balance, previous_balance)
+
+    def _resolve_yearly_balances(self) -> tuple[Decimal, Decimal]:
+        """Resolve current-year vs previous-year outstanding balances for YoY formulas."""
+        if "outstanding_balance" not in self.df.columns:
+            return (Decimal("0.0"), Decimal("0.0"))
+        snapshot_date_candidates = [
+            "measurement_date", "snapshot_date", "as_of_date", "reporting_date",
+            "data_ingest_ts", "origination_date", "funded_at", "disbursement_date",
+        ]
+        date_column = next(
+            (col for col in snapshot_date_candidates
+             if col in self.df.columns
+             and pd.to_datetime(self.df[col], errors="coerce").nunique(dropna=True) > 1),
+            None,
+        )
+        if date_column is None:
+            return (Decimal("0.0"), Decimal("0.0"))
+        period_df = pd.DataFrame(
+            {
+                "date": self._get_datetime_series(date_column),
+                "balance": self._get_numeric_series("outstanding_balance").fillna(0.0),
+            }
+        ).dropna(subset=["date"])
+        if period_df.empty:
+            return (Decimal("0.0"), Decimal("0.0"))
+        period_df["year"] = period_df["date"].dt.year
+        current_year = period_df["year"].max()
+        previous_year = current_year - 1
+        current_balance = Decimal(
+            str(period_df.loc[period_df["year"] == current_year, "balance"].sum())
+        )
+        previous_balance = Decimal(
+            str(period_df.loc[period_df["year"] == previous_year, "balance"].sum())
         )
         return (current_balance, previous_balance)
 

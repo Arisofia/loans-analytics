@@ -198,14 +198,23 @@ class OutputPhase:
     def _export_json(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
         output_path = run_dir / 'kpis_output.json'
         with open(output_path, 'w') as f:
-            json.dump(kpi_results, f, indent=2, default=str)
+            json.dump(self._sanitize_keys(kpi_results), f, indent=2, default=str)
         logger.info('Exported JSON: %s', output_path)
         return output_path
+
+    @staticmethod
+    def _sanitize_keys(obj: Any) -> Any:
+        """Recursively convert non-str dict keys (e.g. numpy.int64) to str."""
+        if isinstance(obj, dict):
+            return {str(k): OutputPhase._sanitize_keys(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [OutputPhase._sanitize_keys(v) for v in obj]
+        return obj
 
     def _export_payload_json(self, payload: Any, run_dir: Path, filename: str) -> Path:
         output_path = run_dir / filename
         with open(output_path, 'w', encoding='utf-8') as fh:
-            json.dump(payload, fh, indent=2, default=str)
+            json.dump(self._sanitize_keys(payload), fh, indent=2, default=str)
         logger.info('Exported payload: %s', output_path)
         return output_path
 

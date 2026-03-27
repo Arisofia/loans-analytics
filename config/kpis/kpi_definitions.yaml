@@ -190,6 +190,16 @@ growth_kpis:
     unit: "percentage"
     description: "Month-over-month portfolio growth"
 
+  mom_growth_pct:
+    formula: "(current_month_balance - previous_month_balance) / previous_month_balance * 100"
+    unit: "percentage"
+    description: "Month-over-month AUM growth percentage"
+
+  yoy_growth_pct:
+    formula: "(current_year_balance - previous_year_balance) / previous_year_balance * 100"
+    unit: "percentage"
+    description: "Year-over-year AUM growth percentage"
+
 # Customer KPIs
 customer_kpis:
   active_borrowers:

@@ -210,7 +210,7 @@ class UnifiedPipeline:
             results['status'] = 'success' if all_success else 'partial'
         manifest_path = run_dir / 'pipeline_results.json'
         with open(manifest_path, 'w') as f:
-            json.dump(results, f, indent=2, default=str)
+            json.dump(self._sanitize_json_keys(results), f, indent=2, default=str)
         separator = '=' * 80
         logger.info('\n%s', separator)
         logger.info('PIPELINE EXECUTION COMPLETE')
@@ -218,6 +218,15 @@ class UnifiedPipeline:
         logger.info('Duration: %.2f seconds', duration)
         logger.info('Results: %s', manifest_path)
         return results
+
+    @staticmethod
+    def _sanitize_json_keys(obj: Any) -> Any:
+        """Recursively convert non-str dict keys (e.g. numpy.int64) to str."""
+        if isinstance(obj, dict):
+            return {str(k): UnifiedPipeline._sanitize_json_keys(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [UnifiedPipeline._sanitize_json_keys(v) for v in obj]
+        return obj
 
     @staticmethod
     def _calculate_input_hash(file_path: Path) -> str:

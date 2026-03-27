@@ -45,36 +45,47 @@ class DecisionPhase:
             if not clean_path:
                 return {"status": "skipped", "reason": "No clean data path from transformation phase."}
 
-            df = pd.read_csv(clean_path) if Path(clean_path).exists() else pd.DataFrame()
+            clean = Path(clean_path)
+            if not clean.exists():
+                df = pd.DataFrame()
+            elif clean.suffix == ".parquet":
+                df = pd.read_parquet(clean)
+            else:
+                df = pd.read_csv(clean, encoding="utf-8", encoding_errors="replace")
             if df.empty:
                 return {"status": "skipped", "reason": "Clean data is empty."}
 
             # ── Build marts (individual modules) ────────────────────────
             from backend.src.marts.build_all_marts import build_all_marts
 
-            marts = build_all_marts(df)
+            marts = build_all_marts({"df": df})
             logger.info("Built %d marts from %d rows", len(marts), len(df))
 
             # ── Data quality gate ───────────────────────────────────────
             from backend.src.data_quality.engine import run_quality_engine
 
-            dq_result = run_quality_engine(marts)
+            dq_results = run_quality_engine(df)
+            blocking = any(
+                getattr(r, "severity", None) == "blocking"
+                or (hasattr(r, "severity") and str(r.severity).lower() == "blocking")
+                for r in dq_results
+            )
             logger.info(
                 "Data quality: %d rules evaluated, blocking=%s",
-                len(dq_result["rule_results"]),
-                dq_result["blocking"],
+                len(dq_results),
+                blocking,
             )
-            if dq_result["blocking"]:
+            if blocking:
                 return {
                     "status": "blocked",
                     "reason": "Data quality blocking rules failed",
-                    "dq_result": dq_result,
+                    "dq_result": [str(r) for r in dq_results],
                 }
 
             # ── Build features ──────────────────────────────────────────
-            from backend.python.multi_agent.feature_store.builder import build_all_features
+            from backend.python.multi_agent.feature_store.builder import build_feature_store
 
-            features = build_all_features(marts)
+            features = build_feature_store(marts, phase3_results.get("kpis", {}))
             logger.info("Built features: %s", list(features.keys()))
 
             # ── Seed metrics from Phase 3 KPIs ──────────────────────────
