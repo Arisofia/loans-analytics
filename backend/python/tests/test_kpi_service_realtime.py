@@ -60,6 +60,35 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
     assert kpi_map['DPD_31_60'].value == pytest.approx(0.0)
     assert kpi_map['DPD_61_90'].value == pytest.approx(0.0)
     assert kpi_map['DPD_90_PLUS'].value == pytest.approx(33.33)
+    assert kpi_map['NPL'].value == pytest.approx(33.33)
+
+
+def test_calculate_kpis_for_portfolio_keeps_npl_and_npl_90_distinct():
+    service = KPIService(actor='test_user')
+    loans = [
+        LoanRecord(
+            id='L1',
+            borrower_id='B1',
+            loan_amount=1000.0,
+            principal_balance=1000.0,
+            interest_rate=0.15,
+            loan_status='30-59 days past due',
+            days_past_due=45.0,
+        ),
+        LoanRecord(
+            id='L2',
+            borrower_id='B2',
+            loan_amount=1000.0,
+            principal_balance=1000.0,
+            interest_rate=0.20,
+            loan_status='current',
+            days_past_due=0.0,
+        ),
+    ]
+    response = asyncio.run(service.calculate_kpis_for_portfolio(loans))
+    kpi_map = {k.id: k for k in response}
+    assert kpi_map['NPL'].value == pytest.approx(50.0)
+    assert kpi_map['PAR90'].value == pytest.approx(0.0)
 
 def test_supported_catalog_kpis_include_remaining_catalog_ids():
     service = KPIService(actor='test_user')
