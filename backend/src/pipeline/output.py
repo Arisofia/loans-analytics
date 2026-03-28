@@ -1,4 +1,5 @@
 import json
+import math
 import os
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
@@ -21,6 +22,31 @@ logger = get_logger(__name__)
 KPI_DEFINITIONS_TABLE = 'monitoring.kpi_definitions'
 _BOOL_ENV_TRUE = frozenset({'1', 'true', 'yes', 'on'})
 _BOOL_ENV_FALSE = frozenset({'0', 'false', 'no', 'off'})
+_NON_NEGATIVE_KPI_KEYS = frozenset({
+    'active_borrowers',
+    'automation_rate',
+    'average_loan_size',
+    'cash_on_hand',
+    'collection_rate_6m',
+    'cost_of_risk',
+    'cure_rate',
+    'customer_lifetime_value',
+    'default_rate',
+    'delinq_1_30_rate',
+    'delinq_31_60_rate',
+    'disbursement_volume',
+    'lgd',
+    'loan_count',
+    'new_loans_mtd',
+    'npl_ratio',
+    'par_30',
+    'par_60',
+    'par_90',
+    'portfolio_yield',
+    'recovery_rate',
+    'repeat_borrower_rate',
+    'total_aum',
+})
 
 
 def _parse_bool_env(var_name: str, default: bool = True) -> bool:
@@ -532,11 +558,31 @@ class OutputPhase:
             return None
         row_timestamp = row.get('timestamp')
         as_of_date = str(row_timestamp).split('T')[0] if row_timestamp else date.today().isoformat()
-        value = row.get('value')
-        monitoring_row: Dict[str, Any] = {'kpi_key': name_to_key[lookup_name], 'value': value, 'value_num': value, 'timestamp': row_timestamp, 'computed_at': row_timestamp, 'as_of_date': as_of_date, 'status': row.get('status', 'green'), **metadata}
+        kpi_key = name_to_key[lookup_name]
+        value = self._sanitize_monitoring_value(kpi_key=kpi_key, raw_value=row.get('value'))
+        if value is None:
+            return None
+        monitoring_row: Dict[str, Any] = {'kpi_key': kpi_key, 'value': value, 'value_num': value, 'timestamp': row_timestamp, 'computed_at': row_timestamp, 'as_of_date': as_of_date, 'status': row.get('status', 'green'), **metadata}
         if lookup_name in name_to_id:
             monitoring_row['kpi_id'] = name_to_id[lookup_name]
         return monitoring_row
+
+    def _sanitize_monitoring_value(self, *, kpi_key: str, raw_value: Any) -> Optional[float]:
+        if raw_value is None:
+            logger.warning('Skipping KPI %s because value is null', kpi_key)
+            return None
+        try:
+            value = float(raw_value)
+        except (TypeError, ValueError):
+            logger.warning('Skipping KPI %s because value=%r is non-numeric', kpi_key, raw_value)
+            return None
+        if math.isnan(value) or math.isinf(value):
+            logger.warning('Skipping KPI %s because value=%r is not finite', kpi_key, raw_value)
+            return None
+        if kpi_key in _NON_NEGATIVE_KPI_KEYS and value < 0:
+            logger.warning('Skipping KPI %s because value=%s is negative', kpi_key, value)
+            return None
+        return value
 
     def _write_row_batches(self, *, supabase: Any, table_name: str, rows: list, batch_size: int, is_monitoring_table: bool) -> int:
         total_inserted = 0
