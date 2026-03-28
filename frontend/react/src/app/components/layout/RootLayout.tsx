@@ -22,10 +22,10 @@ const navigation = [
   {
     title: "OPERATIONAL",
     items: [
-      { name: "Home", path: "/", icon: Home },
-      { name: "Executive Command Center", path: "/executive", icon: BarChart3 },
-      { name: "Portfolio Overview", path: "/portfolio", icon: TrendingUp },
-      { name: "Collections Operations", path: "/collections", icon: Users },
+      { name: "Home",                   path: "/",              icon: Home },
+      { name: "Executive Command Center",path: "/executive",    icon: BarChart3 },
+      { name: "Portfolio Overview",      path: "/portfolio",    icon: TrendingUp },
+      { name: "Collections Operations",  path: "/collections",  icon: Users },
     ],
   },
   {
@@ -33,14 +33,16 @@ const navigation = [
     items: [
       { name: "Risk Intelligence", path: "/risk", icon: AlertTriangle },
       { name: "Vintage & Cohort", path: "/vintage", icon: Activity },
+      { name: "Risk Intelligence",       path: "/risk",         icon: AlertTriangle },
+      { name: "Vintage & Cohort",        path: "/vintage",      icon: Activity },
     ],
   },
   {
     title: "FINANCIAL",
     items: [
-      { name: "Treasury & Liquidity", path: "/treasury", icon: DollarSign },
-      { name: "Unit Economics", path: "/unit-economics", icon: Percent },
-      { name: "Covenant Compliance", path: "/covenants", icon: Shield },
+      { name: "Treasury & Liquidity",    path: "/treasury",     icon: DollarSign },
+      { name: "Unit Economics",          path: "/unit-economics",icon: Percent },
+      { name: "Covenant Compliance",     path: "/covenants",    icon: Shield },
     ],
   },
   {
@@ -48,13 +50,15 @@ const navigation = [
     items: [
       { name: "Sales & Growth", path: "/sales", icon: PieChart },
       { name: "Marketing Intelligence", path: "/marketing", icon: TrendingUp },
+      { name: "Sales & Growth",          path: "/sales",        icon: PieChart },
+      { name: "Marketing Intelligence",  path: "/marketing",    icon: TrendingUp },
     ],
   },
   {
     title: "INTELLIGENCE",
     items: [
-      { name: "Investor Room", path: "/investor-room", icon: Shield },
-      { name: "AI Decision Center", path: "/ai-center", icon: Brain },
+      { name: "Investor Room",           path: "/investor-room",icon: Shield },
+      { name: "AI Decision Center",      path: "/ai-center",    icon: Brain },
     ],
   },
 ];
