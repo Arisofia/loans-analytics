@@ -1,37 +1,106 @@
 from __future__ import annotations
 
+import logging
+
 import pandas as pd
+
+logger = logging.getLogger(__name__)
+
+_REQUIRED_BASE_COLUMNS = ("origination_date", "outstanding_principal")
+
+
+def _series_or_zero(df: pd.DataFrame, column: str) -> pd.Series:
+    if column in df.columns:
+        return pd.to_numeric(df[column], errors="coerce").fillna(0.0)
+    return pd.Series(0.0, index=df.index, dtype=float)
+
+
+def _first_present(df: pd.DataFrame, candidates: list[str]) -> str | None:
+    for col in candidates:
+        if col in df.columns:
+            return col
+    return None
+
+
+def _validate_required_columns(df: pd.DataFrame) -> None:
+    missing = [col for col in _REQUIRED_BASE_COLUMNS if col not in df.columns]
+    if missing:
+        raise ValueError(
+            "finance_mart requires real Google-source fields "
+            f"{_REQUIRED_BASE_COLUMNS}. Missing: {missing}"
+        )
 
 
 def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
+    """Build finance mart from real pipeline columns only (no placeholder multipliers)."""
     df = portfolio_df.copy()
+    _validate_required_columns(df)
+
     df["origination_date"] = pd.to_datetime(df["origination_date"], errors="coerce")
+    if df["origination_date"].isna().all():
+        raise ValueError("finance_mart requires valid origination_date values from loan_data")
+
     df["as_of_month"] = df["origination_date"].dt.to_period("M").astype(str)
 
-    rate_col = "interest_rate" if "interest_rate" in df.columns else None
-    if rate_col is not None:
-        df["_interest_income"] = df["outstanding_principal"].fillna(0) * df[rate_col].fillna(0) / 12
-        df["_fee_income"] = df["funded_amount"].fillna(0) * df[rate_col].fillna(0) * 0.05 / 12
+    outstanding = _series_or_zero(df, "outstanding_principal")
+    funded = _series_or_zero(df, "funded_amount")
+
+    interest_income_col = _first_present(df, ["interest_income", "interest_income_usd"])
+    fee_income_col = _first_present(df, ["fee_income", "fee_income_usd", "origination_fee"])
+    funding_cost_col = _first_present(df, ["funding_cost", "funding_cost_usd", "interest_expense"])
+    provision_col = _first_present(df, ["provision_expense", "provision_expense_usd", "expected_loss"])
+
+    if interest_income_col:
+        df["_interest_income"] = _series_or_zero(df, interest_income_col)
     else:
-        # Fallback multipliers are only used as a last resort if interest_rate is completely missing
-        # from the pipeline. Canonical mapping should happen in TransformationPhase.
-        df["_interest_income"] = df["outstanding_principal"].fillna(0) * 0.02
-        df["_fee_income"] = df["funded_amount"].fillna(0) * 0.005
+        rate_col = _first_present(df, ["interest_rate", "tasainteres", "apr"])
+        if not rate_col:
+            raise ValueError(
+                "finance_mart requires interest_rate/tasainteres/apr or explicit interest_income "
+                "to compute real interest income from loan_data"
+            )
+        rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
+        df["_interest_income"] = outstanding * rate / 12
+
+    if fee_income_col:
+        df["_fee_income"] = _series_or_zero(df, fee_income_col)
+    else:
+        fee_rate_col = _first_present(df, ["origination_fee_rate", "fee_rate"])
+        if fee_rate_col:
+            fee_rate = pd.to_numeric(df[fee_rate_col], errors="coerce").fillna(0.0)
+            df["_fee_income"] = funded * fee_rate
+        else:
+            df["_fee_income"] = 0.0
+
+    if funding_cost_col:
+        df["_funding_cost"] = _series_or_zero(df, funding_cost_col)
+    else:
+        cof_col = _first_present(df, ["cost_of_funds_rate", "funding_rate"])
+        if cof_col:
+            cof_rate = pd.to_numeric(df[cof_col], errors="coerce").fillna(0.0)
+            df["_funding_cost"] = funded * cof_rate / 12
+        else:
+            logger.warning("finance_mart: funding_cost not found in loan_data/control_mora derived set; defaulting to 0")
+            df["_funding_cost"] = 0.0
+
+    if provision_col:
+        df["_provision_expense"] = _series_or_zero(df, provision_col)
+    else:
+        logger.warning("finance_mart: provision_expense not found in real inputs; defaulting to 0")
+        df["_provision_expense"] = 0.0
 
     grouped = (
         df.groupby("as_of_month", dropna=False)
         .agg(
             interest_income=("_interest_income", "sum"),
             fee_income=("_fee_income", "sum"),
-            funding_cost=("funded_amount", "sum"),
-            provision_expense=("default_flag", "sum"),
+            funding_cost=("_funding_cost", "sum"),
+            provision_expense=("_provision_expense", "sum"),
             debt_balance=("outstanding_principal", "sum"),
         )
         .reset_index()
     )
 
-    grouped["funding_cost"] = grouped["funding_cost"] * 0.01
-    grouped["provision_expense"] = grouped["provision_expense"] * 100.0
     grouped["gross_margin"] = (
         grouped["interest_income"]
         + grouped["fee_income"]
