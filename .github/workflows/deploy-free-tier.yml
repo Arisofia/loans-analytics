@@ -91,13 +91,14 @@ jobs:
       - name: Docker metadata (API)
         id: meta-api
         run: |
-          SHA_TAG="${{ env.IMAGE_BASE }}-api:sha-${GITHUB_SHA}"
+          IMAGE_BASE_LC=$(echo "${{ env.IMAGE_BASE }}" | tr '[:upper:]' '[:lower:]')
+          SHA_TAG="$IMAGE_BASE_LC-api:sha-${GITHUB_SHA}"
           if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
-            TAGS="${SHA_TAG},${{ env.IMAGE_BASE }}-api:latest"
+            TAGS="$SHA_TAG,$IMAGE_BASE_LC-api:latest"
           else
-            TAGS="${SHA_TAG}"
+            TAGS="$SHA_TAG"
           fi
-          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
           echo "labels=org.opencontainers.image.revision=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push API image
@@ -120,13 +121,14 @@ jobs:
       - name: Docker metadata (Dashboard)
         id: meta-dash
         run: |
-          SHA_TAG="${{ env.IMAGE_BASE }}-dashboard:sha-${GITHUB_SHA}"
+          IMAGE_BASE_LC=$(echo "${{ env.IMAGE_BASE }}" | tr '[:upper:]' '[:lower:]')
+          SHA_TAG="$IMAGE_BASE_LC-dashboard:sha-${GITHUB_SHA}"
           if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
-            TAGS="${SHA_TAG},${{ env.IMAGE_BASE }}-dashboard:latest"
+            TAGS="$SHA_TAG,$IMAGE_BASE_LC-dashboard:latest"
           else
-            TAGS="${SHA_TAG}"
+            TAGS="$SHA_TAG"
           fi
-          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
           echo "labels=org.opencontainers.image.revision=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Dashboard image
