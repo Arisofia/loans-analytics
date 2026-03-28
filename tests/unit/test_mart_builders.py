@@ -63,6 +63,36 @@ class TestFinanceMart:
         result = build_finance(loan_df)
         assert isinstance(result, pd.DataFrame)
 
+    def test_uses_real_financial_columns_when_present(self, loan_df: pd.DataFrame):
+        loan_df = loan_df.copy()
+        loan_df["interest_income"] = [100.0, 200.0, 300.0]
+        loan_df["fee_income"] = [10.0, 20.0, 30.0]
+        loan_df["funding_cost"] = [25.0, 25.0, 25.0]
+
+        result = build_finance(loan_df)
+
+        assert result["interest_income"].sum() == pytest.approx(600.0)
+        assert result["fee_income"].sum() == pytest.approx(60.0)
+        assert result["funding_cost"].sum() == pytest.approx(75.0)
+
+    def test_missing_rate_and_interest_income_raises(self, loan_df: pd.DataFrame):
+        loan_df = loan_df.drop(columns=["interest_rate", "apr"])
+
+        with pytest.raises(ValueError, match="requires one of"):
+            build_finance(loan_df)
+
+    def test_provision_derived_from_default_flag_and_lgd(self, loan_df: pd.DataFrame):
+        loan_df = loan_df.copy()
+        loan_df = loan_df.drop(columns=["interest_rate", "apr"])
+        loan_df["interest_income"] = [100.0, 200.0, 300.0]
+        loan_df["default_flag"] = [0, 1, 1]
+        loan_df["lgd"] = [0.45, 0.5, 0.6]
+
+        result = build_finance(loan_df)
+
+        expected = (18_000 * 0.5) + (25_000 * 0.6)
+        assert result["provision_expense"].sum() == pytest.approx(expected)
+
 
 
 

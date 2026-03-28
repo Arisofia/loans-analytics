@@ -48,6 +48,7 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-ci-test-extras.txt
 
       - name: Check Supabase secrets availability
         id: check-secrets
@@ -179,6 +180,7 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-ci-test-extras.txt
 
       - name: Run integration tests
         env:
@@ -235,6 +237,7 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-ci-test-extras.txt
 
       - name: Run multi-agent tests
         run: |
@@ -275,6 +278,7 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-ci-test-extras.txt
 
       - name: Install Playwright browser
         run: |
@@ -374,6 +378,7 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-ci-test-extras.txt
 
       - name: Pipeline config validation
         run: |

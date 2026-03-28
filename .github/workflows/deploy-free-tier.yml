@@ -54,6 +54,7 @@ jobs:
   # ---------------------------------------------------------------------------
   build-and-push:
     name: Build & push to GHCR
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.ENABLE_AUTO_DEPLOY == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
