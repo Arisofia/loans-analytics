@@ -1,4 +1,6 @@
 import random
+import inspect
+import asyncio
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -13,6 +15,7 @@ if str(ROOT) not in sys.path:
 # Load .env so integration tests (RUN_REAL_SUPABASE_TESTS, etc.) are not skipped locally
 try:
     from dotenv import load_dotenv
+
     _env_file = ROOT / ".env"
     if _env_file.exists():
         load_dotenv(_env_file, override=False)
@@ -45,30 +48,32 @@ def _build_portfolio(n: int = 50, seed: int = 42) -> pd.DataFrame:
         dpd_val = _dpd_by_status[status]
         dpd = 0 if status == "current" else dpd_val()
         disb_date = today - timedelta(days=rng.randint(60, 720))
-        records.append({
-            "loan_id": f"LN-{i + 1:04d}",
-            "borrower_id": f"B-{(i % 40) + 1:03d}",
-            "loan_amount": principal,
-            "principal_balance": round(principal * rng.uniform(0.30, 0.95), 2),
-            "outstanding_loan_value": round(principal * rng.uniform(0.30, 0.95), 2),
-            "appraised_value": round(principal * rng.uniform(1.1, 2.5), 2),
-            "borrower_income": round(rng.uniform(18_000, 120_000), 2),
-            "monthly_debt": round(rng.uniform(300, 3_000), 2),
-            "interest_rate": round(rng.uniform(0.18, 0.45), 4),
-            "interest_rate_apr": round(rng.uniform(0.18, 0.45), 4),
-            "loan_status": status,
-            "days_past_due": dpd,
-            "days_in_default": dpd if status == "default" else 0,
-            "term_months": rng.choice([6, 9, 12, 18, 24]),
-            "origination_fee": round(principal * rng.uniform(0.01, 0.03), 2),
-            "origination_fee_taxes": round(principal * 0.016 * 0.16, 2),
-            "total_scheduled": round(principal * rng.uniform(0.08, 0.15), 2),
-            "last_payment_amount": round(principal * rng.uniform(0.05, 0.12), 2),
-            "tpv": round(rng.uniform(50_000, 500_000), 2),
-            "disbursement_date": disb_date.isoformat(),
-            "origination_date": disb_date.isoformat(),
-            "pagador": f"P-{(i % 15) + 1:02d}",
-        })
+        records.append(
+            {
+                "loan_id": f"LN-{i + 1:04d}",
+                "borrower_id": f"B-{(i % 40) + 1:03d}",
+                "loan_amount": principal,
+                "principal_balance": round(principal * rng.uniform(0.30, 0.95), 2),
+                "outstanding_loan_value": round(principal * rng.uniform(0.30, 0.95), 2),
+                "appraised_value": round(principal * rng.uniform(1.1, 2.5), 2),
+                "borrower_income": round(rng.uniform(18_000, 120_000), 2),
+                "monthly_debt": round(rng.uniform(300, 3_000), 2),
+                "interest_rate": round(rng.uniform(0.18, 0.45), 4),
+                "interest_rate_apr": round(rng.uniform(0.18, 0.45), 4),
+                "loan_status": status,
+                "days_past_due": dpd,
+                "days_in_default": dpd if status == "default" else 0,
+                "term_months": rng.choice([6, 9, 12, 18, 24]),
+                "origination_fee": round(principal * rng.uniform(0.01, 0.03), 2),
+                "origination_fee_taxes": round(principal * 0.016 * 0.16, 2),
+                "total_scheduled": round(principal * rng.uniform(0.08, 0.15), 2),
+                "last_payment_amount": round(principal * rng.uniform(0.05, 0.12), 2),
+                "tpv": round(rng.uniform(50_000, 500_000), 2),
+                "disbursement_date": disb_date.isoformat(),
+                "origination_date": disb_date.isoformat(),
+                "pagador": f"P-{(i % 15) + 1:02d}",
+            }
+        )
     return pd.DataFrame(records)
 
 
@@ -127,3 +132,17 @@ def realistic_loan_records() -> list:
             )
         )
     return records
+
+
+def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> bool | None:
+    """Run async tests without requiring pytest-asyncio plugin."""
+    test_function = pyfuncitem.obj
+    if inspect.iscoroutinefunction(test_function):
+        kwargs = {
+            name: pyfuncitem.funcargs[name]
+            for name in pyfuncitem._fixtureinfo.argnames
+            if name in pyfuncitem.funcargs
+        }
+        asyncio.run(test_function(**kwargs))
+        return True
+    return None

@@ -15,17 +15,11 @@ _ASSET_QUALITY_REGISTRY = {
     "version": "asset-quality-ssot-1.3",
     "asset_quality_kpis": {
         "par_30": {
-            "formula": (
-                "SUM(outstanding_balance WHERE dpd >= 30 OR status IN ['delinquent', 'defaulted'])"
-                " / SUM(outstanding_balance) * 100"
-            ),
+            "formula": "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100",
             "unit": "percentage",
         },
         "par_60": {
-            "formula": (
-                "SUM(outstanding_balance WHERE dpd >= 60 OR status IN ['delinquent', 'defaulted'])"
-                " / SUM(outstanding_balance) * 100"
-            ),
+            "formula": "SUM(outstanding_balance WHERE dpd >= 60) / SUM(outstanding_balance) * 100",
             "unit": "percentage",
         },
         "par_90": {
@@ -33,20 +27,11 @@ _ASSET_QUALITY_REGISTRY = {
             "unit": "percentage",
         },
         "npl": {
-            # NOTE: NPL intentionally uses the same threshold as PAR30 per
-            # micro-lender convention.  For IFRS 9 / FASB reporting the formula
-            # should be tightened to dpd >= 90 with status = 'defaulted'.
-            "formula": (
-                "SUM(outstanding_balance WHERE dpd >= 30 OR status IN ['delinquent', 'defaulted'])"
-                " / SUM(outstanding_balance) * 100"
-            ),
+            "formula": "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100",
             "unit": "percentage",
         },
         "npl_90_proxy": {
-            "formula": (
-                "SUM(outstanding_balance WHERE dpd >= 90 OR status = 'defaulted')"
-                " / SUM(outstanding_balance) * 100"
-            ),
+            "formula": "SUM(outstanding_balance WHERE dpd >= 90) / SUM(outstanding_balance) * 100",
             "unit": "percentage",
         },
         "npl_180_proxy": {
@@ -58,6 +43,17 @@ _ASSET_QUALITY_REGISTRY = {
         },
     },
 }
+
+
+def _to_numeric_strict(series: pd.Series, *, field_name: str) -> pd.Series:
+    numeric = pd.to_numeric(series, errors="coerce")
+    if numeric.isna().any():
+        bad_rows = [int(idx) for idx in numeric[numeric.isna()].index[:5]]
+        raise ValueError(
+            f"CRITICAL: Invalid numeric values detected in '{field_name}' at rows {bad_rows}. "
+            f"Please remediate source data before KPI calculation."
+        )
+    return numeric.astype(float)
 
 
 def _normalize_status_for_ssot(status: pd.Series) -> pd.Series:
@@ -77,8 +73,8 @@ def calculate_asset_quality_metrics(
 ) -> dict[str, float]:
     normalized_df = pd.DataFrame(
         {
-            "outstanding_balance": pd.to_numeric(balance, errors="coerce").fillna(0.0),
-            "dpd": pd.to_numeric(dpd, errors="coerce").fillna(0.0),
+            "outstanding_balance": _to_numeric_strict(balance, field_name="outstanding_balance"),
+            "dpd": _to_numeric_strict(dpd, field_name="dpd"),
             "status": (
                 _normalize_status_for_ssot(status)
                 if status is not None
@@ -86,6 +82,10 @@ def calculate_asset_quality_metrics(
             ),
         }
     )
+    if normalized_df.empty:
+        return {alias: 0.0 for alias in metric_aliases if alias in _METRIC_ALIAS_TO_ID}
+    if float(normalized_df["outstanding_balance"].sum()) <= 0:
+        raise ValueError("CRITICAL: Sum(outstanding_balance) must be > 0 for asset-quality KPIs.")
     engine = KPIFormulaEngine(normalized_df, actor=actor, registry_data=_ASSET_QUALITY_REGISTRY)
     values: dict[str, float] = {}
     for alias in metric_aliases:
