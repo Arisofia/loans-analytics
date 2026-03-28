@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test test-quick test-baseline test-zero-cost e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic train-scorecard-if-ready zero-cost-schema etl-local snapshot-build run
+.PHONY: help setup format lint type-check test test-quick test-baseline test-zero-cost e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic train-scorecard-if-ready zero-cost-schema etl-local snapshot-build push-kv run
 PYTHON ?= $(shell \
 	for p in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do \
 		if command -v $$p >/dev/null 2>&1 && $$p -c "import pytest" >/dev/null 2>&1; then \
@@ -165,9 +165,12 @@ snapshot-build:
 	MONTH=$(or $(MONTH),) \
 	"$(PYTHON)" scripts/data/build_snapshot.py
 
+push-kv:
+	@echo "Pushing analytics sections to Supabase KV..."
+	"$(PYTHON)" scripts/data/push_to_kv.py
+
 run:
 	@echo "Running zero-cost ETL pipeline (ingest + snapshot)..."
 	$(MAKE) etl-local
 	$(MAKE) zero-cost-schema
 	$(MAKE) snapshot-build
-

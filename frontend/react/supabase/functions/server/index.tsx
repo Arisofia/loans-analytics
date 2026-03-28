@@ -24,17 +24,17 @@ app.use("*", logger());
 const DEFAULT_DATA: Record<string, unknown> = {
   summary: {
     kpis: {
-      total_outstanding: 8_150_000,
-      active_loans: 342,
-      par30: 6.28,
-      default_rate: 2.85,
-      collection_rate: 94.2,
-      active_borrowers: 298,
+      total_outstanding: 8_520_000,
+      active_loans: 356,
+      par30: 5.7,
+      expected_loss: 2.4,
+      collection_rate: 97.8,
+      active_borrowers: 312,
     },
     alerts: [
-      { id: "a1", type: "risk", message: "PAR30 approaching 7% threshold", severity: "warning", timestamp: "2025-01-15T10:30:00Z" },
-      { id: "a2", type: "collections", message: "Collection rate dipped below 95% target", severity: "warning", timestamp: "2025-01-15T09:00:00Z" },
-      { id: "a3", type: "compliance", message: "Monthly covenant report due in 5 days", severity: "info", timestamp: "2025-01-15T08:00:00Z" },
+      { id: "a1", type: "risk", message: "PAR30 is at 5.7% and above covenant max of 4.0%", severity: "critical", timestamp: "2026-03-28T10:30:00Z" },
+      { id: "a2", type: "collections", message: "Collection rate at 97.8% is below 98.5% covenant floor", severity: "critical", timestamp: "2026-03-28T09:00:00Z" },
+      { id: "a3", type: "compliance", message: "2 active covenant breaches require lender update", severity: "warning", timestamp: "2026-03-28T08:00:00Z" },
     ],
     cashflow_trend: [
       { month: "Aug", inflow: 1200000, outflow: 980000 },
@@ -60,7 +60,7 @@ const DEFAULT_DATA: Record<string, unknown> = {
   },
 
   portfolio: {
-    metrics: { aum: 8_150_000, active_loans: 342, avg_apr: 36.5, default_rate: 2.85 },
+    metrics: { aum: 8_520_000, active_loans: 356, avg_apr: 35.4, default_rate: 5.7 },
     outstanding_trend: [
       { month: "Aug", outstanding: 7200000 },
       { month: "Sep", outstanding: 7450000 },
@@ -79,19 +79,22 @@ const DEFAULT_DATA: Record<string, unknown> = {
   },
 
   risk: {
-    metrics: { par30: 6.28, par60: 3.45, par90: 1.82, expected_loss: 2.15 },
+    metrics: { par30: 5.7, par60: 3.2, par90: 1.9, expected_loss: 2.4 },
     risk_alerts: [
       { id: "r1", message: "Vintage Q3-2024 showing elevated roll rates", severity: "warning" },
       { id: "r2", message: "Concentration risk: top 10 borrowers = 18% of portfolio", severity: "warning" },
       { id: "r3", message: "Expected loss within acceptable range", severity: "info" },
     ],
     delinquency_trend: [
-      { month: "Aug", par30: 5.1, par60: 2.8, par90: 1.5 },
-      { month: "Sep", par30: 5.4, par60: 3.0, par90: 1.6 },
-      { month: "Oct", par30: 5.8, par60: 3.2, par90: 1.7 },
-      { month: "Nov", par30: 5.9, par60: 3.3, par90: 1.7 },
-      { month: "Dec", par30: 6.1, par60: 3.4, par90: 1.8 },
-      { month: "Jan", par30: 6.28, par60: 3.45, par90: 1.82 },
+      { month: "Jul", par30: 3.8, par60: 2.1, par90: 1.2 },
+      { month: "Aug", par30: 4.1, par60: 2.3, par90: 1.3 },
+      { month: "Sep", par30: 4.4, par60: 2.5, par90: 1.4 },
+      { month: "Oct", par30: 4.7, par60: 2.7, par90: 1.5 },
+      { month: "Nov", par30: 5.0, par60: 2.9, par90: 1.6 },
+      { month: "Dec", par30: 5.2, par60: 3.0, par90: 1.7 },
+      { month: "Jan", par30: 5.4, par60: 3.1, par90: 1.8 },
+      { month: "Feb", par30: 5.6, par60: 3.2, par90: 1.9 },
+      { month: "Mar", par30: 5.7, par60: 3.2, par90: 1.9 },
     ],
   },
 
@@ -208,8 +211,8 @@ const DEFAULT_DATA: Record<string, unknown> = {
   },
 
   covenants: {
-    metrics: { advance_rate: 75.2, dscr: 1.45, max_default: 2.85, collection_rate: 94.2 },
-    compliance_status: "COMPLIANT",
+    metrics: { advance_rate: 78.0, dscr: 1.28, max_default: 5.7, collection_rate: 97.8 },
+    compliance_status: "BREACH",
     repline_distribution: [
       { category: "Term Loans", amount: 4200000, limit: 5000000, utilization: 84, status: "OK" },
       { category: "Revolving", amount: 2100000, limit: 3000000, utilization: 70, status: "OK" },
@@ -224,11 +227,11 @@ const DEFAULT_DATA: Record<string, unknown> = {
       { month: "Jan", rate: 94.2, threshold: 90 },
     ],
     covenants: [
-      { name: "Advance Rate", current: 75.2, threshold: 80, status: "PASS", description: "Max advance rate on eligible receivables" },
-      { name: "DSCR", current: 1.45, threshold: 1.25, status: "PASS", description: "Debt service coverage ratio minimum" },
-      { name: "Max Default Rate", current: 2.85, threshold: 5.0, status: "PASS", description: "Maximum portfolio default rate" },
-      { name: "Collection Rate", current: 94.2, threshold: 90, status: "PASS", description: "Minimum monthly collection rate" },
-      { name: "Concentration Limit", current: 18, threshold: 20, status: "WATCH", description: "Max exposure to top 10 borrowers" },
+      { name: "Advance Rate", current: 78.0, threshold: 80, status: "PASS", description: "Max advance rate on eligible receivables" },
+      { name: "DSCR", current: 1.28, threshold: 1.25, status: "PASS", description: "Debt service coverage ratio minimum" },
+      { name: "Max Default Rate", current: 5.7, threshold: 4.0, status: "BREACH", description: "Maximum portfolio PAR30/default covenant rate" },
+      { name: "Collection Rate", current: 97.8, threshold: 98.5, status: "BREACH", description: "Minimum monthly collection covenant rate" },
+      { name: "Concentration Limit", current: 19.2, threshold: 20, status: "WATCH", description: "Max exposure to top 10 borrowers" },
     ],
   },
 
@@ -246,17 +249,74 @@ const DEFAULT_DATA: Record<string, unknown> = {
       { priority: 3, agent: "Treasury Agent", action: "Prepare monthly lender report", routed_to: "Finance Team" },
     ],
   },
+  "investor-room": {
+    covenant_monitoring: [
+      { covenant: "PAR30 ≤ 4.0%", current: 5.7, threshold: 4.0, status: "BREACH", headroom: -1.7 },
+      { covenant: "Collection Rate ≥ 98.5%", current: 97.8, threshold: 98.5, status: "BREACH", headroom: -0.7 },
+      { covenant: "Advance Rate ≤ 80.0%", current: 78.0, threshold: 80.0, status: "PASS", headroom: 2.0 },
+      { covenant: "DSCR ≥ 1.25x", current: 1.28, threshold: 1.25, status: "PASS", headroom: 0.03 },
+    ],
+    scenarios: [
+      { name: "Base", weight: 0.5, irr: 18.2, expected_loss: 2.4, par30: 5.7 },
+      { name: "Stress", weight: 0.3, irr: 14.1, expected_loss: 4.2, par30: 7.1 },
+      { name: "Recovery", weight: 0.2, irr: 21.5, expected_loss: 1.8, par30: 4.9 },
+    ],
+    corrected_metrics: { ppc: 412.4, ppp: 379.8, ppc_ppp_gap: 32.6 },
+    cohort_table: [
+      { vintage: "2024-Q4", disbursed: 1820000, irr: 17.9, expected_loss: 2.2 },
+      { vintage: "2025-Q1", disbursed: 1930000, irr: 18.4, expected_loss: 2.5 },
+      { vintage: "2025-Q2", disbursed: 2010000, irr: 18.0, expected_loss: 2.8 },
+    ],
+  },
+  marketing: {
+    metrics: { cac: 126.5, ltv: 607.2, ltv_cac_ratio: 4.8, invisible_primes: 312, invisible_primes_default_rate: 1.8 },
+    channels: [
+      { channel: "Meta", cac: 132.0, ltv: 612.0, ltv_cac: 4.6, conversion: 4.1 },
+      { channel: "Google", cac: 149.0, ltv: 648.0, ltv_cac: 4.3, conversion: 3.6 },
+      { channel: "Referral", cac: 84.0, ltv: 556.0, ltv_cac: 6.6, conversion: 6.2 },
+    ],
+    segments: [
+      { segment: "Invisible Primes", borrowers: 312, default_rate: 1.8, avg_ticket: 21300 },
+      { segment: "Prime", borrowers: 221, default_rate: 1.4, avg_ticket: 28700 },
+      { segment: "Near-prime", borrowers: 407, default_rate: 3.2, avg_ticket: 19800 },
+    ],
+  },
+  "ai-decision-center": {
+    business_state: "WATCH",
+    confidence: 0.86,
+    agents: [
+      { name: "Risk Agent", status: "Active", confidence: 0.91, task: "Reduce PAR30 and roll-rate migration" },
+      { name: "Collections Agent", status: "Active", confidence: 0.88, task: "Lift 31-60 DPD cure rates" },
+      { name: "Treasury Agent", status: "Standby", confidence: 0.79, task: "Preserve covenant liquidity buffers" },
+      { name: "Growth Agent", status: "Active", confidence: 0.83, task: "Scale invisible-prime channels" },
+      { name: "Compliance Agent", status: "Alert", confidence: 0.94, task: "Resolve 2 active covenant breaches" },
+    ],
+    ranked_actions: [
+      { rank: 1, action: "Tighten approvals for high-risk micro-segments", confidence: 0.92, owner: "Credit Committee" },
+      { rank: 2, action: "Deploy daily collections sprint for 31-60 DPD", confidence: 0.89, owner: "Collections Lead" },
+      { rank: 3, action: "Rebalance acquisition budget toward referral", confidence: 0.84, owner: "Growth Lead" },
+    ],
+    opportunities: [
+      { title: "Invisible-prime payroll products", estimated_uplift_pct: 11.2 },
+      { title: "Dynamic repricing for repeat borrowers", estimated_uplift_pct: 7.5 },
+    ],
+  },
 };
 
 // ─── Seed helper ─────────────────────────────────────────────────
 async function ensureSeeded() {
-  const check = await kv.get("data:summary");
-  if (!check) {
-    const entries = Object.entries(DEFAULT_DATA).map(([section, value]) => ({
-      key: `data:${section}`,
-      value,
-    }));
-    await kv.mset(entries);
+  try {
+    const check = await kv.get("data:summary");
+    if (!check) {
+      const entries = Object.entries(DEFAULT_DATA).map(([section, value]) => ({
+        key: `data:${section}`,
+        value,
+      }));
+      await kv.mset(entries);
+    }
+  } catch (_error) {
+    // Intentionally ignore seeding failures.
+    // GET routes include explicit DEFAULT_DATA fallback per section.
   }
 }
 
@@ -264,8 +324,19 @@ async function ensureSeeded() {
 app.get("/data/:section", async (c) => {
   await ensureSeeded();
   const section = c.req.param("section");
-  const data = await kv.get(`data:${section}`);
+  let data = null;
+
+  try {
+    data = await kv.get(`data:${section}`);
+  } catch (_error) {
+    data = null;
+  }
+
   if (!data) {
+    const fallback = DEFAULT_DATA[section];
+    if (fallback) {
+      return c.json(fallback);
+    }
     return c.json({ error: "Section not found" }, 404);
   }
   return c.json(data);
