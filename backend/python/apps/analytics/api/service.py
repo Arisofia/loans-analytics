@@ -2761,14 +2761,13 @@ class KPIService:
     def _map_dpd_to_bucket(dpd_value: float) -> str:
         if dpd_value <= 0:
             return "current"
-        elif dpd_value <= 30:
+        if dpd_value <= 30:
             return "1_30"
-        elif dpd_value <= 60:
+        if dpd_value <= 60:
             return "31_60"
-        elif dpd_value <= 90:
+        if dpd_value <= 90:
             return "61_90"
-        else:
-            return "90_plus"
+        return "90_plus"
 
     @staticmethod
     def _bucket_order() -> list[str]:
@@ -2791,7 +2790,7 @@ class KPIService:
             nsm_path = latest_run / "nsm_recurrent_tpv_output.json"
         if not nsm_path.exists():
             return NSMRecurrentTPVResponse()
-        with open(nsm_path) as f:
+        with open(nsm_path, encoding="utf-8") as f:
             data = json.load(f)
         by_period = {
             period: NSMPeriodMetrics(period=period, **metrics)
