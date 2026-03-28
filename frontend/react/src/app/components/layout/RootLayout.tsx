@@ -213,9 +213,9 @@ export function RootLayout() {
             Alerts
           </span>
         </Link>
-        <Link to="/ai-center" className="flex flex-col items-center gap-1">
-          <TrendingUp className="h-5 w-5" style={{ color: location.pathname === '/ai-center' ? 'var(--primary-purple)' : 'var(--medium-gray)' }} />
-          <span className="text-xs" style={{ color: location.pathname === '/ai-center' ? 'var(--primary-purple)' : 'var(--medium-gray)' }}>
+        <Link to="/executive" className="flex flex-col items-center gap-1">
+          <TrendingUp className="h-5 w-5" style={{ color: location.pathname === '/executive' ? 'var(--primary-purple)' : 'var(--medium-gray)' }} />
+          <span className="text-xs" style={{ color: location.pathname === '/executive' ? 'var(--primary-purple)' : 'var(--medium-gray)' }}>
             AI
           </span>
         </Link>
