@@ -315,7 +315,7 @@ const DEFAULT_DATA: Record<string, unknown> = {
 async function ensureSeeded() {
   try {
     const check = await kv.get("data:summary");
-    if (!check) {
+    if (check === null || check === undefined) {
       const entries = Object.entries(DEFAULT_DATA).map(([section, value]) => ({
         key: `data:${section}`,
         value,
