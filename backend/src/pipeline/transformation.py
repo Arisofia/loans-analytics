@@ -227,13 +227,15 @@ class TransformationPhase:
             "dias_vencido": "dpd",
             "mora_en_dias": "dpd",
             "diias_mora_m": "dpd",
-            "principal_amount": "amount",
+            "principal_amount": "funded_amount",
+            "funded_amount": "funded_amount",
+            "outstanding_principal": "outstanding_principal",
             "current_status": "status",
             "loan_status": "status",
-            "principal_balance": "current_balance",
-            "outstanding_loan_value": "current_balance",
-            "loan_amount": "amount",
-            "disbursement_amount": "amount",
+            "principal_balance": "outstanding_principal",
+            "outstanding_loan_value": "outstanding_principal",
+            "loan_amount": "funded_amount",
+            "disbursement_amount": "funded_amount",
             "fechadesembolso": "origination_date",
             "fecha_de_desembolso": "origination_date",
             "fechapagoprogramado": "due_date",
@@ -262,7 +264,7 @@ class TransformationPhase:
             "dias_en_pagar": "days_to_pay",
             "numerodesembolsos": "disbursement_count",
             "valoraprobado": "approved_value",
-            "totalsaldovigente": "current_balance",
+            "totalsaldovigente": "outstanding_principal",
             "garantiaretenida": "guarantee_retained",
             "fecha_actual": "as_of_date",
             "term_max": "term_months",
@@ -272,6 +274,7 @@ class TransformationPhase:
             "ingreso_pagadopendiente": "tpv",
             "tasa_de_interés": "interest_rate",
             "tasa_interes": "interest_rate",
+            "tasa_de_interes": "interest_rate",
         }
         if rename_dict := {
             source: target
@@ -334,32 +337,31 @@ class TransformationPhase:
     def _derive_canonical_financial_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Derive canonical financial columns from Spanish source columns.
 
-        Creates outstanding_balance, principal_amount, interest_rate, and
-        status when they are missing or empty, using the actual source data
-        (montodesembolsado, valororiginal, tasainteres, dpd).
+        Creates outstanding_principal, funded_amount, interest_rate, and
+        status when they are missing or empty.
         """
         derived: List[str] = []
 
-        # --- outstanding_balance ---
-        # Use only actual balance columns; disbursement/approved amounts are
-        # NOT outstanding balances (paid-off loans would get phantom balance).
-        if "outstanding_balance" not in df.columns or df["outstanding_balance"].isna().all():
+        # --- outstanding_principal ---
+        if "outstanding_principal" not in df.columns or df["outstanding_principal"].isna().all():
             balance = self._coalesce_numeric_columns(
                 df,
                 [
+                    "outstanding_balance",
                     "current_balance",
                     "totalsaldovigente",
                 ],
             )
             if balance.notna().any():
-                df["outstanding_balance"] = balance
-                derived.append("outstanding_balance")
+                df["outstanding_principal"] = balance
+                derived.append("outstanding_principal")
 
-        # --- principal_amount ---
-        if "principal_amount" not in df.columns or df["principal_amount"].isna().all():
+        # --- funded_amount ---
+        if "funded_amount" not in df.columns or df["funded_amount"].isna().all():
             principal = self._coalesce_numeric_columns(
                 df,
                 [
+                    "principal_amount",
                     "montodesembolsado",
                     "valororiginal",
                     "approved_value",
@@ -367,28 +369,12 @@ class TransformationPhase:
                 ],
             )
             if principal.notna().any():
-                df["principal_amount"] = principal
-                derived.append("principal_amount")
-
-        # --- current_balance (backfill when all-NaN) ---
-        if "current_balance" in df.columns and df["current_balance"].isna().all():
-            cb = self._coalesce_numeric_columns(
-                df,
-                [
-                    "outstanding_balance",
-                    "montodesembolsado",
-                    "totalsaldovigente",
-                    "valororiginal",
-                    "approved_value",
-                ],
-            )
-            if cb.notna().any():
-                df["current_balance"] = cb
-                derived.append("current_balance")
+                df["funded_amount"] = principal
+                derived.append("funded_amount")
 
         # --- interest_rate from tasainteres ("1.50%" → 0.015) ---
         if "interest_rate" not in df.columns or df["interest_rate"].isna().all():
-            for rate_col in ("tasainteres", "tasa_interes", "tasa_de_interes"):
+            for rate_col in ("tasainteres", "tasa_interes", "tasa_de_interes", "tasa_de_interés"):
                 if rate_col in df.columns:
                     raw = df[rate_col].astype(str).str.strip()
                     raw = raw.str.replace("%", "", regex=False)

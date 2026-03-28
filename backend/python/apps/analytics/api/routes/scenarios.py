@@ -39,9 +39,9 @@ async def run_base_case(req: ScenarioRequest):
         result = run_base(req.current_metrics)
         return ScenarioResult(
             scenario="base",
-            projected_metrics=result.get("projected_metrics", {}),
-            triggers=result.get("triggers", []),
-            narrative=result.get("narrative", ""),
+            projected_metrics=getattr(result, "projected_metrics", {}),
+            triggers=getattr(result, "triggers", []),
+            narrative=getattr(result, "narrative", ""),
         )
     except Exception as exc:
         logger.error("Base case error: %s", exc, exc_info=True)
@@ -57,9 +57,9 @@ async def run_downside_case(req: ScenarioRequest):
         result = run_down(req.current_metrics)
         return ScenarioResult(
             scenario="downside",
-            projected_metrics=result.get("projected_metrics", {}),
-            triggers=result.get("triggers", []),
-            narrative=result.get("narrative", ""),
+            projected_metrics=getattr(result, "projected_metrics", {}),
+            triggers=getattr(result, "triggers", []),
+            narrative=getattr(result, "narrative", ""),
         )
     except Exception as exc:
         logger.error("Downside case error: %s", exc, exc_info=True)
@@ -75,9 +75,9 @@ async def run_stress_case(req: ScenarioRequest):
         result = run_stress(req.current_metrics)
         return ScenarioResult(
             scenario="stress",
-            projected_metrics=result.get("projected_metrics", {}),
-            triggers=result.get("triggers", []),
-            narrative=result.get("narrative", ""),
+            projected_metrics=getattr(result, "projected_metrics", {}),
+            triggers=getattr(result, "triggers", []),
+            narrative=getattr(result, "narrative", ""),
         )
     except Exception as exc:
         logger.error("Stress case error: %s", exc, exc_info=True)
@@ -103,9 +103,9 @@ async def compare_all(req: ScenarioRequest):
             results.append(
                 ScenarioResult(
                     scenario=label,
-                    projected_metrics=out.get("projected_metrics", {}),
-                    triggers=out.get("triggers", []),
-                    narrative=out.get("narrative", ""),
+                    projected_metrics=getattr(out, "projected_metrics", {}),
+                    triggers=getattr(out, "triggers", []),
+                    narrative=getattr(out, "narrative", ""),
                 )
             )
         except Exception as exc:  # noqa: BLE001

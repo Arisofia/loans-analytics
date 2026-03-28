@@ -37,12 +37,13 @@ try:
     from backend.python.apps.analytics.api.routes.scenarios import router as scenarios_router
     from backend.python.apps.analytics.api.routes.reports import router as reports_router
     from backend.python.apps.analytics.api.routes.quality import router as quality_router
-    app.include_router(metrics_router)
-    app.include_router(agents_router)
-    app.include_router(decisions_router)
-    app.include_router(scenarios_router)
-    app.include_router(reports_router)
-    app.include_router(quality_router)
+    if app is not None:
+        app.include_router(metrics_router)
+        app.include_router(agents_router)
+        app.include_router(decisions_router)
+        app.include_router(scenarios_router)
+        app.include_router(reports_router)
+        app.include_router(quality_router)
 except ImportError:
 
     class HTTPException(Exception):  # type: ignore[no-redef]

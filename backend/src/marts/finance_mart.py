@@ -13,6 +13,8 @@ def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
         df["_interest_income"] = df["outstanding_principal"].fillna(0) * df[rate_col].fillna(0) / 12
         df["_fee_income"] = df["funded_amount"].fillna(0) * df[rate_col].fillna(0) * 0.05 / 12
     else:
+        # Fallback multipliers are only used as a last resort if interest_rate is completely missing
+        # from the pipeline. Canonical mapping should happen in TransformationPhase.
         df["_interest_income"] = df["outstanding_principal"].fillna(0) * 0.02
         df["_fee_income"] = df["funded_amount"].fillna(0) * 0.005
 

@@ -419,7 +419,7 @@ def collection_efficiency_6m(
     if target_ce is None:
         try:
             from backend.python.config import settings
-            target_ce = settings.guardrails.min_ce_6m
+            target_ce = settings.financial.min_ce_6m
         except Exception:
             target_ce = 0.96
 
@@ -600,8 +600,8 @@ def financing_rate_eir(
 
     try:
         from backend.python.config import settings
-        target_min = settings.guardrails.target_apr_min
-        target_max = settings.guardrails.target_apr_max
+        target_min = settings.financial.target_apr_min
+        target_max = settings.financial.target_apr_max
     except Exception:
         target_min = 0.34
         target_max = 0.40
@@ -659,8 +659,8 @@ def cost_of_debt_dscr(
     """
     try:
         from backend.python.config import settings
-        min_dscr = settings.guardrails.min_dscr
-        max_cod = settings.guardrails.max_cost_of_debt
+        min_dscr = settings.financial.min_dscr
+        max_cod = settings.financial.max_cost_of_debt
     except Exception:
         min_dscr = 1.2
         max_cod = 0.13

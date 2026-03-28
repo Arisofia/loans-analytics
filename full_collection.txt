@@ -1,0 +1,1265 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0
+rootdir: c:\Users\IvónYamilethRiveraDe\OneDrive - OXON Epidemiology SL\Escritorio\abaco-loans-analytics
+configfile: pyproject.toml
+plugins: anyio-4.12.1, dash-4.0.0, hypothesis-6.151.9, langsmith-0.7.22, locust-2.43.3, asyncio-1.3.0, cov-7.0.0, json-report-1.5.0, metadata-3.1.1, mock-3.15.1, xdist-3.8.0, typeguard-4.5.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 817 items / 2 skipped
+
+<Dir abaco-loans-analytics>
+  <Dir tests>
+    <Package agents>
+      <Module test_agent_factory.py>
+        <UnitTestCase TestAgentFactory>
+          <TestCaseFunction test_decorated_agent_accepts_kwargs>
+          <TestCaseFunction test_decorated_agent_accepts_provider_parameter>
+          <TestCaseFunction test_decorated_agent_initializes_with_correct_role>
+          <TestCaseFunction test_decorator_adds_init_method>
+      <Module test_base_agent.py>
+        <Class TestBaseAgent>
+          <Function test_base_agent_initialization>
+          <Function test_agent_execute_method>
+          <Function test_agent_validate_method>
+          <Function test_agent_handle_error_method>
+          <Function test_agent_logging>
+          <Function test_agent_metrics_collection>
+          <Function test_agent_configuration>
+          <Function test_agent_state_management>
+      <Module test_base_agent_grok.py>
+        <UnitTestCase TestBaseAgentGrok>
+          <TestCaseFunction test_call_llm_dispatches_to_grok>
+          <TestCaseFunction test_default_model_uses_grok_env>
+          <TestCaseFunction test_init_grok_client_requires_key>
+          <TestCaseFunction test_init_grok_client_uses_xai_settings>
+      <Dir test_concrete_agents>
+        <Module test_analytics_agent.py>
+          <Class TestAnalyticsAgent>
+            <Function test_analytics_agent_initialization>
+            <Function test_portfolio_analysis>
+            <Function test_kpi_calculation>
+            <Function test_large_dataset_analysis>
+        <Module test_custom_agents.py>
+          <Class TestCustomAgents>
+            <Function test_custom_agent_registration>
+            <Function test_custom_agent_execution>
+        <Module test_risk_agent.py>
+          <Class TestRiskAgent>
+            <Function test_risk_agent_initialization>
+            <Function test_credit_risk_assessment>
+            <Function test_early_warning_system>
+        <Module test_validation_agent.py>
+          <Class TestValidationAgent>
+            <Function test_validation_agent_initialization>
+            <Function test_data_validation>
+            <Function test_schema_validation>
+      <Module test_data_quality_agent.py>
+        <Function test_clean_data_no_blocking>
+        <Function test_dirty_data_blocked>
+      <Dir test_integration>
+        <Module test_agent_chaining.py>
+          <Class TestAgentChaining>
+            <Coroutine test_sequential_agent_chain>
+            <Coroutine test_conditional_agent_chain>
+            <Coroutine test_parallel_agent_execution>
+        <Module test_agent_communication.py>
+          <Class TestAgentCommunication>
+            <Coroutine test_agent_to_agent_message_passing>
+            <Coroutine test_agent_broadcast>
+            <Coroutine test_async_agent_communication>
+        <Module test_supabase_integration.py>
+          <Class TestSupabaseIntegration>
+            <Coroutine test_supabase_connection>
+            <Coroutine test_agent_data_persistence>
+            <Coroutine test_agent_query_supabase>
+        <Module test_webhook_to_agent_flow.py>
+          <Class TestWebhookToAgentFlow>
+            <Coroutine test_webhook_triggers_agent>
+            <Coroutine test_webhook_to_agent_to_supabase>
+            <Coroutine test_webhook_payload_validation>
+      <Module test_kpi_integration.py>
+        <UnitTestCase TestKpiIntegration>
+          <TestCaseFunction test_detect_anomalies_multiple>
+          <TestCaseFunction test_detect_anomalies_none>
+          <TestCaseFunction test_detect_anomalies_single>
+          <TestCaseFunction test_format_kpi_summary>
+          <TestCaseFunction test_format_kpi_summary_with_breach>
+          <TestCaseFunction test_get_kpi_context_for_agent>
+          <TestCaseFunction test_get_kpi_context_without_values>
+          <TestCaseFunction test_get_kpi_definition>
+          <TestCaseFunction test_get_kpi_definition_not_found>
+          <TestCaseFunction test_kpi_value_creation>
+          <TestCaseFunction test_severity_determination_critical>
+          <TestCaseFunction test_severity_determination_info>
+          <TestCaseFunction test_severity_determination_warning>
+          <TestCaseFunction test_update_kpi_value>
+          <TestCaseFunction test_validate_kpi_value_above_max>
+          <TestCaseFunction test_validate_kpi_value_below_min>
+          <TestCaseFunction test_validate_kpi_value_within_range>
+          <TestCaseFunction test_validate_unknown_kpi>
+      <Module test_orchestrator.py>
+        <Class TestAgentOrchestrator>
+          <Function test_orchestrator_initialization>
+          <Function test_agent_registration>
+          <Function test_agent_dispatch>
+          <Function test_orchestrator_error_handling>
+          <Function test_multi_agent_coordination>
+          <Function test_agent_communication_protocol>
+          <Function test_orchestrator_timeout_handling>
+          <Function test_agent_priority_queue>
+      <Module test_orchestrator_historical_integration.py>
+        <UnitTestCase TestOrchestratorHistoricalIntegration>
+          <TestCaseFunction test_auto_enriches_and_injects_historical_context>
+          <TestCaseFunction test_preserves_explicit_historical_context>
+      <Module test_protocol.py>
+        <Class TestAgentProtocol>
+          <Function test_protocol_message_format>
+          <Function test_protocol_request_structure>
+          <Function test_protocol_response_structure>
+          <Function test_protocol_error_response>
+          <Function test_protocol_versioning>
+          <Function test_protocol_serialization>
+          <Function test_protocol_deserialization>
+          <Function test_protocol_validation>
+      <Module test_scenario_packs.py>
+        <UnitTestCase TestRetailLoanScenarios>
+          <TestCaseFunction test_all_retail_scenarios_have_descriptions>
+          <TestCaseFunction test_retail_origination_scenario_exists>
+          <TestCaseFunction test_retail_origination_workflow_structure>
+          <TestCaseFunction test_retail_portfolio_review_scenario_exists>
+          <TestCaseFunction test_retail_portfolio_review_workflow_structure>
+          <TestCaseFunction test_retail_rate_adjustment_scenario_exists>
+          <TestCaseFunction test_retail_rate_adjustment_workflow_structure>
+          <TestCaseFunction test_retail_scenarios_use_correct_context_keys>
+        <UnitTestCase TestScenarioIntegration>
+          <TestCaseFunction test_all_scenarios_have_unique_names>
+          <TestCaseFunction test_all_scenarios_use_valid_agent_roles>
+          <TestCaseFunction test_retail_scenarios_are_product_specific>
+          <TestCaseFunction test_scenario_list_method>
+          <TestCaseFunction test_total_scenario_count>
+        <UnitTestCase TestSMELoanScenarios>
+          <TestCaseFunction test_sme_default_management_scenario>
+          <TestCaseFunction test_sme_scenarios_have_descriptions>
+          <TestCaseFunction test_sme_stress_test_scenario>
+          <TestCaseFunction test_sme_underwriting_scenario>
+        <UnitTestCase TestAutoLoanScenarios>
+          <TestCaseFunction test_auto_delinquency_workout_scenario>
+          <TestCaseFunction test_auto_origination_scenario>
+          <TestCaseFunction test_auto_residual_value_scenario>
+          <TestCaseFunction test_auto_scenarios_have_descriptions>
+        <UnitTestCase TestPortfolioScenarios>
+          <TestCaseFunction test_portfolio_health_check_scenario>
+          <TestCaseFunction test_portfolio_scenarios_have_descriptions>
+          <TestCaseFunction test_regulatory_review_scenario>
+          <TestCaseFunction test_strategic_planning_scenario>
+      <Dir test_scenarios>
+        <Module test_concurrent_agents.py>
+          <Class TestConcurrentAgents>
+            <Coroutine test_concurrent_agent_execution>
+            <Coroutine test_concurrent_agent_race_conditions>
+            <Coroutine test_agent_pool_management>
+        <Module test_error_scenarios.py>
+          <Class TestErrorScenarios>
+            <Coroutine test_agent_failure_recovery>
+            <Coroutine test_invalid_input_handling>
+            <Coroutine test_database_connection_failure>
+            <Coroutine test_llm_api_failure>
+        <Module test_happy_path.py>
+          <Class TestHappyPath>
+            <Coroutine test_complete_loan_analysis_flow>
+            <Coroutine test_multi_agent_collaboration>
+            <Coroutine test_realtime_monitoring_scenario>
+        <Module test_timeout_scenarios.py>
+          <Class TestTimeoutScenarios>
+            <Coroutine test_agent_timeout_detection>
+            <Coroutine test_timeout_fallback_mechanism>
+            <Coroutine test_long_running_analysis>
+      <Module test_specialized_agents.py>
+        <UnitTestCase TestCollectionsAgent>
+          <TestCaseFunction test_agent_initialization>
+          <TestCaseFunction test_system_prompt_covers_key_topics>
+        <UnitTestCase TestFraudDetectionAgent>
+          <TestCaseFunction test_agent_initialization>
+          <TestCaseFunction test_system_prompt_covers_fraud_topics>
+        <UnitTestCase TestPricingAgent>
+          <TestCaseFunction test_agent_initialization>
+          <TestCaseFunction test_system_prompt_covers_pricing_topics>
+        <UnitTestCase TestCustomerRetentionAgent>
+          <TestCaseFunction test_agent_initialization>
+          <TestCaseFunction test_system_prompt_covers_retention_topics>
+        <UnitTestCase TestSpecializedAgentIntegration>
+          <TestCaseFunction test_agent_role_names_match_constants>
+          <TestCaseFunction test_all_agents_have_system_prompts>
+          <TestCaseFunction test_all_agents_have_unique_roles>
+    <Dir e2e>
+      <Module test_backend_api.py>
+        <Function test_backend_health>
+      <Module test_grafana_kpi_overview.py>
+        <Function test_loans_kpi_overview_queries>
+    <Dir integration>
+      <Module test_historical_kpis_real.py>
+        <Function test_supabase_backend_connection>
+        <Function test_historical_provider_real_mode>
+        <Function test_fetch_historical_kpis_empty_range>
+        <Function test_fetch_historical_kpis_with_data>
+        <Function test_historical_kpis_query_performance>
+        <Function test_historical_context_provider_cache_behavior>
+        <Function test_historical_trend_analysis_with_real_data>
+        <Function test_historical_moving_average_with_real_data>
+        <Function test_historical_kpis_data_integrity>
+    <Package kpi_engine>
+      <Module test_risk.py>
+        <Function test_par30_basic>
+        <Function test_par30_empty>
+        <Function test_expected_loss_defaults>
+        <Function test_expected_loss_with_scorecard>
+    <Package orchestrator>
+      <Module test_decision_orchestrator.py>
+        <Function test_orchestrator_collects_alerts>
+        <Function test_orchestrator_empty>
+    <Dir security>
+      <Module test_guardrails_fuzz.py>
+        <Function test_sanitize_for_logging_neutralizes_control_chars>
+        <Function test_redact_pii_replaces_emails>
+      <Module test_kpi_formula_fuzz.py>
+        <Function test_numeric_expression_fuzz_is_stable>
+        <Function test_division_by_zero_fails_closed>
+        <Function test_untrusted_formula_input_never_crashes>
+      <Module test_log_injection.py>
+        <Class TestLogInjectionPrevention>
+          <Function test_sanitize_newlines>
+          <Function test_sanitize_carriage_return>
+          <Function test_sanitize_ansi_codes>
+          <Function test_sanitize_null_bytes>
+          <Function test_sanitize_truncates_long_input>
+          <Function test_sanitize_empty_input>
+          <Function test_legitimate_paths_handled_correctly>
+      <Module test_path_traversal.py>
+        <Class TestPathTraversalPrevention>
+          <Function test_rejects_absolute_paths>
+          <Function test_rejects_parent_traversal>
+          <Function test_rejects_invalid_characters>
+          <Function test_rejects_empty_path>
+          <Function test_allows_legitimate_paths>
+          <Function test_resolved_path_within_allowed_dir>
+          <Function test_symlink_cannot_escape>
+          <Function test_url_encoded_traversal_blocked>
+          <Function test_windows_path_separators_handled>
+        <Class TestComplianceRequirements>
+          <Function test_owasp_asvs_5_2_1_compliance>
+          <Function test_defense_in_depth>
+      <Module test_prng_security.py>
+        <Function test_mexican_rfc_generation_uses_secrets>
+        <Function test_spanish_dni_generation_uses_secrets>
+        <Function test_spanish_nie_generation_uses_secrets>
+        <Function test_reproducible_test_data_uses_random_with_seed>
+        <Function test_kpi_data_generation_reproducibility>
+      <Module test_sql_static_views.py>
+        <Function test_sql_directory_avoids_dynamic_sql_constructs>
+    <Module test_config_loader.py>
+      <Function test_load_config_empty_yaml_fails_fast>
+      <Function test_load_config_non_mapping_yaml_fails_fast>
+      <Function test_load_config_malformed_yaml_fails_fast>
+      <Function test_load_config_valid_mapping_without_optional_sections>
+    <Module test_csv_upload_homologation.py>
+      <Class TestCoerceNumeric>
+        <Function test_dollar_sign_and_thousands>
+        <Function test_plain_integers>
+        <Function test_decimal_comma_locale>
+        <Function test_nan_and_none>
+      <Class TestAliasMatches>
+        <Function test_exact_match>
+        <Function test_trailing_underscore>
+        <Function test_numeric_suffix>
+        <Function test_kam_hunter_variants>
+        <Function test_no_spurious_matches>
+      <Class TestApplyAliases>
+        <Function test_loan_id_mapped_from_numero_desembolso>
+        <Function test_borrower_id_mapped_from_codcliente>
+        <Function test_amount_mapped_and_currency_parsed>
+        <Function test_codcliente_suffix_variants_coalesced>
+      <Class TestClassifyLoanIdDuplicates>
+        <Function test_no_duplicates_returns_empty>
+        <Function test_exact_duplicate_emits_warning>
+        <Function test_historical_snapshot_emits_info>
+        <Function test_suspicious_merge_emits_warning>
+        <Function test_mixed_scenarios_all_reported>
+        <Function test_missing_loan_id_column_returns_empty>
+        <Function test_no_borrower_id_column_falls_back_to_generic>
+        <Function test_no_borrower_id_same_amount_falls_back_to_generic>
+        <Function test_client_code_used_as_borrower_fallback>
+        <Function test_client_name_used_as_borrower_fallback>
+        <Function test_borrower_id_takes_priority_over_client_code>
+        <Function test_borrower_id_cols_constant_priority>
+      <Class TestValidateForPipeline>
+        <Function test_valid_frame_returns_true>
+        <Function test_missing_required_columns>
+        <Function test_all_zeros_amount_reported>
+      <Class TestCanonicalizeStatusNullHandling>
+        <Function test_none_returns_unknown>
+        <Function test_empty_string_returns_unknown>
+        <Function test_nan_string_returns_unknown>
+        <Function test_nan_float_returns_unknown>
+        <Function test_whitespace_only_returns_unknown>
+        <Function test_known_active_aliases_still_work>
+        <Function test_defaulted_aliases_unaffected>
+      <Class TestDeriveStatusNullResolution>
+        <Function test_null_status_no_dpd_resolves_to_active>
+        <Function test_null_status_dpd_30_resolves_to_delinquent>
+        <Function test_null_status_dpd_90_plus_resolves_to_defaulted>
+        <Function test_null_status_no_dpd_column_stays_unknown>
+        <Function test_explicit_status_is_not_overridden_by_zero_dpd>
+    <Module test_data_integrity.py>
+      <Class TestDataIntegrity>
+        <Function test_no_production_imports_of_fixtures>
+        <Function test_no_fixtures_in_production_paths>
+        <Function test_environment_config_exists>
+        <Function test_test_data_root_blocked_in_production>
+        <Function test_environment_validation>
+    <Module test_default_risk_model.py>
+      <Class TestDefaultRiskModel>
+        <Function test_import>
+        <Function test_load_file_not_found>
+        <Function test_predict_proba>
+        <Function test_predict_proba_high>
+        <Function test_predict_proba_low>
+        <Function test_predict_proba_not_loaded_raises>
+        <Function test_predict_batch>
+        <Function test_predict_proba_validates_features>
+        <Function test_feature_columns_alias>
+        <Function test_metadata_empty_on_init>
+      <Class TestPredictionModels>
+        <Function test_request_model>
+        <Function test_response_model>
+      <Class TestPredictEndpoint>
+        <Function test_predict_default_no_model>
+        <Function test_predict_default_with_model>
+    <Module test_executive_analytics_service.py>
+      <Function test_executive_analytics_includes_strategic_confirmations>
+    <Module test_holding_financial_indicators.py>
+      <Class TestPPCCorrected>
+        <Function test_normal_calculation>
+        <Function test_zero_collections>
+      <Class TestPPPCorrected>
+        <Function test_normal_calculation>
+        <Function test_zero_opex>
+      <Class TestCashConversionCycle>
+        <Function test_negative_cce_fintech>
+        <Function test_favorable_cce>
+      <Class TestLiquidityReserve>
+        <Function test_5pct_reserve>
+        <Function test_floor_applies>
+        <Function test_large_portfolio>
+      <Class TestDebtCovenants>
+        <Function test_all_compliant>
+        <Function test_collection_rate_breach>
+        <Function test_delinquency_growth_breach>
+        <Function test_advance_rate_documented>
+      <Class TestDefaultRateReconciliation>
+        <Function test_reconciliation_matches>
+        <Function test_er_cons_rate>
+      <Class TestDownsideScenario>
+        <Function test_base_vs_downside>
+        <Function test_growth_trajectory>
+        <Function test_downside_reduces_revenue_roughly_40pct>
+      <Class TestSubsidiarySetupCosts>
+        <Function test_loads_from_config>
+        <Function test_all_pre_launch>
+      <Class TestAFMigration>
+        <Function test_migration_tracking>
+        <Function test_strategy_is_documented>
+      <Class TestDEBITDASensitivity>
+        <Function test_sensitivity_table>
+        <Function test_base_case_reasonable>
+        <Function test_zero_ebitda>
+      <Class TestIntercompanyElimination>
+        <Function test_all_consistent>
+        <Function test_deviation_flagged>
+      <Class TestPortfolioConcentration>
+        <Function test_compliant_portfolio>
+        <Function test_single_obligor_breach>
+        <Function test_hhi_calculation>
+        <Function test_empty_portfolio>
+    <Module test_kpi_engine_extended.py>
+      <Class TestCalculateWeightedStatistics>
+        <Function test_weighted_apr_by_balance>
+        <Function test_multiple_metrics>
+        <Function test_missing_metric_returns_zero>
+        <Function test_empty_dataframe>
+        <Function test_zero_weight_falls_back_to_mean>
+      <Class TestCalculateLineUtilization>
+        <Function test_utilization_computed_correctly>
+        <Function test_utilization_capped_at_1>
+        <Function test_zero_line_returns_zero>
+        <Function test_missing_column_returns_zero_column>
+      <Class TestClassifyDpdBuckets>
+        <Function test_bucket_labels>
+        <Function test_missing_dpd_col_defaults_current>
+        <Function test_custom_output_col>
+      <Class TestSegmentClientsByExposure>
+        <Function test_tier_labels>
+        <Function test_inactive_tier>
+        <Function test_missing_balance_col>
+      <Class TestComputeCustomerDpdStats>
+        <Function test_aggregation>
+        <Function test_empty_returns_empty_df>
+        <Function test_missing_dpd_col>
+      <Class TestBuildFeatureEngineeringPipeline>
+        <Function test_adds_dpd_bucket>
+        <Function test_adds_exposure_segment>
+        <Function test_adds_zscore>
+        <Function test_adds_line_utilization_zscore_when_line_present>
+        <Function test_missing_required_columns_returns_unchanged>
+      <Class TestAnalyzeSmallLineRotation>
+        <Function test_filters_correctly>
+        <Function test_empty_returns_zero>
+        <Function test_criteria_included>
+      <Class TestSegmentPortfolioByLineBlocks>
+        <Function test_returns_blocks>
+        <Function test_block_labels_format>
+        <Function test_share_pct_sums_to_100>
+        <Function test_sorted_by_line_min>
+        <Function test_empty_returns_empty>
+      <Class TestComputeRateByAmountTiers>
+        <Function test_returns_list>
+        <Function test_small_loan_tier_has_min_commission>
+        <Function test_higher_rate_for_small_loans>
+        <Function test_empty_returns_list>
+      <Class TestComputeDefaultBySegment>
+        <Function test_returns_all_segments>
+        <Function test_default_rate_correct>
+        <Function test_sorted_by_default_rate_desc>
+        <Function test_fallback_to_dpd_when_no_default_flag>
+        <Function test_empty_returns_empty>
+      <Class TestComputeMaxMoraBySegment>
+        <Function test_max_dpd_per_segment>
+        <Function test_sorted_by_max_dpd_desc>
+        <Function test_dpd_buckets_present>
+        <Function test_empty_returns_empty>
+      <Class TestComputeChurnAnalysis>
+        <Function test_returns_expected_keys>
+        <Function test_churn_rate_between_0_and_100>
+        <Function test_older_loans_are_churned>
+        <Function test_by_segment_includes_all_segments>
+        <Function test_empty_returns_zero>
+      <Class TestComputePricingRecommendations>
+        <Function test_returns_three_keys>
+        <Function test_min_commission_policy_threshold>
+        <Function test_loans_affected_positive>
+        <Function test_segment_pricing_per_segment>
+        <Function test_empty_returns_empty_structure>
+      <Class TestComputeIncomeAndRevenue>
+        <Function test_returns_expected_keys>
+        <Function test_total_revenue_is_sum_of_components>
+        <Function test_net_yield_positive>
+        <Function test_segment_revenue_sums_to_total>
+        <Function test_revenue_sorted_by_total_desc>
+        <Function test_empty_returns_zeros>
+    <Module test_mype_and_analytics.py>
+      <Class TestMYPEHighRiskClassification>
+        <Function test_flags_multiple_reasons>
+        <Function test_clear_low_risk>
+        <Function test_at_thresholds_triggers_flags>
+      <Class TestMYPEIndustryAdjustment>
+        <Function test_rewards_high_contribution>
+        <Function test_penalizes_low_contribution>
+        <Function test_unknown_falls_back_to_other>
+        <Function test_impacts_facility_recommendation>
+      <Class TestMYPENPL>
+        <Function test_classify_npl_threshold>
+        <Function test_below_threshold_is_not_npl>
+      <Class TestMYPERotation>
+        <Function test_meets_target>
+        <Function test_below_target>
+        <Function test_boundary_condition>
+        <Function test_zero_balance>
+      <Class TestMYPEFacilityApproval>
+        <Function test_recommends_collateral_for_high_risk>
+        <Function test_approves_low_risk>
+        <Function test_flags_critical_npl>
+        <Function test_reduces_recommendation_when_rotation_low>
+        <Function test_pod_and_collateral_behavior>
+      <Class TestSettings2026Targets>
+        <Function test_targets_loaded>
+        <Function test_jan_target>
+        <Function test_dec_target>
+        <Function test_all_months_present>
+        <Function test_targets_monotonically_increasing>
+        <Function test_required_growth_achievable>
+        <Function test_guardrails_still_loaded>
+        <Function test_loader_ignores_helper_keys_and_parses_underscore_values>
+      <Class TestStandardizeNumeric>
+        <Function test_handles_symbols>
+        <Function test_passes_through_numeric>
+        <Function test_handles_negatives_and_commas>
+      <Class TestCalculateQualityScore>
+        <Function test_rewards_complete_data>
+        <Function test_penalizes_missing>
+        <Function test_empty_dataframe_returns_zero>
+        <Function test_all_null_returns_zero>
+        <Function test_counts_completeness>
+        <Function test_empty_df_no_columns>
+      <Class TestPortfolioKPIs>
+        <Function test_returns_expected_metrics>
+        <Function test_missing_column_raises>
+        <Function test_handles_empty_frame>
+        <Function test_zero_principal_yield_is_zero>
+        <Function test_dti_nan_when_income_non_positive>
+        <Function test_dti_mixed_income_ignores_nan>
+      <Class TestProjectGrowth>
+        <Function test_builds_monotonic_path>
+        <Function test_rejects_insufficient_periods>
+        <Function test_formats_month_labels>
+        <Function test_supports_decreasing_targets>
+        <Function test_default_periods_is_6>
+      <Class TestPortfolioVsTargets2026>
+        <Function test_mar_2026_target_reachable_from_current_aum>
+        <Function test_dec_2026_implies_43pct_growth>
+        <Function test_monthly_net_growth_within_historical_capacity>
+    <Module test_performance_tracker.py>
+      <Function test_performance_metric_to_dict>
+      <Function test_performance_tracker_latency>
+      <Function test_performance_tracker_success_rate>
+      <Function test_get_latency_percentiles>
+      <Function test_get_performance_report>
+      <Function test_track_scenario_latency_validates_inputs>
+      <Function test_track_success_rate_validates_counts>
+    <Module test_pipeline_calculation_risk.py>
+      <Function test_ltv_sintetico_basic_calculation>
+      <Function test_ltv_sintetico_zero_adjusted_value_is_opaque_and_nan>
+      <Function test_ltv_sintetico_missing_denominator_is_opaque_and_nan>
+      <Function test_ltv_sintetico_missing_columns_returns_empty_series>
+      <Function test_ltv_sintetico_empty_dataframe>
+      <Function test_ltv_sintetico_strict_positive_denominator_rule>
+      <Function test_ltv_sintetico_valid_row_not_nan>
+      <Function test_ltv_sintetico_zero_nominal_returns_nan>
+      <Function test_ltv_sintetico_invalid_mask_fully_diluted>
+      <Function test_ltv_sintetico_invalid_mask_zero_nominal>
+      <Function test_ltv_sintetico_invalid_mask_no_invalids_all_valid>
+      <Function test_ltv_sintetico_invalid_mask_missing_columns_returns_empty_series>
+      <Function test_ltv_sintetico_invalid_mask_empty_dataframe>
+      <Function test_ltv_sintetico_nan_and_mask_are_consistent>
+      <Function test_velocity_of_default_basic_diff>
+      <Function test_ltv_sintetico_preserves_indices>
+      <Function test_compute_portfolio_velocity_of_default_uses_as_of_date>
+      <Function test_compute_portfolio_velocity_of_default_excludes_closed_loans>
+      <Function test_compute_portfolio_velocity_of_default_returns_none_without_date>
+      <Function test_compute_portfolio_velocity_of_default_returns_none_single_period>
+      <Function test_vd_chronology_unsorted_input>
+      <Function test_vd_units_percentage_points>
+      <Function test_vd_handles_mixed_date_formats>
+      <Function test_vd_ignores_nan_dates>
+      <Function test_velocity_of_default_unsorted_input_normalized_by_period_col>
+      <Function test_velocity_of_default_no_period_col_preserves_row_order>
+      <Function test_velocity_of_default_units_are_percentage_points>
+      <Function test_compute_portfolio_velocity_of_default_unsorted_input_v2>
+      <Function test_compute_portfolio_velocity_of_default_all_closed_returns_none>
+      <Function test_compute_portfolio_velocity_of_default_no_status_column>
+      <Function test_compute_portfolio_velocity_of_default_units_are_percentage_points_v2>
+      <Function test_par_metrics_no_dpd_adjusted_uses_raw_dpd>
+      <Function test_par_metrics_uses_canonical_dpd_adjusted>
+      <Function test_par_metrics_all_canonical_adjusted_accounts_captured>
+      <Function test_par_metrics_zero_total_balance>
+      <Function test_par_metrics_empty_group>
+      <Function test_ltv_sintetico_all_nan_input>
+      <Function test_vd_no_active_loans>
+      <Function test_vd_all_defaulted_steady>
+      <Function test_vd_three_periods_delta>
+      <Function test_ltv_sintetico_zero_dilution>
+      <Function test_rollup_sum_monthly_includes_period_key>
+      <Function test_rollup_sum_daily_includes_date_key>
+      <Function test_dimension_segment_kpis_are_sorted_deterministically>
+      <Function test_npl_ratio_and_npl_90_ratio_are_distinct>
+      <Function test_npl_90_ratio_strictly_subset_of_npl_ratio>
+      <Function test_status_normalization_spanish_values>
+      <Function test_status_normalization_english_values>
+      <Class TestSilentHandlerHardening>
+        <Function test_rollup_sum_raises_on_nonexistent_date_column>
+        <Function test_rollup_sum_raises_on_non_datetime_column>
+        <Function test_apply_umap_raises_when_umap_errors_while_available>
+        <Function test_apply_hdbscan_raises_when_hdbscan_errors_while_available>
+        <Function test_run_advanced_clustering_propagates_critical_on_inner_failure>
+      <Function test_calculate_ltv_uses_decimal_arithmetic>
+      <Function test_calculate_ltv_result_matches_pure_decimal_division>
+      <Function test_calculate_ltv_raises_when_collateral_is_zero>
+      <Function test_calculate_ltv_raises_when_collateral_is_negative>
+      <Function test_calculate_ltv_raises_on_missing_columns>
+    <Module test_pipeline_config.py>
+      <Function test_pipeline_config_load_not_found>
+      <Function test_pipeline_config_load_valid>
+      <Function test_load_business_rules_not_found>
+      <Function test_load_business_rules_valid>
+      <Function test_load_kpi_definitions_not_found>
+      <Function test_load_business_rules_empty_yaml_fails_fast>
+      <Function test_load_kpi_definitions_empty_yaml_fails_fast>
+      <Function test_load_kpi_definitions_valid>
+      <Function test_business_rules_status_mappings_include_spanish_aliases>
+    <Module test_pipeline_ingestion_failfast.py>
+      <Function test_calculate_hash_is_stable_across_column_order>
+      <Function test_to_nullable_string_raises_for_undecodable_bytes>
+      <Function test_ingestion_without_input_fails_instead_of_using_dummy_data>
+    <Module test_pipeline_ingestion_sheets.py>
+      <Function test_ingestion_google_sheets_path_executes_adapter>
+      <Function test_ingestion_google_sheets_missing_credentials_fails_fast>
+      <Function test_ingestion_google_sheets_missing_status_source_fails_fast>
+    <Module test_pipeline_orchestrator.py>
+      <Function test_pipeline_init>
+      <Function test_pipeline_execute_full_success>
+      <Function test_pipeline_execute_fail_at_ingestion>
+      <Function test_pipeline_dry_run>
+      <Function test_pipeline_execute_fails_fast_when_explicit_input_missing>
+      <Function test_pipeline_uses_deterministic_hash_for_config_only_runs>
+    <Module test_pipeline_output.py>
+      <Function test_is_monitoring_kpi_values_table_variants>
+      <Function test_prepare_kpi_rows_uses_monitoring_shape_for_public_view_name>
+      <Function test_map_monitoring_kpi_name_default_aliases>
+      <Function test_map_monitoring_kpi_name_custom_alias_overrides_defaults>
+      <Function test_insert_batch_rows_monitoring_uses_upsert_and_conflict_keys>
+      <Function test_execute_exports_segment_snapshot_when_clean_data_available>
+      <Function test_execute_exports_full_ml_intelligence_payload>
+      <Function test_execute_exports_empty_payload_when_not_none>
+      <Function test_execute_omits_payload_keys_when_not_supplied>
+      <Function test_quality_score_is_fail_closed_without_kpi_engine>
+      <Function test_check_sla_is_fail_closed_without_kpi_engine>
+      <Function test_quality_score_is_fail_closed_for_malformed_audit_trail>
+      <Function test_check_sla_is_fail_closed_for_malformed_audit_trail>
+      <Function test_parse_bool_env_unset_returns_default_true>
+      <Function test_parse_bool_env_unset_returns_default_false>
+      <Function test_parse_bool_env_truthy_values>
+      <Function test_parse_bool_env_falsy_values>
+      <Function test_parse_bool_env_raises_on_unrecognised_value>
+      <Function test_ensure_missing_kpi_raises_by_default>
+      <Function test_ensure_missing_kpi_raises_when_no_config_key_and_no_env>
+      <Function test_ensure_missing_kpi_disabled_via_config_false>
+      <Function test_ensure_missing_kpi_disabled_via_env_false>
+      <Function test_ensure_missing_kpi_legacy_truthy_config_logs_deprecation>
+      <Function test_ensure_missing_kpi_legacy_truthy_env_logs_deprecation>
+      <Function test_ensure_missing_kpi_no_op_when_all_present>
+      <Function test_export_kpis_monthly_csv>
+      <Function test_export_kpis_monthly_csv_skips_when_empty>
+      <Function test_export_kpis_by_kam_csv>
+      <Function test_export_kpis_by_kam_csv_falls_back_to_farmer>
+      <Function test_export_kpis_by_kam_csv_skips_when_no_data>
+      <Function test_export_kpis_by_industry_csv>
+      <Function test_export_kpis_by_industry_csv_skips_when_no_data>
+      <Function test_export_kpis_snapshot_current_csv>
+      <Function test_export_kpis_snapshot_current_csv_skips_when_empty>
+      <Function test_execute_produces_all_four_kpi_csvs>
+    <Module test_scorecard_model.py>
+      <Class TestDatasetConstruction>
+        <Function test_build_dataset_with_empty_auxiliary_dataframes>
+        <Function test_target_created>
+        <Function test_behavioral_features_created>
+        <Function test_customer_features_merged>
+        <Function test_ltv_ratio_computed>
+      <Class TestIVComputation>
+        <Function test_iv_table_has_rows>
+        <Function test_iv_table_columns>
+        <Function test_iv_sorted_descending>
+        <Function test_behavioral_features_have_iv>
+      <Class TestModelTraining>
+        <Function test_metrics_present>
+        <Function test_auc_above_random>
+        <Function test_gini_positive>
+        <Function test_ks_positive>
+        <Function test_features_selected>
+        <Function test_scorecard_table_populated>
+      <Class TestScoreScaling>
+        <Function test_score_distribution_present>
+        <Function test_defaults_score_lower>
+        <Function test_single_loan_score_in_range>
+        <Function test_single_loan_pd_in_range>
+      <Class TestPersistence>
+        <Function test_save_and_load_roundtrip>
+        <Function test_loaded_model_produces_same_score>
+        <Function test_metadata_json_valid>
+    <Module test_security_utils.py>
+      <Function test_sanitize_valid_host>
+      <Function test_sanitize_invalid_scheme>
+      <Function test_sanitize_invalid_netloc>
+      <Function test_sanitize_invalid_input_type>
+      <Function test_private_blocked_by_default>
+      <Function test_private_allowed_via_env>
+      <Function test_link_local_blocked_by_default>
+      <Function test_loopback_blocked_by_default>
+      <Function test_loopback_allowed_via_env>
+    <Module test_service_status_report.py>
+      <Class TestServiceStatusChecker>
+        <Function test_init>
+        <Function test_run_command_success>
+        <Function test_run_command_failure>
+        <Function test_check_git_status_success>
+        <Function test_check_git_status_excludes_report_files>
+        <Function test_check_python_environment>
+        <Function test_check_supabase_configuration_missing_url>
+        <Function test_check_supabase_configuration_missing_key>
+        <Function test_check_supabase_configuration_complete>
+        <Function test_check_pipeline>
+        <Function test_run_all_checks_continues_on_error>
+      <Class TestGenerateMarkdownReport>
+        <Function test_generate_markdown_report_empty_results>
+        <Function test_generate_markdown_report_all_passing>
+        <Function test_generate_markdown_report_some_failing>
+        <Function test_generate_markdown_report_boolean_rendering>
+        <Function test_generate_markdown_report_dict_values>
+        <Function test_generate_markdown_report_utf8_characters>
+      <Class TestEdgeCases>
+        <Function test_check_with_no_git>
+        <Function test_todo_count_with_unreadable_files>
+        <Function test_check_tests_missing_directory>
+    <Module test_transformation.py>
+      <Class TestTransformationPhaseInit>
+        <Function test_init_with_default_config>
+        <Function test_init_with_empty_config>
+        <Function test_init_with_custom_config>
+      <Class TestNullHandling>
+        <Function test_no_nulls_returns_unchanged>
+        <Function test_drop_strategy>
+        <Function test_fill_strategy>
+        <Function test_smart_strategy>
+        <Function test_smart_strategy_forces_zero_for_cashflow_fields>
+        <Function test_smart_strategy_uses_structural_zero_not_median>
+        <Function test_structural_zero_flag_preserves_non_null_values>
+      <Class TestTypeNormalization>
+        <Function test_status_normalization>
+        <Function test_date_normalization>
+        <Function test_normalization_disabled>
+      <Class TestCanonicalRiskState>
+        <Function test_derive_canonical_risk_state_flags_kiting_and_adjusts_dpd>
+        <Function test_derive_canonical_risk_state_marks_ratio_opaque_when_scheduled_non_positive>
+        <Function test_derive_canonical_risk_state_does_not_flag_new_origination_as_kiting>
+        <Function test_dpd_bucket_assignment>
+        <Function test_risk_categorization>
+        <Function test_amount_tier_classification>
+        <Function test_non_negative_balance_enforcement>
+      <Class TestControlMoraDerivations>
+        <Function test_derive_control_mora_fields_requires_as_of_or_dpd_signal>
+      <Class TestCustomRules>
+        <Function test_valid_column_mapping_rule>
+        <Function test_valid_derived_field_rule>
+        <Function test_dangerous_pattern_rejected>
+        <Function test_derived_field_rejected_when_referencing_pii_column>
+        <Function test_invalid_column_mapping_configuration>
+      <Class TestOutlierDetection>
+        <Function test_outlier_detection_iqr>
+        <Function test_outlier_detection_zscore>
+        <Function test_outlier_detection_disabled>
+        <Function test_outlier_detection_with_nan_values>
+        <Function test_outlier_detection_iqr_identical_values>
+      <Class TestReferentialIntegrity>
+        <Function test_duplicate_loan_id_detection>
+        <Function test_null_borrower_id_detection>
+        <Function test_negative_amount_detection>
+        <Function test_clean_data_passes_integrity>
+      <Class TestExecute>
+        <Function test_execute_with_dataframe>
+        <Function test_execute_drops_structurally_empty_rows_before_null_failfast>
+        <Function test_execute_no_data_raises_error>
+    <Module test_usage_tracker.py>
+      <Function test_track_event>
+      <Function test_persistence_load>
+      <Function test_export_json>
+      <Function test_export_csv>
+      <Function test_export_parquet>
+    <Dir unit>
+      <Dir kpis>
+        <Module test_target_loader.py>
+          <Class TestTargetLoaderBasics>
+            <Function test_get_2026_targets_dict>
+            <Function test_loader_get_target_by_month_number>
+            <Function test_loader_get_target_by_month_name>
+            <Function test_loader_get_target_invalid>
+          <Class TestVarianceCalculation>
+            <Function test_variance_on_track_positive>
+            <Function test_variance_on_track_negative>
+            <Function test_variance_monitor>
+            <Function test_variance_at_risk>
+            <Function test_variance_exceeded_5pct>
+            <Function test_variance_exact_match>
+            <Function test_variance_precision_decimals>
+          <Class TestDataFrameOperations>
+            <Function test_export_targets_table>
+            <Function test_load_from_dataframe>
+            <Function test_compare_actuals_vs_targets>
+          <Class TestTargetSequence>
+            <Function test_monthly_growth_consistent>
+            <Function test_year_growth_target>
+            <Function test_all_months_positive>
+          <Class TestEdgeCases>
+            <Function test_variance_with_zero_target>
+            <Function test_large_variance>
+            <Function test_very_small_actual>
+      <Module test_contracts.py>
+        <Class TestContractTypes>
+          <Function test_type_aliases_are_str>
+        <Class TestReportSchema>
+          <Function test_report_section_creation>
+          <Function test_executive_brief_creation>
+          <Function test_investor_summary_creation>
+          <Function test_lender_pack_creation>
+          <Function test_weekly_memo_creation>
+      <Module test_dashboard_threshold_integration.py>
+        <Class TestThresholdEnrichmentIntegration>
+          <Function test_load_kpi_registry_thresholds>
+          <Function test_threshold_determination_high_is_good>
+          <Function test_threshold_determination_low_is_good>
+          <Function test_enrich_kpis_for_dashboard>
+          <Function test_dashboard_badge_rendering_status_values>
+          <Function test_enriched_kpi_structure_for_streamlit_rendering>
+      <Module test_data_quality_engine.py>
+        <Class TestRuleRegistry>
+          <Function test_registry_has_built_in_validators>
+          <Function test_all_rules_have_ids>
+        <Class TestAnomalyDetection>
+          <Function test_detect_anomalies_returns_list>
+          <Function test_no_anomalies_in_small_set>
+        <Class TestBlockingPolicy>
+          <Function test_no_blocking_with_all_passed>
+          <Function test_blocking_on_severity>
+        <Class TestQualityEngine>
+          <Function test_run_quality_engine_returns_list>
+          <Function test_results_have_rule_id>
+      <Module test_feature_store.py>
+        <Class TestCampaignFeatures>
+          <Function test_returns_dataframe>
+          <Function test_has_rows>
+        <Class TestTreasuryFeatures>
+          <Function test_returns_dict>
+          <Function test_has_expected_keys>
+      <Module test_financial_precision.py>
+        <Class TestMonetaryConversions>
+          <Function test_dollars_to_cents_basic>
+          <Function test_dollars_to_cents_from_string>
+          <Function test_cents_to_dollars_roundtrip>
+          <Function test_precision_rejection_too_many_decimals>
+          <Function test_monetary_bounds>
+          <Function test_exact_cent_values>
+        <Class TestInterestRateConversions>
+          <Function test_rate_to_basis_points_basic>
+          <Function test_basis_points_roundtrip>
+          <Function test_rate_bounds>
+          <Function test_rate_with_decimal_input>
+        <Class TestAggregationPrecision>
+          <Function test_safe_decimal_sum>
+          <Function test_safe_sum_monetary>
+          <Function test_huge_aggregation_no_drift>
+        <Class TestDivisionPrecision>
+          <Function test_safe_divide_basic>
+          <Function test_safe_divide_percentage>
+          <Function test_safe_divide_zero>
+          <Function test_par_rate_calculation>
+        <Class TestConversionGuards>
+          <Function test_validate_monetary_field_cents>
+          <Function test_validate_monetary_warns_on_small>
+          <Function test_validate_monetary_large>
+        <Class TestEdgeCases>
+          <Function test_minimum_loan_amount>
+          <Function test_maximum_loan_amount>
+          <Function test_minimum_interest_rate>
+          <Function test_maximum_interest_rate>
+          <Function test_zero_division_handling>
+        <Class TestRoundingPolicy>
+          <Function test_rounding_half_up>
+          <Function test_rounding_monetary_amounts>
+      <Module test_kpi_api_client.py>
+        <Class TestKPIAPIClient>
+          <Function test_client_initialization>
+          <Function test_default_api_url_from_env>
+          <Function test_default_api_url_fallback>
+          <Function test_get_latest_kpis_success>
+          <Function test_get_latest_kpis_with_filter>
+          <Function test_cache_hit>
+          <Function test_cache_expiration>
+          <Function test_bypass_cache>
+          <Function test_critical_kpis_filter>
+          <Function test_warning_kpis_filter>
+          <Function test_kpi_summary>
+          <Function test_get_single_kpi>
+          <Function test_error_handling_connection>
+          <Function test_error_handling_invalid_response>
+          <Function test_clear_cache>
+          <Function test_context_manager>
+        <Class TestKPIResponse>
+          <Function test_status_checks_normal>
+          <Function test_status_checks_critical>
+          <Function test_status_checks_not_configured>
+        <Class TestSingletonPattern>
+          <Function test_singleton_instance>
+          <Function test_singleton_with_parameters>
+      <Module test_kpi_formula_engine_ssot.py>
+        <Function test_calculate_kpi_returns_ssot_metadata>
+        <Function test_calculate_kpi_records_audit_entry>
+        <Function test_threshold_status_critical_when_value_exceeds_critical>
+        <Function test_calculate_kpi_missing_definition_raises>
+        <Function test_division_by_zero_fails_closed>
+        <Function test_parser_stub_classifies_formula>
+        <Function test_registry_loader_stub>
+        <Function test_auditor_stub_stores_entries>
+        <Function test_comparison_formula_uses_latest_and_previous_month_balances>
+        <Function test_comparison_formula_raises_when_previous_month_is_zero>
+        <Function test_dpd_bucket_formulas_support_range_logic_via_aggregation_deltas>
+        <Function test_where_clause_supports_or_conditions_for_npl_ratio_style_formulas>
+        <Function test_where_clause_supports_and_conditions>
+      <Module test_kpi_metric_engine.py>
+        <Class TestCapitalMetrics>
+          <Function test_debt_to_equity>
+          <Function test_debt_to_equity_zero_equity>
+          <Function test_leverage_ratio>
+          <Function test_return_on_equity>
+          <Function test_return_on_assets>
+        <Class TestCovenants>
+          <Function test_eligible_portfolio_ratio>
+          <Function test_capital_gap>
+        <Class TestMetricEngine>
+          <Function test_run_metric_engine_with_dataframes>
+      <Module test_kpi_metrics_exporter.py>
+        <Class TestKPIMetricsExporter>
+          <Function test_publish_kpi_result_normal_status>
+          <Function test_publish_kpi_result_warning_status>
+          <Function test_publish_kpi_result_critical_status>
+          <Function test_threshold_values_published>
+          <Function test_prometheus_metrics_text_format>
+          <Function test_get_critical_kpis>
+          <Function test_get_warning_kpis>
+          <Function test_get_status_summary>
+          <Function test_metadata_storage>
+      <Module test_kpi_snapshot_loader.py>
+        <Function test_load_kpi_snapshot_from_api_success_with_dataclass>
+        <Function test_load_kpi_snapshot_from_api_success_with_dict>
+        <Function test_load_kpi_snapshot_from_api_disabled>
+        <Function test_load_kpi_snapshot_from_api_empty_payload>
+        <Function test_load_kpi_snapshot_from_api_fallback_on_error>
+        <Function test_load_kpi_snapshot_from_api_prefers_websocket_when_enabled>
+      <Module test_kpi_websocket_client.py>
+        <Function test_websocket_client_defaults>
+        <Function test_async_get_snapshot_requires_websockets_when_missing>
+      <Module test_mart_builders.py>
+        <Class TestPortfolioMart>
+          <Function test_build_returns_dataframe>
+        <Class TestFinanceMart>
+          <Function test_build_returns_dataframe>
+        <Class TestSalesMart>
+          <Function test_build_returns_dataframe>
+        <Class TestMarketingMart>
+          <Function test_build_returns_dataframe>
+        <Class TestCollectionsMart>
+          <Function test_build_returns_dataframe>
+        <Class TestTreasuryMart>
+          <Function test_build_returns_dataframe>
+        <Class TestBuildAllMarts>
+          <Function test_returns_dict_with_keys>
+      <Module test_orchestrator_subpackage.py>
+        <Class TestPriorityRules>
+          <Function test_hierarchy_ordering>
+          <Function test_unknown_category_gets_high_rank>
+          <Function test_agent_to_category_has_entries>
+          <Function test_rank_actions_sorts_by_priority>
+          <Function test_resolve_conflicts_removes_expand_when_restrict_present>
+        <Class TestDependencyGraph>
+          <Function test_topological_sort_simple>
+          <Function test_topological_sort_no_deps>
+        <Class TestActionRouter>
+          <Function test_route_actions_marks_routed>
+      <Module test_scenario_engine.py>
+        <Class TestAssumptions>
+          <Function test_load_defaults>
+        <Class TestBaseCase>
+          <Function test_returns_scenario_result>
+          <Function test_has_triggers>
+        <Class TestDownsideCase>
+          <Function test_returns_scenario_result>
+          <Function test_triggers_present>
+        <Class TestStressCase>
+          <Function test_returns_scenario_result>
+          <Function test_stress_triggers_present>
+      <Module test_semantic_layer.py>
+        <Class TestMetricContract>
+          <Function test_create_contract>
+          <Function test_is_breached>
+          <Function test_is_warning>
+        <Class TestBusinessDimensions>
+          <Function test_list_dimensions_non_empty>
+          <Function test_get_dimension_by_id>
+          <Function test_get_unknown_dimension_returns_none>
+        <Class TestSemanticResolver>
+          <Function test_resolver_instantiates>
+          <Function test_resolve_metric>
+          <Function test_resolve_all>
+    <Dir zero_cost>
+      <Module test_loan_tape_xirr_dpd.py>
+        <Class TestLoanTapeLoader>
+          <Function test_load_all_returns_required_tables>
+          <Function test_dim_loan_has_loan_id_key>
+          <Function test_fact_schedule_has_loan_id>
+          <Function test_fact_real_payment_has_loan_id>
+          <Function test_source_tag_is_set>
+          <Function test_control_mora_and_loan_tape_share_loan_id_column>
+        <Class TestCrosswalk>
+          <Function test_unmatched_file_is_created>
+          <Function test_unmatched_reason_code_not_empty>
+          <Function test_exact_match_resolves>
+          <Function test_unmatched_file_exists_even_when_all_matched>
+        <Class TestXIRR>
+          <Function test_simple_known_case>
+          <Function test_realistic_loan_cashflows>
+          <Function test_all_negative_raises_value_error>
+          <Function test_all_positive_raises_value_error>
+          <Function test_mismatched_lengths_raises_value_error>
+          <Function test_irregular_dates>
+          <Function test_cashflows_order_independent>
+          <Function test_contractual_apr_monthly_compounding>
+          <Function test_contractual_apr_annual>
+          <Function test_loan_xirr_returns_float>
+          <Function test_loan_xirr_missing_loan_returns_nan>
+          <Function test_portfolio_xirr_returns_series>
+        <Class TestPipelineRouter>
+          <Function test_jan_2026_uses_loan_tape>
+          <Function test_dec_2025_uses_loan_tape>
+          <Function test_feb_2026_uses_control_mora>
+          <Function test_march_2026_uses_control_mora>
+          <Function test_custom_pivot_month>
+        <Class TestExporter>
+          <Function test_parquet_file_is_created>
+          <Function test_csv_file_is_created>
+          <Function test_export_tables_writes_multiple_files>
+          <Function test_unmatched_records_file_exists>
+          <Function test_manifest_is_written>
+        <Class TestDPDCalculator>
+          <Function test_build_snapshots_returns_dataframe>
+          <Function test_current_loan_has_zero_dpd>
+          <Function test_overdue_loan_has_positive_dpd>
+          <Function test_par_flags_set_correctly>
+          <Function test_mora_bucket_is_populated>
+      <Module test_local_migration_etl.py>
+        <Function test_xirr_known_case_precision>
+        <Function test_xirr_requires_sign_change>
+        <Function test_reconcile_payments_marks_missing_and_mismatch_reason_codes>
+        <Function test_build_not_specified_log_caps_at_max_rows>
+        <Function test_reconcile_payments_captures_null_loan_id>
+        <Function test_reconcile_payments_captures_invalid_dates_no_duplicates>
+      <Module test_zero_cost_adapters.py>
+        <Class TestZeroCostStorage>
+          <Function test_write_and_read_parquet>
+          <Function test_manifest_content>
+          <Function test_duckdb_query>
+        <Class TestControlMoraAdapter>
+          <Function test_load_basic>
+          <Function test_column_aliasing>
+          <Function test_numeric_coercion>
+          <Function test_snapshot_month_inferred_from_filename>
+          <Function test_snapshot_month_inference_warning_on_unparseable_filename>
+          <Function test_snapshot_month_set>
+          <Function test_mora_bucket_inference>
+          <Function test_load_many>
+        <Class TestMonthlySnapshotBuilder>
+          <Function test_build_returns_expected_columns>
+          <Function test_par_flags>
+          <Function test_compute_portfolio_kpis>
+          <Function test_compute_portfolio_kpis_active_loans>
+          <Function test_compute_portfolio_kpis_active_loans_with_zero_outstanding>
+          <Function test_compute_portfolio_kpis_active_loans_fallback>
+          <Function test_compute_portfolio_kpis_weighted_avg_dpd>
+          <Function test_set_snapshot_month_explicit_normalizes_to_month_end>
+          <Function test_set_snapshot_month_column_normalizes_to_month_end>
+          <Function test_to_star_schema>
+
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.10-final-0 _______________
+
+Name                                                               Stmts   Miss Branch BrPart  Cover
+----------------------------------------------------------------------------------------------------
+backend\python\apps\analytics\api\main.py                            653    505    122      2    19%
+backend\python\apps\analytics\api\models.py                          473      0      0      0   100%
+backend\python\apps\analytics\api\monitoring_models.py                56      0      0      0   100%
+backend\python\apps\analytics\api\monitoring_service.py              129     96     28      0    21%
+backend\python\apps\analytics\api\routes\agents.py                    38     15      4      0    55%
+backend\python\apps\analytics\api\routes\decisions.py                 34     14      2      0    56%
+backend\python\apps\analytics\api\routes\metrics.py                   39     14      2      0    61%
+backend\python\apps\analytics\api\routes\quality.py                   31     13      2      0    55%
+backend\python\apps\analytics\api\routes\reports.py                   60     33     10      0    39%
+backend\python\apps\analytics\api\routes\scenarios.py                 57     32      2      0    42%
+backend\python\apps\analytics\api\service.py                        1176    988    338      0    12%
+backend\python\config\__init__.py                                    158     30     40      5    73%
+backend\python\config\mype_rules.py                                  127     75     32      0    33%
+backend\python\config\theme.py                                         1      1      0      0     0%
+backend\python\config\tracing_setup.py                                 5      5      0      0     0%
+backend\python\financial_precision.py                                 63     46     26      0    19%
+backend\python\kpis\_column_utils.py                                  18     13      4      0    23%
+backend\python\kpis\advanced_risk.py                                 121    102     22      0    13%
+backend\python\kpis\catalog_processor.py                             643    573    160      0     9%
+backend\python\kpis\collection_rate.py                                29     20     10      0    23%
+backend\python\kpis\dpd_calculator.py                                101     87     32      0    11%
+backend\python\kpis\engine.py                                        390    330    104      0    12%
+backend\python\kpis\formula\__init__.py                                4      0      0      0   100%
+backend\python\kpis\formula\auditor.py                                 9      3      0      0    67%
+backend\python\kpis\formula\parser.py                                 11      2      0      0    82%
+backend\python\kpis\formula\registry.py                               28     19     14      0    21%
+backend\python\kpis\formula_engine.py                                511    436    216      0    10%
+backend\python\kpis\graph_analytics.py                               383    342    140      0     8%
+backend\python\kpis\health_score.py                                   80     68     26      0    11%
+backend\python\kpis\holding_financial_indicators.py                  193    158     50      0    14%
+backend\python\kpis\lending_kpis.py                                  480    450    154      0     5%
+backend\python\kpis\ltv.py                                            16     12      2      0    22%
+backend\python\kpis\portfolio_analytics.py                           302    269     66      0     9%
+backend\python\kpis\ssot_asset_quality.py                             21     13      4      0    32%
+backend\python\kpis\target_loader.py                                  75     59     36      0    14%
+backend\python\kpis\threshold_enrichment.py                           65     53     34      0    12%
+backend\python\kpis\unit_economics.py                                128    108     38      0    12%
+backend\python\logging_config.py                                      31     18      8      1    36%
+backend\python\middleware\__init__.py                                  2      0      0      0   100%
+backend\python\middleware\rate_limiter.py                             81     49     12      0    34%
+backend\python\models\default_risk_model.py                          221    221     58      0     0%
+backend\python\models\default_risk_torch_model.py                     62     62      8      0     0%
+backend\python\models\kpi_models.py                                   19      4      4      0    65%
+backend\python\models\scorecard_model.py                             348    276     78      0    17%
+backend\python\models\segmentation_model.py                          274    274     64      0     0%
+backend\python\models\woe_iv_engine.py                                52     52     18      0     0%
+backend\python\monitoring\__init__.py                                  2      0      0      0   100%
+backend\python\monitoring\kpi_metrics.py                              87     61     28      0    23%
+backend\python\multi_agent\__init__.py                                 6      2      0      0    67%
+backend\python\multi_agent\_llm_agents.py                              2      2      0      0     0%
+backend\python\multi_agent\agent_factory.py                           10      2      0      0    80%
+backend\python\multi_agent\agents\base_agent.py                       11      0      4      2    87%
+backend\python\multi_agent\agents\cfo_agent.py                        48     48     12      0     0%
+backend\python\multi_agent\agents\cohort_vintage_agent.py             36     36     10      0     0%
+backend\python\multi_agent\agents\collections_agent.py                45     45     10      0     0%
+backend\python\multi_agent\agents\concentration_agent.py              41     41     10      0     0%
+backend\python\multi_agent\agents\covenant_agent.py                   33     33      8      0     0%
+backend\python\multi_agent\agents\data_quality_agent.py               21     11      4      0    40%
+backend\python\multi_agent\agents\decision_agent_base.py              33     33      0      0     0%
+backend\python\multi_agent\agents\liquidity_agent.py                  40     40     14      0     0%
+backend\python\multi_agent\agents\marketing_agent.py                  41     41     16      0     0%
+backend\python\multi_agent\agents\narrative_agent.py                  41     41      6      0     0%
+backend\python\multi_agent\agents\pricing_agent.py                    17     17      2      0     0%
+backend\python\multi_agent\agents\retention_agent.py                  36     36     10      0     0%
+backend\python\multi_agent\agents\revenue_strategy_agent.py           36     36     10      0     0%
+backend\python\multi_agent\agents\risk_agent.py                       20     20      2      0     0%
+backend\python\multi_agent\agents\sales_agent.py                      16     16      2      0     0%
+backend\python\multi_agent\agents\segmentation_agent.py               17     17      4      0     0%
+backend\python\multi_agent\base_agent.py                             159    134     34      0    13%
+backend\python\multi_agent\cli.py                                     86     86     14      0     0%
+backend\python\multi_agent\config_historical.py                       29     19      8      0    27%
+backend\python\multi_agent\decision_orchestrator.py                   81     81     26      0     0%
+backend\python\multi_agent\feature_store\builder.py                   10     10      0      0     0%
+backend\python\multi_agent\feature_store\campaign_features.py         25     22     10      0     9%
+backend\python\multi_agent\feature_store\customer_features.py          7      7      2      0     0%
+backend\python\multi_agent\feature_store\loan_features.py             43     43     18      0     0%
+backend\python\multi_agent\feature_store\segment_features.py           9      9      2      0     0%
+backend\python\multi_agent\feature_store\treasury_features.py         28     22      2      0    20%
+backend\python\multi_agent\guardrails.py                              44     28     12      0    29%
+backend\python\multi_agent\historical_backend_supabase.py             22     14      2      0    33%
+backend\python\multi_agent\historical_context.py                     475    386    140      0    14%
+backend\python\multi_agent\kpi_integration.py                        107     75     32      0    23%
+backend\python\multi_agent\llm_agents.py                              39      9      0      0    77%
+backend\python\multi_agent\orchestrator.py                           164    135     56      0    13%
+backend\python\multi_agent\orchestrator\__init__.py                   18      3      2      1    80%
+backend\python\multi_agent\orchestrator\action_router.py              28     15      2      0    43%
+backend\python\multi_agent\orchestrator\decision_orchestrator.py      18     12      2      0    30%
+backend\python\multi_agent\orchestrator\dependency_graph.py           25     21     12      0    11%
+backend\python\multi_agent\orchestrator\priority_rules.py             17     10      2      0    37%
+backend\python\multi_agent\orchestrator\run_first_live_agents.py      16     16      2      0     0%
+backend\python\multi_agent\protocol.py                                78      0      0      0   100%
+backend\python\multi_agent\specialized_agents.py                       2      0      0      0   100%
+backend\python\multi_agent\tracing.py                                 52     30      8      0    37%
+backend\python\schemas.py                                             62     62     44      0     0%
+backend\python\supabase_pool.py                                      162    134     28      0    15%
+backend\python\time_utils.py                                          14      8      4      0    33%
+backend\python\utils\dashboard.py                                     36     36     18      0     0%
+backend\python\utils\normalization.py                                 16     16      6      0     0%
+backend\python\utils\usage_tracker.py                                 81     56     22      0    24%
+backend\python\validation.py                                         158    134     96      0     9%
+backend\src\agents\llm_provider.py                                    19     19      2      0     0%
+backend\src\agents\monitoring\__init__.py                              3      0      0      0   100%
+backend\src\agents\monitoring\cost_tracker.py                         81     51     18      0    30%
+backend\src\agents\monitoring\performance_tracker.py                 116     80     22      0    26%
+backend\src\agents\multi_agent\__init__.py                             4      4      0      0     0%
+backend\src\analytics\__init__.py                                     54     44     16      0    14%
+backend\src\contracts\agent_schema.py                                 53      1      0      0    98%
+backend\src\contracts\mart_schema.py                                  43     43      0      0     0%
+backend\src\contracts\metric_schema.py                                12      0      0      0   100%
+backend\src\contracts\raw_schema.py                                   65     65      4      0     0%
+backend\src\contracts\report_schema.py                                50      0      0      0   100%
+backend\src\contracts\types.py                                         9      0      0      0   100%
+backend\src\data_quality\anomaly_detection.py                         58     39     18      0    25%
+backend\src\data_quality\blocking_policy.py                           18     12      8      0    23%
+backend\src\data_quality\engine.py                                    27     21      8      0    17%
+backend\src\data_quality\rules.py                                     45     15     10      0    55%
+backend\src\data_quality\validators.py                                40     26     10      0    28%
+backend\src\infrastructure\google_sheets_adapter.py                   78     56     18      0    23%
+backend\src\infrastructure\meta_ads_adapter.py                        84     84     22      0     0%
+backend\src\kpi_engine\capital.py                                     66     48     20      0    21%
+backend\src\kpi_engine\cohorts.py                                     52     43     16      0    13%
+backend\src\kpi_engine\concentration.py                               63     63     24      0     0%
+backend\src\kpi_engine\covenants.py                                   55     41     12      0    21%
+backend\src\kpi_engine\engine.py                                      27     19      0      0    30%
+backend\src\kpi_engine\liquidity.py                                   30     30      8      0     0%
+backend\src\kpi_engine\portfolio_analytics.py                        225    204     92      0     7%
+backend\src\kpi_engine\revenue.py                                     52     46     22      0     8%
+backend\src\kpi_engine\risk.py                                       127    113     66      0     7%
+backend\src\kpi_engine\unit_economics.py                             108     95     36      0     9%
+backend\src\marts\__init__.py                                          3      0      0      0   100%
+backend\src\marts\build_all_marts.py                                  14      6      2      0    50%
+backend\src\marts\builder.py                                          55     37      8      0    29%
+backend\src\marts\collections_mart.py                                  6      2      0      0    67%
+backend\src\marts\finance_mart.py                                     21     17      2      0    17%
+backend\src\marts\marketing_mart.py                                   44     37     14      0    12%
+backend\src\marts\portfolio_mart.py                                   26     20     12      0    16%
+backend\src\marts\sales_mart.py                                       16     12      6      0    18%
+backend\src\marts\treasury_mart.py                                    18     12      0      0    33%
+backend\src\pipeline\__init__.py                                       2      0      0      0   100%
+backend\src\pipeline\calculation.py                                  605    519    192      0    11%
+backend\src\pipeline\config.py                                        54     37     24      0    22%
+backend\src\pipeline\decision_phase.py                                82     73     16      0     9%
+backend\src\pipeline\ingestion.py                                    192    166     72      0    10%
+backend\src\pipeline\orchestrator.py                                 309    254     50      0    15%
+backend\src\pipeline\output.py                                       630    546    214      0    10%
+backend\src\pipeline\transformation.py                               917    816    284      0     8%
+backend\src\pipeline\utils.py                                          5      5      0      0     0%
+backend\src\scenario_engine\assumptions.py                            20     10      2      0    45%
+backend\src\scenario_engine\base_case.py                              17     11      4      0    29%
+backend\src\scenario_engine\downside_case.py                          22     15      8      0    23%
+backend\src\scenario_engine\engine.py                                 54     35     14      0    28%
+backend\src\scenario_engine\stress_case.py                            22     15      8      0    23%
+backend\src\semantic\__init__.py                                       4      0      0      0   100%
+backend\src\semantic\business_dimensions.py                           16      2      0      0    88%
+backend\src\semantic\metric_contracts.py                              42     10      8      0    64%
+backend\src\semantic\metrics_registry.py                              33     13      6      0    51%
+backend\src\semantic\semantic_resolver.py                             40     24     12      0    31%
+backend\src\utils\config_loader.py                                    44     37     24      0    10%
+backend\src\zero_cost\__init__.py                                     13      0      0      0   100%
+backend\src\zero_cost\control_mora_adapter.py                        104     81     40      0    16%
+backend\src\zero_cost\crosswalk.py                                   153    127     64      0    12%
+backend\src\zero_cost\exporter.py                                     66     47     18      0    23%
+backend\src\zero_cost\fuzzy_matcher.py                               104     83     32      0    15%
+backend\src\zero_cost\lend_id_mapper.py                               68     47     14      0    26%
+backend\src\zero_cost\loan_tape_loader.py                            132     92     44      0    23%
+backend\src\zero_cost\local_migration_etl.py                         174    143     38      0    15%
+backend\src\zero_cost\monthly_snapshot.py                            133    118     62      0     8%
+backend\src\zero_cost\pipeline_router.py                             118     92     22      0    19%
+backend\src\zero_cost\storage.py                                      81     55     20      0    26%
+backend\src\zero_cost\xirr.py                                        126    106     52      0    11%
+frontend\streamlit_app\app.py                                        299    299    120      0     0%
+frontend\streamlit_app\bootstrap.py                                    8      8      4      0     0%
+frontend\streamlit_app\components\alert_cards.py                      24     24      8      0     0%
+frontend\streamlit_app\components\analytics_tabs.py                  115    115     30      0     0%
+frontend\streamlit_app\components\charts.py                           57     57     16      0     0%
+frontend\streamlit_app\components\confidence_badge.py                  6      6      0      0     0%
+frontend\streamlit_app\components\csv_upload.py                      491    445    224      0     6%
+frontend\streamlit_app\components\decision_table.py                   15     15      4      0     0%
+frontend\streamlit_app\components\kpi_metrics.py                      49     49     14      0     0%
+frontend\streamlit_app\components\risk_prediction.py                  54     54      8      0     0%
+frontend\streamlit_app\components\sales_risk.py                       52     52     14      0     0%
+frontend\streamlit_app\components\scenario_strip.py                   23     23     14      0     0%
+frontend\streamlit_app\components\visualizations.py                    6      6      0      0     0%
+frontend\streamlit_app\decision_api_client.py                         42     42      4      0     0%
+frontend\streamlit_app\decision_loader.py                             48     48     16      0     0%
+frontend\streamlit_app\kpi_api_client.py                             132     95     32      0    23%
+frontend\streamlit_app\kpi_snapshot_loader.py                         53     40     22      0    17%
+frontend\streamlit_app\kpi_websocket_client.py                        30     19      6      0    31%
+frontend\streamlit_app\pages\03_Collections_Operations.py            967    838    240      2    11%
+frontend\streamlit_app\utils\security.py                              33     10     12      5    62%
+----------------------------------------------------------------------------------------------------
+TOTAL                                                              19301  15380   5356     18    16%
+
+16 empty files skipped.
+Coverage HTML written to dir htmlcov
+=================== 817 tests collected in 86.34s (0:01:26) ===================
