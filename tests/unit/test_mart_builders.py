@@ -64,6 +64,52 @@ class TestFinanceMart:
         assert isinstance(result, pd.DataFrame)
 
 
+
+
+    def test_uses_real_financial_columns_when_present(self, loan_df: pd.DataFrame):
+        loan_df = loan_df.copy()
+        loan_df["interest_income"] = [100.0, 200.0, 300.0]
+        loan_df["fee_income"] = [10.0, 20.0, 30.0]
+        loan_df["funding_cost"] = [25.0, 25.0, 25.0]
+
+        result = build_finance(loan_df)
+
+        assert result["interest_income"].sum() == pytest.approx(600.0)
+        assert result["fee_income"].sum() == pytest.approx(60.0)
+        assert result["funding_cost"].sum() == pytest.approx(75.0)
+
+    def test_no_rate_does_not_use_placeholder_multipliers(self, loan_df: pd.DataFrame):
+        loan_df = loan_df.copy()
+
+        # Drop all rate-like columns and any pre-populated financial result columns
+        loan_df = loan_df.drop(
+            columns=[
+                "interest_rate",
+                "tasainteres",
+                "apr",
+                "origination_fee_rate",
+                "fee_rate",
+                "cost_of_funds_rate",
+                "funding_rate",
+                "interest_income",
+                "fee_income",
+                "funding_cost",
+                "provision_expense",
+            ],
+            errors="ignore",
+        )
+
+        # Ensure no defaults so provision should also be zero in the fallback path
+        loan_df["default_flag"] = 0
+
+        result = build_finance(loan_df)
+
+        assert result["interest_income"].sum() == pytest.approx(0.0)
+        assert result["fee_income"].sum() == pytest.approx(0.0)
+        assert result["funding_cost"].sum() == pytest.approx(0.0)
+        assert result["provision_expense"].sum() == pytest.approx(0.0)
+
+
 class TestSalesMart:
     def test_build_returns_dataframe(self, loan_df: pd.DataFrame):
         leads = pd.DataFrame(
