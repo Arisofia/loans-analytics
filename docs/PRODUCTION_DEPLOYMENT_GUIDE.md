@@ -4,7 +4,7 @@
 
 This repository supports **one canonical production deployment path**:
 
-1. Build immutable container images from `Dockerfile`, `Dockerfile.dashboard`, and `Dockerfile.pipeline`.
+1. Build immutable container images from `Dockerfile` and `Dockerfile.dashboard`.
 2. Push images to GHCR via `.github/workflows/deploy-free-tier.yml`.
 3. Deploy those exact images to **one** free-tier target (`render`, `railway`, or `fly`) using the same workflow.
 
@@ -16,7 +16,6 @@ Historical Azure/AWS/GCP examples were removed from this guide because they are 
 
 - API service (`Dockerfile`)
 - Streamlit dashboard (`Dockerfile.dashboard`)
-- Pipeline runner (`Dockerfile.pipeline`)
 - Supabase/PostgreSQL (managed external dependency)
 
 ---
@@ -81,6 +80,7 @@ Run `.github/workflows/deploy-free-tier.yml` via `workflow_dispatch`:
 - `target`: `ghcr`, `render`, `railway`, `fly`, or `all`
 - `service`: `api`, `dashboard`, or `pipeline`
 
+
 ### 2) Verify image publication
 
 Confirm GHCR tags exist:
@@ -92,7 +92,6 @@ Confirm GHCR tags exist:
 
 - API health endpoint: `/health`
 - Streamlit health endpoint: `/_stcore/health`
-- Pipeline execution logs for explicit success status
 
 ---
 
