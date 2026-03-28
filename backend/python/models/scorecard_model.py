@@ -274,12 +274,30 @@ class ScorecardModel:
         scores = offset - factor * log_odds
         return np.clip(scores, 300, 850).astype(int)
 
-    def fit(self, loan_df: pd.DataFrame, payment_df: pd.DataFrame, customer_df: pd.DataFrame, iv_threshold: float=IV_USELESS, cv_folds: int=5) -> Dict[str, Any]:
+    def fit(self, loan_df: pd.DataFrame, payment_df: pd.DataFrame, customer_df: pd.DataFrame, iv_threshold: float=IV_USELESS, cv_folds: int=5, feature_allowlist: Optional[List[str]]=None) -> Dict[str, Any]:
         logger.info('Building model dataset...')
         model_df = self.build_model_dataset(loan_df, payment_df, customer_df)
         target = 'is_default'
         exclude = {target, 'loan_id', 'customer_id', 'borrower_id', 'id_prestamo', 'status', 'current_status', 'estado', '_first_late_date', 'vintage_quarter'}
-        candidates = [c for c in model_df.columns if c not in exclude and (not c.startswith('_'))]
+        all_candidates = [c for c in model_df.columns if c not in exclude and (not c.startswith('_'))]
+        candidates = all_candidates
+        if feature_allowlist:
+            allowset = {c.strip().lower() for c in feature_allowlist if str(c).strip()}
+            candidates = [c for c in candidates if c.lower() in allowset]
+            if not candidates:
+                logger.warning(
+                    'Feature allowlist filtered out all candidate features (allowlist size=%d). '
+                    'Falling back to unfiltered candidate set (%d features).',
+                    len(allowset),
+                    len(all_candidates),
+                )
+                candidates = all_candidates
+            else:
+                logger.info(
+                    'Feature allowlist active: %d features allowed, %d candidates remain',
+                    len(allowset),
+                    len(candidates),
+                )
         logger.info('Computing IV for %d candidate features...', len(candidates))
         iv_table = self.compute_iv_table(model_df, candidates, target=target)
         selected = iv_table[iv_table['iv'] >= iv_threshold]['feature'].tolist()
@@ -312,7 +330,7 @@ class ScorecardModel:
             pd.util.hash_pandas_object(model_df[selected + [target]]).values.tobytes()
         ).hexdigest()[:16]
         metrics = {'auc_roc': round(auc, 4), 'gini_coefficient': round(gini, 4), 'ks_statistic': round(ks_stat, 4), 'cv_auc_mean': round(float(cv_aucs.mean()), 4), 'cv_auc_std': round(float(cv_aucs.std()), 4), 'n_features_selected': len(selected), 'n_samples': len(y), 'n_defaults': int(y.sum()), 'default_rate': round(float(y.mean()) * 100, 2), 'score_distribution': score_stats}
-        self.metadata = {'model_type': 'WoE_LogisticRegression', 'features': selected, 'iv_threshold': iv_threshold, 'regularisation_C': 0.1, 'random_state': _RANDOM_STATE, 'data_fingerprint': data_hash, 'score_scale': {'base': BASE_SCORE, 'pdo': PDO, 'base_odds': BASE_ODDS}, 'metrics': metrics}
+        self.metadata = {'model_type': 'WoE_LogisticRegression', 'features': selected, 'iv_threshold': iv_threshold, 'regularisation_C': 0.1, 'random_state': _RANDOM_STATE, 'data_fingerprint': data_hash, 'score_scale': {'base': BASE_SCORE, 'pdo': PDO, 'base_odds': BASE_ODDS}, 'feature_allowlist': feature_allowlist or [], 'metrics': metrics}
         logger.info('Scorecard trained: AUC=%.4f, KS=%.4f, Gini=%.4f, CV AUC=%.4f±%.4f', auc, ks_stat, gini, cv_aucs.mean(), cv_aucs.std())
         return metrics
 

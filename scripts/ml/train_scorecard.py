@@ -12,6 +12,34 @@ from backend.python.models.scorecard_model import ScorecardModel
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s - %(message)s')
 logger = logging.getLogger('train_scorecard')
 
+
+ORIGINATION_FEATURES = [
+    'disbursement_amount',
+    'interest_rate_apr',
+    'term',
+    'tpv',
+    'origination_fee',
+    'industry',
+    'pagador',
+    'cliente',
+    'interest_rate',
+    'principal_amount',
+    'outstanding_balance',
+    'collateral_value',
+    'ltv_ratio',
+]
+
+BEHAVIORAL_FEATURES = [
+    'late_payment_rate',
+    'n_late_payments',
+    'days_to_first_late',
+    'payment_amount_std',
+    'max_consecutive_late',
+    'n_payments',
+    'loan_age_days',
+    'payment_ratio',
+]
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description='Train WoE/IV Scorecard')
     p.add_argument('--loans', type=Path, default=Path('data/raw/loan_data.csv'))
@@ -20,6 +48,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument('--output-dir', type=Path, default=Path('models/scorecard'))
     p.add_argument('--iv-threshold', type=float, default=0.02, help='Minimum IV to include a feature (default: 0.02 = useless threshold)')
     p.add_argument('--cv-folds', type=int, default=5, help='Cross-validation folds for AUC estimation')
+    p.add_argument('--feature-set', choices=['origination', 'behavioral', 'all'], default='origination', help='Feature family used for training (default: origination).')
     return p.parse_args()
 
 def validate_inputs(loans: Path, payments: Path, customers: Path) -> None:
@@ -79,8 +108,16 @@ def main() -> int:
         return 1
     logger.info('Loaded - loans: %d rows, payments: %d rows, customers: %d rows', len(loan_df), len(payment_df), len(customer_df))
     model = ScorecardModel()
+    feature_allowlist = None
+    if args.feature_set == 'origination':
+        feature_allowlist = ORIGINATION_FEATURES
+    elif args.feature_set == 'behavioral':
+        feature_allowlist = BEHAVIORAL_FEATURES
+    elif args.feature_set == 'all':
+        feature_allowlist = ORIGINATION_FEATURES + BEHAVIORAL_FEATURES
+    logger.info('Training feature set: %s (%d allowlisted features)', args.feature_set, len(feature_allowlist or []))
     try:
-        metrics = model.fit(loan_df=loan_df, payment_df=payment_df, customer_df=customer_df, iv_threshold=args.iv_threshold, cv_folds=args.cv_folds)
+        metrics = model.fit(loan_df=loan_df, payment_df=payment_df, customer_df=customer_df, iv_threshold=args.iv_threshold, cv_folds=args.cv_folds, feature_allowlist=feature_allowlist)
     except Exception as err:
         logger.error('Training failed: %s', err, exc_info=True)
         return 1
