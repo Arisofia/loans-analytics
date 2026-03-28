@@ -2509,8 +2509,6 @@ class KPIService:
             float(df[df["dpd"] > 90]["principal_balance"].sum()) / total_outstanding * 100
             if total_outstanding > 0
             else 0.0
-            actor='api.service',
-            metric_aliases=['par30', 'par60', 'par90', 'npl', 'npl90'],
         )
         return {
             "par30": ssot.get("par30", 0.0),
