@@ -27,6 +27,7 @@ def _validate_required_columns(df: pd.DataFrame) -> None:
     if missing:
         raise ValueError(
             "finance_mart requires base columns "
+            "finance_mart requires real Google-source fields "
             f"{_REQUIRED_BASE_COLUMNS}. Missing: {missing}"
         )
 
@@ -40,6 +41,9 @@ def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
     if df["origination_date"].isna().all():
         raise ValueError("finance_mart requires at least one valid origination_date value")
 
+        raise ValueError("finance_mart requires valid origination_date values from loan_data")
+
+    df["origination_date"] = pd.to_datetime(df.get("origination_date"), errors="coerce")
     df["as_of_month"] = df["origination_date"].dt.to_period("M").astype(str)
 
     outstanding = _series_or_zero(df, "outstanding_principal")
@@ -49,6 +53,7 @@ def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
     fee_income_col = _first_present(df, ["fee_income", "fee_income_usd", "origination_fee"])
     funding_cost_col = _first_present(df, ["funding_cost", "funding_cost_usd", "interest_expense"])
     provision_col = _first_present(df, ["provision_expense", "provision_expense_usd", "expected_loss"])
+    provision_col = _first_present(df, ["provision_expense", "expected_loss", "provision_expense_usd"])
 
     if interest_income_col:
         df["_interest_income"] = _series_or_zero(df, interest_income_col)
@@ -61,6 +66,17 @@ def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
             )
         rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
         df["_interest_income"] = outstanding * rate / 12
+                "finance_mart requires interest_rate/tasainteres/apr or explicit interest_income "
+                "to compute real interest income from loan_data"
+            )
+        rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
+        df["_interest_income"] = outstanding * rate / 12
+        if rate_col:
+            rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
+            df["_interest_income"] = outstanding * rate / 12
+        else:
+            logger.warning("finance_mart: missing interest rate and interest income columns; defaulting interest_income to 0")
+            df["_interest_income"] = 0.0
 
     if fee_income_col:
         df["_fee_income"] = _series_or_zero(df, fee_income_col)
@@ -81,6 +97,8 @@ def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
             df["_funding_cost"] = funded * cof_rate / 12
         else:
             logger.warning("finance_mart: funding_cost missing; defaulting to 0")
+            logger.warning("finance_mart: funding_cost not found in loan_data/control_mora derived set; defaulting to 0")
+            logger.warning("finance_mart: missing funding cost columns; defaulting funding_cost to 0")
             df["_funding_cost"] = 0.0
 
     if provision_col:
@@ -95,6 +113,11 @@ def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
         else:
             logger.warning("finance_mart: provision_expense missing; defaulting to 0")
             df["_provision_expense"] = 0.0
+        logger.warning("finance_mart: provision_expense not found in real inputs; defaulting to 0")
+        df["_provision_expense"] = 0.0
+        default_flag = _series_or_zero(df, "default_flag")
+        lgd = pd.to_numeric(df.get("lgd", pd.Series(0.45, index=df.index)), errors="coerce").fillna(0.45)
+        df["_provision_expense"] = default_flag * outstanding * lgd
 
     grouped = (
         df.groupby("as_of_month", dropna=False)
