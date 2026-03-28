@@ -1,3 +1,4 @@
 # Shared CI-only test dependencies
 sentry-sdk
 polars
+pytest-asyncio

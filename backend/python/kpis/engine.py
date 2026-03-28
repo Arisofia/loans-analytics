@@ -477,12 +477,9 @@ class KPIEngineV2:
         )
         total_out = Decimal(str(active_df[balance_col].sum()))
         if total_out <= 0:
-            return {
-                "npl_ratio": Decimal("0.0"),
-                "npl_90_ratio": Decimal("0.0"),
-                "defaulted_outstanding_ratio": Decimal("0.0"),
-                "top_10_borrower_concentration": Decimal("0.0"),
-            }
+            raise ValueError(
+                "CRITICAL: Derived risk KPI calculation requires positive outstanding balance."
+            )
         npl_90_ratio = Decimal(str(round(results["npl90"], 6)))
         npl_ratio = Decimal(str(round(results["npl"], 6)))
         defaulted_out = Decimal(

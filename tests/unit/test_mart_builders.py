@@ -5,13 +5,13 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from backend.src.marts.portfolio_mart import build as build_portfolio
-from backend.src.marts.finance_mart import build as build_finance
-from backend.src.marts.sales_mart import build as build_sales
-from backend.src.marts.marketing_mart import build as build_marketing
-from backend.src.marts.collections_mart import build as build_collections
-from backend.src.marts.treasury_mart import build as build_treasury
 from backend.src.marts.build_all_marts import build_all_marts
+from backend.src.marts.collections_mart import build as build_collections
+from backend.src.marts.finance_mart import build as build_finance
+from backend.src.marts.marketing_mart import build as build_marketing
+from backend.src.marts.portfolio_mart import build as build_portfolio
+from backend.src.marts.sales_mart import build as build_sales
+from backend.src.marts.treasury_mart import build as build_treasury
 
 
 @pytest.fixture()
@@ -60,6 +60,10 @@ class TestPortfolioMart:
 
 class TestFinanceMart:
     def test_build_returns_dataframe(self, loan_df: pd.DataFrame):
+        loan_df = loan_df.copy()
+        loan_df["fee_income"] = [10.0, 20.0, 30.0]
+        loan_df["funding_cost"] = [25.0, 25.0, 25.0]
+        loan_df["provision_expense"] = [0.0, 0.0, 100.0]
         result = build_finance(loan_df)
         assert isinstance(result, pd.DataFrame)
 
@@ -68,6 +72,7 @@ class TestFinanceMart:
         loan_df["interest_income"] = [100.0, 200.0, 300.0]
         loan_df["fee_income"] = [10.0, 20.0, 30.0]
         loan_df["funding_cost"] = [25.0, 25.0, 25.0]
+        loan_df["provision_expense"] = [2.0, 2.0, 2.0]
 
         result = build_finance(loan_df)
 
@@ -77,13 +82,13 @@ class TestFinanceMart:
 
     def test_missing_rate_and_interest_income_raises(self, loan_df: pd.DataFrame):
         loan_df = loan_df.drop(columns=["interest_rate", "apr"])
-
         with pytest.raises(ValueError, match="requires one of"):
             build_finance(loan_df)
 
     def test_provision_derived_from_default_flag_and_lgd(self, loan_df: pd.DataFrame):
         loan_df = loan_df.copy()
-        loan_df = loan_df.drop(columns=["interest_rate", "apr"])
+        loan_df["fee_income"] = [10.0, 20.0, 30.0]
+        loan_df["funding_cost"] = [25.0, 25.0, 25.0]
         loan_df["interest_income"] = [100.0, 200.0, 300.0]
         loan_df["default_flag"] = [0, 1, 1]
         loan_df["lgd"] = [0.45, 0.5, 0.6]
@@ -93,137 +98,29 @@ class TestFinanceMart:
         expected = (18_000 * 0.5) + (25_000 * 0.6)
         assert result["provision_expense"].sum() == pytest.approx(expected)
 
-
-
-
-    def test_uses_real_financial_columns_when_present(self, loan_df: pd.DataFrame):
-        loan_df = loan_df.copy()
-        loan_df["interest_income"] = [100.0, 200.0, 300.0]
-        loan_df["fee_income"] = [10.0, 20.0, 30.0]
-        loan_df["funding_cost"] = [25.0, 25.0, 25.0]
+    def test_uses_usd_financial_columns_when_base_missing(self, loan_df: pd.DataFrame):
+        loan_df = loan_df.copy().drop(
+            columns=["interest_rate", "apr", "default_flag"], errors="ignore"
+        )
+        loan_df["interest_income_usd"] = [100.0, 200.0, 300.0]
+        loan_df["fee_income_usd"] = [10.0, 20.0, 30.0]
+        loan_df["funding_cost_usd"] = [25.0, 25.0, 25.0]
+        loan_df["provision_expense_usd"] = [1.0, 2.0, 3.0]
 
         result = build_finance(loan_df)
 
         assert result["interest_income"].sum() == pytest.approx(600.0)
         assert result["fee_income"].sum() == pytest.approx(60.0)
         assert result["funding_cost"].sum() == pytest.approx(75.0)
+        assert result["provision_expense"].sum() == pytest.approx(6.0)
 
-    def test_missing_rate_and_interest_income_raises(self, loan_df: pd.DataFrame):
-        loan_df = loan_df.drop(columns=["interest_rate", "apr"])
-
-        with pytest.raises(ValueError, match="requires interest_rate"):
-            build_finance(loan_df)
-
-    @pytest.mark.parametrize(
-        "interest_values, fee_values, funding_values",
-        [
-            (
-                [100.0, 200.0, 300.0],
-                [10.0, 20.0, 30.0],
-                [25.0, 25.0, 25.0],
-            )
-        ],
-    )
-    def test_uses_usd_financial_columns_when_base_missing(
-        self,
-        loan_df: pd.DataFrame,
-        interest_values,
-        fee_values,
-        funding_values,
-    ):
-        loan_df = loan_df.copy()
-
-        # Ensure base-name columns are absent so *_usd is selected by _first_present
-        loan_df = loan_df.drop(
-            columns=[
-                "interest_income",
-                "fee_income",
-                "funding_cost",
-    def test_no_rate_does_not_use_placeholder_multipliers(self, loan_df: pd.DataFrame):
-        loan_df = loan_df.copy()
-
-        # Drop all rate-like columns and any pre-populated financial result columns
-        loan_df = loan_df.drop(
-            columns=[
-                "interest_rate",
-                "tasainteres",
-                "apr",
-                "origination_fee_rate",
-                "fee_rate",
-                "cost_of_funds_rate",
-                "funding_rate",
-                "interest_income",
-                "fee_income",
-                "funding_cost",
-                "provision_expense",
-            ],
-            errors="ignore",
-        )
-
-        loan_df["interest_income_usd"] = interest_values
-        loan_df["fee_income_usd"] = fee_values
-        loan_df["funding_cost_usd"] = funding_values
-
+    def test_missing_funding_cost_defaults_to_zero_with_warning_path(self, loan_df: pd.DataFrame):
+        loan_df = loan_df.copy().drop(columns=["interest_rate", "apr"], errors="ignore")
+        loan_df["interest_income"] = [100.0, 200.0, 300.0]
+        loan_df["fee_income"] = [10.0, 20.0, 30.0]
+        loan_df["provision_expense"] = [1.0, 2.0, 3.0]
         result = build_finance(loan_df)
-
-        assert result["interest_income"].sum() == pytest.approx(sum(interest_values))
-        assert result["fee_income"].sum() == pytest.approx(sum(fee_values))
-        assert result["funding_cost"].sum() == pytest.approx(sum(funding_values))
-
-    @pytest.mark.parametrize(
-        "origination_fee, interest_expense, expected_loss",
-        [
-            (
-                [5.0, 10.0, 15.0],
-                [20.0, 20.0, 20.0],
-                [1.0, 2.0, 3.0],
-            )
-        ],
-    )
-    def test_uses_alternate_financial_columns_when_present(
-        self,
-        loan_df: pd.DataFrame,
-        origination_fee,
-        interest_expense,
-        expected_loss,
-    ):
-        loan_df = loan_df.copy()
-
-        # Remove other alternative columns so _first_present selects the intended ones
-        loan_df = loan_df.drop(
-            columns=[
-                "fee_income",
-                "fee_income_usd",
-                "funding_cost",
-                "funding_cost_usd",
-                "interest_income",
-                "interest_income_usd",
-                "expected_loss_usd",
-            ],
-            errors="ignore",
-        )
-
-        loan_df["origination_fee"] = origination_fee
-        loan_df["interest_expense"] = interest_expense
-        loan_df["expected_loss"] = expected_loss
-
-        result = build_finance(loan_df)
-
-        # origination_fee should map into aggregated fee_income
-        assert result["fee_income"].sum() == pytest.approx(sum(origination_fee))
-        # interest_expense should map into aggregated funding_cost
-        assert result["funding_cost"].sum() == pytest.approx(sum(interest_expense))
-        # expected_loss should flow through to expected_loss aggregate
-        assert result["expected_loss"].sum() == pytest.approx(sum(expected_loss))
-        # Ensure no defaults so provision should also be zero in the fallback path
-        loan_df["default_flag"] = 0
-
-        result = build_finance(loan_df)
-
-        assert result["interest_income"].sum() == pytest.approx(0.0)
-        assert result["fee_income"].sum() == pytest.approx(0.0)
         assert result["funding_cost"].sum() == pytest.approx(0.0)
-        assert result["provision_expense"].sum() == pytest.approx(0.0)
 
 
 class TestSalesMart:

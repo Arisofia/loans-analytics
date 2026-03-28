@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import logging
-
 import pandas as pd
 
-logger = logging.getLogger(__name__)
-
 _REQUIRED_BASE_COLUMNS = ("origination_date", "outstanding_principal")
+logger = logging.getLogger(__name__)
 
 
 def _series_or_zero(df: pd.DataFrame, column: str) -> pd.Series:
@@ -15,25 +13,101 @@ def _series_or_zero(df: pd.DataFrame, column: str) -> pd.Series:
     return pd.Series(0.0, index=df.index, dtype=float)
 
 
+def _zero_series(df: pd.DataFrame) -> pd.Series:
+    return pd.Series(0.0, index=df.index, dtype=float)
+
+
 def _first_present(df: pd.DataFrame, candidates: list[str]) -> str | None:
-    for col in candidates:
-        if col in df.columns:
-            return col
-    return None
+    return next((col for col in candidates if col in df.columns), None)
 
 
 def _validate_required_columns(df: pd.DataFrame) -> None:
     missing = [col for col in _REQUIRED_BASE_COLUMNS if col not in df.columns]
     if missing:
         raise ValueError(
-            "finance_mart requires base columns "
-            "finance_mart requires real Google-source fields "
-            f"{_REQUIRED_BASE_COLUMNS}. Missing: {missing}"
+            f"finance_mart requires base columns {_REQUIRED_BASE_COLUMNS}. Missing: {missing}"
         )
 
 
+def _resolve_direct_or_rate(
+    df: pd.DataFrame,
+    *,
+    direct_candidates: list[str],
+    rate_candidates: list[str],
+    base_amount: pd.Series,
+    annualize: bool = False,
+    warn_message: str,
+) -> pd.Series:
+    direct_col = _first_present(df, direct_candidates)
+    if direct_col:
+        return _series_or_zero(df, direct_col)
+    rate_col = _first_present(df, rate_candidates)
+    if not rate_col:
+        logger.warning(warn_message)
+        return _zero_series(df)
+    rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
+    denominator = 12 if annualize else 1
+    return base_amount * rate / denominator
+
+
+def _resolve_interest_income(df: pd.DataFrame, outstanding: pd.Series) -> pd.Series:
+    interest_income_col = _first_present(df, ["interest_income", "interest_income_usd"])
+    if interest_income_col:
+        return _series_or_zero(df, interest_income_col)
+
+    rate_col = _first_present(df, ["interest_rate", "tasainteres", "apr"])
+    if not rate_col:
+        raise ValueError(
+            "finance_mart requires one of [interest_rate, tasainteres, apr] "
+            "or an explicit [interest_income, interest_income_usd] column"
+        )
+    rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
+    return outstanding * rate / 12
+
+
+def _resolve_fee_income(df: pd.DataFrame, funded: pd.Series) -> pd.Series:
+    return _resolve_direct_or_rate(
+        df,
+        direct_candidates=["fee_income", "fee_income_usd", "origination_fee"],
+        rate_candidates=["origination_fee_rate", "fee_rate"],
+        base_amount=funded,
+        annualize=False,
+        warn_message="finance_mart: missing fee income/rate inputs; defaulting fee income to 0.0",
+    )
+
+
+def _resolve_funding_cost(df: pd.DataFrame, funded: pd.Series) -> pd.Series:
+    return _resolve_direct_or_rate(
+        df,
+        direct_candidates=["funding_cost", "funding_cost_usd", "interest_expense"],
+        rate_candidates=["cost_of_funds_rate", "funding_rate"],
+        base_amount=funded,
+        annualize=True,
+        warn_message="finance_mart: missing funding cost/rate inputs; defaulting funding_cost to 0.0",
+    )
+
+
+def _resolve_provision_expense(df: pd.DataFrame, outstanding: pd.Series) -> pd.Series:
+    provision_col = _first_present(
+        df, ["provision_expense", "provision_expense_usd", "expected_loss"]
+    )
+    if provision_col:
+        return _series_or_zero(df, provision_col)
+
+    default_flag_col = _first_present(df, ["default_flag", "is_default"])
+    lgd_col = _first_present(df, ["lgd", "loss_given_default"])
+    if not default_flag_col or not lgd_col:
+        logger.warning(
+            "finance_mart: missing provision/default inputs; defaulting provision_expense to 0.0"
+        )
+        return _zero_series(df)
+    default_flag = pd.to_numeric(df[default_flag_col], errors="coerce").fillna(0.0)
+    lgd = pd.to_numeric(df[lgd_col], errors="coerce").fillna(0.0)
+    return outstanding * default_flag * lgd
+
+
 def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
-    """Build finance mart from real pipeline columns only (no placeholder multipliers)."""
+    """Build finance mart from source fields, failing fast when critical financial inputs are missing."""
     df = portfolio_df.copy()
     _validate_required_columns(df)
 
@@ -41,78 +115,15 @@ def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
     if df["origination_date"].isna().all():
         raise ValueError("finance_mart requires at least one valid origination_date value")
 
-        raise ValueError("finance_mart requires valid origination_date values from loan_data")
-
-    df["origination_date"] = pd.to_datetime(df.get("origination_date"), errors="coerce")
     df["as_of_month"] = df["origination_date"].dt.to_period("M").astype(str)
 
     outstanding = _series_or_zero(df, "outstanding_principal")
     funded = _series_or_zero(df, "funded_amount")
 
-    interest_income_col = _first_present(df, ["interest_income", "interest_income_usd"])
-    fee_income_col = _first_present(df, ["fee_income", "fee_income_usd", "origination_fee"])
-    funding_cost_col = _first_present(df, ["funding_cost", "funding_cost_usd", "interest_expense"])
-    provision_col = _first_present(df, ["provision_expense", "provision_expense_usd", "expected_loss"])
-    provision_col = _first_present(df, ["provision_expense", "expected_loss", "provision_expense_usd"])
-
-    if interest_income_col:
-        df["_interest_income"] = _series_or_zero(df, interest_income_col)
-    else:
-        rate_col = _first_present(df, ["interest_rate", "tasainteres", "apr"])
-        if not rate_col:
-            raise ValueError(
-                "finance_mart requires one of [interest_rate, tasainteres, apr] "
-                "or an explicit interest_income column"
-            )
-        rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
-        df["_interest_income"] = outstanding * rate / 12
-        if rate_col:
-            rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
-            df["_interest_income"] = outstanding * rate / 12
-        else:
-            logger.warning("finance_mart: missing interest rate and interest income columns; defaulting interest_income to 0")
-            df["_interest_income"] = 0.0
-
-    if fee_income_col:
-        df["_fee_income"] = _series_or_zero(df, fee_income_col)
-    else:
-        fee_rate_col = _first_present(df, ["origination_fee_rate", "fee_rate"])
-        if fee_rate_col:
-            fee_rate = pd.to_numeric(df[fee_rate_col], errors="coerce").fillna(0.0)
-            df["_fee_income"] = funded * fee_rate
-        else:
-            df["_fee_income"] = 0.0
-
-    if funding_cost_col:
-        df["_funding_cost"] = _series_or_zero(df, funding_cost_col)
-    else:
-        cof_col = _first_present(df, ["cost_of_funds_rate", "funding_rate"])
-        if cof_col:
-            cof_rate = pd.to_numeric(df[cof_col], errors="coerce").fillna(0.0)
-            df["_funding_cost"] = funded * cof_rate / 12
-        else:
-            logger.warning("finance_mart: funding_cost missing; defaulting to 0")
-            logger.warning("finance_mart: funding_cost not found in loan_data/control_mora derived set; defaulting to 0")
-            logger.warning("finance_mart: missing funding cost columns; defaulting funding_cost to 0")
-            df["_funding_cost"] = 0.0
-
-    if provision_col:
-        df["_provision_expense"] = _series_or_zero(df, provision_col)
-    else:
-        default_flag_col = _first_present(df, ["default_flag", "is_default"])
-        lgd_col = _first_present(df, ["lgd", "loss_given_default"])
-        if default_flag_col and lgd_col:
-            default_flag = pd.to_numeric(df[default_flag_col], errors="coerce").fillna(0.0)
-            lgd = pd.to_numeric(df[lgd_col], errors="coerce").fillna(0.0)
-            df["_provision_expense"] = outstanding * default_flag * lgd
-        else:
-            logger.warning("finance_mart: provision_expense missing; defaulting to 0")
-            df["_provision_expense"] = 0.0
-        logger.warning("finance_mart: provision_expense not found in real inputs; defaulting to 0")
-        df["_provision_expense"] = 0.0
-        default_flag = _series_or_zero(df, "default_flag")
-        lgd = pd.to_numeric(df.get("lgd", pd.Series(0.45, index=df.index)), errors="coerce").fillna(0.45)
-        df["_provision_expense"] = default_flag * outstanding * lgd
+    df["_interest_income"] = _resolve_interest_income(df, outstanding)
+    df["_fee_income"] = _resolve_fee_income(df, funded)
+    df["_funding_cost"] = _resolve_funding_cost(df, funded)
+    df["_provision_expense"] = _resolve_provision_expense(df, outstanding)
 
     grouped = (
         df.groupby("as_of_month", dropna=False)

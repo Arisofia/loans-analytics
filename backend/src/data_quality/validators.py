@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import pandas as pd
 
-from backend.src.data_quality.rules import Rule, RuleResult, Severity, register
-from backend.src.data_quality.rules import RULE_REGISTRY  # noqa: F401
+from backend.src.data_quality.rules import RULE_REGISTRY, Rule, RuleResult, Severity, register
+
+__all__ = ["RULE_REGISTRY"]
 
 
 # ── Completeness checks ─────────────────────────────────────────────────
@@ -34,12 +35,14 @@ def _check_required_fields(df: pd.DataFrame) -> RuleResult:
     )
 
 
-register(Rule(
-    rule_id="required_fields",
-    description="All required columns must be present and non-null",
-    severity=Severity.BLOCKING,
-    check_fn=_check_required_fields,
-))
+register(
+    Rule(
+        rule_id="required_fields",
+        description="All required columns must be present and non-null",
+        severity=Severity.BLOCKING,
+        check_fn=_check_required_fields,
+    )
+)
 
 
 # ── Uniqueness checks ───────────────────────────────────────────────────
@@ -56,13 +59,15 @@ def _check_loan_id_unique(df: pd.DataFrame) -> RuleResult:
     )
 
 
-register(Rule(
-    rule_id="loan_id_unique",
-    description="loan_id must be unique within the mart",
-    severity=Severity.CRITICAL,
-    check_fn=_check_loan_id_unique,
-    mart="portfolio_mart",
-))
+register(
+    Rule(
+        rule_id="loan_id_unique",
+        description="loan_id must be unique within the mart",
+        severity=Severity.CRITICAL,
+        check_fn=_check_loan_id_unique,
+        mart="portfolio_mart",
+    )
+)
 
 
 # ── Range checks ────────────────────────────────────────────────────────
@@ -80,12 +85,14 @@ def _check_amount_positive(df: pd.DataFrame) -> RuleResult:
     )
 
 
-register(Rule(
-    rule_id="amount_positive",
-    description="Loan amount must be > 0",
-    severity=Severity.WARNING,
-    check_fn=_check_amount_positive,
-))
+register(
+    Rule(
+        rule_id="amount_positive",
+        description="Loan amount must be > 0",
+        severity=Severity.WARNING,
+        check_fn=_check_amount_positive,
+    )
+)
 
 
 def _check_interest_rate_range(df: pd.DataFrame) -> RuleResult:
@@ -102,12 +109,14 @@ def _check_interest_rate_range(df: pd.DataFrame) -> RuleResult:
     )
 
 
-register(Rule(
-    rule_id="interest_rate_range",
-    description="Interest rate must be between 0% and 100%",
-    severity=Severity.WARNING,
-    check_fn=_check_interest_rate_range,
-))
+register(
+    Rule(
+        rule_id="interest_rate_range",
+        description="Interest rate must be between 0% and 100%",
+        severity=Severity.WARNING,
+        check_fn=_check_interest_rate_range,
+    )
+)
 
 
 # ── Status enum check ───────────────────────────────────────────────────
@@ -125,9 +134,11 @@ def _check_valid_status(df: pd.DataFrame) -> RuleResult:
     )
 
 
-register(Rule(
-    rule_id="valid_status",
-    description="Status must be one of: active, delinquent, defaulted, closed",
-    severity=Severity.CRITICAL,
-    check_fn=_check_valid_status,
-))
+register(
+    Rule(
+        rule_id="valid_status",
+        description="Status must be one of: active, delinquent, defaulted, closed",
+        severity=Severity.CRITICAL,
+        check_fn=_check_valid_status,
+    )
+)

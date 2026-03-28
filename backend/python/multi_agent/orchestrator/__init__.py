@@ -27,7 +27,6 @@ def _load_legacy_orchestrator() -> types.ModuleType:
 
 
 try:
-    _legacy = _load_legacy_orchestrator()
-    MultiAgentOrchestrator = _legacy.MultiAgentOrchestrator  # noqa: F401
+    MultiAgentOrchestrator = _load_legacy_orchestrator().MultiAgentOrchestrator  # noqa: F401
 except Exception:  # noqa: BLE001 — graceful fallback if legacy file is missing
     pass
