@@ -1,6 +1,8 @@
 import os
 import json
-import requests
+import urllib.request
+import urllib.error
+import urllib.parse
 from pathlib import Path
 from typing import Dict, Any
 
@@ -26,7 +28,7 @@ def sync_to_supabase(run_dir: Path):
     mapping = {
         "kpis.json": "summary",
         "segment_kpis.json": "portfolio", # Simplified mapping
-        "risk_alerts.json": "risk", # Assuming this exists or will be derived
+        "risk_alerts.json": "risk",
         "collections.json": "collections",
         "treasury.json": "treasury",
         "sales.json": "sales",
@@ -40,7 +42,6 @@ def sync_to_supabase(run_dir: Path):
     if decision_dir.exists():
         mapping_decision = {
             "decision_center_state.json": "executive",
-            "decision_center_state.json": "decision", # Map to both for redundancy/compatibility
         }
         for filename, section in mapping_decision.items():
             file_path = decision_dir / filename
@@ -51,23 +52,46 @@ def sync_to_supabase(run_dir: Path):
         file_path = run_dir / filename
         if file_path.exists():
             _push_file(file_path, section, base_url, headers)
-        else:
-            # Try subdirectories if any
-            pass
 
-def _push_file(file_path: Path, section: string, base_url: string, headers: Dict):
+def _push_file(file_path: Path, section: str, base_url: str, headers: Dict):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
         url = f"{base_url}/{section}"
-        print(f"Pushing {file_path.name} to {url}...")
-        response = requests.put(url, json=data, headers=headers)
         
-        if response.status_code == 200:
+        # Bandit fix: Audit url open for permitted schemes.
+        parsed_url = urllib.parse.urlparse(url)
+        if parsed_url.scheme not in ('http', 'https'):
+            print(f"Error: Unsupported URL scheme {parsed_url.scheme}")
+            return
+
+        print(f"Pushing {file_path.name} to {url}...")
+        
+        req = urllib.request.Request(
+            url=url,
+            data=json.dumps(data).encode("utf-8"),
+            method="PUT",
+            headers=headers
+        )
+        
+        # Sourcery fix: urlopen raises HTTPError for 4xx/5xx; manual status check is dead code.
+        with urllib.request.urlopen(req, timeout=30) as response:
+            # We just need to ensure it completed without exception
+            _ = response.read()
             print(f"Successfully synced {section}")
-        else:
-            print(f"Failed to sync {section}: {response.status_code} {response.text}")
+            
+    except urllib.error.HTTPError as e:
+        # Catch specific HTTP errors to show details
+        print(f"Failed to sync {section}: {e.code} {e.reason}")
+        try:
+            error_body = e.read().decode()
+            if error_body:
+                print(f"Response body: {error_body}")
+        except:
+            pass
+    except urllib.error.URLError as e:
+        print(f"Network error syncing {section}: {e.reason}")
     except Exception as e:
         print(f"Error syncing {file_path}: {e}")
 
@@ -75,7 +99,7 @@ if __name__ == "__main__":
     # Example usage: find latest run or pass as arg
     runs_dir = Path("logs/runs")
     if runs_dir.exists():
-        runs = sorted([d for d in runs_dir.iterdir() if d.is_dir()], key=os.path.getmtime, reverse=True)
+        runs = sorted([d for d in runs_dir.iterdir() if d.is_dir()], key=lambda d: d.stat().st_mtime, reverse=True)
         if runs:
             latest_run = runs[0]
             print(f"Syncing latest run: {latest_run}")

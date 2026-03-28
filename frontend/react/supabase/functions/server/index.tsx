@@ -307,39 +307,65 @@ const DEFAULT_DATA: Record<string, unknown> = {
 async function ensureSeeded() {
   try {
     const check = await kv.get("data:summary");
-    if (!check) {
-      const entries = Object.entries(DEFAULT_DATA).map(([section, value]) => ({
-        key: `data:${section}`,
-        value,
-      }));
-      await kv.mset(entries);
+    try {
+      const check = await kv.get("data:summary");
+      if (!check) {
+        const entries = Object.entries(DEFAULT_DATA).map(([section, value]) => ({
+          key: `data:${section}`,
+          value,
+        }));
+        await kv.mset(entries);
+        console.log(`[KV] Seeded ${entries.length} default data sections.`);
+      }
+    } catch (err) {
+      console.error("[KV] Failed to check/seed default data:", err);
+      console.log(`[KV] Seeded ${entries.length} default data sections.`);
     }
-  } catch (_error) {
-    // Intentionally ignore seeding failures.
-    // GET routes include explicit DEFAULT_DATA fallback per section.
-  }
-}
-
-// ─── Routes ──────────────────────────────────────────────────────
-app.get("/data/:section", async (c) => {
-  await ensureSeeded();
-  const section = c.req.param("section");
-  let data = null;
-
-  try {
-    data = await kv.get(`data:${section}`);
-  } catch (_error) {
-    data = null;
-  }
-
-  if (!data) {
-    const fallback = DEFAULT_DATA[section];
+  } catch (err) {
+    console.error("[KV] Failed to check/seed default data:", err);
+  app.get("/data/:section", async (c) => {
+    const section = c.req.param("section");
+    try {
+      await ensureSeeded();
+      const data = await kv.get(`data:${section}`);
+      // Fallback to DEFAULT_DATA if KV is empty, but respect valid falsy values
+      if (data !== null && data !== undefined) {
+        return c.json(data);
+      }
+    } catch (err) {
+      console.error(`[KV] Error fetching section ${section}:", err);
+    }
+    // Fallback to static data if KV fails or is empty
+    if (Object.prototype.hasOwnProperty.call(DEFAULT_DATA, section)) {
+      return c.json(DEFAULT_DATA[section]);
+    }
+    return c.json({ error: "Section not found" }, 404);
+  });
     if (fallback) {
       return c.json(fallback);
     }
     return c.json({ error: "Section not found" }, 404);
+=======
+  
+  try {
+    await ensureSeeded();
+    const data = await kv.get(`data:${section}`);
+    
+    // Sourcery fix: fallback to DEFAULT_DATA if KV is empty, but respect valid falsy values
+    if (data !== null && data !== undefined) {
+      return c.json(data);
+    }
+  } catch (err) {
+    console.error(`[KV] Error fetching section ${section}:`, err);
+>>>>>>> 9af4f9296 (fix: robust fallback in GET /data/:section, error logging for KV, review feedback applied)
   }
-  return c.json(data);
+
+  // Fallback to static data if KV fails or is empty
+  if (Object.prototype.hasOwnProperty.call(DEFAULT_DATA, section)) {
+    return c.json(DEFAULT_DATA[section]);
+  }
+
+  return c.json({ error: "Section not found" }, 404);
 });
 
 app.put("/data/:section", async (c) => {

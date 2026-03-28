@@ -270,6 +270,8 @@ class TransformationPhase:
             "apr__term__ponderado": "term_months",
             "ingreso_total_por_desembolso": "tpv",
             "ingreso_pagadopendiente": "tpv",
+            "tasa_de_interés": "interest_rate",
+            "tasa_interes": "interest_rate",
         }
         if rename_dict := {
             source: target
