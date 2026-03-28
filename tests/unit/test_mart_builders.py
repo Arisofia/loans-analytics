@@ -78,6 +78,11 @@ class TestFinanceMart:
         assert result["fee_income"].sum() == pytest.approx(60.0)
         assert result["funding_cost"].sum() == pytest.approx(75.0)
 
+    def test_missing_rate_and_interest_income_raises(self, loan_df: pd.DataFrame):
+        loan_df = loan_df.drop(columns=["interest_rate", "apr"])
+
+        with pytest.raises(ValueError, match="requires interest_rate"):
+            build_finance(loan_df)
     def test_no_rate_does_not_use_placeholder_multipliers(self, loan_df: pd.DataFrame):
         loan_df = loan_df.copy()
 
