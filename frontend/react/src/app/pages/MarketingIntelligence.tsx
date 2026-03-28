@@ -62,6 +62,17 @@ export default function MarketingIntelligence() {
           <p className="text-base font-semibold" style={{ color: "var(--primary-purple)" }}>
             Invisible Primes Opportunity
           </p>
+      </div>
+
+      <div
+        className="rounded-xl p-5 flex gap-5 items-center"
+        style={{ background: "var(--gradient-card-primary)", border: "1px solid var(--primary-purple)" }}
+      >
+        <div style={{ fontSize: 40, flexShrink: 0 }}>✨</div>
+        <div className="flex-1">
+          <p className="text-base font-semibold" style={{ color: "var(--primary-purple)" }}>
+            Invisible Primes Opportunity
+          </p>
         <MetricCard title="CAC" value={`$${summary.cac}`} icon={DollarSign}
           status={summary.cac < 100 ? "good" : summary.cac < 150 ? "warning" : "critical"} />
         <MetricCard title="LTV" value={`$${summary.ltv.toLocaleString()}`} icon={TrendingUp} status="good" />
@@ -126,6 +137,9 @@ export default function MarketingIntelligence() {
                       borderRadius: 3,
                     }}
                   />
+                </div>
+                <span style={{ fontSize: 11, color: "var(--medium-gray)", minWidth: 60, textAlign: "right" }}>
+                  {(c.leads > 0 ? ((c.funded / c.leads) * 100).toFixed(1) : "0.0")}% · CAC ${c.cac}
                 </div>
                 <span style={{ fontSize: 11, color: "var(--medium-gray)", minWidth: 60, textAlign: "right" }}>
                   {(c.leads > 0 ? ((c.funded / c.leads) * 100).toFixed(1) : "0.0")}% · CAC ${c.cac}
