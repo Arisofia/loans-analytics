@@ -1,5 +1,7 @@
 # 🚀 Setup Guide - Consolidated
 
+> **Deployment scope note (2026-03-28):** Canonical production deployment is `deploy-free-tier.yml` (GHCR + Render/Railway/Fly). Any Azure references in this document are historical implementation notes, not an active deployment path.
+
 > **Purpose**: Single source of truth for all project setup procedures  
 > **Replaces**: 12 scattered SETUP files (2,478 lines total)  
 > **Date**: January 30, 2026
@@ -14,7 +16,7 @@
 4. [Integration Tests Setup](#4-integration-tests-setup)
 5. [Monitoring & Alertmanager Setup](#5-monitoring--alertmanager-setup)
 6. [Secrets & Environment Setup](#6-secrets--environment-setup)
-7. [Azure Cloud Setup](#7-azure-cloud-setup)
+7. [Historical Azure Setup (Inactive)](#7-historical-azure-setup-inactive)
 8. [Supabase Database Setup](#8-supabase-database-setup)
 9. [Workspace Configuration](#9-workspace-configuration)
 
@@ -283,7 +285,7 @@ Required GitHub Secrets:
 
 ---
 
-## 7. Azure Cloud Setup
+## 7. Historical Azure Setup (Inactive)
 
 ### Azure CLI Installation
 

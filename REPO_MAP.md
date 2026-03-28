@@ -60,11 +60,13 @@
 - `kpis/` — KPI definitions (per version)
 - `rules/` — Alert & validation rules
 
-#### `db/` — Database & data
+#### `db/` — Database schema assets
 - `migrations/` — Supabase migration scripts (14-digit timestamps, lexicographic order)
 - `sql/` — Raw SQL utilities
 - `star_schema/` — Dimensional schema definitions
-- `samples/` — (planned) Sample loan data for development
+
+#### `tests/fixtures/` — Test-only deterministic fixtures
+- Contains non-production fixtures used only by automated tests (for example E2E CSV input).
 
 ### Documentation
 

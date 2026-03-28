@@ -1,0 +1,7 @@
+loan_id,borrower_id,amount,status,days_past_due,outstanding_balance,interest_rate,last_payment_amount,total_scheduled,origination_date
+LN-0001,CUST-001,1200,active,0,1200,22,120,120,2025-01-15
+LN-0002,CUST-002,900,delinquent,32,860,24,40,120,2025-01-20
+LN-0003,CUST-003,1500,defaulted,120,1400,28,0,180,2024-11-02
+LN-0004,CUST-001,750,active,5,700,20,75,90,2025-02-01
+LN-0005,CUST-004,980,delinquent,61,900,23,30,110,2024-12-12
+LN-0006,CUST-005,1320,active,0,1280,21,130,130,2025-02-22
