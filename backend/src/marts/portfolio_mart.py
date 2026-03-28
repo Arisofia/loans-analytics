@@ -13,7 +13,9 @@ DPD_BUCKETS = [
 ]
 
 
-def _dpd_bucket(days_past_due: int) -> str:
+def _dpd_bucket(days_past_due: int | float | None) -> str:
+    if days_past_due is None or pd.isna(days_past_due):
+        return "unknown"
     if days_past_due <= 0:
         return "current"
     if days_past_due <= 30:
@@ -32,7 +34,8 @@ def build_portfolio_mart(loans_df: pd.DataFrame) -> pd.DataFrame:
     df["origination_month"] = df["origination_date"].dt.to_period("M").astype(str)
     df["cohort"] = df["origination_month"]
     df["vintage"] = df["origination_month"]
-    df["dpd_bucket"] = df["days_past_due"].fillna(0).astype(int).map(_dpd_bucket)
+    dpd_series = pd.to_numeric(df["days_past_due"], errors="coerce")
+    df["dpd_bucket"] = dpd_series.map(_dpd_bucket)
 
     required_columns = [
         "loan_id",

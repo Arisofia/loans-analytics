@@ -162,6 +162,13 @@ class TestClassifyDpdBuckets:
         result = classify_dpd_buckets(portfolio_df, output_col="bucket")
         assert "bucket" in result.columns
 
+    def test_null_dpd_is_classified_as_unknown(self, portfolio_df: pd.DataFrame) -> None:
+        df = portfolio_df.copy()
+        df.loc[df["loan_id"] == "L02", "days_past_due"] = None
+        result = classify_dpd_buckets(df)
+        dpd_map = result.set_index("loan_id")["dpd_bucket"].to_dict()
+        assert dpd_map["L02"] == "unknown"
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # risk — segment_clients_by_exposure
