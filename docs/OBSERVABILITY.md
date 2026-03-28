@@ -1,5 +1,7 @@
 ﻿# Observability & Monitoring Setup
 
+> **Deployment scope note (2026-03-28):** Canonical production deployment is `deploy-free-tier.yml` (GHCR + Render/Railway/Fly). Any Azure references in this document are historical implementation notes, not an active deployment path.
+
 **Last Updated:** 2026-01-29  
 **Status:** âœ… **PRODUCTION READY**
 

@@ -292,7 +292,7 @@ jobs:
           STREAMLIT_BROWSER_GATHER_USAGE_STATS: "false"
         run: |
           nohup uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 > /tmp/api.log 2>&1 &
-          nohup streamlit run frontend/streamlit_app/pages/3_Portfolio_Dashboard.py --server.port=8501 --server.address=127.0.0.1 > /tmp/dashboard.log 2>&1 &
+          nohup streamlit run frontend/streamlit_app/app.py --server.port=8501 --server.address=127.0.0.1 > /tmp/dashboard.log 2>&1 &
 
       - name: Wait for services
         run: |
@@ -331,7 +331,7 @@ jobs:
           RUN_E2E: "1"
           BACKEND_BASE_URL: "http://127.0.0.1:8000"
           FRONTEND_BASE_URL: "http://127.0.0.1:8501"
-          CSV_PATH: "data/samples/loans_sample_data_20260202.csv"
+          CSV_PATH: "tests/fixtures/loans_e2e_fixture.csv"
           EXPECT_FALLBACK_MODE: "1"
         run: |
           "$PYTHON_BIN" -m pytest tests/e2e -v -m e2e --tb=short
@@ -382,4 +382,4 @@ jobs:
 
       - name: Pipeline config validation
         run: |
-          "$PYTHON_BIN" scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv --mode validate
+          "$PYTHON_BIN" scripts/data/run_data_pipeline.py --input tests/fixtures/loans_e2e_fixture.csv --mode validate

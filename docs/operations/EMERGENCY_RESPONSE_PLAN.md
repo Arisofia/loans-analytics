@@ -1,181 +1,87 @@
 # 🚨 Emergency Response Plan - Production Outage
 
-**Date**: January 1, 2026, 7:00 AM CET
-**Status**: CRITICAL - All 3 P0 systems down
-**Owner**: DevOps / Data Engineering Lead
+**Status**: Active runbook template for P0 production incidents.
+**Owner**: DevOps / Data Engineering Lead.
 
 ---
 
-## SITUATION REPORT
+## 1) Immediate Incident Classification (First 15 Minutes)
 
-### P0 Issues (CRITICAL - Fix Immediately)
+Classify impact using live symptoms:
 
-| Issue                                | Status                      | Impact                         | Owner    |
-| ------------------------------------ | --------------------------- | ------------------------------ | -------- |
-| **PROD-001: Dashboard Offline**      | DNS_PROBE_FINISHED_NXDOMAIN | Users cannot access system     | DevOps   |
-| **PROD-002: CI/CD Pipeline Broken**  | 🔧 **FIXED** - Redeploying  | Blocks all code deployments    | DevOps   |
-| **PROD-003: Data Pipelines Failing** | Unknown root cause          | No data refresh, stale metrics | Data Eng |
-
----
-
-## IMMEDIATE ACTIONS (Next 30 Minutes)
-
-### 1️⃣ Deploy CI/CD Fix
-
-**Status**: ✅ **COMPLETE** - Fixed `.github/workflows/deploy-dashboard.yml`
-**Fix Applied**:
-
-- Replaced invalid `if: ${{ secrets.AZURE_CREDENTIALS != '' }}` syntax
-- Added proper GitHub Actions output check: `steps.check_creds.outputs.has_creds == true`
-- Added health check validation after deployment
-- Added failure notifications
-  **Next Step**: Commit and push to main
-
-```bash
-git add .github/workflows/deploy-dashboard.yml
-git commit -m "fix(ci): correct github actions secrets context syntax (P0 PROD-002)"
-git push origin main
-```
-
-## **Expected Result**: Workflow runs without syntax errors on next push to main
-
-### 2️⃣ Restore Dashboard Service (Parallel Task)
-
-**Owner**: DevOps
-**Timeline**: 30 minutes
-**Diagnosis Steps**:
-
-1. Azure Portal → App Services → `loans-analytics-dashboard`
-2. Check "Overview" → Is status "Running"?
-   - If **Stopped** → Click "Start"
-   - If **Running** → Continue to step 3
-3. Click "Diagnose and solve problems" → Run "Availability" check
-4. If startup errors → Check "Log stream" for Python/dependency errors
-   **Common Issues & Fixes**:
-   | Error | Fix |
-   | --------------------- | ---------------------------------------------------------------------- |
-   | `ModuleNotFoundError` | Check `dashboard/requirements.txt` installed all deps |
-   | `Port already in use` | Restart app service |
-   | `Connection timeout` | Check Azure Storage/DB connection string in App Settings |
-   | DNS NXDOMAIN | Check if custom domain configured, or use `*.azurewebsites.net` domain |
-   **Success Criteria**: Dashboard loads without DNS error at <https://loans-analytics-dashboard.azurewebsites.net>
+| Incident ID | Symptom | Severity | Immediate Owner |
+| --- | --- | --- | --- |
+| PROD-API | API `/health` failing | P0 | DevOps |
+| PROD-DASH | Streamlit `/_stcore/health` failing | P0 | DevOps |
+| PROD-PIPE | ETL/pipeline runs failing | P0 | Data Engineering |
+| PROD-DATA | KPI freshness SLA missed | P1 | Data Engineering |
 
 ---
 
-### 3️⃣ Diagnose Data Pipeline Failures (Parallel Task)
+## 2) First Response Actions (First 30 Minutes)
 
-**Owner**: Data Engineering
-**Timeline**: 45 minutes
-**Root Cause Investigation**:
+### A. Validate deployment workflow health
 
-1. GitHub Actions → View latest failed run (e.g., "Daily Data Ingestion")
-2. Click into job logs and search for actual error message
-3. Look for patterns:
-   - **Auth failure** → API key expired, check Key Vault
-   - **Connection timeout** → Network/firewall blocking, check NSG rules
-   - **Module not found** → Dependency missing from `requirements.txt`
-   - **Data validation** → Great Expectations test failed
-     **Immediate Mitigation**:
+1. Open GitHub Actions and inspect latest `deploy-free-tier.yml`, `tests.yml`, and `etl-pipeline.yml` runs.
+2. If deploy workflow failed, capture exact failed step and error.
+3. If deployment target secrets are missing, fail closed and escalate immediately.
 
-- If **single source failed**: Retry manually or use fallback data
-- If **multiple sources failed**: Likely authentication issue → Rotate API keys in Key Vault
-- If **transformation error**: Hotfix code in `src/` and redeploy
-  **Success Criteria**: At least 1 data pipeline completes successfully
+### B. Validate runtime endpoints
+
+- API: `GET /health`
+- Dashboard: `GET /_stcore/health`
+- Data freshness: latest KPI timestamp in monitoring tables
+
+### C. Validate image integrity
+
+Confirm deployed services use expected GHCR `sha-<commit>` image tag.
 
 ---
 
-## HOUR 2-4: STABILIZATION
+## 3) Immediate Mitigation Rules
 
-### 4️⃣ Set Up Basic Monitoring
-
-**Owner**: DevOps
-**Timeline**: 30 minutes
-**Azure Portal Actions**:
-
-```text
-Application Insights → Alerts → Create Alert Rule
-- Metric: Response time > 5 seconds
-- Action: Email to team
-Application Insights → Alerts → Create Alert Rule
-- Metric: Failed requests > 10 in 5 minutes
-- Action: Email to team
-App Service → Health Check
-- Path: /?page=health
-- Enable health check monitoring
-```
-
-**GitHub Actions**:
-
-```text
-Repository Settings → Notifications
-- Workflows: Enable email on workflow failure
-```
+- **Do not** hotfix directly in running containers.
+- **Do not** bypass failing checks by forcing traffic to stale instances.
+- **Do** rollback only to previous known-good image SHA.
+- **Do** keep API and dashboard on the same release SHA.
 
 ---
 
-### 5️⃣ Enable Branch Protection
+## 4) Rollback Procedure (Fail-Fast)
 
-**Owner**: DevOps
-**Timeline**: 10 minutes
-**GitHub → Settings → Branches → Add Rule**:
-
-- Branch name: `main`
-- ✅ Require PR before merging
-- ✅ Require status checks to pass (select CI workflows)
-- ✅ Require code review (1 approval)
-  **Effect**: Prevents direct commits that break production
+1. Identify last known-good release SHA from GitHub Actions.
+2. Redeploy that exact image tag via deployment target (Render/Railway/Fly).
+3. Re-run health checks.
+4. Verify KPI freshness resumes.
+5. Keep incident open until root cause is documented.
 
 ---
 
-## ESCALATION MATRIX
+## 5) Escalation Matrix
 
-| Scenario                           | Action                     | Contact            |
-| ---------------------------------- | -------------------------- | ------------------ |
-| Dashboard still down after restart | Escalate to Azure Support  | CTO                |
-| Pipeline fix doesn't resolve issue | Check API vendor status    | Integration Lead   |
-| Cannot fix in 4 hours              | Activate disaster recovery | CTO + Head of Data |
-
----
-
-## SUCCESS METRICS (Target: EOD)
-
-| Metric                 | Current | Target   |
-| ---------------------- | ------- | -------- |
-| Dashboard Uptime       | 0%      | 95%+     |
-| CI/CD Success Rate     | 0%      | 80%+     |
-| Data Pipelines Running | 0/4     | 3/4      |
-| Monitoring Alerts      | 0       | 5+       |
-| Incident Documentation | Partial | Complete |
+| Scenario | Action | Escalation |
+| --- | --- | --- |
+| Platform remains unavailable > 30 min | Trigger rollback | Engineering Manager |
+| Rollback fails | Declare SEV-1 and freeze releases | CTO |
+| Data freshness still stale after recovery | Stop KPI publication | Head of Data |
 
 ---
 
-## POST-INCIDENT (Next 24 Hours)
+## 6) Recovery Exit Criteria
 
-1. **Root Cause Analysis**: Document why all 3 systems failed simultaneously
-2. **Timeline**: Create detailed timeline of failure detection and response
-3. **Preventive Measures**:
-   - Add better alerting to catch failures earlier
-   - Implement health checks for each component
-   - Add runbooks for common failure patterns
-4. **Team Debrief**: 30-min meeting to review learnings
+All must be true before incident closure:
 
----
-
-## RUNBOOKS REFERENCED
-
-- `docs/runbooks/monitoring-guide.md` → Monitoring and diagnosis steps
-- `docs/runbooks/deployment-blocked.md` → CI/CD and deployment recovery steps
-- `docs/runbooks/dashboard-down.md` → Dashboard service restoration flow
+- [ ] API health endpoint returns success
+- [ ] Dashboard health endpoint returns success
+- [ ] Pipeline run completes without critical error
+- [ ] KPI freshness is within SLA
+- [ ] Post-incident notes include root cause and prevention actions
 
 ---
 
-## KEY CONTACTS
+## 7) Post-Incident Actions (Within 24 Hours)
 
-| Role | Name | Contact | Status |
-| ---- | ---- | ------- | ------ |
-
----
-
-**Last Updated**: 2026-01-01 07:00 CET
-**Status**: EMERGENCY RESPONSE IN PROGRESS
-**Next Review**: 30 minutes
+1. Create incident timeline (detection → mitigation → recovery).
+2. Record root cause and guardrail gap.
+3. Add tests/alerts preventing recurrence.
+4. Link PR and workflow runs used to recover.
