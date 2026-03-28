@@ -48,6 +48,7 @@ opentelemetry-api==1.40.0
 opentelemetry-sdk==1.40.0
 opentelemetry-exporter-otlp==1.40.0
 opentelemetry-instrumentation-httpx==0.61b0
+httpx>=0.24.0
 opentelemetry-instrumentation-requests==0.61b0
 opentelemetry-instrumentation-urllib3==0.61b0
 opentelemetry-instrumentation-sqlite3==0.61b0

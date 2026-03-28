@@ -396,15 +396,17 @@ class TransformationPhase:
                 | (df["status"].astype(str).str.strip() == "")
             )
             if empty_status.mean() > 0.5:
-                dpd_vals = pd.to_numeric(df["dpd"], errors="coerce").fillna(0)
-                status_from_dpd = pd.Series("active", index=df.index, dtype="object")
+                dpd_vals = pd.to_numeric(df["dpd"], errors="coerce")
+                status_from_dpd = pd.Series("unknown", index=df.index, dtype="object")
+                status_from_dpd.loc[dpd_vals.notna() & (dpd_vals <= 0)] = "active"
                 status_from_dpd.loc[dpd_vals > 0] = "delinquent"
                 status_from_dpd.loc[dpd_vals > 90] = "defaulted"
                 df.loc[empty_status, "status"] = status_from_dpd.loc[empty_status]
                 derived.append("status")
         elif "status" not in df.columns and "dpd" in df.columns:
-            dpd_vals = pd.to_numeric(df["dpd"], errors="coerce").fillna(0)
-            status_from_dpd = pd.Series("active", index=df.index, dtype="object")
+            dpd_vals = pd.to_numeric(df["dpd"], errors="coerce")
+            status_from_dpd = pd.Series("unknown", index=df.index, dtype="object")
+            status_from_dpd.loc[dpd_vals.notna() & (dpd_vals <= 0)] = "active"
             status_from_dpd.loc[dpd_vals > 0] = "delinquent"
             status_from_dpd.loc[dpd_vals > 90] = "defaulted"
             df["status"] = status_from_dpd
