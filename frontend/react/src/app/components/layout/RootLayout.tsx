@@ -9,12 +9,12 @@ import {
   Users,
   Menu,
   X,
-  Bell,
   Settings,
   PieChart,
   Shield,
   Percent,
-  Activity
+  Activity,
+  Brain
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -47,6 +47,14 @@ const navigation = [
     title: "GROWTH",
     items: [
       { name: "Sales & Growth", path: "/sales", icon: PieChart },
+      { name: "Marketing Intelligence", path: "/marketing", icon: PieChart },
+    ],
+  },
+  {
+    title: "INTELLIGENCE",
+    items: [
+      { name: "Investor Room", path: "/investor-room", icon: Shield },
+      { name: "AI Decision Center", path: "/ai-center", icon: Brain },
     ],
   },
 ];
@@ -81,9 +89,6 @@ export function RootLayout() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="text-white">
-            <Bell className="h-5 w-5" />
-          </Button>
           <Button variant="ghost" size="icon" className="text-white">
             <Settings className="h-5 w-5" />
           </Button>
@@ -130,18 +135,13 @@ export function RootLayout() {
                       <li key={item.path}>
                         <Link
                           to={item.path}
-                          onClick={() => setSidebarOpen(false)}
                           className={`
                             flex items-center gap-3 px-3 py-2 rounded-lg transition-all
-                            ${isActive 
-                              ? 'text-white font-semibold' 
-                              : 'hover:bg-opacity-10 hover:bg-white'
+                            ${isActive
+                              ? 'text-white font-semibold bg-[var(--sidebar-accent)]'
+                              : 'hover:bg-opacity-10 hover:bg-white text-[var(--light-gray)]'
                             }
                           `}
-                          style={{
-                            backgroundColor: isActive ? 'var(--sidebar-accent)' : 'transparent',
-                            color: isActive ? 'var(--primary-purple)' : 'var(--light-gray)',
-                          }}
                         >
                           <Icon className="h-5 w-5" />
                           <span className="text-sm">{item.name}</span>

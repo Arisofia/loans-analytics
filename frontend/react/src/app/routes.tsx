@@ -1,19 +1,19 @@
 import { createBrowserRouter } from "react-router";
 import { RootLayout } from "./components/layout/RootLayout";
-import { HomePage } from "./pages/HomePage";
-import { PortfolioOverview } from "./pages/PortfolioOverview";
-import { ExecutiveCommandCenter } from "./pages/ExecutiveCommandCenter";
-import { RiskIntelligence } from "./pages/RiskIntelligence";
-import { CollectionsOperations } from "./pages/CollectionsOperations";
-import { TreasuryLiquidity } from "./pages/TreasuryLiquidity";
-import { SalesGrowth } from "./pages/SalesGrowth";
-import { VintageAnalysis } from "./pages/VintageAnalysis";
-import { UnitEconomics } from "./pages/UnitEconomics";
-import { CovenantCompliance } from "./pages/CovenantCompliance";
+import HomePage from "./pages/HomePage";
+import PortfolioOverview from "./pages/PortfolioOverview";
+import ExecutiveCommandCenter from "./pages/ExecutiveCommandCenter";
+import RiskIntelligence from "./pages/RiskIntelligence";
+import CollectionsOperations from "./pages/CollectionsOperations";
+import TreasuryLiquidity from "./pages/TreasuryLiquidity";
+import SalesGrowth from "./pages/SalesGrowth";
+import VintageAnalysis from "./pages/VintageAnalysis";
+import UnitEconomics from "./pages/UnitEconomics";
+import CovenantCompliance from "./pages/CovenantCompliance";
 import AIDecisionCenter from "./pages/AIDecisionCenter";
 import InvestorRoom from "./pages/InvestorRoom";
 import MarketingIntelligence from "./pages/MarketingIntelligence";
-import { NotFound } from "./pages/NotFound";
+import NotFound from "./pages/NotFound";
 
 export const router = createBrowserRouter([
   {
@@ -30,6 +30,7 @@ export const router = createBrowserRouter([
       { path: "vintage", Component: VintageAnalysis },
       { path: "unit-economics", Component: UnitEconomics },
       { path: "covenants", Component: CovenantCompliance },
+      { path: "ai-center", Component: AIDecisionCenter },
       { path: "ai-decision-center", Component: AIDecisionCenter },
       { path: "investor-room", Component: InvestorRoom },
       { path: "marketing", Component: MarketingIntelligence },
