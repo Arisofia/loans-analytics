@@ -1,6 +1,6 @@
 import { projectId, publicAnonKey } from "@/lib/supabase";
 
-const BASE_URL = `https://${projectId}.supabase.co/functions/v1/server/make-server-a903c193`;
+const BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-a903c193`;
 
 const headers: Record<string, string> = {
   "Content-Type": "application/json",

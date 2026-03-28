@@ -32,7 +32,7 @@ const navigation = [
     title: "ANALYTICS",
     items: [
       { name: "Risk Intelligence", path: "/risk", icon: AlertTriangle },
-      { name: "Vintage & Cohort Analysis", path: "/vintage", icon: Activity },
+      { name: "Vintage & Cohort", path: "/vintage", icon: Activity },
     ],
   },
   {
@@ -47,7 +47,7 @@ const navigation = [
     title: "GROWTH",
     items: [
       { name: "Sales & Growth", path: "/sales", icon: PieChart },
-      { name: "Marketing Intelligence", path: "/marketing", icon: PieChart },
+      { name: "Marketing Intelligence", path: "/marketing", icon: TrendingUp },
     ],
   },
   {
