@@ -46,7 +46,7 @@ SECTION_NAMES = [
 class Config:
     project_id: str
     anon_key: str
-    base_path: str = "/functions/v1/server/make-server-a903c193"
+    base_path: str = "/functions/v1/make-server-a903c193"
 
     @property
     def endpoint(self) -> str:
