@@ -208,7 +208,8 @@ jobs:
       - name: Install dependencies
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip
-          "$PYTHON_BIN" -m pip install -r requirements.prod.lock.txt
+          grep -viE '^(pywin32==)' requirements.prod.lock.txt > /tmp/requirements.prod.linux.txt
+          "$PYTHON_BIN" -m pip install -r /tmp/requirements.prod.linux.txt
 
       - name: Run pipeline
         env:
@@ -302,7 +303,8 @@ jobs:
       - name: Install dependencies
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip
-          "$PYTHON_BIN" -m pip install -r requirements.prod.lock.txt duckdb rapidfuzz
+          grep -viE '^(pywin32==)' requirements.prod.lock.txt > /tmp/requirements.prod.linux.txt
+          "$PYTHON_BIN" -m pip install -r /tmp/requirements.prod.linux.txt duckdb rapidfuzz
 
       - name: Initialize DuckDB star schema
         run: python scripts/data/init_duckdb_schema.py
