@@ -250,13 +250,18 @@ const DEFAULT_DATA: Record<string, unknown> = {
 
 // ─── Seed helper ─────────────────────────────────────────────────
 async function ensureSeeded() {
-  const check = await kv.get("data:summary");
-  if (!check) {
-    const entries = Object.entries(DEFAULT_DATA).map(([section, value]) => ({
-      key: `data:${section}`,
-      value,
-    }));
-    await kv.mset(entries);
+  try {
+    const check = await kv.get("data:summary");
+    if (!check) {
+      const entries = Object.entries(DEFAULT_DATA).map(([section, value]) => ({
+        key: `data:${section}`,
+        value,
+      }));
+      await kv.mset(entries);
+    }
+  } catch (_error) {
+    // Intentionally ignore seeding failures.
+    // GET routes include explicit DEFAULT_DATA fallback per section.
   }
 }
 
@@ -264,8 +269,19 @@ async function ensureSeeded() {
 app.get("/data/:section", async (c) => {
   await ensureSeeded();
   const section = c.req.param("section");
-  const data = await kv.get(`data:${section}`);
+  let data = null;
+
+  try {
+    data = await kv.get(`data:${section}`);
+  } catch (_error) {
+    data = null;
+  }
+
   if (!data) {
+    const fallback = DEFAULT_DATA[section];
+    if (fallback) {
+      return c.json(fallback);
+    }
     return c.json({ error: "Section not found" }, 404);
   }
   return c.json(data);
