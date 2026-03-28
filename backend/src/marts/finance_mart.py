@@ -66,11 +66,6 @@ def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
             )
         rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
         df["_interest_income"] = outstanding * rate / 12
-                "finance_mart requires interest_rate/tasainteres/apr or explicit interest_income "
-                "to compute real interest income from loan_data"
-            )
-        rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
-        df["_interest_income"] = outstanding * rate / 12
         if rate_col:
             rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
             df["_interest_income"] = outstanding * rate / 12
