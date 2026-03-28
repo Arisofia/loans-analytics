@@ -39,7 +39,7 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
-          "$PYTHON_BIN" -m pip install --prefer-binary sentry-sdk polars
+          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-ci-test-extras.txt
 
       - name: Run linting (changed Python files only)
         shell: bash
