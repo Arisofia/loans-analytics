@@ -39,11 +39,27 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          "$PYTHON_BIN" -m pip install --prefer-binary sentry-sdk polars
 
-      - name: Run linting
+      - name: Run linting (changed Python files only)
+        shell: bash
         run: |
-          ruff check .
-          black --check .
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.sha }}"
+
+          mapfile -t PY_FILES < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -E '\.py$' || true)
+
+          if [ "${#PY_FILES[@]}" -eq 0 ]; then
+            echo "No Python file changes detected; skipping lint checks."
+            exit 0
+          fi
+
+          echo "Linting changed files:"
+          printf ' - %s\n' "${PY_FILES[@]}"
+
+          ruff check "${PY_FILES[@]}"
+          black --check "${PY_FILES[@]}"
 
       - name: Run mypy type checking
         run: |

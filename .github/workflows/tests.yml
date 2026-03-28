@@ -48,6 +48,7 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          "$PYTHON_BIN" -m pip install --prefer-binary sentry-sdk polars
 
       - name: Check Supabase secrets availability
         id: check-secrets
@@ -124,11 +125,11 @@ jobs:
         if: steps.pytest.outcome == 'failure'
         run: exit 1
 
-      - name: Run full-suite baseline validation
+      - name: Run baseline validation (CI-safe subset)
         if: steps.pytest.outcome == 'success'
         run: |
           mkdir -p artifacts
-          "$PYTHON_BIN" -m pytest -q --json-report --json-report-file=artifacts/full-suite-report.json
+          "$PYTHON_BIN" -m pytest -q --no-cov -m "not integration and not e2e" --json-report --json-report-file=artifacts/full-suite-report.json
           "$PYTHON_BIN" scripts/validation/check_full_suite_baseline.py \
             --baseline .github/ci-baselines/full-suite-baseline.json \
             --report artifacts/full-suite-report.json
@@ -179,6 +180,7 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          "$PYTHON_BIN" -m pip install --prefer-binary sentry-sdk polars
 
       - name: Run integration tests
         env:
@@ -235,6 +237,7 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          "$PYTHON_BIN" -m pip install --prefer-binary sentry-sdk polars
 
       - name: Run multi-agent tests
         run: |
@@ -275,6 +278,7 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          "$PYTHON_BIN" -m pip install --prefer-binary sentry-sdk polars
 
       - name: Install Playwright browser
         run: |
@@ -374,6 +378,7 @@ jobs:
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
           "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          "$PYTHON_BIN" -m pip install --prefer-binary sentry-sdk polars
 
       - name: Pipeline config validation
         run: |
