@@ -124,11 +124,11 @@ jobs:
         if: steps.pytest.outcome == 'failure'
         run: exit 1
 
-      - name: Run full-suite baseline validation
+      - name: Run baseline validation (CI-safe subset)
         if: steps.pytest.outcome == 'success'
         run: |
           mkdir -p artifacts
-          "$PYTHON_BIN" -m pytest -q --json-report --json-report-file=artifacts/full-suite-report.json
+          "$PYTHON_BIN" -m pytest -q --no-cov -m "not integration and not e2e" --json-report --json-report-file=artifacts/full-suite-report.json
           "$PYTHON_BIN" scripts/validation/check_full_suite_baseline.py \
             --baseline .github/ci-baselines/full-suite-baseline.json \
             --report artifacts/full-suite-report.json

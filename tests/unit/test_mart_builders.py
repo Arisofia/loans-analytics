@@ -83,6 +83,32 @@ class TestFinanceMart:
 
         with pytest.raises(ValueError, match="requires interest_rate"):
             build_finance(loan_df)
+
+    @pytest.mark.parametrize(
+        "interest_values, fee_values, funding_values",
+        [
+            (
+                [100.0, 200.0, 300.0],
+                [10.0, 20.0, 30.0],
+                [25.0, 25.0, 25.0],
+            )
+        ],
+    )
+    def test_uses_usd_financial_columns_when_base_missing(
+        self,
+        loan_df: pd.DataFrame,
+        interest_values,
+        fee_values,
+        funding_values,
+    ):
+        loan_df = loan_df.copy()
+
+        # Ensure base-name columns are absent so *_usd is selected by _first_present
+        loan_df = loan_df.drop(
+            columns=[
+                "interest_income",
+                "fee_income",
+                "funding_cost",
     def test_no_rate_does_not_use_placeholder_multipliers(self, loan_df: pd.DataFrame):
         loan_df = loan_df.copy()
 
@@ -104,6 +130,61 @@ class TestFinanceMart:
             errors="ignore",
         )
 
+        loan_df["interest_income_usd"] = interest_values
+        loan_df["fee_income_usd"] = fee_values
+        loan_df["funding_cost_usd"] = funding_values
+
+        result = build_finance(loan_df)
+
+        assert result["interest_income"].sum() == pytest.approx(sum(interest_values))
+        assert result["fee_income"].sum() == pytest.approx(sum(fee_values))
+        assert result["funding_cost"].sum() == pytest.approx(sum(funding_values))
+
+    @pytest.mark.parametrize(
+        "origination_fee, interest_expense, expected_loss",
+        [
+            (
+                [5.0, 10.0, 15.0],
+                [20.0, 20.0, 20.0],
+                [1.0, 2.0, 3.0],
+            )
+        ],
+    )
+    def test_uses_alternate_financial_columns_when_present(
+        self,
+        loan_df: pd.DataFrame,
+        origination_fee,
+        interest_expense,
+        expected_loss,
+    ):
+        loan_df = loan_df.copy()
+
+        # Remove other alternative columns so _first_present selects the intended ones
+        loan_df = loan_df.drop(
+            columns=[
+                "fee_income",
+                "fee_income_usd",
+                "funding_cost",
+                "funding_cost_usd",
+                "interest_income",
+                "interest_income_usd",
+                "expected_loss_usd",
+            ],
+            errors="ignore",
+        )
+
+        loan_df["origination_fee"] = origination_fee
+        loan_df["interest_expense"] = interest_expense
+        loan_df["expected_loss"] = expected_loss
+
+        result = build_finance(loan_df)
+
+        # origination_fee should map into aggregated fee_income
+        assert result["fee_income"].sum() == pytest.approx(sum(origination_fee))
+        # interest_expense should map into aggregated funding_cost
+        assert result["funding_cost"].sum() == pytest.approx(sum(interest_expense))
+        # expected_loss should flow through to expected_loss aggregate
+        assert result["expected_loss"].sum() == pytest.approx(sum(expected_loss))
         # Ensure no defaults so provision should also be zero in the fallback path
         loan_df["default_flag"] = 0
 
