@@ -269,17 +269,25 @@ const DEFAULT_DATA: Record<string, unknown> = {
     ],
   },
   marketing: {
-    metrics: { cac: 126.5, ltv: 607.2, ltv_cac_ratio: 4.8, invisible_primes: 312, invisible_primes_default_rate: 1.8 },
-    channels: [
-      { channel: "Meta", cac: 132.0, ltv: 612.0, ltv_cac: 4.6, conversion: 4.1 },
-      { channel: "Google", cac: 149.0, ltv: 648.0, ltv_cac: 4.3, conversion: 3.6 },
-      { channel: "Referral", cac: 84.0, ltv: 556.0, ltv_cac: 6.6, conversion: 6.2 },
+    summary: { cac: 125.0, ltv: 2357.64, roi: 1786.11, avg_ticket: 4366.0 },
+    channel_performance: [
+      { channel: "Referidos", leads: 120, funded: 52, cac: 80, quality: "high" },
+      { channel: "Digital", leads: 380, funded: 85, cac: 150, quality: "medium" },
+      { channel: "KAM directo", leads: 95, funded: 48, cac: 95, quality: "high" },
+      { channel: "Alianzas", leads: 65, funded: 22, cac: 180, quality: "medium" },
     ],
-    segments: [
-      { segment: "Invisible Primes", borrowers: 312, default_rate: 1.8, avg_ticket: 21300 },
-      { segment: "Prime", borrowers: 221, default_rate: 1.4, avg_ticket: 28700 },
-      { segment: "Near-prime", borrowers: 407, default_rate: 3.2, avg_ticket: 19800 },
+    segment_performance: [
+      { segment: "transporte", count: 128, avg_ticket: 4800, default_rate: 1.2, ltv: 2592, roi: 2140.5 },
+      { segment: "comercio", count: 184, avg_ticket: 4300, default_rate: 1.6, ltv: 2322, roi: 1894.8 },
+      { segment: "servicios", count: 141, avg_ticket: 3950, default_rate: 2.3, ltv: 2133, roi: 1650.2 },
+      { segment: "agro", count: 96, avg_ticket: 5100, default_rate: 2.9, ltv: 2754, roi: 1422.1 },
     ],
+    invisible_primes: {
+      count: 46,
+      description: "Customers with low credit score but strong repayment behavior",
+      avg_dpd: 5.2,
+      avg_ticket: 3056.2,
+    },
   },
   "ai-decision-center": {
     business_state: "WATCH",
@@ -307,7 +315,7 @@ const DEFAULT_DATA: Record<string, unknown> = {
 async function ensureSeeded() {
   try {
     const check = await kv.get("data:summary");
-    if (!check) {
+    if (check === null || check === undefined) {
       const entries = Object.entries(DEFAULT_DATA).map(([section, value]) => ({
         key: `data:${section}`,
         value,
