@@ -1,10 +1,10 @@
 """Multi-agent package — first live slice + legacy compatibility."""
 
-from .orchestrator import DecisionOrchestrator
+from .orchestrator import MultiAgentOrchestrator
 try:
-    from .orchestrator import MultiAgentOrchestrator  # legacy re-export
+    from .orchestrator import DecisionOrchestrator  # new primary name
 except ImportError:
-    pass
+    DecisionOrchestrator = MultiAgentOrchestrator
 from .llm_agents import (
     ComplianceAgent,
     CustomerRetentionAgent,
@@ -14,6 +14,7 @@ from .llm_agents import (
     CollectionsAgent,
     FraudDetectionAgent,
     PricingAgent,
+    OpsOptimizerAgent,
 )
 from .protocol import (
     AgentRole,
@@ -42,6 +43,7 @@ __all__ = [
     "CollectionsAgent",
     "FraudDetectionAgent",
     "PricingAgent",
+    "OpsOptimizerAgent",
     "AgentRole",
     "AgentRequest",
     "AgentResponse",

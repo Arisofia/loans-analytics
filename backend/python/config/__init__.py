@@ -102,6 +102,13 @@ class EnvironmentSettings(BaseModel):
             if missing:
                 raise RuntimeError(f'Missing required production environment variables: {missing}')
 
+class Guardrails(BaseModel):
+    min_ce_6m: float = 0.96
+    target_apr_min: float = 0.34
+    target_apr_max: float = 0.4
+    min_dscr: float = 1.2
+    max_cost_of_debt: float = 0.13
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', extra='ignore')
     runtime: EnvironmentSettings = Field(default_factory=EnvironmentSettings)
@@ -114,6 +121,16 @@ class Settings(BaseSettings):
     supabase_pool: SupabasePoolSettings = Field(default_factory=SupabasePoolSettings)
     portfolio_targets_2026: dict[str, int] = Field(default_factory=dict)
     database_url: Optional[str] = Field(default=None, description='Supabase database URL for connection pooling')
+
+    @property
+    def guardrails(self) -> Guardrails:
+        return Guardrails(
+            min_ce_6m=self.financial.min_ce_6m,
+            target_apr_min=self.financial.target_apr_min,
+            target_apr_max=self.financial.target_apr_max,
+            min_dscr=self.financial.min_dscr,
+            max_cost_of_debt=self.financial.max_cost_of_debt
+        )
 
     @staticmethod
     def _resolve_project_root(project_root: str | Path | None=None) -> Path:

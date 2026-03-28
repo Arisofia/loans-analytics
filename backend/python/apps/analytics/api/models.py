@@ -48,6 +48,9 @@ class LoanRecord(BaseModel):
 
 class LoanPortfolioRequest(BaseModel):
     loans: Optional[List[LoanRecord]] = Field(None, min_length=0, max_length=10000, description='Array of loan records for analysis')
+    payments: Optional[List[Dict[str, Any]]] = Field(None, description='Optional payment records')
+    customers: Optional[List[Dict[str, Any]]] = Field(None, description='Optional customer records')
+    schedule: Optional[List[Dict[str, Any]]] = Field(None, description='Optional payment schedule records')
     ltv_threshold: Optional[float] = Field(80.0, description='LTV threshold for risk alerts (default: 80.0)')
     dti_threshold: Optional[float] = Field(50.0, description='DTI threshold for risk alerts (default: 50.0)')
 

@@ -142,16 +142,46 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
         "SELECT DISTINCT ON (kpi_key) kpi_key, value_num, as_of_date "
         "FROM monitoring.kpi_values "
         "WHERE as_of_date = (SELECT MAX(as_of_date) FROM monitoring.kpi_values) "
+        "AND value_num IS NOT NULL "
         "ORDER BY kpi_key, computed_at DESC"
     )
+
+    non_negative_keys = {
+        "active_borrowers",
+        "automation_rate",
+        "average_loan_size",
+        "cash_on_hand",
+        "collection_rate_6m",
+        "cost_of_risk",
+        "cure_rate",
+        "customer_lifetime_value",
+        "default_rate",
+        "delinq_1_30_rate",
+        "delinq_31_60_rate",
+        "disbursement_volume",
+        "lgd",
+        "loan_count",
+        "new_loans_mtd",
+        "npl_ratio",
+        "par_30",
+        "par_60",
+        "par_90",
+        "portfolio_yield",
+        "recovery_rate",
+        "repeat_borrower_rate",
+        "total_aum",
+    }
 
     def stat_sql(kpi_key: str) -> str:
         if not re.match(r'^[a-z][a-z0-9_]*$', kpi_key):
             raise ValueError(f"Invalid kpi_key: {kpi_key!r}")
+        lower_bound_filter = "AND value_num >= 0 " if kpi_key in non_negative_keys else ""
         return (
             f"SELECT value_num AS value "
             f"FROM monitoring.kpi_values "
             f"WHERE kpi_key = '{kpi_key}' "  # nosec B608
+            f"AND value_num IS NOT NULL "
+            f"{lower_bound_filter}"
             f"ORDER BY as_of_date DESC "
             f"LIMIT 1"
         )
