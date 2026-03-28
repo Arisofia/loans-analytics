@@ -85,6 +85,12 @@ def load_from_pipeline_json(path: str) -> dict[str, Any] | None:
 def load_from_gsheets_csv(url: str, timeout: int) -> dict[str, Any] | None:
     if not url:
         return None
+    
+    # Security: Validate URL scheme to prevent file:// or other unexpected protocols (Bandit)
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return None
+
     try:
         with urllib.request.urlopen(url, timeout=timeout) as response:
             text = response.read().decode("utf-8")
@@ -249,9 +255,10 @@ def put_section(config: Config, section: str, body: Any, timeout: int) -> None:
             "Authorization": f"Bearer {config.anon_key}",
         },
     )
+    # urllib.request.urlopen raises HTTPError for 4xx/5xx responses.
+    # We allow the exception to propagate to the caller for error reporting.
     with urllib.request.urlopen(req, timeout=timeout) as response:
-        if response.status >= 400:
-            raise RuntimeError(f"PUT {section} failed with status {response.status}")
+        _ = response.read()
 
 
 def main() -> int:
