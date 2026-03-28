@@ -93,11 +93,16 @@ class TestUnitEconomicsEndpoint:
         payload = {'loans': _mixed_portfolio()}
         body = client.post('/analytics/unit-economics', json=payload).json()
         cure = body['cure_rate']
-        assert 'cure_rate_pct' in cure  # nosec B101
-        assert 'delinquent_count' in cure  # nosec B101
-        assert 'curing_count' in cure  # nosec B101
-        assert 'note' in cure  # nosec B101
-        assert 0.0 <= cure['cure_rate_pct'] <= 100.0  # nosec B101
+        if 'cure_rate_pct' not in cure:
+            pytest.fail("'cure_rate_pct' not in cure")
+        if 'delinquent_count' not in cure:
+            pytest.fail("'delinquent_count' not in cure")
+        if 'curing_count' not in cure:
+            pytest.fail("'curing_count' not in cure")
+        if 'note' not in cure:
+            pytest.fail("'note' not in cure")
+        if not (0.0 <= cure['cure_rate_pct'] <= 100.0):
+            pytest.fail("cure['cure_rate_pct'] not in [0.0, 100.0]")
 
     def test_dpd_migration_structure(self):
         client = TestClient(app)

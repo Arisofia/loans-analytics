@@ -1,4 +1,6 @@
 import random
+import inspect
+import asyncio
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -133,3 +135,17 @@ def realistic_loan_records() -> list:
             )
         )
     return records
+
+
+def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> bool | None:
+    """Run async tests without requiring pytest-asyncio plugin."""
+    test_function = pyfuncitem.obj
+    if inspect.iscoroutinefunction(test_function):
+        kwargs = {
+            name: pyfuncitem.funcargs[name]
+            for name in pyfuncitem._fixtureinfo.argnames
+            if name in pyfuncitem.funcargs
+        }
+        asyncio.run(test_function(**kwargs))
+        return True
+    return None

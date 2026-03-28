@@ -76,6 +76,8 @@ def _is_allowed_url(url: str) -> bool:
 
 
 def _safe_urlopen(url_or_request: str | urllib.request.Request, timeout: int):
+    # SECURITY: Bandit B310 - urlopen is only called after explicit scheme validation (http/https only).
+    # This prevents file:// or custom schemes. Do not bypass this check. See: https://bandit.readthedocs.io/en/latest/plugins/b310_audit_url_open.html
     target_url = (
         url_or_request.full_url
         if isinstance(url_or_request, urllib.request.Request)
