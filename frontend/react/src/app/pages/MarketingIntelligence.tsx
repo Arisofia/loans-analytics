@@ -19,6 +19,7 @@ export default function MarketingIntelligence() {
   if (error) return <ErrorState message={error} onRetry={refetch} />;
   if (!data) return null;
   const { summary, channel_performance, segment_performance, invisible_primes } = data;
+  const ltvCacRatio = summary.cac > 0 ? summary.ltv / summary.cac : 0;
 
   const segChart = segment_performance.map((s) => ({ name: s.segment, default_rate: s.default_rate, roi: s.roi / 100 }));
   const chanChart = channel_performance.map((c) => ({ name: c.channel, funded: c.funded, cac: c.cac }));
@@ -42,9 +43,9 @@ export default function MarketingIntelligence() {
         <MetricCard title="LTV" value={`$${summary.ltv.toLocaleString()}`} icon={TrendingUp} status="good" />
         <MetricCard
           title="LTV/CAC"
-          value={`${(summary.ltv / summary.cac).toFixed(1)}x`}
+          value={summary.cac > 0 ? `${ltvCacRatio.toFixed(1)}x` : "N/A"}
           icon={Percent}
-          status={summary.ltv / summary.cac >= 3 ? "good" : "warning"}
+          status={summary.cac > 0 && ltvCacRatio >= 3 ? "good" : "warning"}
         />
         <MetricCard title="Avg Ticket" value={`$${summary.avg_ticket.toLocaleString()}`} icon={Users} status="neutral" />
       </div>
@@ -96,10 +97,17 @@ export default function MarketingIntelligence() {
               <div key={c.channel} className="flex items-center gap-3">
                 <span style={{ minWidth: 100, fontSize: 12, color: "var(--light-gray)" }}>{c.channel}</span>
                 <div style={{ flex: 1, height: 5, background: "rgba(255,255,255,0.08)", borderRadius: 3 }}>
-                  <div style={{ width: `${(c.funded / c.leads) * 100}%`, height: "100%", background: qColor(c.quality), borderRadius: 3 }} />
+                  <div
+                    style={{
+                      width: `${c.leads > 0 ? (c.funded / c.leads) * 100 : 0}%`,
+                      height: "100%",
+                      background: qColor(c.quality),
+                      borderRadius: 3,
+                    }}
+                  />
                 </div>
                 <span style={{ fontSize: 11, color: "var(--medium-gray)", minWidth: 60, textAlign: "right" }}>
-                  {((c.funded / c.leads) * 100).toFixed(1)}% · CAC ${c.cac}
+                  {(c.leads > 0 ? ((c.funded / c.leads) * 100).toFixed(1) : "0.0")}% · CAC ${c.cac}
                 </span>
               </div>
             ))}
