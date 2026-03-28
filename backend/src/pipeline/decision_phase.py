@@ -43,7 +43,10 @@ class DecisionPhase:
             # ── Load canonical DataFrame from Phase 2 ───────────────────
             clean_path = phase2_results.get("output_path")
             if not clean_path:
-                return {"status": "skipped", "reason": "No clean data path from transformation phase."}
+                return {
+                    "status": "skipped",
+                    "reason": "No clean data path from transformation phase.",
+                }
 
             clean = Path(clean_path)
             if not clean.exists():
@@ -103,12 +106,7 @@ class DecisionPhase:
             # ── Run unified metric engine ───────────────────────────────
             from backend.src.kpi_engine.engine import run_metric_engine
 
-            equity = business_rules.get("target_equity_ratio", 0.08)
-            lgd = business_rules.get("lgd", 0.10)
-            min_coll = business_rules.get("min_collection_rate", 0.985)
-            engine_metrics = run_metric_engine(
-                marts, equity=equity, lgd=lgd, min_collection_rate=min_coll,
-            )
+            engine_metrics = run_metric_engine(marts)
             metrics_seed.update(engine_metrics)
             logger.info("Metric engine produced %d metrics", len(engine_metrics))
 
@@ -135,15 +133,14 @@ class DecisionPhase:
 
             # ── Run decision orchestrator (subpackage) ──────────────────
             from backend.python.multi_agent.orchestrator import DecisionOrchestrator
-
-            orchestrator = DecisionOrchestrator()
-            decision_state = orchestrator.run(
-                marts=marts,
-                metrics_seed=metrics_seed,
-                features=features,
-                scenarios=scenarios_dicts,
-                business_params=business_rules,
+            from backend.python.multi_agent.orchestrator.run_first_live_agents import (
+                run_first_live_agents,
             )
+
+            quality_payload = {"results": [str(r) for r in dq_results], "blocking": blocking}
+            agent_outputs = run_first_live_agents(marts, metrics_seed, features, quality_payload)
+            orchestrator = DecisionOrchestrator(agent_outputs=agent_outputs, metrics=metrics_seed)
+            decision_state = orchestrator.run()
 
             # ── Persist decision state ──────────────────────────────────
             decision_dir = run_dir / "decision"
@@ -151,7 +148,7 @@ class DecisionPhase:
 
             state_path = decision_dir / "decision_center_state.json"
             with open(state_path, "w", encoding="utf-8") as fh:
-                json.dump(decision_state.model_dump(), fh, indent=2, default=str)
+                json.dump(decision_state, fh, indent=2, default=str)
 
             scenarios_path = decision_dir / "scenarios.json"
             with open(scenarios_path, "w", encoding="utf-8") as fh:
@@ -167,18 +164,18 @@ class DecisionPhase:
 
             logger.info(
                 "Decision phase complete — state=%s, alerts=%d, actions=%d",
-                decision_state.business_state,
-                len(decision_state.critical_alerts),
-                len(decision_state.ranked_actions),
+                "decision_ready",
+                len(decision_state.get("ranked_alerts", [])),
+                len(decision_state.get("ranked_actions", [])),
             )
 
             return {
                 "status": "success",
-                "business_state": decision_state.business_state,
-                "critical_alerts_count": len(decision_state.critical_alerts),
-                "ranked_actions_count": len(decision_state.ranked_actions),
-                "opportunities_count": len(decision_state.opportunities),
-                "agent_statuses": decision_state.agent_statuses,
+                "business_state": "decision_ready",
+                "critical_alerts_count": len(decision_state.get("ranked_alerts", [])),
+                "ranked_actions_count": len(decision_state.get("ranked_actions", [])),
+                "opportunities_count": len(decision_state.get("opportunities", [])),
+                "agent_statuses": decision_state.get("agent_statuses", {}),
                 "decision_state_path": str(state_path),
                 "scenarios_path": str(scenarios_path),
             }

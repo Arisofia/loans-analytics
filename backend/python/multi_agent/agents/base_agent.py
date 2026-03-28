@@ -11,7 +11,9 @@ from backend.src.contracts.agent_schema import AgentOutput
 class BaseAgent(abc.ABC):
     @property
     @abc.abstractmethod
-    def agent_id(self) -> str: ...
+    def agent_id(self) -> str:
+        """Stable agent identifier."""
+        raise NotImplementedError
 
     @abc.abstractmethod
     def run(
@@ -20,4 +22,6 @@ class BaseAgent(abc.ABC):
         metrics: dict[str, Any],
         features: dict[str, pd.DataFrame],
         quality: dict[str, Any],
-    ) -> AgentOutput: ...
+    ) -> AgentOutput:
+        """Execute agent logic and return structured output."""
+        raise NotImplementedError
