@@ -56,7 +56,6 @@ safety-local-lock.json
 
 # Generated lock files
 requirements.lock.txt
-requirements.prod.lock.txt
 
 # Obsolete local instructions
 .env.local.INSTRUCTIONS
