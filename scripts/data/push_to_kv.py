@@ -40,6 +40,7 @@ SECTION_NAMES = [
     "marketing",
     "ai-decision-center",
 ]
+ALLOWED_URL_SCHEMES = {"http", "https"}
 
 
 @dataclass
@@ -70,6 +71,21 @@ def _to_float(value: str, default: float) -> float:
         return default
 
 
+def _is_allowed_url(url: str) -> bool:
+    return urllib.parse.urlparse(url).scheme in ALLOWED_URL_SCHEMES
+
+
+def _safe_urlopen(url_or_request: str | urllib.request.Request, timeout: int):
+    target_url = (
+        url_or_request.full_url
+        if isinstance(url_or_request, urllib.request.Request)
+        else str(url_or_request)
+    )
+    if not _is_allowed_url(target_url):
+        raise ValueError(f"Unsupported URL scheme in '{target_url}'")
+    return urllib.request.urlopen(url_or_request, timeout=timeout)
+
+
 def load_from_pipeline_json(path: str) -> dict[str, Any] | None:
     if not path:
         return None
@@ -85,14 +101,13 @@ def load_from_pipeline_json(path: str) -> dict[str, Any] | None:
 def load_from_gsheets_csv(url: str, timeout: int) -> dict[str, Any] | None:
     if not url:
         return None
-    
+
     # Security: Validate URL scheme to prevent file:// or other unexpected protocols (Bandit)
-    parsed = urllib.parse.urlparse(url)
-    if parsed.scheme not in ("http", "https"):
+    if not _is_allowed_url(url):
         return None
 
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as response:
+        with _safe_urlopen(url, timeout=timeout) as response:
             text = response.read().decode("utf-8")
     except (urllib.error.URLError, TimeoutError):
         return None
@@ -131,7 +146,11 @@ def synthetic_payload() -> dict[str, Any]:
                 "expected_loss": 2.4,
             },
             "alerts": [
-                {"id": "cov-01", "severity": "warning", "message": "2 covenant breaches in current month"},
+                {
+                    "id": "cov-01",
+                    "severity": "warning",
+                    "message": "2 covenant breaches in current month",
+                },
             ],
             "updated_at": now,
         },
@@ -147,7 +166,10 @@ def synthetic_payload() -> dict[str, Any]:
         },
         "collections": {
             "metrics": {"collection_rate": 94.8, "contact_rate": 80.4, "promise_to_pay": 61.2},
-            "agents": [{"name": "Collector A", "efficiency": 0.86}, {"name": "Collector B", "efficiency": 0.79}],
+            "agents": [
+                {"name": "Collector A", "efficiency": 0.86},
+                {"name": "Collector B", "efficiency": 0.79},
+            ],
             "updated_at": now,
         },
         "treasury": {
@@ -211,9 +233,30 @@ def synthetic_payload() -> dict[str, Any]:
                 {"channel": "Alianzas", "leads": 65, "funded": 22, "cac": 180, "quality": "medium"},
             ],
             "segment_performance": [
-                {"segment": "transporte", "count": 128, "avg_ticket": 4800, "default_rate": 1.2, "ltv": 2592, "roi": 2140.5},
-                {"segment": "comercio", "count": 184, "avg_ticket": 4300, "default_rate": 1.6, "ltv": 2322, "roi": 1894.8},
-                {"segment": "servicios", "count": 141, "avg_ticket": 3950, "default_rate": 2.3, "ltv": 2133, "roi": 1650.2},
+                {
+                    "segment": "transporte",
+                    "count": 128,
+                    "avg_ticket": 4800,
+                    "default_rate": 1.2,
+                    "ltv": 2592,
+                    "roi": 2140.5,
+                },
+                {
+                    "segment": "comercio",
+                    "count": 184,
+                    "avg_ticket": 4300,
+                    "default_rate": 1.6,
+                    "ltv": 2322,
+                    "roi": 1894.8,
+                },
+                {
+                    "segment": "servicios",
+                    "count": 141,
+                    "avg_ticket": 3950,
+                    "default_rate": 2.3,
+                    "ltv": 2133,
+                    "roi": 1650.2,
+                },
             ],
             "invisible_primes": {
                 "count": 46,
@@ -227,19 +270,60 @@ def synthetic_payload() -> dict[str, Any]:
             "business_state": "WATCH",
             "confidence": 0.86,
             "agents": [
-                {"name": "Risk Agent", "status": "Active", "confidence": 0.91, "task": "Reduce PAR30 and roll-rate migration"},
-                {"name": "Collections Agent", "status": "Active", "confidence": 0.88, "task": "Lift 31-60 DPD cure rates"},
-                {"name": "Treasury Agent", "status": "Standby", "confidence": 0.79, "task": "Preserve covenant liquidity buffers"},
-                {"name": "Compliance Agent", "status": "Alert", "confidence": 0.94, "task": "Resolve covenant watch items"},
+                {
+                    "name": "Risk Agent",
+                    "status": "Active",
+                    "confidence": 0.91,
+                    "task": "Reduce PAR30 and roll-rate migration",
+                },
+                {
+                    "name": "Collections Agent",
+                    "status": "Active",
+                    "confidence": 0.88,
+                    "task": "Lift 31-60 DPD cure rates",
+                },
+                {
+                    "name": "Treasury Agent",
+                    "status": "Standby",
+                    "confidence": 0.79,
+                    "task": "Preserve covenant liquidity buffers",
+                },
+                {
+                    "name": "Compliance Agent",
+                    "status": "Alert",
+                    "confidence": 0.94,
+                    "task": "Resolve covenant watch items",
+                },
             ],
             "ranked_actions": [
-                {"rank": 1, "action": "Mitigate covenant exposure", "confidence": 0.92, "owner": "Credit Committee"},
-                {"rank": 2, "action": "Lift cure rates for 31-60 DPD", "confidence": 0.89, "owner": "Collections Lead"},
-                {"rank": 3, "action": "Improve prime acquisition quality", "confidence": 0.84, "owner": "Growth Lead"},
+                {
+                    "rank": 1,
+                    "action": "Mitigate covenant exposure",
+                    "confidence": 0.92,
+                    "owner": "Credit Committee",
+                },
+                {
+                    "rank": 2,
+                    "action": "Lift cure rates for 31-60 DPD",
+                    "confidence": 0.89,
+                    "owner": "Collections Lead",
+                },
+                {
+                    "rank": 3,
+                    "action": "Improve prime acquisition quality",
+                    "confidence": 0.84,
+                    "owner": "Growth Lead",
+                },
             ],
             "opportunities": [
-                {"title": "Cross-sell insured product", "estimated_uplift_pct": round(random.uniform(7.0, 11.0), 2)},
-                {"title": "Invisible-prime payroll products", "estimated_uplift_pct": round(random.uniform(5.0, 9.0), 2)},
+                {
+                    "title": "Cross-sell insured product",
+                    "estimated_uplift_pct": round(random.uniform(7.0, 11.0), 2),
+                },
+                {
+                    "title": "Invisible-prime payroll products",
+                    "estimated_uplift_pct": round(random.uniform(5.0, 9.0), 2),
+                },
             ],
             "updated_at": now,
         },
@@ -272,14 +356,16 @@ def put_section(config: Config, section: str, body: Any, timeout: int) -> None:
     )
     # urllib.request.urlopen raises HTTPError for 4xx/5xx responses.
     # We allow the exception to propagate to the caller for error reporting.
-    with urllib.request.urlopen(req, timeout=timeout) as response:
+    with _safe_urlopen(req, timeout=timeout) as response:
         _ = response.read()
 
 
 def main() -> int:
     args = parse_args()
     if not args.project_id or not args.anon_key:
-        print("Missing Supabase credentials. Set VITE_SUPABASE_PROJECT_ID and VITE_SUPABASE_ANON_KEY.")
+        print(
+            "Missing Supabase credentials. Set VITE_SUPABASE_PROJECT_ID and VITE_SUPABASE_ANON_KEY."
+        )
         return 2
 
     config = Config(project_id=args.project_id, anon_key=args.anon_key)

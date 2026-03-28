@@ -69,8 +69,9 @@ def get_threshold_status(
         return _eval_low_is_good(value, critical_thresh, warning_thresh)
     if critical_val is not None:
         return _eval_only_critical(value, float(critical_val))
-    elif warning_val is not None:
+    if warning_val is not None:
         return _eval_only_warning(value, float(warning_val))
+    # Defensive fallback for static analysis (all branches above should already return).
     return "not_configured"
 
 

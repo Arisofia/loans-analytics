@@ -13,14 +13,17 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 # Load .env so integration tests (RUN_REAL_SUPABASE_TESTS, etc.) are not skipped locally
+load_dotenv = None
 try:
     from dotenv import load_dotenv
 
+except ImportError:
+    load_dotenv = None
+
+if load_dotenv is not None:
     _env_file = ROOT / ".env"
     if _env_file.exists():
         load_dotenv(_env_file, override=False)
-except ImportError:
-    pass
 
 
 def _build_portfolio(n: int = 50, seed: int = 42) -> pd.DataFrame:
