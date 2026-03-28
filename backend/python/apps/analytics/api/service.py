@@ -644,6 +644,13 @@ class KPIService:
             return 75
         return 100 if "90+" in status else 0
 
+    @staticmethod
+    def _normalize_default_status(status_series: pd.Series) -> pd.Series:
+        status = status_series.astype(str).str.strip().str.lower()
+        return status.mask(
+            status.str.contains(STATUS_PATTERN_DEFAULT, regex=True, na=False), "defaulted"
+        )
+
     def _calculate_loan_risk_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
         if "appraised_value" in df.columns and df["appraised_value"].notna().any():
             df["ltv"] = df["principal_balance"] / df["appraised_value"] * 100
@@ -1129,7 +1136,6 @@ class KPIService:
             results = self._calculate_portfolio_performance_metrics(df)
             roll_rates = await self.calculate_roll_rate_analytics(loans)
             cure_rate = roll_rates.summary.portfolio_cure_rate_pct
-            npl_data = calculate_npl_ratio(df)
             lgd_data = calculate_lgd(df)
             cor_data = calculate_cost_of_risk(df)
             nim_data = calculate_nim(df)
@@ -1168,6 +1174,7 @@ class KPIService:
                 ),
                 build_kpi_response("LOSS_RATE", "Loss Rate", results["loss_rate"], "%"),
                 build_kpi_response("RECOVERY_RATE", "Recovery Rate", results["recovery_rate"], "%"),
+                build_kpi_response("NPL", "Non-Performing Loans", results["npl"], "%"),
                 build_kpi_response("NPL", "Non-Performing Loans", npl_data["npl_ratio"], "%"),
                 build_kpi_response("LGD", "Loss Given Default", lgd_data["lgd_pct"], "%"),
                 build_kpi_response("COR", "Cost of Risk", cor_data["cost_of_risk_pct"], "%"),
@@ -1385,6 +1392,10 @@ class KPIService:
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_90_PLUS, regex=True, na=False), 100.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_60_89, regex=True, na=False), 75.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_30_59, regex=True, na=False), 45.0)
+        status_series = self._normalize_default_status(
+            df.get("loan_status", pd.Series([""] * len(df), index=df.index))
+        )
+        default_mask = status_series.eq("defaulted")
         status_series = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
         default_mask = status_series.str.contains(STATUS_PATTERN_DEFAULT, regex=True, na=False)
         collected = (
@@ -1597,6 +1608,10 @@ class KPIService:
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_90_PLUS, regex=True, na=False), 100.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_60_89, regex=True, na=False), 75.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_30_59, regex=True, na=False), 45.0)
+        default_mask = self._normalize_default_status(
+            df.get("loan_status", pd.Series([""] * len(df), index=df.index))
+        )
+        default_mask = default_mask.eq("defaulted")
         default_mask = (
             df.get("loan_status", pd.Series([""] * len(df)))
             .astype(str)
@@ -2245,6 +2260,12 @@ class KPIService:
         total_originated = float(df["loan_amount"].sum())
         df["dpd"] = self._derive_dpd_series(df, "days_past_due", "loan_status")
         par_metrics = self._calculate_par_and_bucket_metrics(df, total_outstanding)
+        status_series = self._normalize_default_status(df["loan_status"])
+        default_mask = status_series.eq("defaulted")
+        default_rate_pct = default_mask.sum() / len(df) * 100 if len(df) > 0 else 0
+        defaulted_balance = float(df.loc[default_mask, "principal_balance"].sum())
+        loss_rate = defaulted_balance / total_originated * 100 if total_originated > 0 else 0
+        status_defaulted_mask = status_series.eq("defaulted")
         status_series = df["loan_status"].astype(str)
         default_mask = status_series.str.contains(STATUS_PATTERN_DEFAULT, case=False, na=False)
         default_rate_pct = default_mask.sum() / len(df) * 100 if len(df) > 0 else 0
