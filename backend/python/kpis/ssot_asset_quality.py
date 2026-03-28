@@ -83,7 +83,10 @@ def calculate_asset_quality_metrics(
         }
     )
     if normalized_df.empty:
-        return {alias: 0.0 for alias in metric_aliases if alias in _METRIC_ALIAS_TO_ID}
+        raise ValueError(
+            "CRITICAL: Asset-quality KPI computation received an empty dataset. "
+            "Provide at least one valid loan record."
+        )
     if float(normalized_df["outstanding_balance"].sum()) <= 0:
         raise ValueError("CRITICAL: Sum(outstanding_balance) must be > 0 for asset-quality KPIs.")
     engine = KPIFormulaEngine(normalized_df, actor=actor, registry_data=_ASSET_QUALITY_REGISTRY)

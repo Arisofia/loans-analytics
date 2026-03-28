@@ -1,5 +1,7 @@
 # API Security Guide
 
+> **Deployment scope note (2026-03-28):** Canonical production deployment is `deploy-free-tier.yml` (GHCR + Render/Railway/Fly). Any Azure references in this document are historical implementation notes, not an active deployment path.
+
 ## Overview
 
 This guide covers security implementation for the Loans Analytics API, including authentication, authorization, rate limiting, input validation, and compliance with financial data regulations.

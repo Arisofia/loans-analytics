@@ -27,3 +27,19 @@ def test_calculate_asset_quality_metrics_handles_missing_status() -> None:
     dpd = pd.Series([180.0, 0.0])
     metrics = calculate_asset_quality_metrics(balance, dpd, actor='asset_quality_test', metric_aliases=('npl180',), status=None)
     assert round(metrics['npl180'], 2) == 50.0
+
+
+def test_calculate_asset_quality_metrics_fails_on_empty_input() -> None:
+    balance = pd.Series([], dtype=float)
+    dpd = pd.Series([], dtype=float)
+    try:
+        calculate_asset_quality_metrics(
+            balance,
+            dpd,
+            actor="asset_quality_test",
+            metric_aliases=("par30",),
+        )
+    except ValueError as exc:
+        assert "empty dataset" in str(exc).lower()
+    else:
+        raise AssertionError("Expected ValueError for empty dataset.")
