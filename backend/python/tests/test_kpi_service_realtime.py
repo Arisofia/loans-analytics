@@ -61,6 +61,10 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
     assert kpi_map['DPD_61_90'].value == pytest.approx(0.0)
     assert kpi_map['DPD_90_PLUS'].value == pytest.approx(33.33)
     assert kpi_map['NPL'].value == pytest.approx(33.33)
+    # NPL_90 should be exposed and align with the severe-delinquency proxy (PAR90) in this scenario
+    assert 'NPL_90' in kpi_map
+    assert kpi_map['NPL_90'].value == pytest.approx(33.33)
+    assert kpi_map['NPL_90'].value == pytest.approx(kpi_map['PAR90'].value)
 
 
 def test_calculate_kpis_for_portfolio_keeps_npl_and_npl_90_distinct():
