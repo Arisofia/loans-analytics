@@ -148,6 +148,20 @@ jobs:
   test:
     name: Run tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: loans_analytics
+          POSTGRES_USER: analytics_user
+          POSTGRES_PASSWORD: analytics_pass
+        options: >-
+          --health-cmd "pg_isready -U analytics_user -d loans_analytics"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     permissions:
       contents: read
     steps:
@@ -170,7 +184,26 @@ jobs:
       - name: Install system build dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev
+          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev postgresql-client
+
+      - name: Wait for PostgreSQL readiness acknowledgement
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGUSER: analytics_user
+          PGPASSWORD: analytics_pass
+          PGDATABASE: loans_analytics
+        run: |
+          for i in {1..30}; do
+            if pg_isready; then
+              echo "✅ PostgreSQL is ready."
+              exit 0
+            fi
+            echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
+            sleep 2
+          done
+          echo "❌ PostgreSQL readiness acknowledgement not received in time."
+          exit 1
 
       - name: Install dependencies
         run: |
@@ -186,6 +219,20 @@ jobs:
   run-pipeline:
     name: Run ETL Pipeline
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: loans_analytics
+          POSTGRES_USER: analytics_user
+          POSTGRES_PASSWORD: analytics_pass
+        options: >-
+          --health-cmd "pg_isready -U analytics_user -d loans_analytics"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     permissions:
       contents: read
     needs: [preflight, test]
@@ -217,6 +264,27 @@ jobs:
           "$PYTHON_BIN" -m pip install --upgrade pip
           grep -viE '^(pywin32==)' requirements.prod.lock.txt > /tmp/requirements.prod.linux.txt
           "$PYTHON_BIN" -m pip install -r /tmp/requirements.prod.linux.txt
+
+      - name: Wait for PostgreSQL readiness acknowledgement
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGUSER: analytics_user
+          PGPASSWORD: analytics_pass
+          PGDATABASE: loans_analytics
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+          for i in {1..30}; do
+            if pg_isready; then
+              echo "✅ PostgreSQL is ready."
+              exit 0
+            fi
+            echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
+            sleep 2
+          done
+          echo "❌ PostgreSQL readiness acknowledgement not received in time."
+          exit 1
 
       - name: Run pipeline
         env:
