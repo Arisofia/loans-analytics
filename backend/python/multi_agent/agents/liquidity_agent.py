@@ -26,8 +26,8 @@ class LiquidityAgent(DecisionAgent):
     def run(self, ctx: AgentContext) -> AgentOutput:
         treasury = ctx.marts.get("treasury_mart", pd.DataFrame())
         guardrails = ctx.business_params.get("financial_guardrails", {})
-        alerts = []
-        recommendations = []
+        alerts: list[Any] = []
+        recommendations: list[Any] = []
         actions = []
 
         if treasury.empty:

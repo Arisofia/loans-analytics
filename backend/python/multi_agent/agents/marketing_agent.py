@@ -25,8 +25,8 @@ class MarketingAgent(DecisionAgent):
     def run(self, ctx: AgentContext) -> AgentOutput:
         marketing = ctx.marts.get("marketing_mart", pd.DataFrame())
         seg_profiles = ctx.features.get("segment_profiles", {})
-        alerts = []
-        recommendations = []
+        alerts: list[Any] = []
+        recommendations: list[Any] = []
         actions = []
         metrics: Dict[str, Any] = {}
 

@@ -4,7 +4,7 @@ graph, priority rules, and action routing.
 
 from __future__ import annotations
 
-import importlib
+import importlib.util
 import types
 from pathlib import Path
 
@@ -29,6 +29,6 @@ def _load_legacy_orchestrator() -> types.ModuleType:
 try:
     MultiAgentOrchestrator = _load_legacy_orchestrator().MultiAgentOrchestrator  # noqa: F401
 except Exception:  # noqa: BLE001 — graceful fallback if legacy file is missing
-    MultiAgentOrchestrator = None  # type: ignore[assignment]
+    MultiAgentOrchestrator = None
 
 __all__ = ["DecisionOrchestrator", "MultiAgentOrchestrator"]

@@ -27,8 +27,8 @@ class ConcentrationAgent(DecisionAgent):
     def run(self, ctx: AgentContext) -> AgentOutput:
         portfolio = ctx.marts.get("portfolio_mart", pd.DataFrame())
         guardrails = ctx.business_params.get("financial_guardrails", {})
-        alerts = []
-        recommendations = []
+        alerts: list[Any] = []
+        recommendations: list[Any] = []
         actions = []
         metrics: Dict[str, Any] = {}
 

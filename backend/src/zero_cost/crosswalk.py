@@ -12,10 +12,10 @@ REASON_UNMATCHED_MORA = 'unmatched_control_mora'
 REASON_NOT_SPECIFIED = 'not_specified'
 try:
     # Import lazily at runtime because rapidfuzz is optional in this project.
-    from rapidfuzz import fuzz  # type: ignore[import-untyped]
+    from rapidfuzz import fuzz
     _RAPIDFUZZ = True
 except Exception:  # pragma: no cover
-    fuzz = None  # type: ignore[assignment]
+    fuzz = None
     _RAPIDFUZZ = False
 
 def _normalize(s: str) -> str:

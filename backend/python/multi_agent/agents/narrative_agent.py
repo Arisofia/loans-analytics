@@ -24,7 +24,7 @@ class NarrativeAgent(DecisionAgent):
     def run(self, ctx: AgentContext) -> AgentOutput:
         m = ctx.metrics
         scenarios = ctx.scenarios
-        alerts_from_all = []  # Collect critical alerts from upstream
+        alerts_from_all: list[Any] = []  # Collect critical alerts from upstream
         metrics: Dict[str, Any] = {}
 
         # ── Headline metrics ────────────────────────────────────────────

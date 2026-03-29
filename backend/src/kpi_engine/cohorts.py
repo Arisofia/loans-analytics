@@ -95,6 +95,8 @@ def compute_roll_rates(
     snapshot_only = portfolio_t1 is None or portfolio_t1.empty
 
     if not snapshot_only:
+        if portfolio_t1 is None:
+            raise ValueError("portfolio_t1 is None")
         df1 = portfolio_t1[[loan_id_col, dpd_col, balance_col]].copy()
         df1[balance_col] = pd.to_numeric(df1[balance_col], errors="coerce").fillna(0)
         df1["_bucket_t1"] = _assign_dpd_bucket(df1[dpd_col])
