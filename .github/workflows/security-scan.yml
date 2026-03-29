@@ -165,9 +165,11 @@ jobs:
 
       - name: Run Gitleaks
         run: |
+          set -euo pipefail
           GITLEAKS_VERSION="8.24.2"
           ARCHIVE="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          curl -fsSL -o "$ARCHIVE" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${ARCHIVE}"
+          curl -fL --retry 3 --retry-delay 2 --retry-all-errors -o "$ARCHIVE" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${ARCHIVE}"
           tar -xzf "$ARCHIVE" gitleaks
           mkdir -p "$HOME/.local/bin"
           install -m 0755 gitleaks "$HOME/.local/bin/gitleaks"
