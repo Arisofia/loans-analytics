@@ -29,13 +29,13 @@ def _resolve_default_mask(df: pd.DataFrame, dpd: pd.Series) -> pd.Series:
 
 def calculate_npl_ratio(df: pd.DataFrame) -> dict[str, Any]:
     if df.empty:
-        return {'npl_ratio': 0.0, 'npl_balance': 0.0, 'total_balance': 0.0, 'npl_loan_count': 0, 'formula': 'SUM(balance WHERE dpd >= 30 OR status IN (delinquent, defaulted)) / SUM(balance) * 100'}
+        return {'npl_ratio': 0.0, 'npl_balance': 0.0, 'total_balance': 0.0, 'npl_loan_count': 0, 'formula': "SUM(balance WHERE dpd >= 90 OR status IN (defaulted, written_off)) / SUM(balance) * 100"}
     balance = _resolve_balance(df)
     dpd = _resolve_dpd(df)
-    npl_mask = dpd >= 30
+    npl_mask = dpd >= 90
     if status_col := _first_col(df, ['loan_status', 'status', 'current_status']):
         status = df[status_col].astype(str).str.lower().str.strip()
-        npl_mask = npl_mask | status.isin({'delinquent', 'defaulted'})
+        npl_mask = npl_mask | status.isin({'defaulted', 'written_off'})
     from decimal import Decimal
     total_balance_raw = balance.sum()
     npl_balance_raw = balance[npl_mask].sum()
@@ -44,7 +44,7 @@ def calculate_npl_ratio(df: pd.DataFrame) -> dict[str, Any]:
     npl_loan_count = int(npl_mask.sum())
     npl_ratio = float(_safe_pct(float(npl_balance), float(total_balance)))
     logger.debug('NPL ratio=%.4f%%, balance=%.2f, count=%d', npl_ratio, float(npl_balance), npl_loan_count)
-    return {'npl_ratio': npl_ratio, 'npl_balance': float(round(npl_balance, 2)), 'total_balance': float(round(total_balance, 2)), 'npl_loan_count': npl_loan_count, 'formula': 'SUM(balance WHERE dpd >= 30 OR status IN (delinquent, defaulted)) / SUM(balance) * 100'}
+    return {'npl_ratio': npl_ratio, 'npl_balance': float(round(npl_balance, 2)), 'total_balance': float(round(total_balance, 2)), 'npl_loan_count': npl_loan_count, 'formula': "SUM(balance WHERE dpd >= 90 OR status IN (defaulted, written_off)) / SUM(balance) * 100"}
 
 def calculate_lgd(df: pd.DataFrame) -> dict[str, Any]:
     empty_result: dict[str, Any] = {'lgd_pct': 0.0, 'recovery_rate_pct': 0.0, 'defaulted_balance': 0.0, 'recovered_amount': 0.0, 'formula': '(defaulted_balance - recovered_amount) / defaulted_balance * 100'}

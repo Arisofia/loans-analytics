@@ -10,8 +10,8 @@ _METRIC_ALIAS_TO_ID: dict[str, str] = {
     "par30": "par_30",
     "par60": "par_60",
     "par90": "par_90",
-    "npl": "npl",
-    "npl_ratio": "npl",
+    "npl": "npl_90_proxy",
+    "npl_ratio": "npl_90_proxy",
     "npl90": "npl_90_proxy",
     "npl_90_ratio": "npl_90_proxy",
     "npl180": "npl_180_proxy",
@@ -32,12 +32,11 @@ _ASSET_QUALITY_REGISTRY = {
             "formula": "SUM(outstanding_balance WHERE dpd >= 90) / SUM(outstanding_balance) * 100",
             "unit": "percentage",
         },
-        "npl": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100",
-            "unit": "percentage",
-        },
         "npl_90_proxy": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 90) / SUM(outstanding_balance) * 100",
+            "formula": (
+                "SUM(outstanding_balance WHERE dpd >= 90 OR status = 'defaulted')"
+                " / SUM(outstanding_balance) * 100"
+            ),
             "unit": "percentage",
         },
         "npl_180_proxy": {
