@@ -105,6 +105,8 @@ jobs:
 
       - name: Resolve pipeline inputs and verify files
         id: resolve
+        env:
+          GOOGLE_SHEETS_CREDENTIALS_JSON: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS_JSON }}
         run: |
           CSV="${{ github.event.inputs.input_csv }}"
           MODE="${{ github.event.inputs.mode }}"
@@ -123,7 +125,12 @@ jobs:
 
           # For gsheets:// URIs no file check is needed; for local files, verify existence
           if [[ "$CSV" == gsheets://* ]]; then
-            echo "✅ Google Sheets source: $CSV"
+            if [ -z "$GOOGLE_SHEETS_CREDENTIALS_JSON" ]; then
+              echo "::warning::Google Sheets source selected but GOOGLE_SHEETS_CREDENTIALS_JSON is missing — switching to dry-run mode"
+              MODE="dry-run"
+            else
+              echo "✅ Google Sheets source: $CSV"
+            fi
           elif [ "$MODE" != "dry-run" ] && [ ! -f "$CSV" ]; then
             echo "⚠️  Input CSV '$CSV' not found — switching to dry-run mode"
             MODE="dry-run"
@@ -371,4 +378,3 @@ jobs:
           | `SUPABASE_SERVICE_ROLE_KEY` | Write access to Supabase |
           | `SUPABASE_ANON_KEY` | Read access to Supabase |
           EOF
-

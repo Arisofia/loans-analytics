@@ -41,12 +41,19 @@ jobs:
 
       - name: Check for data source
         id: check_loan_tape
+        env:
+          GOOGLE_SHEETS_CREDENTIALS_JSON: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS_JSON }}
         run: |
           DATA_SOURCE="${{ github.event.inputs.data_source || 'gsheets://DESEMBOLSOS' }}"
           echo "Using data source: $DATA_SOURCE"
 
           # Google Sheets sources are always available (credentials checked at runtime)
           if [[ "$DATA_SOURCE" == gsheets://* ]]; then
+            if [ -z "$GOOGLE_SHEETS_CREDENTIALS_JSON" ]; then
+              echo "::warning::Google Sheets source requested but GOOGLE_SHEETS_CREDENTIALS_JSON is missing — skipping local ETL run."
+              echo "has_data=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             echo "✅ Google Sheets source configured: $DATA_SOURCE"
             echo "has_data=true" >> "$GITHUB_OUTPUT"
             echo "source_type=gsheets" >> "$GITHUB_OUTPUT"
