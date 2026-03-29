@@ -20,12 +20,15 @@ def test_loans_e2e_fixture_schema_up_to_date():
     # Adjust this list to reflect the expected, stable schema of the loans E2E fixture.
     expected_columns = [
         "loan_id",
-        "customer_id",
-        "loan_amount",
-        "interest_rate",
-        "term_months",
-        "issue_date",
+        "borrower_id",
+        "amount",
         "status",
+        "days_past_due",
+        "outstanding_balance",
+        "interest_rate",
+        "last_payment_amount",
+        "total_scheduled",
+        "origination_date",
     ]
 
     assert list(df.columns) == expected_columns, (
