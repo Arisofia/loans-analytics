@@ -17,14 +17,11 @@ ORIGINATION_FEATURES = [
     'disbursement_amount',
     'interest_rate_apr',
     'term',
-    'tpv',
     'origination_fee',
     'industry',
     'pagador',
     'cliente',
-    'interest_rate',
     'principal_amount',
-    'outstanding_balance',
     'collateral_value',
     'ltv_ratio',
 ]
@@ -39,6 +36,26 @@ BEHAVIORAL_FEATURES = [
     'loan_age_days',
     'payment_ratio',
 ]
+
+LEAKY_BEHAVIORAL_FEATURES = {
+    'late_payment_rate',
+    'n_late_payments',
+    'days_to_first_late',
+    'payment_amount_std',
+    'max_consecutive_late',
+    'n_payments',
+    'loan_age_days',
+    'payment_ratio',
+}
+
+
+def validate_feature_policies() -> None:
+    overlap = set(ORIGINATION_FEATURES) & LEAKY_BEHAVIORAL_FEATURES
+    if overlap:
+        raise ValueError(
+            "Origination feature list includes behavioral/leaky fields: "
+            + ", ".join(sorted(overlap))
+        )
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description='Train WoE/IV Scorecard')
@@ -93,6 +110,11 @@ def build_executive_report(metrics: dict, iv_table: pd.DataFrame, scorecard_tabl
 
 def main() -> int:
     args = parse_args()
+    try:
+        validate_feature_policies()
+    except ValueError as err:
+        logger.error(str(err))
+        return 1
     try:
         validate_inputs(args.loans, args.payments, args.customers)
     except FileNotFoundError as err:
