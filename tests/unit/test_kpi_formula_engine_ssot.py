@@ -2,7 +2,7 @@ from __future__ import annotations
 from decimal import Decimal
 import pandas as pd
 import pytest
-from backend.python.kpis.formula.auditor import KPIFormulaAuditor
+## auditor import removed: module deleted
 from backend.python.kpis.formula.parser import FormulaParser
 from backend.python.kpis.formula.registry import KPIRegistry
 from backend.python.kpis.formula_engine import KPIFormulaEngine, KPIFormulaError
@@ -73,12 +73,7 @@ def test_registry_loader_stub(tmp_path) -> None:
     assert registry.version() == '1.0'
     assert registry.get('par_30')['unit'] == 'USD'
 
-def test_auditor_stub_stores_entries() -> None:
-    auditor = KPIFormulaAuditor()
-    auditor.record({'kpi_name': 'par_30', 'result': '3.5'})
-    records = auditor.all_records()
-    assert len(records) == 1
-    assert records[0]['kpi_name'] == 'par_30'
+## test_auditor_stub_stores_entries removed: auditor module deleted
 
 def test_comparison_formula_uses_latest_and_previous_month_balances() -> None:
     df = pd.DataFrame({'measurement_date': ['2025-01-05', '2025-01-20', '2025-02-10', '2025-02-19'], 'outstanding_balance': [100.0, 150.0, 200.0, 100.0]})
