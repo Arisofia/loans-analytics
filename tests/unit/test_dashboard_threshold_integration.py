@@ -21,6 +21,10 @@ class TestThresholdEnrichmentIntegration:
         assert get_threshold_status(7, thresholds) == 'warning'
         assert get_threshold_status(15, thresholds) == 'critical'
 
+    def test_threshold_determination_returns_not_configured_when_threshold_values_are_none(self):
+        thresholds = {'critical': None, 'warning': None}
+        assert get_threshold_status(42, thresholds) == 'not_configured'
+
     def test_enrich_kpis_for_dashboard(self):
         kpi_snapshot = {'total_outstanding_balance': 50000000, 'par_30': 3.5, 'collection_rate': 88.2, 'total_loans': 250}
         thresholds_map = {'total_outstanding_balance': {'warning': 10000000, 'critical': 50000000}, 'par_30': {'critical': 5, 'warning': 10}, 'collection_rate': {'critical': 85, 'warning': 70}}
