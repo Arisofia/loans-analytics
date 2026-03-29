@@ -10,7 +10,7 @@ import pandas as pd
 from backend.python.kpis.ltv import calculate_ltv_sintetico
 from backend.python.kpis.collection_rate import calculate_collection_rate
 from backend.python.kpis.formula_engine import KPIFormulaEngine
-from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+from backend.python.kpis.ssot_asset_quality import AssetQualitySSOT, calculate_asset_quality_metrics
 from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -729,3 +729,27 @@ class KPIEngineV2:
             record_copy["context"] = json.dumps(context_value if context_value is not None else {})
             records_for_df.append(record_copy)
         return pd.DataFrame(records_for_df)
+
+
+class KPIEngine:
+    """Strict SSOT dispatcher for canonical asset-quality KPI execution."""
+
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config or {}
+        self.dispatch_table = {
+            "par_30": lambda df: AssetQualitySSOT.calculate_par(df, 30),
+            "par_60": lambda df: AssetQualitySSOT.calculate_par(df, 60),
+            "par_90": lambda df: AssetQualitySSOT.calculate_par(df, 90),
+            "npl_90_ratio": AssetQualitySSOT.calculate_npl_90_ratio,
+            "default_rate": AssetQualitySSOT.calculate_default_rate,
+        }
+
+    def compute_all(self, df: pd.DataFrame) -> Dict[str, float]:
+        results: Dict[str, float] = {}
+        for kpi_name in self.config.get("requested_kpis", []):
+            if kpi_name not in self.dispatch_table:
+                raise NotImplementedError(
+                    f"KPI '{kpi_name}' is requested in config but lacks an SSOT mapping."
+                )
+            results[kpi_name] = float(self.dispatch_table[kpi_name](df))
+        return results

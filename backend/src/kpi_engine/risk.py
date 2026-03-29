@@ -107,15 +107,16 @@ def classify_dpd_buckets(
         result[output_col] = "current"
         return result
 
-    dpd = pd.to_numeric(result[dpd_col], errors="coerce").fillna(0).clip(lower=0)
-    bucket = pd.Series("current", index=dpd.index, dtype=str)
+    dpd = pd.to_numeric(result[dpd_col], errors="coerce")
+    bucket = pd.Series("unknown", index=dpd.index, dtype=str)
+    valid_dpd = dpd.dropna().clip(lower=0)
 
     for label, lo, hi in _DPD_BUCKET_LABELS:
         if hi is None:
-            mask = dpd >= lo
+            mask = valid_dpd >= lo
         else:
-            mask = (dpd >= lo) & (dpd < hi)
-        bucket[mask] = label
+            mask = (valid_dpd >= lo) & (valid_dpd < hi)
+        bucket.loc[mask.index[mask]] = label
 
     result[output_col] = bucket
     return result
