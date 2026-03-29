@@ -338,13 +338,13 @@ class CalculationPhase:
 
     @staticmethod
     def _calculate_segment_par_metrics(grp: pd.DataFrame, balance_col: str, dpd_col: str, total_bal: float, status_col: Optional[str]=None) -> Dict[str, float]:
+        if grp.empty or total_bal <= 0:
+            return {'par_30': 0.0, 'par_60': 0.0, 'par_90': 0.0}
         raw_dpd = pd.to_numeric(grp[dpd_col], errors='coerce').fillna(0.0)
         if 'dpd_adjusted' in grp.columns:
             adjusted_dpd = pd.to_numeric(grp['dpd_adjusted'], errors='coerce').fillna(raw_dpd)
         else:
             adjusted_dpd = raw_dpd
-        if total_bal == 0:
-            return {'par_30': 0.0, 'par_60': 0.0, 'par_90': 0.0}
         status_series = grp[status_col] if status_col else None
         ssot_metrics = calculate_asset_quality_metrics(balance=grp[balance_col], dpd=adjusted_dpd, status=status_series, actor='pipeline.segment_analytics', metric_aliases=['par30', 'par60', 'par90'])
         return {'par_30': round(float(ssot_metrics['par30']), 4), 'par_60': round(float(ssot_metrics['par60']), 4), 'par_90': round(float(ssot_metrics['par90']), 4)}
