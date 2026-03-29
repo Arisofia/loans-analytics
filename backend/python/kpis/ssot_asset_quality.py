@@ -80,6 +80,55 @@ class AssetQualitySSOT:
     """Single source of truth for balance-weighted asset-quality KPIs."""
 
     @staticmethod
+    def _resolve_column(df: pd.DataFrame, *candidates: str) -> str:
+        for col in candidates:
+            if col in df.columns:
+                return col
+        raise KeyError(f"Missing critical columns for KPI calculation: {list(candidates)}")
+
+    @classmethod
+    def _validate_inputs(cls, df: pd.DataFrame, required_cols: Sequence[str]) -> None:
+        if df is None or df.empty:
+            raise ValueError("Input DataFrame is empty. Cannot calculate KPIs.")
+        missing = [col for col in required_cols if col not in df.columns]
+        if missing:
+            raise KeyError(f"Missing critical columns for KPI calculation: {missing}")
+        if "outstanding_principal" in required_cols and df["outstanding_principal"].isna().any():
+            raise ValueError(
+                "Null values detected in 'outstanding_principal'. Data must be clean before KPI calculation."
+            )
+
+    @classmethod
+    def calculate_par(cls, df: pd.DataFrame, days_past_due: int) -> float:
+        cls._validate_inputs(df, ["outstanding_principal", "days_past_due"])
+        total_principal = float(pd.to_numeric(df["outstanding_principal"], errors="coerce").sum())
+        if total_principal == 0:
+            return 0.0
+        dpd = pd.to_numeric(df["days_past_due"], errors="coerce")
+        par_principal = float(
+            pd.to_numeric(df.loc[dpd >= days_past_due, "outstanding_principal"], errors="coerce").sum()
+        )
+        return float(par_principal / total_principal)
+
+    @classmethod
+    def calculate_npl_90_ratio(cls, df: pd.DataFrame) -> float:
+        return cls.calculate_par(df, 90)
+
+    @classmethod
+    def calculate_default_rate(cls, df: pd.DataFrame) -> float:
+        cls._validate_inputs(df, ["outstanding_principal", "days_past_due", "status"])
+        total_principal = float(pd.to_numeric(df["outstanding_principal"], errors="coerce").sum())
+        if total_principal == 0:
+            return 0.0
+        dpd = pd.to_numeric(df["days_past_due"], errors="coerce")
+        status = df["status"].astype(str).str.upper()
+        default_mask = (dpd >= 180) | (status == "WRITTEN_OFF")
+        default_principal = float(
+            pd.to_numeric(df.loc[default_mask, "outstanding_principal"], errors="coerce").sum()
+        )
+        return float(default_principal / total_principal)
+
+    @staticmethod
     def _build_normalized_df(
         *,
         balance: pd.Series,
