@@ -101,7 +101,7 @@ def test_calculate_par_zero_total_principal():
         'days_past_due': [100, 200],
         'status': ['ACTIVE', 'ACTIVE']
     })
-    with pytest.raises(ValueError, match='Sum\(outstanding_balance\) must be > 0'):
+    with pytest.raises(ValueError, match=r'Sum\(outstanding_balance\) must be > 0'):
         calculate_asset_quality_metrics(
             balance=zero_df['outstanding_principal'],
             dpd=zero_df['days_past_due'],
