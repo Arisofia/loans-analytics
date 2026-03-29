@@ -31,9 +31,12 @@ class DataQualityAgent(DecisionAgent):
         for w in dq["warnings"]:
             alerts.append(self._alert("dq_warning", "warning", w, w))
 
-        return self._build_output(
+        output = self._build_output(
             summary=f"Quality score {dq['quality_score']}",
             alerts=alerts,
             confidence=dq["quality_score"],
             blocked_by=blocked_by,
         )
+        if blocked_by:
+            output.status = "blocked"
+        return output

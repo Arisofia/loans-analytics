@@ -1,6 +1,7 @@
 from frontend.streamlit_app.utils.security import sanitize_api_base
 
-def test_sanitize_valid_host():
+def test_sanitize_valid_host(monkeypatch):
+    monkeypatch.setattr('socket.getaddrinfo', lambda *args, **kwargs: [(2, 1, 6, '', ('93.184.216.34', 0))])
     assert sanitize_api_base('http://example.com') == 'http://example.com'
     assert sanitize_api_base('https://example.com') == 'https://example.com'
     assert sanitize_api_base('https://example.com/path?q=1') == 'https://example.com'

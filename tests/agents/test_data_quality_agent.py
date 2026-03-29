@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from backend.python.multi_agent.agents.data_quality_agent import DataQualityAgent
+from backend.python.multi_agent.agents.decision_agent_base import AgentContext
 
 
 @pytest.fixture()
@@ -34,24 +35,28 @@ def dirty_loans() -> pd.DataFrame:
 
 def test_clean_data_no_blocking(clean_loans: pd.DataFrame) -> None:
     agent = DataQualityAgent()
-    output = agent.run(
+    ctx = AgentContext(
         marts={"portfolio_mart": clean_loans},
-        metrics=[],
+        metrics={},
         features={},
-        quality={"quality_score": 1.0, "blocking_issues": [], "warnings": []},
+        scenarios=[],
+        business_params={},
     )
+    output = agent.run(ctx)
     assert output.status == "ok"
     assert output.blocked_by == []
 
 
 def test_dirty_data_blocked(dirty_loans: pd.DataFrame) -> None:
     agent = DataQualityAgent()
-    output = agent.run(
+    ctx = AgentContext(
         marts={"portfolio_mart": dirty_loans},
-        metrics=[],
+        metrics={},
         features={},
-        quality={},
+        scenarios=[],
+        business_params={},
     )
+    output = agent.run(ctx)
     assert output.status == "blocked"
     assert "data_quality" in output.blocked_by
     assert len(output.alerts) > 0

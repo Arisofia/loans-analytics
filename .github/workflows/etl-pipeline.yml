@@ -250,6 +250,7 @@ jobs:
           python -m pip install --upgrade pip
           grep -viE '^(pywin32==)' requirements.prod.lock.txt > /tmp/requirements.prod.linux.txt
           python -m pip install -r /tmp/requirements.prod.linux.txt
+          python -m pip install sentry-sdk
 
       - name: Wait for PostgreSQL readiness acknowledgement
         env:

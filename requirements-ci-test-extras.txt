@@ -2,3 +2,4 @@
 sentry-sdk
 polars
 pytest-asyncio
+pyarrow>=14.0
