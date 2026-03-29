@@ -29,6 +29,21 @@ def test_calculate_asset_quality_metrics_handles_missing_status() -> None:
     assert round(metrics['npl180'], 2) == 50.0
 
 
+def test_calculate_asset_quality_metrics_supports_strict_aliases() -> None:
+    balance = pd.Series([100.0, 200.0, 300.0])
+    dpd = pd.Series([0.0, 95.0, 200.0])
+    status = pd.Series(["active", "delinquent", "defaulted"])
+    metrics = calculate_asset_quality_metrics(
+        balance,
+        dpd,
+        actor="asset_quality_test",
+        metric_aliases=("npl_90_ratio", "default_rate"),
+        status=status,
+    )
+    assert round(metrics["npl_90_ratio"], 2) == 83.33
+    assert round(metrics["default_rate"], 2) == 50.0
+
+
 def test_calculate_asset_quality_metrics_fails_on_empty_input() -> None:
     balance = pd.Series([], dtype=float)
     dpd = pd.Series([], dtype=float)
