@@ -18,7 +18,7 @@ _METRIC_ALIAS_TO_ID: dict[str, str] = {
     "default_rate": "default_rate_balance",
 }
 _ASSET_QUALITY_REGISTRY = {
-    "version": "asset-quality-ssot-1.3",
+    "version": "asset-quality-ssot-1.4",
     "asset_quality_kpis": {
         "par_30": {
             "formula": "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100",
@@ -111,7 +111,17 @@ class AssetQualitySSOT:
 
     @classmethod
     def calculate_npl_90_ratio(cls, df: pd.DataFrame) -> float:
-        return cls.calculate_par(df, 90)
+        cls._validate_inputs(df, ["outstanding_principal", "days_past_due", "status"])
+        total_principal = float(pd.to_numeric(df["outstanding_principal"], errors="coerce").sum())
+        if total_principal == 0:
+            return 0.0
+        dpd = pd.to_numeric(df["days_past_due"], errors="coerce")
+        status = df["status"].astype(str).str.upper()
+        npl_mask = (dpd >= 90) | (status == "WRITTEN_OFF")
+        npl_principal = float(
+            pd.to_numeric(df.loc[npl_mask, "outstanding_principal"], errors="coerce").sum()
+        )
+        return float(npl_principal / total_principal)
 
     @classmethod
     def calculate_default_rate(cls, df: pd.DataFrame) -> float:

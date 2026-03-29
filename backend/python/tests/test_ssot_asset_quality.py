@@ -64,6 +64,18 @@ def test_calculate_npl_90_ratio_mapping(clean_portfolio):
     assert par_90 == npl_ratio, 'NPL drifted from PAR90 semantics.'
 
 
+def test_calculate_npl_90_ratio_counts_written_off_even_if_dpd_below_90():
+    df = pd.DataFrame(
+        {
+            "outstanding_principal": [100.0, 100.0, 100.0],
+            "days_past_due": [0, 95, 10],
+            "status": ["ACTIVE", "ACTIVE", "WRITTEN_OFF"],
+        }
+    )
+    npl_ratio = AssetQualitySSOT.calculate_npl_90_ratio(df)
+    assert np.isclose(npl_ratio, 2 / 3), f"Expected 0.6667, got {npl_ratio}"
+
+
 def test_calculate_default_rate_combined_logic(clean_portfolio):
     default_rate = AssetQualitySSOT.calculate_default_rate(clean_portfolio)
     assert np.isclose(default_rate, 0.3), f'Expected 0.3, got {default_rate}'
