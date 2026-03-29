@@ -31,18 +31,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python 3.12 (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install system build dependencies
         run: |
@@ -70,9 +63,9 @@ jobs:
 
       - name: Install QA tools
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
-          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
-          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-ci-test-extras.txt
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --prefer-binary -r requirements-dev.txt
+          python -m pip install --prefer-binary -r requirements-ci-test-extras.txt
 
       - name: Run linting (changed Python files only)
         shell: bash
@@ -96,7 +89,7 @@ jobs:
 
       - name: Run mypy type checking
         run: |
-          "$PYTHON_BIN" -m mypy --no-incremental
+          python -m mypy --no-incremental
         continue-on-error: true
 
       - name: Run tests
@@ -110,15 +103,15 @@ jobs:
 
       - name: Validate port consistency
         run: |
-          "$PYTHON_BIN" scripts/validation/validate_port_consistency.py
+          python scripts/validation/validate_port_consistency.py
 
       - name: Validate migration order determinism
         run: |
-          "$PYTHON_BIN" scripts/validation/validate_migration_order.py
+          python scripts/validation/validate_migration_order.py
 
       - name: Validate documentation links
         run: |
-          "$PYTHON_BIN" tools/validate_doc_links.py
+          python tools/validate_doc_links.py
 
       - name: Comment QA result on PR
         if: always() && github.actor != 'dependabot[bot]'

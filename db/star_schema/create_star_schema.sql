@@ -1,152 +1,153 @@
 -- =============================================================================
--- Star Schema — Loans Analytics
--- Target: Supabase / PostgreSQL (free tier)
--- Version: 1.0  |  2026-03-16
---
--- Tables
---   dim_loan             Loan master attributes (SCD Type 1)
---   dim_client           Client/borrower master data
---   dim_time             Calendar dimension
---   fact_disbursement    One row per disbursement event
---   fact_payment         One row per payment received
---   fact_monthly_snapshot  One row per (loan, month) for portfolio reporting
+-- Pure Star Schema — Loans Analytics (PostgreSQL/Supabase)
+-- Enforces:
+--   * Fact_Desembolsos
+--   * Fact_Transacciones_Pago
+--   * Bridge_Prestatario_Prestamo
+--   * Dim_Calendario as central role-playing time dimension
 -- =============================================================================
 
+CREATE SCHEMA IF NOT EXISTS star;
+
 -- ---------------------------------------------------------------------------
--- 1. DIMENSION: dim_time
+-- 1) Central calendar dimension (Dim_Calendario)
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS dim_time (
-    time_id          SERIAL PRIMARY KEY,
-    snapshot_month   DATE         NOT NULL UNIQUE,
-    year             SMALLINT     NOT NULL,
-    month            SMALLINT     NOT NULL,
-    quarter          SMALLINT     NOT NULL,
-    year_month       CHAR(7)      NOT NULL,  -- 'YYYY-MM'
-    is_month_end     BOOLEAN      NOT NULL DEFAULT TRUE
+CREATE TABLE IF NOT EXISTS star.dim_calendario (
+    date_key               INTEGER PRIMARY KEY, -- YYYYMMDD
+    calendar_date          DATE NOT NULL UNIQUE,
+    year_number            SMALLINT NOT NULL,
+    quarter_number         SMALLINT NOT NULL,
+    month_number           SMALLINT NOT NULL,
+    month_name             VARCHAR(12) NOT NULL,
+    week_of_year           SMALLINT NOT NULL,
+    day_of_month           SMALLINT NOT NULL,
+    day_of_week_iso        SMALLINT NOT NULL,
+    is_month_end           BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- ---------------------------------------------------------------------------
--- 2. DIMENSION: dim_client
+-- 2) Dimensions
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS dim_client (
-    client_sk        SERIAL PRIMARY KEY,
-    client_id        VARCHAR(64)  NOT NULL,
-    client_name      VARCHAR(255),
-    identity_number  VARCHAR(64),
-    created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    UNIQUE (client_id)
+CREATE TABLE IF NOT EXISTS star.dim_prestatario (
+    prestatario_sk         BIGSERIAL PRIMARY KEY,
+    prestatario_id         VARCHAR(64) NOT NULL UNIQUE,
+    tipo_documento         VARCHAR(16),
+    numero_documento       VARCHAR(64),
+    nombre_completo        VARCHAR(255),
+    segmento               VARCHAR(64),
+    ciudad                 VARCHAR(128),
+    pais                   VARCHAR(64),
+    created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS star.dim_prestamo (
+    prestamo_sk            BIGSERIAL PRIMARY KEY,
+    prestamo_id            VARCHAR(64) NOT NULL UNIQUE,
+    producto               VARCHAR(64),
+    moneda                 CHAR(3) NOT NULL DEFAULT 'USD',
+    sucursal               VARCHAR(64),
+    tasa_nominal_anual     NUMERIC(12,8),
+    plazo_meses            SMALLINT,
+
+    -- Role-playing dimension keys to Dim_Calendario
+    fecha_solicitud_key    INTEGER REFERENCES star.dim_calendario(date_key),
+    fecha_aprobacion_key   INTEGER REFERENCES star.dim_calendario(date_key),
+    fecha_desembolso_key   INTEGER REFERENCES star.dim_calendario(date_key),
+    fecha_vencimiento_key  INTEGER REFERENCES star.dim_calendario(date_key),
+    fecha_castigo_key      INTEGER REFERENCES star.dim_calendario(date_key),
+
+    created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ---------------------------------------------------------------------------
--- 3. DIMENSION: dim_loan
+-- 3) Bridge (Bridge_Prestatario_Prestamo)
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS dim_loan (
-    loan_sk              SERIAL PRIMARY KEY,
-    lend_id              VARCHAR(64)  NOT NULL,
-    numero_desembolso    VARCHAR(64),
-    client_sk            INT          REFERENCES dim_client(client_sk),
-    product_type         VARCHAR(64),
-    branch_code          VARCHAR(32),
-    currency             CHAR(3)      NOT NULL DEFAULT 'USD',
-    disbursement_date    DATE,
-    maturity_date        DATE,
-    original_principal   NUMERIC(18,4),
-    interest_rate        NUMERIC(8,6),
-    term_months          SMALLINT,
-    created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    UNIQUE (lend_id)
+CREATE TABLE IF NOT EXISTS star.bridge_prestatario_prestamo (
+    bridge_sk              BIGSERIAL PRIMARY KEY,
+    prestatario_sk         BIGINT NOT NULL REFERENCES star.dim_prestatario(prestatario_sk),
+    prestamo_sk            BIGINT NOT NULL REFERENCES star.dim_prestamo(prestamo_sk),
+    relacion_tipo          VARCHAR(32) NOT NULL DEFAULT 'TITULAR', -- TITULAR, CODEUDOR, GARANTE
+    relacion_inicio_key    INTEGER REFERENCES star.dim_calendario(date_key),
+    relacion_fin_key       INTEGER REFERENCES star.dim_calendario(date_key),
+    is_primary             BOOLEAN NOT NULL DEFAULT TRUE,
+    participation_pct      NUMERIC(9,6) NOT NULL DEFAULT 1.0,
+    UNIQUE (prestatario_sk, prestamo_sk, relacion_tipo)
 );
 
-CREATE INDEX IF NOT EXISTS idx_dim_loan_numero_desembolso
-    ON dim_loan (numero_desembolso);
-CREATE INDEX IF NOT EXISTS idx_dim_loan_client_sk
-    ON dim_loan (client_sk);
-
 -- ---------------------------------------------------------------------------
--- 4. FACT: fact_disbursement
+-- 4) Facts
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS fact_disbursement (
-    disbursement_sk      SERIAL PRIMARY KEY,
-    loan_sk              INT          NOT NULL REFERENCES dim_loan(loan_sk),
-    client_sk            INT          NOT NULL REFERENCES dim_client(client_sk),
-    time_id              INT          NOT NULL REFERENCES dim_time(time_id),
-    disbursement_date    DATE         NOT NULL,
-    principal_amount     NUMERIC(18,4) NOT NULL,
-    currency             CHAR(3)       NOT NULL DEFAULT 'USD',
-    channel              VARCHAR(64),
-    product_type         VARCHAR(64),
-    branch_code          VARCHAR(32),
-    loaded_at            TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS star.fact_desembolsos (
+    desembolso_sk          BIGSERIAL PRIMARY KEY,
+    prestamo_sk            BIGINT NOT NULL REFERENCES star.dim_prestamo(prestamo_sk),
+    prestatario_sk         BIGINT NOT NULL REFERENCES star.dim_prestatario(prestatario_sk),
+    fecha_desembolso_key   INTEGER NOT NULL REFERENCES star.dim_calendario(date_key),
+    monto_desembolsado     NUMERIC(18,4) NOT NULL CHECK (monto_desembolsado >= 0),
+    cargo_originacion      NUMERIC(18,4) NOT NULL DEFAULT 0,
+    canal                  VARCHAR(64),
+    loaded_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_fact_disb_loan_sk  ON fact_disbursement (loan_sk);
-CREATE INDEX IF NOT EXISTS idx_fact_disb_time_id  ON fact_disbursement (time_id);
-CREATE INDEX IF NOT EXISTS idx_fact_disb_date     ON fact_disbursement (disbursement_date);
-
--- ---------------------------------------------------------------------------
--- 5. FACT: fact_payment
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS fact_payment (
-    payment_sk           SERIAL PRIMARY KEY,
-    loan_sk              INT          NOT NULL REFERENCES dim_loan(loan_sk),
-    client_sk            INT          NOT NULL REFERENCES dim_client(client_sk),
-    time_id              INT          NOT NULL REFERENCES dim_time(time_id),
-    payment_date         DATE         NOT NULL,
-    principal_paid       NUMERIC(18,4) NOT NULL DEFAULT 0,
-    interest_paid        NUMERIC(18,4) NOT NULL DEFAULT 0,
-    fees_paid            NUMERIC(18,4) NOT NULL DEFAULT 0,
-    total_paid           NUMERIC(18,4) GENERATED ALWAYS AS
-                             (principal_paid + interest_paid + fees_paid) STORED,
-    currency             CHAR(3)       NOT NULL DEFAULT 'USD',
-    payment_method       VARCHAR(64),
-    loaded_at            TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS star.fact_transacciones_pago (
+    pago_sk                BIGSERIAL PRIMARY KEY,
+    prestamo_sk            BIGINT NOT NULL REFERENCES star.dim_prestamo(prestamo_sk),
+    prestatario_sk         BIGINT NOT NULL REFERENCES star.dim_prestatario(prestatario_sk),
+    fecha_pago_key         INTEGER NOT NULL REFERENCES star.dim_calendario(date_key),
+    principal_pagado       NUMERIC(18,4) NOT NULL DEFAULT 0 CHECK (principal_pagado >= 0),
+    interes_pagado         NUMERIC(18,4) NOT NULL DEFAULT 0 CHECK (interes_pagado >= 0),
+    mora_pagada            NUMERIC(18,4) NOT NULL DEFAULT 0 CHECK (mora_pagada >= 0),
+    fee_pagado             NUMERIC(18,4) NOT NULL DEFAULT 0 CHECK (fee_pagado >= 0),
+    monto_total_pagado     NUMERIC(18,4) GENERATED ALWAYS AS
+                           (principal_pagado + interes_pagado + mora_pagada + fee_pagado) STORED,
+    metodo_pago            VARCHAR(64),
+    loaded_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_fact_pay_loan_sk  ON fact_payment (loan_sk);
-CREATE INDEX IF NOT EXISTS idx_fact_pay_time_id  ON fact_payment (time_id);
-CREATE INDEX IF NOT EXISTS idx_fact_pay_date     ON fact_payment (payment_date);
+-- ---------------------------------------------------------------------------
+-- 5) Performance indexes (single-direction 1:N joins)
+-- ---------------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_dim_prestamo_fecha_desembolso_key
+    ON star.dim_prestamo (fecha_desembolso_key);
+CREATE INDEX IF NOT EXISTS idx_bridge_prestamo
+    ON star.bridge_prestatario_prestamo (prestamo_sk);
+CREATE INDEX IF NOT EXISTS idx_bridge_prestatario
+    ON star.bridge_prestatario_prestamo (prestatario_sk);
+CREATE INDEX IF NOT EXISTS idx_fact_desembolsos_prestamo
+    ON star.fact_desembolsos (prestamo_sk, fecha_desembolso_key);
+CREATE INDEX IF NOT EXISTS idx_fact_pagos_prestamo
+    ON star.fact_transacciones_pago (prestamo_sk, fecha_pago_key);
 
 -- ---------------------------------------------------------------------------
--- 6. FACT: fact_monthly_snapshot
+-- 6) Compatibility views for existing downstream SQL
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS fact_monthly_snapshot (
-    snapshot_sk          SERIAL PRIMARY KEY,
-    loan_sk              INT          NOT NULL REFERENCES dim_loan(loan_sk),
-    client_sk            INT          NOT NULL REFERENCES dim_client(client_sk),
-    time_id              INT          NOT NULL REFERENCES dim_time(time_id),
-    snapshot_month       DATE         NOT NULL,
+CREATE SCHEMA IF NOT EXISTS compat;
 
-    -- Balance sheet
-    principal_outstanding  NUMERIC(18,4),
-    total_overdue_amount   NUMERIC(18,4),
-    interest_outstanding   NUMERIC(18,4),
-    fees_outstanding       NUMERIC(18,4),
+CREATE OR REPLACE VIEW compat.fact_disbursement AS
+SELECT
+    desembolso_sk AS disbursement_sk,
+    prestamo_sk AS loan_sk,
+    prestatario_sk AS client_sk,
+    fecha_desembolso_key AS time_id,
+    dc.calendar_date AS disbursement_date,
+    monto_desembolsado AS principal_amount,
+    canal AS channel,
+    loaded_at
+FROM star.fact_desembolsos fd
+JOIN star.dim_calendario dc ON dc.date_key = fd.fecha_desembolso_key;
 
-    -- Mora / credit quality
-    dpd                  SMALLINT,
-    mora_bucket          VARCHAR(16),   -- 'current','1-30','31-60','61-90','91-180','181-360','360+'
-    is_overdue           BOOLEAN        GENERATED ALWAYS AS (dpd > 0) STORED,
-
-    -- PAR flags (true if loan DPD >= threshold)
-    par_1                BOOLEAN,
-    par_30               BOOLEAN,
-    par_60               BOOLEAN,
-    par_90               BOOLEAN,
-
-    -- Vintage / lifecycle
-    months_on_book       SMALLINT,
-    monthly_income       NUMERIC(18,4),
-
-    -- Metadata
-    source               VARCHAR(64),   -- 'control_mora', 'pipeline', etc.
-    loaded_at            TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
-
-    UNIQUE (loan_sk, time_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_snap_loan_sk     ON fact_monthly_snapshot (loan_sk);
-CREATE INDEX IF NOT EXISTS idx_snap_time_id     ON fact_monthly_snapshot (time_id);
-CREATE INDEX IF NOT EXISTS idx_snap_month       ON fact_monthly_snapshot (snapshot_month);
-CREATE INDEX IF NOT EXISTS idx_snap_mora_bucket ON fact_monthly_snapshot (mora_bucket);
-CREATE INDEX IF NOT EXISTS idx_snap_dpd         ON fact_monthly_snapshot (dpd);
+CREATE OR REPLACE VIEW compat.fact_payment AS
+SELECT
+    pago_sk AS payment_sk,
+    prestamo_sk AS loan_sk,
+    prestatario_sk AS client_sk,
+    fecha_pago_key AS time_id,
+    dc.calendar_date AS payment_date,
+    principal_pagado AS principal_paid,
+    interes_pagado AS interest_paid,
+    fee_pagado AS fees_paid,
+    monto_total_pagado AS total_paid,
+    metodo_pago AS payment_method,
+    loaded_at
+FROM star.fact_transacciones_pago fp
+JOIN star.dim_calendario dc ON dc.date_key = fp.fecha_pago_key;

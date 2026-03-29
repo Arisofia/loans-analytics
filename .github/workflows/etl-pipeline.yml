@@ -168,18 +168,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
       - name: Install system build dependencies
         run: |
@@ -207,8 +200,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
-          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --prefer-binary -r requirements-dev.txt
 
       - name: Run tests
         run: make test
@@ -246,24 +239,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip
+          python -m pip install --upgrade pip
           grep -viE '^(pywin32==)' requirements.prod.lock.txt > /tmp/requirements.prod.linux.txt
-          "$PYTHON_BIN" -m pip install -r /tmp/requirements.prod.linux.txt
+          python -m pip install -r /tmp/requirements.prod.linux.txt
 
       - name: Wait for PostgreSQL readiness acknowledgement
         env:
@@ -362,24 +348,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip
+          python -m pip install --upgrade pip
           grep -viE '^(pywin32==)' requirements.prod.lock.txt > /tmp/requirements.prod.linux.txt
-          "$PYTHON_BIN" -m pip install -r /tmp/requirements.prod.linux.txt duckdb rapidfuzz
+          python -m pip install -r /tmp/requirements.prod.linux.txt duckdb rapidfuzz
 
       - name: Initialize DuckDB star schema
         run: python scripts/data/init_duckdb_schema.py
