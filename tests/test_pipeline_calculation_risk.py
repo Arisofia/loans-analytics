@@ -478,7 +478,7 @@ def test_dimension_segment_kpis_are_sorted_deterministically():
     assert list(result.keys()) == ["Alpha", "Zeta"]
 
 
-def test_npl_ratio_and_npl_90_ratio_are_distinct():
+def test_npl_ratio_and_npl_90_ratio_are_aligned_to_strict_90_plus():
     df = pd.DataFrame(
         {
             "outstanding_balance": [1000.0, 1000.0, 1000.0, 1000.0, 1000.0],
@@ -488,11 +488,9 @@ def test_npl_ratio_and_npl_90_ratio_are_distinct():
     )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     kpis = engine._calculate_derived_risk_kpis(df)
-    assert float(kpis["npl_90_ratio"]) == pytest.approx(20.0, rel=0.0001)
-    assert float(kpis["npl_ratio"]) == pytest.approx(60.0, rel=0.0001)
-    assert (
-        kpis["npl_ratio"] != kpis["npl_90_ratio"]
-    ), "npl_ratio and npl_90_ratio must be distinct; npl uses dpd>=30 while npl_90 uses dpd>=90"
+    assert float(kpis["npl_90_ratio"]) == pytest.approx(40.0, rel=0.0001)
+    assert float(kpis["npl_ratio"]) == pytest.approx(40.0, rel=0.0001)
+    assert kpis["npl_ratio"] == kpis["npl_90_ratio"]
 
 
 def test_npl_90_ratio_strictly_subset_of_npl_ratio():
@@ -505,9 +503,7 @@ def test_npl_90_ratio_strictly_subset_of_npl_ratio():
     )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     kpis = engine._calculate_derived_risk_kpis(df)
-    assert float(kpis["npl_90_ratio"]) <= float(
-        kpis["npl_ratio"]
-    ), "npl_90_ratio should never exceed npl_ratio"
+    assert float(kpis["npl_90_ratio"]) == float(kpis["npl_ratio"])
 
 
 def test_status_normalization_spanish_values():

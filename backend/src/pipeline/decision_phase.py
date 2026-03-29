@@ -106,7 +106,7 @@ class DecisionPhase:
             # ── Run unified metric engine ───────────────────────────────
             from backend.src.kpi_engine.engine import run_metric_engine
 
-            engine_metrics = run_metric_engine(marts)
+            engine_metrics = run_metric_engine(marts=marts)
             metrics_seed.update(engine_metrics)
             logger.info("Metric engine produced %d metrics", len(engine_metrics))
 
@@ -138,8 +138,13 @@ class DecisionPhase:
             )
 
             quality_payload = {"results": [str(r) for r in dq_results], "blocking": blocking}
-            agent_outputs = run_first_live_agents(marts, metrics_seed, features, quality_payload)
-            orchestrator = DecisionOrchestrator(agent_outputs=agent_outputs, metrics=metrics_seed)
+            agent_outputs = run_first_live_agents(
+                marts=marts,
+                metrics=metrics_seed,
+                features=features,
+                quality=quality_payload,
+            )
+            orchestrator = DecisionOrchestrator(agent_outputs, metrics_seed)
             decision_state = orchestrator.run()
 
             # ── Persist decision state ──────────────────────────────────

@@ -155,15 +155,15 @@ class TestDerivedRiskKPIAudit(unittest.TestCase):
         val = results['avg_credit_line_utilization']['value']
         self.assertAlmostEqual(val, 61.67, delta=1.0)
 
-    def test_npl_ratio_uses_30dpd_broad_threshold(self):
+    def test_npl_ratio_uses_strict_90dpd_threshold(self):
         df = self._make_portfolio_df()
         engine = KPIEngineV2(df, actor='audit_test')
         results = engine.calculate_all()
         self.assertIn('npl_ratio', results)
         val = results['npl_ratio']['value']
-        self.assertAlmostEqual(val, 45.0, delta=0.1)
+        self.assertAlmostEqual(val, 25.0, delta=0.1)
 
-    def test_npl_90_ratio_is_subset_of_npl_ratio(self):
+    def test_npl_90_ratio_matches_npl_ratio_under_strict_doctrine(self):
         df = self._make_portfolio_df()
         engine = KPIEngineV2(df, actor='audit_test')
         results = engine.calculate_all()
@@ -171,7 +171,7 @@ class TestDerivedRiskKPIAudit(unittest.TestCase):
         self.assertIn('npl_90_ratio', results)
         npl = results['npl_ratio']['value']
         npl_90 = results['npl_90_ratio']['value']
-        self.assertLessEqual(npl_90, npl)
+        self.assertAlmostEqual(npl_90, npl, delta=0.1)
         self.assertAlmostEqual(npl_90, 25.0, delta=0.1)
 
     def test_defaulted_outstanding_ratio_only_defaulted_status(self):

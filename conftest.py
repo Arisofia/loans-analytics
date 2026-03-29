@@ -2,6 +2,7 @@ import random
 import inspect
 import asyncio
 import sys
+import importlib.util
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -13,11 +14,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 # Load .env so integration tests (RUN_REAL_SUPABASE_TESTS, etc.) are not skipped locally
-load_dotenv = None
-try:
+if importlib.util.find_spec("dotenv") is not None:
     from dotenv import load_dotenv
-
-except ImportError:
+else:
     load_dotenv = None
 
 if load_dotenv is not None:
