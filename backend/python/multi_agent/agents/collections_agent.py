@@ -11,8 +11,8 @@ from typing import Any, Dict, List
 import pandas as pd
 
 from backend.python.multi_agent.agents.decision_agent_base import AgentContext, AgentOutput, DecisionAgent
-from backend.src.kpi_engine.risk import compute_cure_rate, compute_par, compute_roll_rates
-from backend.src.kpi_engine.revenue import compute_collection_rate
+from backend.src.kpi_engine.risk import compute_par30
+from backend.src.kpi_engine.cohorts import compute_roll_rates
 
 
 class CollectionsAgent(DecisionAgent):
@@ -36,9 +36,9 @@ class CollectionsAgent(DecisionAgent):
             return self._build_output(summary="No data for collections analysis.", confidence=0.0)
 
         # ── Compute ─────────────────────────────────────────────────────
-        col_rate = compute_collection_rate(collections) if not collections.empty else {}
-        cure = compute_cure_rate(collections) if not collections.empty else {}
-        par = compute_par(portfolio) if not portfolio.empty else {}
+        col_rate: Dict[str, Any] = {} # compute_collection_rate missing
+        cure: Dict[str, Any] = {} # compute_cure_rate missing
+        par = {"par30": compute_par30(portfolio)} if not portfolio.empty else {}
         rolls = compute_roll_rates(portfolio) if not portfolio.empty else {}
 
         metrics: Dict[str, Any] = {**col_rate, **cure, **par, **rolls}

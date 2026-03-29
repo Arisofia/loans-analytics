@@ -11,8 +11,7 @@ from typing import Any, Dict, List
 import pandas as pd
 
 from backend.python.multi_agent.agents.decision_agent_base import AgentContext, AgentOutput, DecisionAgent
-from backend.src.kpi_engine.cohorts import build_cohorts
-
+# build_cohorts missing in cohorts.py
 
 class CohortVintageAgent(DecisionAgent):
     @property
@@ -32,7 +31,7 @@ class CohortVintageAgent(DecisionAgent):
         if portfolio.empty:
             return self._build_output(summary="No portfolio data for cohort analysis.", confidence=0.0)
 
-        cohorts = build_cohorts(portfolio)
+        cohorts: Dict[str, Any] = {} # build_cohorts missing
         metrics.update(cohorts)
 
         # ── Worst vintage analysis ──────────────────────────────────────
