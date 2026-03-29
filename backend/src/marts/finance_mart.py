@@ -38,25 +38,27 @@ def _resolve_direct_or_rate(
     annualize: bool = False,
     warn_message: str,
 ) -> pd.Series:
-    direct_col = _first_present(df, direct_candidates)
-    if direct_col:
-        return _series_or_zero(df, direct_col)
-    rate_col = _first_present(df, rate_candidates)
-    if not rate_col:
+    direct_column = _first_present(df, direct_candidates)
+    if direct_column is not None:
+        return _series_or_zero(df, direct_column)
+
+    rate_column = _first_present(df, rate_candidates)
+    if rate_column is None:
         logger.warning(warn_message)
         return _zero_series(df)
-    rate = pd.to_numeric(df[rate_col], errors="coerce").fillna(0.0)
+
+    rate = pd.to_numeric(df[rate_column], errors="coerce").fillna(0.0)
     denominator = 12 if annualize else 1
     return base_amount * rate / denominator
 
 
 def _resolve_interest_income(df: pd.DataFrame, outstanding: pd.Series) -> pd.Series:
-    interest_income_col = _first_present(df, ["interest_income", "interest_income_usd"])
-    if interest_income_col:
-        return _series_or_zero(df, interest_income_col)
+    direct_interest_col = _first_present(df, ["interest_income", "interest_income_usd"])
+    if direct_interest_col is not None:
+        return _series_or_zero(df, direct_interest_col)
 
     rate_col = _first_present(df, ["interest_rate", "tasainteres", "apr"])
-    if not rate_col:
+    if rate_col is None:
         raise ValueError(
             "finance_mart requires one of [interest_rate, tasainteres, apr] "
             "or an explicit [interest_income, interest_income_usd] column"

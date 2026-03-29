@@ -2482,7 +2482,7 @@ class KPIService:
             dpd=df["dpd"],
             status=status_series,
             actor="api.service",
-            metric_aliases=["par30", "par60", "par90"],
+            metric_aliases=["par30", "par60", "par90", "npl", "npl90"],
         )
         dpd_1_30 = (
             float(df[(df["dpd"] > 0) & (df["dpd"] <= 30)]["principal_balance"].sum())
@@ -2509,26 +2509,17 @@ class KPIService:
             float(df[df["dpd"] > 90]["principal_balance"].sum()) / total_outstanding * 100
             if total_outstanding > 0
             else 0.0
-            actor='api.service',
-            metric_aliases=['par30', 'par60', 'par90', 'npl', 'npl90'],
         )
         return {
             "par30": ssot.get("par30", 0.0),
             "par60": ssot.get("par60", 0.0),
             "par90": ssot.get("par90", 0.0),
+            "npl": ssot.get("npl", 0.0),
+            "npl90": ssot.get("npl90", 0.0),
             "dpd_1_30": dpd_1_30,
             "dpd_31_60": dpd_31_60,
             "dpd_61_90": dpd_61_90,
             "dpd_90_plus": dpd_90_plus,
-            'par30': ssot['par30'],
-            'par60': ssot['par60'],
-            'par90': ssot['par90'],
-            'npl': ssot['npl'],
-            'npl90': ssot['npl90'],
-            'dpd_1_30': dpd_1_30,
-            'dpd_31_60': dpd_31_60,
-            'dpd_61_90': dpd_61_90,
-            'dpd_90_plus': dpd_90_plus,
         }
 
     def _calculate_collection_recovery_metrics(
@@ -2812,14 +2803,6 @@ class KPIService:
         if dpd_value <= 90:
             return "61_90"
         return "90_plus"
-        elif dpd_value <= 30:
-            return "1_30"
-        elif dpd_value <= 60:
-            return "31_60"
-        elif dpd_value <= 90:
-            return "61_90"
-        else:
-            return "90_plus"
 
     @staticmethod
     def _bucket_order() -> list[str]:

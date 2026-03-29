@@ -85,7 +85,7 @@ def _safe_urlopen(url_or_request: str | urllib.request.Request, timeout: int):
     )
     if not _is_allowed_url(target_url):
         raise ValueError(f"Unsupported URL scheme in '{target_url}'")
-    return urllib.request.urlopen(url_or_request, timeout=timeout)
+    return urllib.request.urlopen(url_or_request, timeout=timeout)  # nosec B310
 
 
 def load_from_pipeline_json(path: str) -> dict[str, Any] | None:

@@ -57,6 +57,15 @@ class TestPortfolioMart:
         assert isinstance(result, pd.DataFrame)
         assert len(result) == len(loan_df)
 
+    def test_missing_days_past_due_maps_to_unknown_bucket(self, loan_df: pd.DataFrame):
+        df = loan_df.copy()
+        df.loc[df["loan_id"] == "L002", "days_past_due"] = None
+
+        result = build_portfolio(df)
+
+        bucket_map = result.set_index("loan_id")["dpd_bucket"].to_dict()
+        assert bucket_map["L002"] == "unknown"
+
 
 class TestFinanceMart:
     def test_build_returns_dataframe(self, loan_df: pd.DataFrame):

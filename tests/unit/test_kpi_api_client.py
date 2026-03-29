@@ -21,9 +21,7 @@ def mock_httpx():
 
 @pytest.fixture
 def api_client():
-    from frontend.streamlit_app.kpi_api_client import KPIAPIClient
-
-    client = KPIAPIClient(api_url="http://test.local:8000", timeout=10, cache_ttl=5)
+    client = client_module.KPIAPIClient(api_url="http://test.local:8000", timeout=10, cache_ttl=5)
     yield client
     client.close()
 
@@ -74,18 +72,14 @@ class TestKPIAPIClient:
         assert api_client._cache == {}
 
     def test_default_api_url_from_env(self, monkeypatch):
-        from frontend.streamlit_app.kpi_api_client import KPIAPIClient
-
         monkeypatch.setenv("KPI_API_URL", "http://prod.api:8000")
-        client = KPIAPIClient()
+        client = client_module.KPIAPIClient()
         assert client.api_url == "http://prod.api:8000"
         client.close()
 
     def test_default_api_url_fallback(self, monkeypatch):
-        from frontend.streamlit_app.kpi_api_client import KPIAPIClient
-
         monkeypatch.delenv("KPI_API_URL", raising=False)
-        client = KPIAPIClient()
+        client = client_module.KPIAPIClient()
         assert client.api_url == "http://localhost:8000"
         client.close()
 
@@ -252,9 +246,7 @@ class TestKPIAPIClient:
         assert len(api_client._cache) == 0
 
     def test_context_manager(self):
-        from frontend.streamlit_app.kpi_api_client import KPIAPIClient
-
-        with KPIAPIClient() as client:
+        with client_module.KPIAPIClient() as client:
             assert client is not None
             assert client.api_url == "http://localhost:8000"
 
@@ -262,9 +254,7 @@ class TestKPIAPIClient:
 class TestKPIResponse:
 
     def test_status_checks_normal(self):
-        from frontend.streamlit_app.kpi_api_client import KPIResponse
-
-        kpi = KPIResponse(
+        kpi = client_module.KPIResponse(
             id="test", name="Test KPI", value=50.0, unit="unit", threshold_status="normal"
         )
         assert kpi.is_normal() is True
@@ -273,9 +263,7 @@ class TestKPIResponse:
         assert kpi.is_configured() is True
 
     def test_status_checks_critical(self):
-        from frontend.streamlit_app.kpi_api_client import KPIResponse
-
-        kpi = KPIResponse(
+        kpi = client_module.KPIResponse(
             id="test", name="Test KPI", value=99.0, unit="unit", threshold_status="critical"
         )
         assert kpi.is_critical() is True
@@ -283,9 +271,7 @@ class TestKPIResponse:
         assert kpi.is_configured() is True
 
     def test_status_checks_not_configured(self):
-        from frontend.streamlit_app.kpi_api_client import KPIResponse
-
-        kpi = KPIResponse(
+        kpi = client_module.KPIResponse(
             id="test", name="Test KPI", value=50.0, unit="unit", threshold_status="not_configured"
         )
         assert kpi.is_configured() is False

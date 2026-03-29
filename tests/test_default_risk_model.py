@@ -116,6 +116,7 @@ class TestPredictEndpoint:
 
     @staticmethod
     def _build_test_client_or_skip():
+        fastapi_app = None
         try:
             from fastapi.testclient import TestClient
             from backend.python.apps.analytics.api.main import app as fastapi_app

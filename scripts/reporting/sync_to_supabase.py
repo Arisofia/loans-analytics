@@ -4,7 +4,7 @@ import urllib.request
 import urllib.error
 import urllib.parse
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict
 
 ALLOWED_URL_SCHEMES = {"http", "https"}
 
@@ -59,7 +59,7 @@ def sync_to_supabase(run_dir: Path):
             _push_file(file_path, section, base_url, headers)
 
 
-def _push_file(file_path: Path, section: str, base_url: str, headers: Dict):
+def _push_file(file_path: Path, section: str, base_url: str, headers: Dict[str, str]) -> None:
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -82,7 +82,7 @@ def _push_file(file_path: Path, section: str, base_url: str, headers: Dict):
         if not _validate_allowed_url(req.full_url):
             print(f"Error: Unsupported URL scheme in request URL {req.full_url}")
             return
-        with urllib.request.urlopen(req, timeout=30) as response:
+        with urllib.request.urlopen(req, timeout=30) as response:  # nosec B310
             # We just need to ensure it completed without exception
             _ = response.read()
             print(f"Successfully synced {section}")
@@ -94,11 +94,11 @@ def _push_file(file_path: Path, section: str, base_url: str, headers: Dict):
             error_body = e.read().decode()
             if error_body:
                 print(f"Response body: {error_body}")
-        except Exception:
-            pass
+        except (UnicodeDecodeError, OSError, ValueError) as decode_err:
+            print(f"Could not decode error body for {section}: {decode_err}")
     except urllib.error.URLError as e:
         print(f"Network error syncing {section}: {e.reason}")
-    except Exception as e:
+    except (OSError, ValueError, json.JSONDecodeError) as e:
         print(f"Error syncing {file_path}: {e}")
 
 
