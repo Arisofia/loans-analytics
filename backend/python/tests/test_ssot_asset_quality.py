@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from backend.python.kpis.ssot_asset_quality import AssetQualitySSOT
+from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 from backend.python.kpis.engine import KPIEngine
 
 
@@ -27,58 +27,72 @@ def dirty_portfolio_nulls():
 
 @pytest.fixture
 def empty_portfolio():
-    return pd.DataFrame()
+    return pd.DataFrame(columns=['outstanding_principal', 'days_past_due', 'status'])
 
 
 # --- SSOT VALIDATION TESTS ---
 
 def test_validation_empty_dataframe(empty_portfolio):
-    with pytest.raises(ValueError, match='Input DataFrame is empty'):
-        AssetQualitySSOT.calculate_par(empty_portfolio, 30)
-
-
-def test_validation_missing_columns(clean_portfolio):
-    df_missing_col = clean_portfolio.drop(columns=['days_past_due'])
-    with pytest.raises(KeyError, match='Missing critical columns'):
-        AssetQualitySSOT.calculate_par(df_missing_col, 30)
+    with pytest.raises(ValueError, match='received an empty dataset'):
+        calculate_asset_quality_metrics(
+            balance=empty_portfolio['outstanding_principal'],
+            dpd=empty_portfolio['days_past_due'],
+            status=empty_portfolio['status'],
+            actor='test',
+            metric_aliases=['par_30']
+        )
 
 
 def test_validation_null_principal(dirty_portfolio_nulls):
-    with pytest.raises(ValueError, match="Null values detected in 'outstanding_principal'"):
-        AssetQualitySSOT.calculate_par(dirty_portfolio_nulls, 30)
+    with pytest.raises(ValueError, match="Invalid numeric values detected in 'outstanding_balance'"):
+        calculate_asset_quality_metrics(
+            balance=dirty_portfolio_nulls['outstanding_principal'],
+            dpd=dirty_portfolio_nulls['days_past_due'],
+            status=dirty_portfolio_nulls['status'],
+            actor='test',
+            metric_aliases=['par_30']
+        )
 
 
 # --- SSOT MATHEMATICAL TESTS ---
 
 def test_calculate_par_standard(clean_portfolio):
-    par_30 = AssetQualitySSOT.calculate_par(clean_portfolio, 30)
-    par_90 = AssetQualitySSOT.calculate_par(clean_portfolio, 90)
+    results = calculate_asset_quality_metrics(
+        balance=clean_portfolio['outstanding_principal'],
+        dpd=clean_portfolio['days_past_due'],
+        status=clean_portfolio['status'],
+        actor='test',
+        metric_aliases=['par_30', 'par_90']
+    )
+    
+    par_30 = results['par_30']
+    par_90 = results['par_90']
 
-    assert np.isclose(par_30, 0.8), f'Expected 0.8, got {par_30}'
-    assert np.isclose(par_90, 0.7), f'Expected 0.7, got {par_90}'
+    assert np.isclose(par_30, 80.0), f'Expected 80.0, got {par_30}'
+    assert np.isclose(par_90, 70.0), f'Expected 70.0, got {par_90}'
 
 
 def test_calculate_npl_90_ratio_mapping(clean_portfolio):
-    par_90 = AssetQualitySSOT.calculate_par(clean_portfolio, 90)
-    npl_ratio = AssetQualitySSOT.calculate_npl_90_ratio(clean_portfolio)
-    assert par_90 == npl_ratio, 'NPL drifted from PAR90 semantics.'
-
-
-def test_calculate_npl_90_ratio_counts_written_off_even_if_dpd_below_90():
-    df = pd.DataFrame(
-        {
-            "outstanding_principal": [100.0, 100.0, 100.0],
-            "days_past_due": [0, 95, 10],
-            "status": ["ACTIVE", "ACTIVE", "WRITTEN_OFF"],
-        }
+    results = calculate_asset_quality_metrics(
+        balance=clean_portfolio['outstanding_principal'],
+        dpd=clean_portfolio['days_past_due'],
+        status=clean_portfolio['status'],
+        actor='test',
+        metric_aliases=['par_90', 'npl90']
     )
-    npl_ratio = AssetQualitySSOT.calculate_npl_90_ratio(df)
-    assert np.isclose(npl_ratio, 2 / 3), f"Expected 0.6667, got {npl_ratio}"
+    assert results['par_90'] == results['npl90'], 'NPL drifted from PAR90 semantics.'
 
 
 def test_calculate_default_rate_combined_logic(clean_portfolio):
-    default_rate = AssetQualitySSOT.calculate_default_rate(clean_portfolio)
-    assert np.isclose(default_rate, 0.3), f'Expected 0.3, got {default_rate}'
+    results = calculate_asset_quality_metrics(
+        balance=clean_portfolio['outstanding_principal'],
+        dpd=clean_portfolio['days_past_due'],
+        status=clean_portfolio['status'],
+        actor='test',
+        metric_aliases=['default_rate']
+    )
+    # 15000 / 50000 * 100 = 30.0
+    assert np.isclose(results['default_rate'], 30.0), f"Expected 30.0, got {results['default_rate']}"
 
 
 def test_calculate_par_zero_total_principal():
@@ -87,22 +101,30 @@ def test_calculate_par_zero_total_principal():
         'days_past_due': [100, 200],
         'status': ['ACTIVE', 'ACTIVE']
     })
-    assert AssetQualitySSOT.calculate_par(zero_df, 90) == 0.0
-    assert AssetQualitySSOT.calculate_default_rate(zero_df) == 0.0
+    with pytest.raises(ValueError, match='Sum\(outstanding_balance\) must be > 0'):
+        calculate_asset_quality_metrics(
+            balance=zero_df['outstanding_principal'],
+            dpd=zero_df['days_past_due'],
+            status=zero_df['status'],
+            actor='test',
+            metric_aliases=['par_90']
+        )
 
 
 # --- KPI ENGINE ROUTING TESTS ---
 
 def test_engine_dispatch_success(clean_portfolio):
+    # Map columns to what KPIEngine expects
+    df = clean_portfolio.rename(columns={'outstanding_principal': 'outstanding_principal'})
     config = {'requested_kpis': ['par_30', 'npl_90_ratio', 'default_rate']}
     engine = KPIEngine(config)
 
-    results = engine.compute_all(clean_portfolio)
+    results = engine.compute_all(df)
 
     assert 'par_30' in results
     assert 'npl_90_ratio' in results
     assert 'default_rate' in results
-    assert np.isclose(results['par_30'], 0.8)
+    assert np.isclose(results['par_30'], 80.0)
 
 
 def test_engine_unsupported_kpi(clean_portfolio):

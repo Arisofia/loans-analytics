@@ -10,7 +10,7 @@ import pandas as pd
 from backend.python.kpis.ltv import calculate_ltv_sintetico
 from backend.python.kpis.collection_rate import calculate_collection_rate
 from backend.python.kpis.formula_engine import KPIFormulaEngine
-from backend.python.kpis.ssot_asset_quality import AssetQualitySSOT, calculate_asset_quality_metrics
+from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 from backend.python.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -737,11 +737,41 @@ class KPIEngine:
     def __init__(self, config: Dict[str, Any]):
         self.config = config or {}
         self.dispatch_table = {
-            "par_30": lambda df: AssetQualitySSOT.calculate_par(df, 30),
-            "par_60": lambda df: AssetQualitySSOT.calculate_par(df, 60),
-            "par_90": lambda df: AssetQualitySSOT.calculate_par(df, 90),
-            "npl_90_ratio": AssetQualitySSOT.calculate_npl_90_ratio,
-            "default_rate": AssetQualitySSOT.calculate_default_rate,
+            "par_30": lambda df: calculate_asset_quality_metrics(
+                balance=df["outstanding_principal"],
+                dpd=df["days_past_due"],
+                status=df.get("status"),
+                actor="system",
+                metric_aliases=["par_30"],
+            )["par_30"],
+            "par_60": lambda df: calculate_asset_quality_metrics(
+                balance=df["outstanding_principal"],
+                dpd=df["days_past_due"],
+                status=df.get("status"),
+                actor="system",
+                metric_aliases=["par_60"],
+            )["par_60"],
+            "par_90": lambda df: calculate_asset_quality_metrics(
+                balance=df["outstanding_principal"],
+                dpd=df["days_past_due"],
+                status=df.get("status"),
+                actor="system",
+                metric_aliases=["par_90"],
+            )["par_90"],
+            "npl_90_ratio": lambda df: calculate_asset_quality_metrics(
+                balance=df["outstanding_principal"],
+                dpd=df["days_past_due"],
+                status=df.get("status"),
+                actor="system",
+                metric_aliases=["npl_90_ratio"],
+            )["npl_90_ratio"],
+            "default_rate": lambda df: calculate_asset_quality_metrics(
+                balance=df["outstanding_principal"],
+                dpd=df["days_past_due"],
+                status=df.get("status"),
+                actor="system",
+                metric_aliases=["default_rate"],
+            )["default_rate"],
         }
 
     def compute_all(self, df: pd.DataFrame) -> Dict[str, float]:
