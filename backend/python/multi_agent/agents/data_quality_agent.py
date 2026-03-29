@@ -37,6 +37,4 @@ class DataQualityAgent(DecisionAgent):
             confidence=dq["quality_score"],
             blocked_by=blocked_by,
         )
-        if blocked_by:
-            output.status = "blocked"
         return output
