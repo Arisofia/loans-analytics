@@ -36,8 +36,8 @@ class CollectionsAgent(DecisionAgent):
             return self._build_output(summary="No data for collections analysis.", confidence=0.0)
 
         # ── Compute ─────────────────────────────────────────────────────
-        col_rate: Dict[str, Any] = {} # compute_collection_rate missing
-        cure: Dict[str, Any] = {} # compute_cure_rate missing
+        col_rate: Dict[str, Any] = {}  # Placeholder, implement or remove if not needed
+        cure: Dict[str, Any] = {}  # Placeholder, implement or remove if not needed
         par = {"par30": compute_par30(portfolio)} if not portfolio.empty else {}
         rolls = compute_roll_rates(portfolio) if not portfolio.empty else {}
 
