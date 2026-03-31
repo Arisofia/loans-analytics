@@ -164,7 +164,7 @@ mypy_extensions==1.1.0
 narwhals==2.18.0
 nest-asyncio==1.6.0
 networkx==3.6.1
-nltk==3.9.3
+nltk==3.9.4
 numba==0.64.0
 numpy==2.4.3
 oauthlib==3.3.1
