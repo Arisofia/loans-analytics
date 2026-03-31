@@ -26,11 +26,11 @@ class DPDCalculator:
         if sched_principal_col in fact_schedule.columns:
             fact_schedule[sched_principal_col] = pd.to_numeric(fact_schedule[sched_principal_col], errors='coerce').fillna(0.0)
         if sched_date_col in fact_schedule.columns:
-            fact_schedule[sched_date_col] = pd.to_datetime(fact_schedule[sched_date_col], errors='coerce')
+            fact_schedule[sched_date_col] = pd.to_datetime(fact_schedule[sched_date_col], errors='coerce', format='mixed')
         if pay_principal_col in fact_real_payment.columns:
             fact_real_payment[pay_principal_col] = pd.to_numeric(fact_real_payment[pay_principal_col], errors='coerce').fillna(0.0)
         if pay_date_col in fact_real_payment.columns:
-            fact_real_payment[pay_date_col] = pd.to_datetime(fact_real_payment[pay_date_col], errors='coerce')
+            fact_real_payment[pay_date_col] = pd.to_datetime(fact_real_payment[pay_date_col], errors='coerce', format='mixed')
         for ref in ref_dates:
             batch = self._snapshot_at(dim_loan, fact_schedule, fact_real_payment, ref_date=ref, loan_id_col=loan_id_col, disb_col=disb_col, sched_date_col=sched_date_col, sched_principal_col=sched_principal_col, pay_date_col=pay_date_col, pay_principal_col=pay_principal_col)
             rows.append(batch)

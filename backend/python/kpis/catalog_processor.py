@@ -32,7 +32,7 @@ class KPICatalogProcessor:
 
     @staticmethod
     def _coerce_datetime(series: pd.Series) -> pd.Series:
-        parsed = pd.to_datetime(series, errors='coerce')
+        parsed = pd.to_datetime(series, errors='coerce', format='mixed')
         if getattr(parsed.dtype, 'tz', None) is not None:
             parsed = parsed.dt.tz_convert(None)
         return parsed
@@ -278,7 +278,7 @@ class KPICatalogProcessor:
         if revenue_df.empty:
             return []
         working = revenue_df.copy()
-        working['month'] = pd.to_datetime(working['month'], errors='coerce')
+        working['month'] = pd.to_datetime(working['month'], errors='coerce', format='mixed')
         working = working.dropna(subset=['month']).sort_values('month')
         activity = self._build_activity_frame()
         if activity.empty:
@@ -304,7 +304,7 @@ class KPICatalogProcessor:
         working['ltv_cac_ratio'] = working['ltv_realized_usd'] / working['cac_usd']
         churn_map = pd.DataFrame(churn_90d or [])
         if not churn_map.empty:
-            churn_map['month'] = pd.to_datetime(churn_map['month'], errors='coerce')
+            churn_map['month'] = pd.to_datetime(churn_map['month'], errors='coerce', format='mixed')
             working = working.merge(churn_map[['month', 'churn90d_pct']], on='month', how='left')
         working['churn90d_pct'] = working.get('churn90d_pct', 0).fillna(0)
         risk_cost = working['recv_revenue_for_month'] * working['churn90d_pct'].clip(0, 0.5)
@@ -441,7 +441,7 @@ class KPICatalogProcessor:
         term_col = self._find_col(['term', 'term_days', 'Term', 'plazo'])
         if disb_col is None or amount_col is None:
             return {}
-        disb_dates = pd.to_datetime(self.loans_df[disb_col], errors='coerce')
+        disb_dates = pd.to_datetime(self.loans_df[disb_col], errors='coerce', format='mixed')
         cutoff = disb_dates.max()
         window_start = cutoff - pd.DateOffset(months=months)
         mask = disb_dates >= window_start
@@ -463,7 +463,7 @@ class KPICatalogProcessor:
         amount_col = loan_cols.get('principal') or self._find_col(['tpv', 'TPV', 'disbursement_amount', 'MontoDesembolsado'])
         if disb_col is None or cust_col is None:
             return {}
-        dates = pd.to_datetime(self.loans_df[disb_col], errors='coerce')
+        dates = pd.to_datetime(self.loans_df[disb_col], errors='coerce', format='mixed')
         cutoff = dates.max()
         window_start = cutoff - pd.DateOffset(months=window_months)
         df = self.loans_df.copy()
@@ -497,7 +497,7 @@ class KPICatalogProcessor:
         if revenue_df.empty or len(revenue_df) < 2:
             return []
         model_df = revenue_df.copy().sort_values('month')
-        model_df['month'] = pd.to_datetime(model_df['month'], errors='coerce')
+        model_df['month'] = pd.to_datetime(model_df['month'], errors='coerce', format='mixed')
         model_df = model_df.dropna(subset=['month', 'recv_revenue_for_month'])
         if len(model_df) < 2:
             return []
@@ -844,7 +844,7 @@ class KPICatalogProcessor:
         if amount_col is None:
             return pd.DataFrame()
         scored = self.payments_df.copy()
-        scored[date_col] = pd.to_datetime(scored[date_col], errors='coerce')
+        scored[date_col] = pd.to_datetime(scored[date_col], errors='coerce', format='mixed')
         scored = scored.dropna(subset=[date_col])
         if scored.empty:
             return pd.DataFrame()
