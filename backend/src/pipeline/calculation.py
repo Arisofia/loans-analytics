@@ -179,7 +179,7 @@ class CalculationPhase:
         if not client_col or not date_col or (not amount_col):
             return empty
         work = df[[client_col, date_col, amount_col]].copy()
-        work['_date'] = pd.to_datetime(work[date_col], errors='coerce')
+        work['_date'] = pd.to_datetime(work[date_col], errors='coerce', format='mixed')
         work = work.dropna(subset=['_date'])
         if work.empty:
             return empty
@@ -700,9 +700,5 @@ class CalculationPhase:
             centroids[cluster_id] = centroid
             risk_scores[cluster_id] = risk_score
         cohort_map = _assign_cluster_cohorts(risk_scores, centroids)
-        full_cohort = pd.Series('Unknown', index=df.index, name='cohort', dtype=object)
-        for cluster_id, cohort_name in cohort_map.items():
-            mask = label_series == cluster_id
-            full_cohort.loc[non_opaque_idx[mask.values]] = cohort_name
-        logger.info('Cohort assignment: %s', full_cohort.value_counts().to_dict())
-        return (full_cohort, centroids)
+        cohort_series = label_series.map(cohort_map)
+        return (cohort_series, centroids)
