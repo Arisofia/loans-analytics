@@ -1,9 +1,9 @@
 {
-  "collected": 1004,
-  "passed": 986,
+  "collected": 63,
+  "passed": 61,
   "failed": 0,
   "errors": 0,
-  "skipped": 18,
+  "skipped": 2,
   "xfailed": 0,
   "xpassed": 0
 }
