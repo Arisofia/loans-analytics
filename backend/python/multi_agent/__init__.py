@@ -1,10 +1,7 @@
 """Multi-agent package — first live slice + legacy compatibility."""
 
 from .orchestrator import MultiAgentOrchestrator
-try:
-    from .orchestrator import DecisionOrchestrator  # new primary name
-except ImportError:
-    DecisionOrchestrator = MultiAgentOrchestrator
+DecisionOrchestrator = MultiAgentOrchestrator
 from .llm_agents import (
     ComplianceAgent,
     CustomerRetentionAgent,
