@@ -76,9 +76,10 @@ class DecisionAgent(abc.ABC):
         blocked_by: Optional[List[str]] = None,
         metrics: Optional[Dict[str, Any]] = None,
     ) -> AgentOutput:
+        blocked = blocked_by or []
         return AgentOutput(
             agent_id=self.agent_id,
-            status="ok",
+            status="blocked" if blocked else "ok",
             timestamp=dt.datetime.now(dt.timezone.utc).isoformat(),
             summary=summary,
             alerts=alerts or [],
@@ -86,7 +87,7 @@ class DecisionAgent(abc.ABC):
             actions=actions or [],
             confidence=confidence,
             evidence=evidence or {},
-            blocked_by=blocked_by or [],
+            blocked_by=blocked,
             metrics=metrics or {},
         )
 

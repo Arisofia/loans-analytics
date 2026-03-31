@@ -2,8 +2,8 @@
 
 [![Pipeline](https://img.shields.io/badge/Pipeline-Operational-brightgreen)]()
 [![KPIs](https://img.shields.io/badge/KPIs-40%2B_Production-blue)]()
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)]()
-[![Tests](https://img.shields.io/badge/Tests-1027%2B_Passing-success)]()
+[![Python](https://img.shields.io/badge/Python-3.12-blue)]()
+[![Tests](https://img.shields.io/badge/Tests-CI_Verified-success)]()
 [![License](https://img.shields.io/badge/License-Proprietary-red)]()
 
 Production-grade lending analytics platform powering portfolio intelligence for factoring and credit operations. Built with financial-precision engineering (Decimal arithmetic, SSOT asset quality, PII redaction) and institutional-level KPI methodology.
@@ -95,7 +95,8 @@ All KPIs are calculated from **real production data only** — no dummy, sample,
 | KPI | Formula | Precision |
 |-----|---------|-----------|
 | PAR 30/60/90 | `Σ(balance where DPD ≥ N) / Σ(total_balance) × 100` | Decimal, ROUND_HALF_UP |
-| NPL Ratio | `Σ(balance where status = defaulted) / Σ(total_balance) × 100` | Decimal |
+| NPL Ratio | `Σ(balance where DPD ≥ 90 OR status = defaulted) / Σ(total_balance) × 100` | Decimal |
+| NPL 90 Ratio | `Σ(balance where DPD ≥ 90) / Σ(total_balance) × 100` | Decimal |
 | Default Rate | `COUNT(defaulted) / COUNT(total) × 100` | Decimal |
 | Loss Rate | `Σ(written_off) / Σ(disbursed) × 100` | Decimal |
 | LGD | `1 - recovery_rate` (from `business_parameters.yml`: 10%) | Decimal |
@@ -121,7 +122,7 @@ PD assignment uses DPD-based risk mapping: Current=0.5%, 30DPD=5%, 60DPD=15%, 90
 ### Financial Metrics
 | KPI | Source |
 |-----|--------|
-| NIM (Net Interest Margin) | `unit_economics.py` |
+| NIM (Net Interest Margin, proxy) | `config/kpis/kpi_definitions.yaml` = `(AVG(interest_rate) - 0.08) * 100` |
 | Cost of Risk | `unit_economics.py` |
 | PPC/PPP (Collection/Payment Periods) | `holding_financial_indicators.py` |
 | Cash Conversion Cycle | `holding_financial_indicators.py` |
@@ -164,11 +165,17 @@ python3 scripts/data/run_data_pipeline.py \
 streamlit run frontend/streamlit_app/app.py
 
 # Quality & testing
-make test           # 1027+ tests
+make test           # Full project suite
 make lint           # Code quality
 make type-check     # Static type analysis
 make format         # Auto-format
 ```
+
+## CI Runtime Guarantees (Applied)
+
+- Python environment is standardized with `actions/setup-python@v4` and `cache: "pip"` in CI workflows.
+- DB-backed jobs run with local `postgres:16-alpine` service and an explicit `pg_isready` readiness gate before tests/pipeline execution.
+- ETL pipeline job explicitly installs `sentry-sdk` after lockfile dependency install to avoid runtime import failures.
 
 ## Repository Structure
 
@@ -409,9 +416,26 @@ Providers: OpenAI, Anthropic, Gemini, Grok (xAI-compatible).
 
 | Workflow | Purpose |
 |----------|---------|
-| `.github/workflows/tests.yml` | Test suite (1027+ tests) |
+| `.github/workflows/tests.yml` | Main test suite (unit, integration, e2e gates) |
 | `.github/workflows/pr-checks.yml` | PR quality gates |
+| `.github/workflows/etl-pipeline.yml` | ETL tests + ingest/snapshot pipeline |
 | `.github/workflows/security-scan.yml` | Snyk + dependency audit |
+
+## Forensic Formula Audit Artifacts
+
+Repository-level formula/KPI forensic outputs are generated under `audit_artifacts/`:
+
+- `forensic_audit_report.md`
+- `reviewed_file_manifest.csv`
+- `formula_inventory.csv`
+- `critical_findings.csv`
+- `duplicate_shadow_map.csv`
+
+Regenerate with:
+
+```bash
+python scripts/full_repo_formula_audit.py
+```
 
 ## Engineering Standards
 
@@ -437,4 +461,3 @@ Providers: OpenAI, Anthropic, Gemini, Grok (xAI-compatible).
 ## License
 
 Proprietary — All rights reserved.
-

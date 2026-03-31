@@ -148,34 +148,60 @@ jobs:
   test:
     name: Run tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: loans_analytics
+          POSTGRES_USER: analytics_user
+          POSTGRES_PASSWORD: analytics_pass
+        options: >-
+          --health-cmd "pg_isready -U analytics_user -d loans_analytics"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     permissions:
       contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
       - name: Install system build dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev
+          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev postgresql-client
+
+      - name: Wait for PostgreSQL readiness acknowledgement
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGUSER: analytics_user
+          PGPASSWORD: analytics_pass
+          PGDATABASE: loans_analytics
+        run: |
+          for i in {1..30}; do
+            if pg_isready; then
+              echo "✅ PostgreSQL is ready."
+              exit 0
+            fi
+            echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
+            sleep 2
+          done
+          echo "❌ PostgreSQL readiness acknowledgement not received in time."
+          exit 1
 
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
-          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --prefer-binary -r requirements-dev.txt
 
       - name: Run tests
         run: make test
@@ -186,6 +212,20 @@ jobs:
   run-pipeline:
     name: Run ETL Pipeline
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: loans_analytics
+          POSTGRES_USER: analytics_user
+          POSTGRES_PASSWORD: analytics_pass
+        options: >-
+          --health-cmd "pg_isready -U analytics_user -d loans_analytics"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     permissions:
       contents: read
     needs: [preflight, test]
@@ -199,24 +239,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip
+          python -m pip install --upgrade pip
           grep -viE '^(pywin32==)' requirements.prod.lock.txt > /tmp/requirements.prod.linux.txt
-          "$PYTHON_BIN" -m pip install -r /tmp/requirements.prod.linux.txt
+          python -m pip install -r /tmp/requirements.prod.linux.txt
+          python -m pip install sentry-sdk
+
+      - name: Wait for PostgreSQL readiness acknowledgement
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGUSER: analytics_user
+          PGPASSWORD: analytics_pass
+          PGDATABASE: loans_analytics
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+          for i in {1..30}; do
+            if pg_isready; then
+              echo "✅ PostgreSQL is ready."
+              exit 0
+            fi
+            echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
+            sleep 2
+          done
+          echo "❌ PostgreSQL readiness acknowledgement not received in time."
+          exit 1
 
       - name: Run pipeline
         env:
@@ -294,24 +349,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }} (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip
+          python -m pip install --upgrade pip
           grep -viE '^(pywin32==)' requirements.prod.lock.txt > /tmp/requirements.prod.linux.txt
-          "$PYTHON_BIN" -m pip install -r /tmp/requirements.prod.linux.txt duckdb rapidfuzz
+          python -m pip install -r /tmp/requirements.prod.linux.txt duckdb rapidfuzz
 
       - name: Initialize DuckDB star schema
         run: python scripts/data/init_duckdb_schema.py

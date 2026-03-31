@@ -1,3 +1,4 @@
 from .parser import FormulaParser
 from .registry import KPIRegistry
-__all__ = ['FormulaParser', 'KPIRegistry']
+from .auditor import KPIFormulaAuditor
+__all__ = ['FormulaParser', 'KPIRegistry', 'KPIFormulaAuditor']

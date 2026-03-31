@@ -488,9 +488,11 @@ def test_npl_ratio_and_npl_90_ratio_are_aligned_to_strict_90_plus():
     )
     engine = KPIEngineV2.__new__(KPIEngineV2)
     kpis = engine._calculate_derived_risk_kpis(df)
-    assert float(kpis["npl_90_ratio"]) == pytest.approx(40.0, rel=0.0001)
+    # strict 90+ captures only the single DPD>=90 loan: 1/5 = 20%
+    assert float(kpis["npl_90_ratio"]) == pytest.approx(20.0, rel=0.0001)
+    # Basel NPL includes DPD>=90 OR status=defaulted: 2/5 = 40%
     assert float(kpis["npl_ratio"]) == pytest.approx(40.0, rel=0.0001)
-    assert kpis["npl_ratio"] == kpis["npl_90_ratio"]
+    assert float(kpis["npl_ratio"]) > float(kpis["npl_90_ratio"])
 
 
 def test_npl_90_ratio_strictly_subset_of_npl_ratio():

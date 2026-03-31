@@ -156,9 +156,9 @@ cash_flow_kpis:
     description: "Total current cash position across portfolio"
 
   net_interest_margin:
-    formula: "AVG(interest_rate) * 100"
+    formula: "(AVG(interest_rate) - 0.08) * 100"
     unit: "percentage"
-    description: "Net Interest Margin - spread between portfolio gross yield and assumed funding cost (default 8%)"
+    description: "Approximate NIM using an 8% funding-cost proxy: (average portfolio yield - 8% funding cost) * 100"
     thresholds:
       warning: 5
       target: 10

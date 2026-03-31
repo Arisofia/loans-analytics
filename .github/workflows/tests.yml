@@ -16,6 +16,20 @@ on:
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: loans_analytics
+          POSTGRES_USER: analytics_user
+          POSTGRES_PASSWORD: analytics_pass
+        options: >-
+          --health-cmd "pg_isready -U analytics_user -d loans_analytics"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     outputs:
       supabase_ready: ${{ steps.check-secrets.outputs.supabase_ready }}
     permissions:
@@ -26,29 +40,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python 3.12 (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install system build dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev
+          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev postgresql-client
+
+      - name: Wait for PostgreSQL readiness acknowledgement
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGUSER: analytics_user
+          PGPASSWORD: analytics_pass
+          PGDATABASE: loans_analytics
+        run: |
+          for i in {1..30}; do
+            if pg_isready; then
+              echo "✅ PostgreSQL is ready."
+              exit 0
+            fi
+            echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
+            sleep 2
+          done
+          echo "❌ PostgreSQL readiness acknowledgement not received in time."
+          exit 1
 
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
-          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
-          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-ci-test-extras.txt
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --prefer-binary -r requirements-dev.txt
+          python -m pip install --prefer-binary -r requirements-ci-test-extras.txt
 
       - name: Check Supabase secrets availability
         id: check-secrets
@@ -65,12 +91,12 @@ jobs:
 
       - name: Run mypy type checking
         run: |
-          "$PYTHON_BIN" -m mypy --no-incremental
+          python -m mypy --no-incremental
         continue-on-error: true
 
       - name: Validate migration governance
         run: |
-          "$PYTHON_BIN" scripts/maintenance/validate_migration_index.py
+          python scripts/maintenance/validate_migration_index.py
 
       - name: Run unit tests
         id: pytest
@@ -88,7 +114,7 @@ jobs:
             exit 0
           fi
           # Extract suite summary and individual failures/errors
-          "$PYTHON_BIN" << 'PYEOF'
+          python << 'PYEOF'
           import xml.etree.ElementTree as ET
           tree = ET.parse('test-results.xml')
           root = tree.getroot()
@@ -129,8 +155,8 @@ jobs:
         if: steps.pytest.outcome == 'success'
         run: |
           mkdir -p artifacts
-          "$PYTHON_BIN" -m pytest -q --no-cov -m "not integration and not e2e" --json-report --json-report-file=artifacts/full-suite-report.json
-          "$PYTHON_BIN" scripts/validation/check_full_suite_baseline.py \
+          python -m pytest -q --no-cov -m "not integration and not e2e" --json-report --json-report-file=artifacts/full-suite-report.json
+          python scripts/validation/check_full_suite_baseline.py \
             --baseline .github/ci-baselines/full-suite-baseline.json \
             --report artifacts/full-suite-report.json
         env:
@@ -148,6 +174,20 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: loans_analytics
+          POSTGRES_USER: analytics_user
+          POSTGRES_PASSWORD: analytics_pass
+        options: >-
+          --health-cmd "pg_isready -U analytics_user -d loans_analytics"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     needs: unit-tests
     if: ${{ needs.unit-tests.result == 'success' && needs.unit-tests.outputs.supabase_ready == 'true' }}
     permissions:
@@ -158,29 +198,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python 3.12 (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install system build dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev
+          sudo apt-get install -y --no-install-recommends build-essential libpq-dev libffi-dev postgresql-client
+
+      - name: Wait for PostgreSQL readiness acknowledgement
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGUSER: analytics_user
+          PGPASSWORD: analytics_pass
+          PGDATABASE: loans_analytics
+        run: |
+          for i in {1..30}; do
+            if pg_isready; then
+              echo "✅ PostgreSQL is ready."
+              exit 0
+            fi
+            echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
+            sleep 2
+          done
+          echo "❌ PostgreSQL readiness acknowledgement not received in time."
+          exit 1
 
       - name: Install dependencies
         run: |
-          "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
-          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-dev.txt
-          "$PYTHON_BIN" -m pip install --prefer-binary -r requirements-ci-test-extras.txt
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --prefer-binary -r requirements-dev.txt
+          python -m pip install --prefer-binary -r requirements-ci-test-extras.txt
 
       - name: Run integration tests
         env:
@@ -189,7 +241,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RUN_REAL_SUPABASE_TESTS: "1"
         run: |
-          "$PYTHON_BIN" -m pytest tests/ -v -m "integration" --tb=short
+          python -m pytest tests/ -v -m "integration" --tb=short
 
   integration-tests-skipped:
     runs-on: ubuntu-latest
@@ -215,18 +267,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python 3.12 (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Export Python binary alias
+        run: echo "PYTHON_BIN=python" >> "$GITHUB_ENV"
 
       - name: Install system build dependencies
         run: |
@@ -256,18 +303,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python 3.12 (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Export Python binary alias
+        run: echo "PYTHON_BIN=python" >> "$GITHUB_ENV"
 
       - name: Install system build dependencies
         run: |
@@ -356,18 +398,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Python 3.12 (no external action)
-        run: |
-          if command -v python3.12 >/dev/null 2>&1; then
-            PYTHON_BIN="python3.12"
-          elif command -v python3 >/dev/null 2>&1; then
-            PYTHON_BIN="python3"
-          else
-            echo "❌ Python is not available on runner"
-            exit 1
-          fi
-          echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
-          "$PYTHON_BIN" --version
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Export Python binary alias
+        run: echo "PYTHON_BIN=python" >> "$GITHUB_ENV"
 
       - name: Install system build dependencies
         run: |

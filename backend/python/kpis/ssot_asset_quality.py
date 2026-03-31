@@ -14,7 +14,6 @@ _METRIC_ALIAS_TO_ID: dict[str, str] = {
     "npl90": "npl_90_proxy",
     "npl_90_ratio": "npl_90_proxy",
     "npl180": "npl_180_proxy",
-    "default_rate": "npl_180_proxy",
 }
 # ── NPL Doctrine ──────────────────────────────────────────────────────────────
 # NPL (Non-Performing Loan) follows Basel-II/III: a loan is non-performing when
