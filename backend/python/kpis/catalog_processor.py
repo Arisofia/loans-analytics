@@ -139,10 +139,11 @@ class KPICatalogProcessor:
         graph_analytics = self.get_graph_analytics()
         portfolio_analytics = self.get_portfolio_analytics()
         lending_kpis = self.get_lending_kpis()
+        early_warning = self.get_early_warning_flow_31_60()
         replines = self.get_replines()
         ticket_segments = self.get_ticket_segments()
         guardrails = self.check_guardrails()
-        return {'executive_strip': executive_strip, 'segmentation_summary': segmentation, 'churn_90d_metrics': churn_90d, 'unit_economics': unit_economics, 'pricing_analytics': pricing_analytics, 'revenue_forecast_6m': revenue_forecast, 'opportunity_prioritization': opportunity_prioritization, 'data_governance': governance, 'strategic_confirmations': strategic_confirmations, 'nsm_customer_types': nsm_customer_types, 'dpd_buckets': dpd_buckets, 'concentration': concentration, 'portfolio_rotation': rotation, 'weighted_apr': weighted_apr, 'weighted_fee_rate': weighted_fee_rate, 'monthly_pricing': pricing_analytics, 'graph_analytics': graph_analytics, 'portfolio_analytics': portfolio_analytics, 'lending_kpis': lending_kpis, 'replines': replines, 'ticket_segments': ticket_segments, 'guardrails': guardrails}
+        return {'executive_strip': executive_strip, 'segmentation_summary': segmentation, 'churn_90d_metrics': churn_90d, 'unit_economics': unit_economics, 'pricing_analytics': pricing_analytics, 'revenue_forecast_6m': revenue_forecast, 'opportunity_prioritization': opportunity_prioritization, 'data_governance': governance, 'strategic_confirmations': strategic_confirmations, 'nsm_customer_types': nsm_customer_types, 'dpd_buckets': dpd_buckets, 'concentration': concentration, 'portfolio_rotation': rotation, 'weighted_apr': weighted_apr, 'weighted_fee_rate': weighted_fee_rate, 'monthly_pricing': pricing_analytics, 'graph_analytics': graph_analytics, 'portfolio_analytics': portfolio_analytics, 'lending_kpis': lending_kpis, 'early_warning_flow_31_60': early_warning, 'replines': replines, 'ticket_segments': ticket_segments, 'guardrails': guardrails}
 
     def get_monthly_revenue_df(self) -> pd.DataFrame:
         payment_cols = self._payment_columns()
@@ -564,7 +565,7 @@ class KPICatalogProcessor:
         merged_dates = pd.concat(date_candidates).dropna()
         if merged_dates.empty:
             return None
-        return int((pd.Timestamp.utcnow().tz_localize(None) - merged_dates.max()).days)
+        return int((pd.Timestamp.now(tz='UTC').tz_localize(None) - merged_dates.max()).days)
 
     @staticmethod
     def _governance_status(quality_score: float) -> str:
@@ -597,6 +598,19 @@ class KPICatalogProcessor:
             pending_disbursements_usd=pending_disbursements_usd,
             cost_of_debt_pct=cost_of_debt_pct,
         )
+
+    def get_early_warning_flow_31_60(self) -> dict[str, Any]:
+        """Calculate the flow rate of current loans (0-30 DPD) into the 31-60 DPD bucket.
+
+        Requires T and T-1 snapshots for precise calculation.
+        Currently returns status 'requires_new_data' as snapshots are not yet integrated.
+        """
+        return {
+            'status': 'requires_new_data',
+            'flow_rate_31_60_pct': 0.0,
+            'note': 'Requires consecutive monthly snapshots; will be enabled once multi-period pipeline runs are stored.',
+            'last_updated': pd.Timestamp.now(tz='UTC').isoformat(),
+        }
 
     def get_replines(self) -> dict:
         """Repline rate: proportion of loans where the same client has ≥2 loans on the same credit line.

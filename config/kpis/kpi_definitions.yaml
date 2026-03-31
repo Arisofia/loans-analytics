@@ -97,10 +97,26 @@ asset_quality_kpis:
   default_rate:
     formula: "COUNT(loan_id WHERE status = 'defaulted') / COUNT(loan_id) * 100"
     unit: "percentage"
-    description: "Percentage of loans in default"
+    description: "Percentage of loans in default (legacy count-based metric; prefer default_rate_by_count)"
     thresholds:
       warning: 2
       critical: 5
+
+  default_rate_by_count:
+    formula: "COUNT(loan_id WHERE status = 'defaulted') / COUNT(loan_id) * 100"
+    unit: "percentage"
+    description: "Percentage of loans in default (count-based)"
+    thresholds:
+      warning: 2
+      critical: 5
+
+  default_rate_by_balance:
+    formula: "SUM(outstanding_balance WHERE status = 'defaulted') / SUM(outstanding_balance) * 100"
+    unit: "percentage"
+    description: "Percentage of portfolio balance in default (balance-based)"
+    thresholds:
+      warning: 3
+      critical: 6
 
   loss_rate:
     formula: "SUM(outstanding_balance WHERE status = 'defaulted') / SUM(principal_amount) * 100"

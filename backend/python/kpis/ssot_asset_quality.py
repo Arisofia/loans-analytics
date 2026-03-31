@@ -14,6 +14,13 @@ _METRIC_ALIAS_TO_ID: dict[str, str] = {
     "npl90": "npl_90_proxy",
     "npl_90_ratio": "npl_90_proxy",
     "npl180": "npl_180_proxy",
+    # "default_rate" in the SSOT context is the balance-weighted severe-default
+    # exposure rate (dpd>=180 OR status=defaulted). This is NOT the same as the
+    # catalog COUNT-based default_rate (COUNT(status=defaulted)/COUNT(loans)*100).
+    # The SSOT "default_rate" is used by the engine dispatch table and is the
+    # correct metric for provisioning and ECL calculations.
+    # For the COUNT-based version, use KPIService._calculate_default_rate().
+    "default_rate": "npl_180_proxy",
 }
 # ── NPL Doctrine ──────────────────────────────────────────────────────────────
 # NPL (Non-Performing Loan) follows Basel-II/III: a loan is non-performing when

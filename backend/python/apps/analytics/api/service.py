@@ -92,6 +92,8 @@ KPI_API_TO_CATALOG_ID = {
     "DPD_90_PLUS": "dpd_90_plus",
     "COLLECTION_RATE": "collections_rate",
     "DEFAULT_RATE": "default_rate",
+    "DEFAULT_RATE_BY_COUNT": "default_rate_by_count",
+    "DEFAULT_RATE_BY_BALANCE": "default_rate_by_balance",
     "TOTAL_LOANS_COUNT": "total_loans_count",
     "LOSS_RATE": "loss_rate",
     "RECOVERY_RATE": "recovery_rate",
@@ -111,6 +113,7 @@ KPI_API_TO_CATALOG_ID = {
     "GROSS_MARGIN_PCT": "gross_margin_pct",
     "REVENUE_FORECAST_6M": "revenue_forecast_6m",
     "CHURN_90D": "churn_90d",
+    "EARLY_WARNING_FLOW_31_60": "early_warning_flow_31_60",
 }
 STATUS_PATTERN_90_PLUS = "90\\+|default|charged"
 STATUS_PATTERN_60_89 = "60-89|60\\+"
@@ -197,9 +200,21 @@ DEFAULT_KPI_METADATA: dict[str, dict[str, Any]] = {
     },
     "DEFAULT_RATE": {
         "formula": "COUNT(loans WHERE status = defaulted) / COUNT(loans) * 100",
-        "definition": "Share of loans in default status.",
+        "definition": "Share of loans in default status (legacy; prefer count-based or balance-based).",
         "implications": "Rising default rate typically requires underwriting and collections adjustments.",
         "thresholds": {"warning": 2.0, "critical": 5.0},
+    },
+    "DEFAULT_RATE_BY_COUNT": {
+        "formula": "COUNT(loans WHERE status = defaulted) / COUNT(loans) * 100",
+        "definition": "Share of loans in default status (count-based).",
+        "implications": "Rising default count signals higher operational pressure on collections.",
+        "thresholds": {"warning": 2.0, "critical": 5.0},
+    },
+    "DEFAULT_RATE_BY_BALANCE": {
+        "formula": "SUM(principal_balance WHERE status = defaulted) / SUM(principal_balance) * 100",
+        "definition": "Share of portfolio balance in default status (balance-based).",
+        "implications": "Rising balance-based default rate signals higher financial exposure to defaults.",
+        "thresholds": {"warning": 3.0, "critical": 6.0},
     },
     "COLLECTIONS_COVERAGE": {
         "formula": "SUM(last_payment_amount) / SUM(total_scheduled) * 100",
@@ -295,6 +310,11 @@ DEFAULT_KPI_METADATA: dict[str, dict[str, Any]] = {
         "formula": "inactive_90d / known_customers * 100",
         "definition": "90-day churn estimate from customer activity windows.",
         "implications": "Higher churn weakens portfolio durability and can elevate CAC requirements.",
+    },
+    "EARLY_WARNING_FLOW_31_60": {
+        "formula": "Requires T and T-1 snapshots",
+        "definition": "Flow rate of loans from 0-30 DPD into 31-60 DPD bucket.",
+        "implications": "Higher flow rate into delinquency is a leading indicator of portfolio deterioration.",
     },
     "NPL": {
         "formula": "SUM(principal_balance WHERE dpd >= 90 OR status = defaulted) / SUM(principal_balance) * 100",
