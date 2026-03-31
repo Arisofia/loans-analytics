@@ -78,11 +78,9 @@ class KPIEngineV2:
             This fallback is retained for data schemas that lack a raw
             ``dpd`` column but provide pre-bucketed USD columns.
         """
-        warnings.warn(
+        logger.warning(
             "_calc_par30_legacy is deprecated; data should provide a raw 'dpd' column "
-            "so the SSOT path (ssot_asset_quality) is used instead.",
-            DeprecationWarning,
-            stacklevel=2,
+            "so the SSOT path (ssot_asset_quality) is used instead."
         )
         required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
         if missing := [col for col in required if col not in self.df.columns]:
@@ -108,11 +106,9 @@ class KPIEngineV2:
             This fallback is retained for data schemas that lack a raw
             ``dpd`` column but provide pre-bucketed USD columns.
         """
-        warnings.warn(
+        logger.warning(
             "_calc_par90_legacy is deprecated; data should provide a raw 'dpd' column "
-            "so the SSOT path (ssot_asset_quality) is used instead.",
-            DeprecationWarning,
-            stacklevel=2,
+            "so the SSOT path (ssot_asset_quality) is used instead."
         )
         required = ["dpd_90_plus_usd", "total_receivable_usd"]
         if missing := [col for col in required if col not in self.df.columns]:

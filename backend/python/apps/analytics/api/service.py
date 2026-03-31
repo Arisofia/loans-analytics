@@ -2273,20 +2273,13 @@ class KPIService:
         total_originated = float(df["loan_amount"].sum())
         df["dpd"] = self._derive_dpd_series(df, "days_past_due", "loan_status")
         par_metrics = self._calculate_par_and_bucket_metrics(df, total_outstanding)
-        status_series = self._normalize_default_status(df["loan_status"])
-        default_mask = status_series.eq("defaulted")
-        default_rate_pct = default_mask.sum() / len(df) * 100 if len(df) > 0 else 0
-        defaulted_balance = float(df.loc[default_mask, "principal_balance"].sum())
-        loss_rate = defaulted_balance / total_originated * 100 if total_originated > 0 else 0
-        status_defaulted_mask = status_series.eq("defaulted")
         status_series = df["loan_status"].astype(str)
         default_mask = status_series.str.contains(STATUS_PATTERN_DEFAULT, case=False, na=False)
-        default_rate_pct = default_mask.sum() / len(df) * 100 if len(df) > 0 else 0
+        default_rate_by_count = default_mask.sum() / len(df) * 100 if len(df) > 0 else 0
         defaulted_balance = float(df.loc[default_mask, "principal_balance"].sum())
+        default_rate_by_balance = defaulted_balance / total_outstanding * 100 if total_outstanding > 0 else 0
         loss_rate = defaulted_balance / total_originated * 100 if total_originated > 0 else 0
-        status_defaulted_mask = status_series.str.contains(
-            STATUS_PATTERN_DEFAULT, case=False, na=False
-        )
+        status_defaulted_mask = default_mask
         weighted_interest = float((df["interest_rate"] * df["principal_balance"]).sum())
         avg_interest_rate = weighted_interest / total_outstanding if total_outstanding > 0 else 0
         collection_rate, recovery_rate = self._calculate_collection_recovery_metrics(
@@ -2309,7 +2302,9 @@ class KPIService:
             "dpd_31_60": par_metrics["dpd_31_60"],
             "dpd_61_90": par_metrics["dpd_61_90"],
             "dpd_90_plus": par_metrics["dpd_90_plus"],
-            "default_rate": default_rate_pct,
+            "default_rate": default_rate_by_count,
+            "default_rate_by_count": default_rate_by_count,
+            "default_rate_by_balance": default_rate_by_balance,
             "collection_rate": collection_rate,
             "loss_rate": loss_rate,
             "recovery_rate": recovery_rate,

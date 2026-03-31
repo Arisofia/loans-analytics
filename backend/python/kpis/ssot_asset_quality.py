@@ -21,6 +21,7 @@ _METRIC_ALIAS_TO_ID: dict[str, str] = {
     # correct metric for provisioning and ECL calculations.
     # For the COUNT-based version, use KPIService._calculate_default_rate().
     "default_rate": "npl_180_proxy",
+    "default_rate_by_balance": "npl_180_proxy",
 }
 # ── NPL Doctrine ──────────────────────────────────────────────────────────────
 # NPL (Non-Performing Loan) follows Basel-II/III: a loan is non-performing when
