@@ -318,7 +318,7 @@ def prepare_uploaded_data(df: pd.DataFrame) -> pd.DataFrame:
     prepared['principal_amount'] = _coerce_amount(prepared['principal_amount'])
     prepared['interest_rate'] = pd.to_numeric(prepared['interest_rate'], errors='coerce')
     prepared['term_months'] = pd.to_numeric(prepared['term_months'], errors='coerce')
-    prepared['origination_date'] = pd.to_datetime(prepared['origination_date'], errors='coerce')
+    prepared['origination_date'] = pd.to_datetime(prepared['origination_date'], errors='coerce', format='mixed')
     if not prepared['interest_rate'].dropna().empty and prepared['interest_rate'].dropna().median() > 1:
         prepared['interest_rate'] = prepared['interest_rate'] / 100.0
     prepared['current_status'] = prepared['current_status'].map(_canonicalize_status)
@@ -871,7 +871,7 @@ def _coerce_datetime_series(df: pd.DataFrame, candidates: tuple[str, ...]) -> tu
     col = _first_existing_column(df, candidates)
     if col is None:
         return (pd.Series(pd.NaT, index=df.index, dtype='datetime64[ns]'), None)
-    return (pd.to_datetime(df[col], errors='coerce'), col)
+    return (pd.to_datetime(df[col], errors='coerce', format='mixed'), col)
 
 def _coerce_money_series(df: pd.DataFrame, candidates: tuple[str, ...]) -> tuple[pd.Series, str | None]:
     col = _first_existing_column(df, candidates)
