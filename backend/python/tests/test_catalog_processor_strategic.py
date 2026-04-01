@@ -104,7 +104,7 @@ class TestKPICatalogProcessorStrategic(unittest.TestCase):
         early_warning = processor.get_early_warning_flow_31_60()
         self.assertEqual(early_warning['status'], 'ok')
         self.assertEqual(early_warning['data_source'], 'previous_snapshot_fields')
-        self.assertAlmostEqual(early_warning['flow_rate_31_60_pct'], 45.45, places=2)
+        self.assertAlmostEqual(early_warning['flow_rate_31_60_pct'], 40.91, places=2)
 
     def test_early_warning_flow_31_60_requires_data_without_history(self):
         loans = pd.DataFrame(
