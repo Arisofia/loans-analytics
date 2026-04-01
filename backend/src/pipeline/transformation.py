@@ -1747,3 +1747,9 @@ class TransformationPhase:
                 integrity_issues.append(
                     {"type": "negative_value", "column": col, "count": int(negative_count)}
                 )
+
+
+# Module-level SSoT: canonical normalised loan-status values derived from
+# TransformationPhase.STATUS_MAPPINGS.  Import this constant instead of
+# hard-coding the set in validators, marts, or pipeline code.
+CANONICAL_LOAN_STATUSES: frozenset[str] = frozenset(TransformationPhase.STATUS_MAPPINGS.values())

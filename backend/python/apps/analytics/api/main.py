@@ -730,8 +730,9 @@ if __name__ == '__main__':
     import uvicorn
     host = os.getenv('API_HOST', '127.0.0.1')
     port = int(os.getenv('API_PORT', '8000'))
+    reload = os.getenv('RELOAD', 'false').lower() == 'true'
     if app is not None:
-        uvicorn.run(app, host=host, port=port)
+        uvicorn.run(app, host=host, port=port, reload=reload)
     else:
         print('FastAPI app not initialized. Check imports.')
         sys.exit(1)

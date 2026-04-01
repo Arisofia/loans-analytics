@@ -9,6 +9,7 @@ from __future__ import annotations
 import pandas as pd
 
 from backend.src.data_quality.rules import RULE_REGISTRY, Rule, RuleResult, Severity, register
+from backend.src.pipeline.transformation import CANONICAL_LOAN_STATUSES
 
 __all__ = ["RULE_REGISTRY"]
 
@@ -121,7 +122,7 @@ register(
 
 # ── Status enum check ───────────────────────────────────────────────────
 def _check_valid_status(df: pd.DataFrame) -> RuleResult:
-    allowed = {"active", "delinquent", "defaulted", "closed"}
+    allowed = CANONICAL_LOAN_STATUSES
     if "status" not in df.columns:
         return RuleResult(rule_id="valid_status", passed=True, severity=Severity.CRITICAL)
     invalid = df[~df["status"].str.lower().isin(allowed)]
