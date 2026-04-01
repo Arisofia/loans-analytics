@@ -390,12 +390,20 @@ segment_kpis:
     name: "Early Warning: 31-60 DPD Flow Rate by Cohort"
     category: "risk"
     definition: "Percentage of previously current loans (dpd <= 30) that flowed into the 31-60 DPD bucket — leading indicator of deterioration"
-    formula: "requires T and T-1 snapshots"
-    inputs: ["outstanding_balance", "dpd", "origination_date"]
+    formula: "roll_rate_matrix['1_30_to_31_60']['roll_rate_pct']"
+    inputs: ["outstanding_balance", "dpd", "origination_date", "portfolio_t0", "portfolio_t1"]
     unit: "percentage"
-    implementability_status: "requires_new_data"
+    description: >-
+      Early warning roll rate: % of 1-30 DPD balance that migrated into the
+      31-60 DPD bucket between observation period T0 and T1. Requires two
+      consecutive portfolio snapshots (T0, T1).
+    implementation: "backend.src.kpi_engine.cohorts.compute_roll_rates(t0, t1)['roll_rate_matrix']['1_30_to_31_60']['roll_rate_pct']"
+    implementability_status: "implement_now"
+    thresholds:
+      warning: 20
+      critical: 35
     priority: "high"
-    notes: "Requires consecutive monthly snapshots; will be enabled once multi-period pipeline runs are stored"
+    notes: "Uses cohort_analytics.compute_roll_rates with consecutive snapshots; accessible via KPIService.get_roll_rate_matrix()"
 
 # NSM (North Star Metric) KPIs — recurrent client volume
 nsm_kpis:
