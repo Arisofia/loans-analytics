@@ -113,7 +113,7 @@ def build_finance_mart(portfolio_df: pd.DataFrame) -> pd.DataFrame:
     df = portfolio_df.copy()
     _validate_required_columns(df)
 
-    df["origination_date"] = pd.to_datetime(df["origination_date"], errors="coerce")
+    df["origination_date"] = pd.to_datetime(df["origination_date"], errors="coerce", format="mixed")
     if df["origination_date"].isna().all():
         raise ValueError("finance_mart requires at least one valid origination_date value")
 

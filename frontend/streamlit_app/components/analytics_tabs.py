@@ -10,7 +10,7 @@ def _render_forecasting_tab(dashboard_metrics):
         st.info('Forecast data not available. Generate KPI exports from current datasets.')
         return
     forecast_df = pd.DataFrame(forecast_rows)
-    forecast_df['month'] = pd.to_datetime(forecast_df['month'], errors='coerce')
+    forecast_df['month'] = pd.to_datetime(forecast_df['month'], errors='coerce', format='mixed')
     forecast_df = forecast_df.dropna(subset=['month'])
     fig = px.line(forecast_df, x='month', y='forecast_revenue_usd', title='Revenue Forecast - Next 6 Months', markers=True)
     if {'lower_bound_usd', 'upper_bound_usd'}.issubset(forecast_df.columns):
@@ -37,7 +37,7 @@ def _render_churn_tab(dashboard_metrics):
     if churn_data:
         churn_df = pd.DataFrame(churn_data)
         if 'month' in churn_df.columns:
-            churn_df['month'] = pd.to_datetime(churn_df['month'], errors='coerce')
+            churn_df['month'] = pd.to_datetime(churn_df['month'], errors='coerce', format='mixed')
             churn_df = churn_df.dropna(subset=['month'])
             fig_churn = px.line(churn_df, x='month', y=['churn90d_pct'], title='90-Day Churn Rate Trend', markers=True)
             st.plotly_chart(apply_theme(fig_churn), width='stretch')
@@ -59,7 +59,7 @@ def _render_unit_economics_tab(dashboard_metrics):
         return
     unit_df = pd.DataFrame(unit_rows)
     if 'month' in unit_df.columns:
-        unit_df['month'] = pd.to_datetime(unit_df['month'], errors='coerce')
+        unit_df['month'] = pd.to_datetime(unit_df['month'], errors='coerce', format='mixed')
         unit_df = unit_df.dropna(subset=['month'])
         if 'ltv_cac_ratio' in unit_df.columns:
             fig_ratio = px.line(unit_df, x='month', y='ltv_cac_ratio', title='LTV/CAC Ratio Trend', markers=True)
@@ -82,7 +82,7 @@ def _render_pricing_governance_tab(dashboard_metrics):
     if pricing_monthly:
         pricing_df = pd.DataFrame(pricing_monthly)
         if 'month' in pricing_df.columns:
-            pricing_df['month'] = pd.to_datetime(pricing_df['month'], errors='coerce')
+            pricing_df['month'] = pd.to_datetime(pricing_df['month'], errors='coerce', format='mixed')
             pricing_df = pricing_df.dropna(subset=['month'])
             fig_price = px.line(pricing_df, x='month', y=['weighted_apr', 'weighted_effective_rate'], title='Pricing Trend', markers=True)
             st.plotly_chart(apply_theme(fig_price), width='stretch')

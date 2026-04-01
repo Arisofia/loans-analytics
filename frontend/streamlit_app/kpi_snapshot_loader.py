@@ -49,7 +49,7 @@ def load_kpi_snapshot_from_api(api_url: Optional[str]=None) -> tuple[dict[str, d
         if not snapshot:
             return ({}, None, False)
         timestamp_raw = api_result.get('timestamp')
-        snapshot_month = pd.to_datetime(timestamp_raw, errors='coerce')
+        snapshot_month = pd.to_datetime(timestamp_raw, errors='coerce', format='mixed')
         if pd.isna(snapshot_month):
             snapshot_month = None
         return (snapshot, snapshot_month, True)

@@ -30,7 +30,7 @@ def _dpd_bucket(days_past_due: int | float | None) -> str:
 def build_portfolio_mart(loans_df: pd.DataFrame) -> pd.DataFrame:
     df = loans_df.copy()
 
-    df["origination_date"] = pd.to_datetime(df["origination_date"], errors="coerce")
+    df["origination_date"] = pd.to_datetime(df["origination_date"], errors="coerce", format="mixed")
     df["origination_month"] = df["origination_date"].dt.to_period("M").astype(str)
     df["cohort"] = df["origination_month"]
     df["vintage"] = df["origination_month"]

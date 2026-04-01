@@ -150,7 +150,7 @@ def compute_customer_lifespan(
         }
 
     df = portfolio.copy()
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce", format="mixed")
     df = df.dropna(subset=[customer_col, date_col])
 
     # Per-customer first/last origination
@@ -264,7 +264,7 @@ def classify_customer_type(
         )
 
     df = loan_history[[customer_col, date_col]].copy()
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce", format="mixed")
     df = df.dropna(subset=[date_col])
 
     # Aggregate per customer

@@ -497,7 +497,7 @@ def render_kpi_methodology(metrics: dict[str, Any]):
 def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
     CHART_MODE = 'lines+markers'
     df = df.copy()
-    df['origination_date'] = pd.to_datetime(df['origination_date'])
+    df['origination_date'] = pd.to_datetime(df['origination_date'], format='mixed')
     df = calculate_days_past_due(df)
     df['origination_month'] = df['origination_date'].dt.to_period('M').astype(str)
     cohort_data = []

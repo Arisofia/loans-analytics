@@ -133,7 +133,7 @@ def _resolve_kpi_snapshot_month(input_analytics_facts: pd.DataFrame) -> Optional
         return None
     for kpi_col_name in ('month', 'month_end', 'date'):
         if kpi_col_name in input_analytics_facts.columns:
-            kpi_parsed = pd.to_datetime(input_analytics_facts[kpi_col_name], errors='coerce').dropna()
+            kpi_parsed = pd.to_datetime(input_analytics_facts[kpi_col_name], errors='coerce', format='mixed').dropna()
             if not kpi_parsed.empty:
                 return kpi_parsed.max()
     return None

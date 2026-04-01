@@ -61,7 +61,7 @@ def build_with_ad_spend(
 
     # Aggregate Meta Ads data to monthly level for joining
     ad = ad_spend_df.copy()
-    ad["date_start"] = pd.to_datetime(ad["date_start"], errors="coerce")
+    ad["date_start"] = pd.to_datetime(ad["date_start"], errors="coerce", format="mixed")
     ad["origination_month"] = ad["date_start"].dt.to_period("M").astype(str)
 
     monthly_spend = (
@@ -88,7 +88,7 @@ def build_with_ad_spend(
 
     # Derive origination_month on the mart side for the join
     mart["origination_month"] = pd.to_datetime(
-        mart["origination_date"], errors="coerce"
+        mart["origination_date"], errors="coerce", format="mixed"
     ).dt.to_period("M").astype(str)
 
     enriched = mart.merge(monthly_spend, on="origination_month", how="left")

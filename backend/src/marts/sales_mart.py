@@ -6,9 +6,9 @@ import pandas as pd
 def build_sales_mart(leads_df: pd.DataFrame) -> pd.DataFrame:
     df = leads_df.copy()
 
-    df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce")
+    df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce", format="mixed")
     if "closed_at" in df.columns:
-        df["closed_at"] = pd.to_datetime(df["closed_at"], errors="coerce")
+        df["closed_at"] = pd.to_datetime(df["closed_at"], errors="coerce", format="mixed")
         df["days_to_close"] = (df["closed_at"] - df["created_at"]).dt.days
     else:
         df["days_to_close"] = None
