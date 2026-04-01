@@ -777,29 +777,36 @@ def irr_portfolio_proxy(
         pay.groupby(pay_id_col)['_pay'].sum().to_dict()
     )
 
-    def _loan_irr(disb: float, total_received: float) -> float | None:
+    def _loan_irr(disb: float, total_received: float) -> tuple[float | None, str]:
+        """Return (periodic_irr, solver_method). solver_method is one of
+        'brentq', 'no_solution', or 'no_cashflows'."""
         if disb <= 0 or total_received <= 0:
-            return None
+            return None, 'no_cashflows'
         # Two-period approximation: CF = [-disb, total_received]
         def npv(r: float) -> float:
             return -disb + total_received / (1 + r)
         try:
-            return float(brentq(npv, -0.9999, 100.0))
+            return float(brentq(npv, -0.9999, 100.0)), 'brentq'
         except (ValueError, RuntimeError):
-            return None
+            return None, 'no_solution'
 
     irr_values: list[float] = []
     weights: list[float] = []
+    used_payments_cashflows = False
+    solver_methods_used: set[str] = set()
 
     for _, row in loans.iterrows():
         lid = str(row[loan_id_col])
         disb = float(row['_disb'])
         weight = float(row['_bal']) if float(row['_bal']) > 0 else disb
         total_recv = float(pay_by_loan.get(lid, 0.0))
-        r = _loan_irr(disb, total_recv)
+        if total_recv > 0:
+            used_payments_cashflows = True
+        r, solver_method = _loan_irr(disb, total_recv)
         if r is not None:
             irr_values.append(r)
             weights.append(weight)
+            solver_methods_used.add(solver_method)
 
     if not irr_values:
         return {
@@ -813,13 +820,17 @@ def irr_portfolio_proxy(
     # Annualise assuming monthly periods
     irr_annual = float((1 + irr_periodic) ** 12 - 1)
 
+    cashflow_source = 'payments_cashflows' if used_payments_cashflows else 'outstanding_balance_proxy'
+    irr_solver = next(iter(solver_methods_used), 'brentq')
+    method = f'{cashflow_source}_{irr_solver}'
+
     return {
         'status': 'ok',
         'irr_annual_pct': round(irr_annual * 100, 2),
         'irr_periodic_pct': round(irr_periodic * 100, 2),
         'loans_computed': len(irr_values),
         'loans_total': int(len(loans)),
-        'method': 'two_period_cf_per_loan_balance_weighted',
+        'method': method,
         'note': (
             'Two-period IRR proxy: CF = [−disbursement, +total_payments_received]. '
             'For multi-period IRR, integrate payment_schedule with dates. '

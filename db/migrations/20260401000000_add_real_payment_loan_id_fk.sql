@@ -11,8 +11,27 @@
 BEGIN;
 
 -- Ensure loan_data.loan_id is unique (required for FK target).
-CREATE UNIQUE INDEX IF NOT EXISTS uq_loan_data_loan_id
-    ON public.loan_data (loan_id);
+-- Guard by column definition, not constraint name: any pre-existing PK or
+-- unique constraint on loan_data.loan_id (regardless of its name) is
+-- sufficient.  Only create the index when no such constraint exists.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM   pg_index     ix
+        JOIN   pg_class     t  ON t.oid  = ix.indrelid
+        JOIN   pg_namespace n  ON n.oid  = t.relnamespace
+        JOIN   pg_attribute a  ON a.attrelid = t.oid
+                               AND a.attnum = ANY(ix.indkey)
+        WHERE  n.nspname   = 'public'
+        AND    t.relname   = 'loan_data'
+        AND    a.attname   = 'loan_id'
+        AND    (ix.indisunique OR ix.indisprimary)
+    ) THEN
+        CREATE UNIQUE INDEX uq_loan_data_loan_id
+            ON public.loan_data (loan_id);
+    END IF;
+END $$;
 
 -- Add the FK constraint with DEFERRABLE INITIALLY DEFERRED to allow bulk
 -- inserts that arrive out of order within a transaction.
