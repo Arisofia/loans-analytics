@@ -54,6 +54,9 @@ pip-audit.json
 pip-audit-lock.json
 safety-local-lock.json
 
+# Stale pip-freeze snapshots
+installed_packages.txt
+
 # Generated lock files
 requirements.lock.txt
 

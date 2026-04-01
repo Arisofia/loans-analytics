@@ -102,6 +102,17 @@ class TransformationPhase:
     def __init__(self, config: Dict[str, Any], business_rules: Optional[Dict[str, Any]] = None):
         self.config = config
         self.business_rules = business_rules or {}
+        # Status mappings: business_rules.yaml is the SSoT; class attribute is the hardcoded fallback.
+        _br_mappings: Dict[str, str] = {
+            k.lower(): v
+            for k, v in self.business_rules.get("status_mappings", {}).items()
+        }
+        self._status_mappings: Dict[str, str] = _br_mappings if _br_mappings else dict(self.STATUS_MAPPINGS)
+        if not _br_mappings:
+            logger.debug(
+                "No status_mappings in business_rules — using hardcoded defaults. "
+                "In production, ensure config/business_rules.yaml is loaded."
+            )
         null_config = config.get("null_handling", {})
         self.null_strategy = null_config.get("strategy", "smart")
         self.fill_values = null_config.get("fill_values", {"numeric": 0, "categorical": "unknown"})
@@ -1162,7 +1173,8 @@ class TransformationPhase:
         original_values = df["status"].unique().tolist()
         original_status = df["status"]
         normalized_status = original_status.astype("string").str.strip().str.lower()
-        mapped_status = normalized_status.map(self.STATUS_MAPPINGS)
+        _mappings = getattr(self, "_status_mappings", dict(self.STATUS_MAPPINGS))
+        mapped_status = normalized_status.map(_mappings)
         mask_missing = original_status.isna()
         mask_unmapped = ~mask_missing & mapped_status.isna()
         final_status = mapped_status.where(~mask_unmapped, normalized_status).where(

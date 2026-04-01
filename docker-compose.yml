@@ -57,7 +57,7 @@ services:
       <<: *common-env
       API_HOST: 0.0.0.0
       API_PORT: "8000"
-      RELOAD: "true"
+      RELOAD: "${API_RELOAD:-false}"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

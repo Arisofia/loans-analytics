@@ -6,10 +6,11 @@ from typing import Any, Dict, Optional
 import pandas as pd
 from backend.python.logging_config import get_logger
 from backend.src.infrastructure.google_sheets_adapter import ControlMoraSheetsAdapter
+from backend.src.pipeline.constants import GSHEETS_URI_PREFIX
 logger = get_logger(__name__)
 
 class IngestionPhase:
-    _GSHEETS_URI_PREFIX = 'gsheets://'
+    _GSHEETS_URI_PREFIX = GSHEETS_URI_PREFIX
 
     def __init__(self, config: Dict[str, Any]):
         self.config = config
