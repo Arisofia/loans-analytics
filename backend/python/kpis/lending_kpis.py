@@ -310,7 +310,7 @@ def mype_approval_batch(loans_df: pd.DataFrame, payments_df: pd.DataFrame | None
         counts[decision] += 1
         decisions.append(decision_row)
     decisions.sort(key=lambda x: float(cast(float, x['pod'])), reverse=True)
-    return {'status': 'ok', 'total_clients': len(decisions), 'summary': counts, 'approve_rate_pct': round(counts['APPROVE'] / max(len(decisions), 1) * 100, 1), 'high_risk_balance_usd': round(sum((float(cast(float, d['outstanding_usd'])) for d in decisions if str(cast(str, d['risk_level'])) in ('HIGH', 'CRITICAL'))), 2), 'decisions': decisions[:100], 'data_gaps': ['utilization = 0 (LineaCredito not in loan_data.csv)', 'collection_rate = proxy from disbursement (needs payment_schedule)']}
+    return {'status': 'ok', 'total_clients': len(decisions), 'summary': counts, 'approve_rate_pct': round(counts['APPROVE'] / max(len(decisions), 1) * 100, 1), 'high_risk_balance_usd': round(sum((float(cast(float, d['outstanding_usd'])) for d in decisions if str(cast(str, d['risk_level'])) in {'HIGH', 'CRITICAL'})), 2), 'decisions': decisions[:100], 'data_gaps': ['utilization = 0 (LineaCredito not in loan_data.csv)', 'collection_rate = proxy from disbursement (needs payment_schedule)']}
 
 def cash_balance_treasury(
     cash_balance_usd: float,
@@ -335,10 +335,8 @@ def cash_balance_treasury(
     reserve_ratio:
         Fraction of cash held in reserve (not deployable).  Default 10%.
     """
-    if avg_portfolio_apr is None and loans_df is not None:
-        apr_col = _col(loans_df, ['interest_rate_apr', 'APR'])
-        if apr_col:
-            avg_portfolio_apr = float(_num(loans_df, apr_col).mean())
+    if avg_portfolio_apr is None and loans_df is not None and (apr_col := _col(loans_df, ['interest_rate_apr', 'APR'])):
+        avg_portfolio_apr = float(_num(loans_df, apr_col).mean())
     if avg_portfolio_apr is None:
         avg_portfolio_apr = 0.28  # conservative LatAm fintech default
 
@@ -354,10 +352,8 @@ def cash_balance_treasury(
     opp_cost_pending_monthly_usd = pending_disbursements_usd * (avg_portfolio_apr / 12.0)
 
     aum_usd = 0.0
-    if loans_df is not None:
-        bal_col = _col(loans_df, ['outstanding_loan_value', 'outstanding_balance'])
-        if bal_col:
-            aum_usd = float(_num(loans_df, bal_col).sum())
+    if loans_df is not None and (bal_col := _col(loans_df, ['outstanding_loan_value', 'outstanding_balance'])):
+        aum_usd = float(_num(loans_df, bal_col).sum())
 
     total_deployable_capital = aum_usd + cash_balance_usd
     utilisation_rate_pct = round(aum_usd / max(total_deployable_capital, 1) * 100, 1)
@@ -483,7 +479,7 @@ def collection_efficiency_6m(
         'scheduled_usd': round(scheduled_usd, 2),
         'collected_usd': round(collected_usd, 2),
         'gap_usd': round(max(scheduled_usd * target_ce - collected_usd, 0), 2),
-        'loans_in_window': int(len(window_df)),
+        'loans_in_window': len(window_df),
         'window_days': window_days,
         'data_source': data_source,
         'note': (
@@ -627,7 +623,7 @@ def financing_rate_eir(
         'target_range_pct': f'{round(target_min * 100):.0f}–{round(target_max * 100):.0f}%',
         'breach': breach,
         'total_outstanding_usd': round(total_bal, 2),
-        'loan_count': int(len(df)),
+        'loan_count': len(df),
         'portfolio_yield_pct': portfolio_yield_pct,
         'portfolio_yield_note': yield_source,
         'note': (
@@ -698,14 +694,12 @@ def cost_of_debt_dscr(
                 annual_interest_income = raw_income
                 income_source = 'payments_total_no_date'
 
-    if annual_interest_income == 0 and aum_usd > 0:
-        apr_col = _col(loans_df, ['interest_rate_apr', 'interest_rate'])
-        if apr_col:
-            apr_vals = pd.to_numeric(loans_df[apr_col], errors='coerce').dropna()
-            if len(apr_vals) > 0:
-                avg_apr = float(apr_vals.mean())
-                annual_interest_income = aum_usd * avg_apr
-                income_source = f'estimated_aum_x_avg_apr_{round(avg_apr * 100, 1)}pct'
+    if annual_interest_income == 0 and aum_usd > 0 and (apr_col := _col(loans_df, ['interest_rate_apr', 'interest_rate'])):
+        apr_vals = pd.to_numeric(loans_df[apr_col], errors='coerce').dropna()
+        if len(apr_vals) > 0:
+            avg_apr = float(apr_vals.mean())
+            annual_interest_income = aum_usd * avg_apr
+            income_source = f'estimated_aum_x_avg_apr_{round(avg_apr * 100, 1)}pct'
 
     annual_debt_service = aum_usd * cost_of_debt_pct
     dscr = annual_interest_income / max(annual_debt_service, 1)
@@ -829,7 +823,7 @@ def irr_portfolio_proxy(
         'irr_annual_pct': round(irr_annual * 100, 2),
         'irr_periodic_pct': round(irr_periodic * 100, 2),
         'loans_computed': len(irr_values),
-        'loans_total': int(len(loans)),
+        'loans_total': len(loans),
         'method': method,
         'note': (
             'Two-period IRR proxy: CF = [−disbursement, +total_payments_received]. '
