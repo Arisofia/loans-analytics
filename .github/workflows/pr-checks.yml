@@ -91,7 +91,6 @@ jobs:
       - name: Run mypy type checking
         run: |
           python -m mypy --no-incremental
-        continue-on-error: true
 
       - name: Run tests
         run: |

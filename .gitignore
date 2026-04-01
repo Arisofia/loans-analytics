@@ -48,6 +48,8 @@ test_dashboard_local.py
 tracked_files_manifest.txt
 _git_info.txt
 _git_remote.txt
+test_gemini.py
+installed_packages.txt
 
 # Security audit artifacts
 pip-audit.json

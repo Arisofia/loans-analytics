@@ -19,7 +19,7 @@ ingestion:
 
     - type: "google_sheets"
       enabled: true
-      spreadsheet_id: "1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o"
+      spreadsheet_id: null  # Set via GOOGLE_SHEETS_SPREADSHEET_ID environment variable
       worksheets:
         - "DESEMBOLSOS"
         - "INTERMEDIA"
@@ -28,14 +28,14 @@ ingestion:
   google_sheets:
     enabled: true
     credentials_path: "credentials/google-service-account.json"
-    spreadsheet_id: "1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o"
+    spreadsheet_id: null  # Set via GOOGLE_SHEETS_SPREADSHEET_ID environment variable
     worksheet: "DESEMBOLSOS"
 
   # 2026 Portfolio Targets Configuration
   targets:
     enabled: true
     source: "google_sheets"
-    spreadsheet_id: "1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o"
+    spreadsheet_id: null  # Set via GOOGLE_SHEETS_SPREADSHEET_ID environment variable
     worksheet: "TARGETS_2026"
     expected_columns:
       - "Month"
