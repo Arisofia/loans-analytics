@@ -90,6 +90,35 @@ class TestKPICatalogProcessorStrategic(unittest.TestCase):
         rotation = processor.get_portfolio_rotation()
         self.assertIn('rotation_x', rotation)
 
+    def test_early_warning_flow_31_60_computes_from_previous_fields(self):
+        loans = pd.DataFrame(
+            {
+                'loan_id': ['L1', 'L2', 'L3'],
+                'days_past_due': [45, 0, 20],
+                'previous_days_past_due': [15, 10, 45],
+                'outstanding_loan_value': [900.0, 1100.0, 1000.0],
+                'previous_principal_balance': [1000.0, 1200.0, 1000.0],
+            }
+        )
+        processor = KPICatalogProcessor(loans, pd.DataFrame(), pd.DataFrame())
+        early_warning = processor.get_early_warning_flow_31_60()
+        self.assertEqual(early_warning['status'], 'ok')
+        self.assertEqual(early_warning['data_source'], 'previous_snapshot_fields')
+        self.assertAlmostEqual(early_warning['flow_rate_31_60_pct'], 45.45, places=2)
+
+    def test_early_warning_flow_31_60_requires_data_without_history(self):
+        loans = pd.DataFrame(
+            {
+                'loan_id': ['L1', 'L2'],
+                'days_past_due': [0, 45],
+                'outstanding_loan_value': [1000.0, 2000.0],
+                'origination_date': ['2025-01-01', '2025-01-01'],
+            }
+        )
+        processor = KPICatalogProcessor(loans, pd.DataFrame(), pd.DataFrame())
+        early_warning = processor.get_early_warning_flow_31_60()
+        self.assertEqual(early_warning['status'], 'requires_new_data')
+
 
 class TestCashBalanceTreasury(unittest.TestCase):
 

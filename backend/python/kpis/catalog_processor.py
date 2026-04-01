@@ -6,6 +6,7 @@ import pandas as pd
 from backend.python.kpis.graph_analytics import build_graph_kpi_report
 from backend.python.kpis.lending_kpis import build_lending_kpi_report
 from backend.python.kpis.portfolio_analytics import build_portfolio_analytics_report
+from backend.src.kpi_engine.cohorts import compute_roll_rates
 
 @dataclass
 class KPICatalogProcessor:
@@ -602,13 +603,123 @@ class KPICatalogProcessor:
     def get_early_warning_flow_31_60(self) -> dict[str, Any]:
         """Calculate the flow rate of current loans (0-30 DPD) into the 31-60 DPD bucket.
 
-        Requires T and T-1 snapshots for precise calculation.
-        Currently returns status 'requires_new_data' as snapshots are not yet integrated.
+        Prefers explicit previous-period fields when available and falls back to
+        deriving T-1/T snapshots from repeated loan rows ordered by date.
         """
+        if self.loans_df.empty:
+            return {
+                'status': 'insufficient_data',
+                'flow_rate_31_60_pct': 0.0,
+                'from_balance_usd': 0.0,
+                'to_balance_usd': 0.0,
+                'data_source': 'none',
+                'note': 'loans_df is empty',
+                'last_updated': pd.Timestamp.now(tz='UTC').isoformat(),
+            }
+
+        loan_cols = self._loan_columns()
+        loan_id_col = loan_cols.get('loan_id')
+        current_dpd_col = loan_cols.get('dpd')
+        current_balance_col = loan_cols.get('outstanding') or loan_cols.get('principal')
+
+        if loan_id_col is None or current_dpd_col is None or current_balance_col is None:
+            return {
+                'status': 'insufficient_data',
+                'flow_rate_31_60_pct': 0.0,
+                'from_balance_usd': 0.0,
+                'to_balance_usd': 0.0,
+                'data_source': 'none',
+                'note': 'Required columns missing (loan_id, dpd, outstanding/principal)',
+                'last_updated': pd.Timestamp.now(tz='UTC').isoformat(),
+            }
+
+        previous_dpd_col = self._first_existing_column(
+            self.loans_df,
+            ['previous_days_past_due', 'prev_days_past_due', 'days_past_due_t0', 'dpd_t0'],
+        )
+        previous_balance_col = self._first_existing_column(
+            self.loans_df,
+            ['previous_principal_balance', 'previous_outstanding_balance', 'outstanding_balance_t0', 'principal_balance_t0'],
+        )
+
+        df = self.loans_df.copy()
+
+        # Preferred path: explicit previous-period fields on each record.
+        if previous_dpd_col is not None:
+            previous_dpd = pd.to_numeric(df[previous_dpd_col], errors='coerce')
+            valid = previous_dpd.notna()
+            if valid.any():
+                t1 = pd.DataFrame({
+                    'loan_id': df.loc[valid, loan_id_col].astype(str),
+                    'days_past_due': pd.to_numeric(df.loc[valid, current_dpd_col], errors='coerce').fillna(0),
+                    'outstanding_principal': pd.to_numeric(df.loc[valid, current_balance_col], errors='coerce').fillna(0),
+                })
+                if previous_balance_col is not None:
+                    t0_balance = pd.to_numeric(df.loc[valid, previous_balance_col], errors='coerce').fillna(
+                        pd.to_numeric(df.loc[valid, current_balance_col], errors='coerce').fillna(0)
+                    )
+                else:
+                    t0_balance = pd.to_numeric(df.loc[valid, current_balance_col], errors='coerce').fillna(0)
+                t0 = pd.DataFrame({
+                    'loan_id': df.loc[valid, loan_id_col].astype(str),
+                    'days_past_due': previous_dpd.loc[valid].fillna(0),
+                    'outstanding_principal': t0_balance,
+                })
+                roll_data = compute_roll_rates(t0, t1)
+                transition = roll_data.get('roll_rate_matrix', {}).get('1_30_to_31_60', {})
+                return {
+                    'status': 'ok',
+                    'flow_rate_31_60_pct': float(transition.get('roll_rate_pct', 0.0)),
+                    'from_balance_usd': float(transition.get('from_balance', 0.0)),
+                    'to_balance_usd': float(transition.get('to_balance', 0.0)),
+                    'data_source': 'previous_snapshot_fields',
+                    'last_updated': pd.Timestamp.now(tz='UTC').isoformat(),
+                }
+
+        # Fallback path: infer T-1 and T snapshots from duplicated loan rows by date.
+        date_col = loan_cols.get('date')
+        if date_col is not None and not df.empty:
+            work = df[[loan_id_col, date_col, current_dpd_col, current_balance_col]].copy()
+            work[date_col] = self._coerce_datetime(work[date_col])
+            work = work.dropna(subset=[loan_id_col, date_col])
+            if not work.empty:
+                work = work.sort_values([loan_id_col, date_col])
+                history = work.groupby(loan_id_col).tail(2)
+                counts = history.groupby(loan_id_col).size()
+                eligible_ids = counts[counts == 2].index
+                if len(eligible_ids) > 0:
+                    paired = history[history[loan_id_col].isin(eligible_ids)].copy()
+                    paired['rn'] = paired.groupby(loan_id_col).cumcount()
+                    t0 = paired[paired['rn'] == 0]
+                    t1 = paired[paired['rn'] == 1]
+                    t0_frame = pd.DataFrame({
+                        'loan_id': t0[loan_id_col].astype(str),
+                        'days_past_due': pd.to_numeric(t0[current_dpd_col], errors='coerce').fillna(0),
+                        'outstanding_principal': pd.to_numeric(t0[current_balance_col], errors='coerce').fillna(0),
+                    })
+                    t1_frame = pd.DataFrame({
+                        'loan_id': t1[loan_id_col].astype(str),
+                        'days_past_due': pd.to_numeric(t1[current_dpd_col], errors='coerce').fillna(0),
+                        'outstanding_principal': pd.to_numeric(t1[current_balance_col], errors='coerce').fillna(0),
+                    })
+                    roll_data = compute_roll_rates(t0_frame, t1_frame)
+                    transition = roll_data.get('roll_rate_matrix', {}).get('1_30_to_31_60', {})
+                    return {
+                        'status': 'ok',
+                        'flow_rate_31_60_pct': float(transition.get('roll_rate_pct', 0.0)),
+                        'from_balance_usd': float(transition.get('from_balance', 0.0)),
+                        'to_balance_usd': float(transition.get('to_balance', 0.0)),
+                        'data_source': 'derived_from_historical_rows',
+                        'last_updated': pd.Timestamp.now(tz='UTC').isoformat(),
+                    }
+
         return {
             'status': 'requires_new_data',
             'flow_rate_31_60_pct': 0.0,
-            'note': 'Requires consecutive monthly snapshots; will be enabled once multi-period pipeline runs are stored.',
+            'from_balance_usd': 0.0,
+            'to_balance_usd': 0.0,
+            'data_source': 'none',
+            'note': 'Requires consecutive snapshots or explicit previous DPD fields',
             'last_updated': pd.Timestamp.now(tz='UTC').isoformat(),
         }
 
