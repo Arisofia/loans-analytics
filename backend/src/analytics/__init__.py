@@ -26,7 +26,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
-
 import numpy as np
 import pandas as pd
 

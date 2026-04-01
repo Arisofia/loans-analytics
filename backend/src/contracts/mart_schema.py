@@ -2,10 +2,12 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PortfolioMartRow(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     loan_id: str
     customer_id: str
     origination_date: date
@@ -26,6 +28,8 @@ class PortfolioMartRow(BaseModel):
 
 
 class FinanceMartRow(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     as_of_month: str
     interest_income: Decimal
     fee_income: Decimal

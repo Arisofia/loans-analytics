@@ -20,13 +20,14 @@ from opentelemetry.trace import Status, StatusCode
 
 # Decision Intelligence imports
 from backend.src.pipeline.decision_phase import DecisionPhase
+from backend.src.pipeline.constants import GSHEETS_URI_PREFIX
 OTEL_AVAILABLE = True
 logger = get_logger(__name__)
 PIPELINE_STATUS_ATTR = 'pipeline.status'
 PIPELINE_DURATION_ATTR = 'pipeline.duration_seconds'
 
 class UnifiedPipeline:
-    _GSHEETS_URI_PREFIX = 'gsheets://'
+    _GSHEETS_URI_PREFIX = GSHEETS_URI_PREFIX
 
     def __init__(self, config_path: Optional[Path]=None, base_log_dir: Optional[Path]=None):
         logger.info('%s', '=' * 80)

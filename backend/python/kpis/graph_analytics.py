@@ -7,6 +7,7 @@ from typing import Any, cast
 import numpy as np
 import pandas as pd
 from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+from backend.python.kpis._column_utils import _col
 logger = logging.getLogger(__name__)
 try:
     nx = importlib.import_module('networkx')
@@ -22,12 +23,6 @@ try:
 except ImportError:
     _louvain_partition = cast(Any, None)
     _LOUVAIN = False
-
-def _col(df: pd.DataFrame, candidates: list[str]) -> str | None:
-    for c in candidates:
-        if c in df.columns:
-            return c
-    return None
 
 def _num(df: pd.DataFrame, col: str) -> pd.Series:
     return pd.to_numeric(df[col], errors='coerce').fillna(0.0)
