@@ -86,6 +86,7 @@ jobs:
       contents: read
     env:
       PYTHON_VERSION: "3.12"
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1

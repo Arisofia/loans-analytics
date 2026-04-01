@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       kv_ready: ${{ steps.kv_secrets.outputs.kv_ready }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
