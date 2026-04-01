@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -16,7 +16,7 @@ class AgentCost:
     db_operations: int = 0
     execution_time_ms: float = 0
     cost_usd: float = 0.0
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> Dict[str, Any]:
         return {'agent_name': self.agent_name, 'scenario_name': self.scenario_name, 'tokens_input': self.tokens_input, 'tokens_output': self.tokens_output, 'tokens_total': self.tokens_total, 'api_calls': self.api_calls, 'db_operations': self.db_operations, 'execution_time_ms': self.execution_time_ms, 'cost_usd': self.cost_usd, 'timestamp': self.timestamp}
@@ -82,7 +82,7 @@ class CostTracker:
         return {'scenario_name': scenario_name, 'baseline_cost_usd': baseline_cost, 'current_cost_usd': current_cost, 'increase_percentage': round(increase_percentage * 100, 2), 'threshold_percentage': threshold * 100, 'alert': alert, 'message': f'⚠️ Cost increased by {increase_percentage * 100:.1f}% (threshold: {threshold * 100:.1f}%)' if alert else f'✅ Cost within acceptable range ({increase_percentage * 100:.1f}% change)'}
 
     def save_report(self, output_path: str) -> None:
-        report = {'timestamp': datetime.utcnow().isoformat(), 'scenarios': {name: self.get_scenario_cost(name) for name in self.metrics}}
+        report = {'timestamp': datetime.now(timezone.utc).isoformat(), 'scenarios': {name: self.get_scenario_cost(name) for name in self.metrics}}
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, 'w') as f:
             json.dump(report, f, indent=2)
