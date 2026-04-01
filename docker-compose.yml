@@ -84,7 +84,7 @@ services:
       STREAMLIT_SERVER_ADDRESS: 0.0.0.0
       API_BASE_URL: http://api:8000
       DASHBOARD_URL: http://localhost:8501
-      GRAFANA_URL: ${GRAFANA_BASE_URL:-https://jenineferderas.grafana.net}/dashboards
+      GRAFANA_URL: ${GRAFANA_BASE_URL:-http://grafana:3000}/dashboards
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
       interval: 30s

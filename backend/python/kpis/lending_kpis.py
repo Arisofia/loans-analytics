@@ -735,6 +735,271 @@ def cost_of_debt_dscr(
     }
 
 
+def irr_by_cohort(
+    loans_df: pd.DataFrame,
+    payments_df: pd.DataFrame | None = None,
+) -> dict[str, Any]:
+    """
+    Internal Rate of Return (IRR) by origination cohort.
+
+    IRR is the discount rate r (monthly) that makes the NPV of a loan's cash
+    flows equal to zero::
+
+        NPV(r) = -disbursement + sum(payment_t / (1+r)^t for t in 1..T) = 0
+
+    Cash flows are mapped to monthly periods relative to disbursement_date.
+    The monthly IRR is annualised as ``annual_irr = (1 + r_monthly)^12 - 1``.
+
+    Requires ``disbursement_date`` and ``disbursement_amount`` in *loans_df*.
+    Inflows are sourced from *payments_df* when provided; otherwise the
+    function uses the outstanding balance recovery as an approximation.
+
+    Parameters
+    ----------
+    loans_df:
+        Loan tape with at minimum ``disbursement_date`` and
+        ``disbursement_amount`` columns.
+    payments_df:
+        Optional payment records.  Columns expected:
+        ``loan_id``, ``true_payment_date``, ``true_total_payment``
+        (or ``true_principal_payment`` + ``true_interest_payment``).
+
+    Returns
+    -------
+    dict with keys:
+        status, portfolio_irr_annual_pct, by_cohort, method, note
+    """
+    disb_date_col = _col(loans_df, ['disbursement_date', 'FechaDesembolso'])
+    disb_amt_col = _col(loans_df, ['disbursement_amount', 'MontoDesembolsado'])
+    loan_id_col = _col(loans_df, ['loan_id'])
+
+    if disb_date_col is None or disb_amt_col is None:
+        return {
+            'status': 'insufficient_data',
+            'portfolio_irr_annual_pct': None,
+            'note': 'Requires disbursement_date and disbursement_amount columns.',
+        }
+
+    def _npv(rate: float, cash_flows: list[float]) -> float:
+        return sum(cf / (1.0 + rate) ** t for t, cf in enumerate(cash_flows))
+
+    def _irr(cash_flows: list[float]) -> float | None:
+        """Return monthly IRR for a cash-flow series, or None if unsolvable."""
+        if not cash_flows or cash_flows[0] >= 0:
+            return None
+        # Bracket search: NPV must be negative at r=0 sign and positive at r<0
+        try:
+            from scipy.optimize import brentq  # type: ignore[import-untyped]
+            f = lambda r: _npv(r, cash_flows)  # noqa: E731
+            if f(-0.999) * f(10.0) >= 0:
+                return None
+            return float(brentq(f, -0.999, 10.0, xtol=1e-8, maxiter=500))
+        except Exception:
+            # Newton-Raphson fallback (no scipy dependency)
+            r = 0.01
+            for _ in range(200):
+                npv = _npv(r, cash_flows)
+                d_npv = sum(
+                    -t * cf / (1.0 + r) ** (t + 1)
+                    for t, cf in enumerate(cash_flows)
+                    if t > 0
+                )
+                if abs(d_npv) < 1e-12:
+                    break
+                r -= npv / d_npv
+                if r <= -1:
+                    return None
+            return r if abs(_npv(r, cash_flows)) < 1.0 else None
+
+    df = loans_df.copy()
+    df['_disb_date'] = pd.to_datetime(df[disb_date_col], errors='coerce', format='mixed')
+    df['_disb_amt'] = pd.to_numeric(df[disb_amt_col], errors='coerce').fillna(0)
+    df['_cohort'] = df['_disb_date'].dt.to_period('M')
+
+    # Build payment map: loan_id → list of (payment_date, amount)
+    payment_map: dict[str, list[tuple[pd.Timestamp, float]]] = {}
+    if payments_df is not None and loan_id_col:
+        pay_lid = _col(payments_df, ['loan_id'])
+        pay_amt = _col(payments_df, ['true_total_payment', 'true_principal_payment'])
+        pay_date_col = _col(payments_df, ['true_payment_date'])
+        if pay_lid and pay_amt and pay_date_col:
+            for _, row in payments_df.iterrows():
+                lid = str(row[pay_lid])
+                pdate = pd.to_datetime(row[pay_date_col], errors='coerce')
+                amt = float(pd.to_numeric(row[pay_amt], errors='coerce') or 0)
+                if not pd.isna(pdate) and amt > 0:
+                    payment_map.setdefault(lid, []).append((pdate, amt))
+
+    cohort_irrs: list[dict[str, Any]] = []
+    all_cfs: list[float] = []
+
+    for cohort, grp in df.groupby('_cohort'):
+        cfs: list[float] = []
+        for _, row in grp.iterrows():
+            disb = float(row['_disb_amt'])
+            if disb <= 0:
+                continue
+            ddate = row['_disb_date']
+            if pd.isna(ddate):
+                continue
+            loan_cfs: list[float] = [-disb]
+            lid = str(row[loan_id_col]) if loan_id_col else None
+            if lid and lid in payment_map:
+                monthly_inflows: dict[int, float] = {}
+                for pdate, amt in payment_map[lid]:
+                    month_offset = (
+                        (pdate.year - ddate.year) * 12 + (pdate.month - ddate.month)
+                    )
+                    if month_offset >= 1:
+                        monthly_inflows[month_offset] = monthly_inflows.get(month_offset, 0.0) + amt
+                if monthly_inflows:
+                    max_t = max(monthly_inflows)
+                    for t in range(1, max_t + 1):
+                        loan_cfs.append(monthly_inflows.get(t, 0.0))
+            else:
+                # No payment data: approximate with outstanding_loan_value as single inflow
+                bal_col = _col(loans_df, ['outstanding_loan_value'])
+                if bal_col:
+                    bal = float(pd.to_numeric(row.get(bal_col, 0), errors='coerce') or 0)
+                    if bal > 0:
+                        loan_cfs.append(bal)
+            if len(loan_cfs) > 1:
+                cfs.extend(loan_cfs)
+
+        cohort_irr_monthly = _irr(cfs) if cfs else None
+        cohort_irr_annual = (
+            round(((1 + cohort_irr_monthly) ** 12 - 1) * 100, 2)
+            if cohort_irr_monthly is not None and cohort_irr_monthly > -1
+            else None
+        )
+        cohort_irrs.append({
+            'cohort': str(cohort),
+            'loan_count': int(len(grp)),
+            'irr_annual_pct': cohort_irr_annual,
+        })
+        if cfs:
+            all_cfs.extend(cfs)
+
+    portfolio_irr_monthly = _irr(all_cfs) if all_cfs else None
+    portfolio_irr_annual = (
+        round(((1 + portfolio_irr_monthly) ** 12 - 1) * 100, 2)
+        if portfolio_irr_monthly is not None and portfolio_irr_monthly > -1
+        else None
+    )
+
+    method = (
+        'monthly_cashflows_brentq'
+        if payments_df is not None
+        else 'outstanding_balance_proxy'
+    )
+
+    return {
+        'status': 'ok' if portfolio_irr_annual is not None else 'insufficient_cashflows',
+        'portfolio_irr_annual_pct': portfolio_irr_annual,
+        'by_cohort': sorted(cohort_irrs, key=lambda x: str(x['cohort'])),
+        'method': method,
+        'note': (
+            'IRR = annualised monthly internal rate of return on disbursement + '
+            'payment cash flows. Requires full payment history for accuracy. '
+            'Single-period proxy used when payments_df is not provided.'
+        ),
+    }
+
+
+def provision_coverage_ratio(
+    loans_df: pd.DataFrame,
+    customer_df: pd.DataFrame | None = None,
+    lgd_override: float | None = None,
+    npl_dpd_threshold: int = 30,
+) -> dict[str, Any]:
+    """
+    Provision Coverage Ratio (PCR).
+
+    PCR = Total ECL Provisions / NPL Outstanding Balance × 100
+
+    A PCR >= 100 % means the portfolio is fully provisioned against NPL
+    exposure.  Regulatory guidance typically requires >= 100 % for Stage 3
+    (default) and >= 50 % for Stage 2 (watchlist) exposures.
+
+    Parameters
+    ----------
+    loans_df:
+        Loan tape.
+    customer_df:
+        Optional customer segmentation data passed through to
+        ``lgd_ecl_by_segment``.
+    lgd_override:
+        LGD scalar override (0–1).  Defaults to ``settings.risk.loss_given_default``.
+    npl_dpd_threshold:
+        Days-past-due threshold for NPL classification.  Default 30 days.
+
+    Returns
+    -------
+    dict with keys:
+        status, provision_coverage_pct, total_ecl_usd, npl_outstanding_usd,
+        npl_count, total_loans, fully_provisioned, note
+    """
+    bal_col = _col(loans_df, ['outstanding_loan_value', 'outstanding_balance'])
+    dpd_col = _col(loans_df, ['days_in_default', 'dpd', 'days_past_due'])
+    stat_col = _col(loans_df, ['loan_status'])
+
+    if bal_col is None:
+        return {
+            'status': 'insufficient_data',
+            'provision_coverage_pct': None,
+            'note': 'Requires outstanding_loan_value column.',
+        }
+
+    # Compute ECL from canonical lgd_ecl function
+    ecl_result = lgd_ecl_by_segment(loans_df, customer_df, lgd_override)
+    total_ecl_usd = float(ecl_result.get('portfolio_ecl_usd', 0))
+
+    # Identify NPL loans
+    df = loans_df.copy()
+    df['_bal'] = pd.to_numeric(df[bal_col], errors='coerce').fillna(0)
+
+    npl_mask = pd.Series(False, index=df.index)
+    if dpd_col:
+        df['_dpd'] = pd.to_numeric(df[dpd_col], errors='coerce').fillna(0)
+        npl_mask |= df['_dpd'] >= npl_dpd_threshold
+    if stat_col:
+        npl_mask |= df[stat_col].astype(str).str.lower().str.contains(
+            'default|npl|charged.?off', na=False
+        )
+
+    npl_outstanding_usd = float(df.loc[npl_mask, '_bal'].sum())
+    npl_count = int(npl_mask.sum())
+    total_loans = int(len(df))
+
+    provision_coverage_pct = (
+        round(total_ecl_usd / npl_outstanding_usd * 100, 2)
+        if npl_outstanding_usd > 0
+        else None
+    )
+
+    fully_provisioned = (
+        provision_coverage_pct is not None and provision_coverage_pct >= 100.0
+    )
+
+    return {
+        'status': 'ok',
+        'provision_coverage_pct': provision_coverage_pct,
+        'total_ecl_usd': round(total_ecl_usd, 2),
+        'npl_outstanding_usd': round(npl_outstanding_usd, 2),
+        'npl_count': npl_count,
+        'total_loans': total_loans,
+        'npl_dpd_threshold_days': npl_dpd_threshold,
+        'fully_provisioned': fully_provisioned,
+        'lgd_used': ecl_result.get('lgd_used'),
+        'note': (
+            'PCR = ECL provisions / NPL outstanding balance. '
+            f'NPL defined as DPD >= {npl_dpd_threshold} or loan_status contains '
+            '"default". PCR >= 100% = fully provisioned. '
+            'ECL uses dpd/180 PD proxy — replace with model scores for precision.'
+        ),
+    }
+
+
 def build_lending_kpi_report(
     loans_df: pd.DataFrame,
     payments_df: pd.DataFrame,
@@ -764,6 +1029,8 @@ def build_lending_kpi_report(
     sla = sla_targets(loans_df)
     eir = financing_rate_eir(loans_df, payments_df)
     dscr = cost_of_debt_dscr(loans_df, payments_df, cost_of_debt_pct=cost_of_debt_pct)
+    irr = irr_by_cohort(loans_df, payments_df)
+    pcr = provision_coverage_ratio(loans_df, customer_df)
     return {
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'cdr_curves': cdr,
@@ -779,4 +1046,6 @@ def build_lending_kpi_report(
         'sla_targets': sla,
         'financing_rate_eir': eir,
         'cost_of_debt_dscr': dscr,
+        'irr_by_cohort': irr,
+        'provision_coverage_ratio': pcr,
     }
