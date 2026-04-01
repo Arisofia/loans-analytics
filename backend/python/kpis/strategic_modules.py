@@ -5,12 +5,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+from backend.python.kpis._column_utils import _col
 logger = logging.getLogger(__name__)
 HEAD_OF_RISK = 'Head of Risk'
 HEAD_OF_PRICING = 'Head of Pricing'
-
-def _col(df: pd.DataFrame, candidates: list[str]) -> str | None:
-    return next((column for column in candidates if column in df.columns), None)
 
 def _num(df: pd.DataFrame, col: str) -> pd.Series:
     return pd.to_numeric(df[col], errors='coerce').fillna(0.0)

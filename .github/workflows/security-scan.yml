@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@d4b3ca9fa7f69d38bfcd667bdc45bc373d16277e # v4
@@ -50,7 +50,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Skip Snyk scan when token is missing
         if: ${{ env.SNYK_TOKEN == '' }}
@@ -78,7 +78,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Set up Python
         run: |
@@ -161,7 +161,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Run Gitleaks
         run: |
@@ -180,3 +180,36 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
+
+  container-scan:
+    name: Container Image Vulnerability Scan (Trivy)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Build pipeline image for scanning
+        run: |
+          docker build -f Dockerfile.pipeline -t loans-analytics-pipeline:scan . 2>&1 || \
+            docker build -f Dockerfile -t loans-analytics-pipeline:scan . 2>&1
+
+      - name: Run Trivy vulnerability scan
+        # aquasecurity/trivy-action v0.28.0
+        # TODO: pin to SHA once digest is verified in CI: aquasecurity/trivy-action@<SHA>
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: loans-analytics-pipeline:scan
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+
+      - name: Upload Trivy scan results to Security tab
+        if: ${{ always() && hashFiles('trivy-results.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/upload-sarif@d4b3ca9fa7f69d38bfcd667bdc45bc373d16277e # v4
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy

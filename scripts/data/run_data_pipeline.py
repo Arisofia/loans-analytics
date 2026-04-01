@@ -19,6 +19,11 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if args.input is not None and not args.input.exists():
+        logger.error('PIPELINE_INPUT path does not exist: %s', args.input)
+        print(f'\n[FAILED] Input file not found: {args.input}')
+        print('Set PIPELINE_INPUT to a valid data file path and retry.')
+        sys.exit(1)
     logger.info('%s', '=' * 80)
     logger.info('UNIFIED PIPELINE EXECUTION STARTED')
     logger.info('%s', '=' * 80)
