@@ -65,8 +65,8 @@ def build_not_specified_log(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
 def reconcile_payments(fact_schedule: pd.DataFrame, fact_real_payment: pd.DataFrame, *, tolerance: float=0.01) -> tuple[pd.DataFrame, pd.DataFrame]:
     schedule = fact_schedule.copy()
     paid = fact_real_payment.copy()
-    schedule['scheduled_date'] = pd.to_datetime(schedule['scheduled_date'], errors='coerce')
-    paid['payment_date'] = pd.to_datetime(paid['payment_date'], errors='coerce')
+    schedule['scheduled_date'] = pd.to_datetime(schedule['scheduled_date'], errors='coerce', format='mixed')
+    paid['payment_date'] = pd.to_datetime(paid['payment_date'], errors='coerce', format='mixed')
     schedule['scheduled_total'] = pd.to_numeric(schedule['scheduled_total'], errors='coerce').fillna(0.0)
     paid['paid_total'] = pd.to_numeric(paid['paid_total'], errors='coerce').fillna(0.0)
     excluded_rows_unmatched: list[pd.DataFrame] = []
@@ -117,7 +117,7 @@ class LocalMonthlySnapshotETL:
         dim_loan = tables['dim_loan'].copy()
         fact_schedule = tables['fact_schedule'].copy()
         fact_real_payment = tables['fact_real_payment'].copy()
-        dim_loan['disbursement_date'] = pd.to_datetime(dim_loan['disbursement_date'], errors='coerce')
+        dim_loan['disbursement_date'] = pd.to_datetime(dim_loan['disbursement_date'], errors='coerce', format='mixed')
         dim_loan['original_principal'] = pd.to_numeric(dim_loan['original_principal'], errors='coerce').fillna(0.0)
         if 'interest_rate' not in dim_loan.columns:
             dim_loan['interest_rate'] = 0.0

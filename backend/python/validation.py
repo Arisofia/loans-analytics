@@ -158,7 +158,7 @@ def validate_iso8601_dates(df: pd.DataFrame, columns: Optional[List[str]]=None) 
             if pd.api.types.is_datetime64_any_dtype(df[col]):
                 validation[f'{col}_iso8601'] = True
                 continue
-            coerced = pd.to_datetime(df[col], errors='coerce')
+            coerced = pd.to_datetime(df[col], errors='coerce', format='mixed')
             orig_null_mask = df[col].isna()
             validation[f'{col}_iso8601'] = not (coerced.isna() & ~orig_null_mask).any()
     return validation

@@ -42,7 +42,7 @@ def test_clean_data_no_blocking(clean_loans: pd.DataFrame) -> None:
         scenarios=[],
         business_params={},
     )
-    output = agent.run(ctx)
+    output = agent.run(ctx=ctx)
     assert output.status == "ok"
     assert output.blocked_by == []
 
@@ -56,7 +56,7 @@ def test_dirty_data_blocked(dirty_loans: pd.DataFrame) -> None:
         scenarios=[],
         business_params={},
     )
-    output = agent.run(ctx)
+    output = agent.run(ctx=ctx)
     assert output.status == "blocked"
     assert "data_quality" in output.blocked_by
     assert len(output.alerts) > 0

@@ -101,9 +101,9 @@ class PipelineRouter:
                 result = result.fillna(candidate)
             return result
         loan_id_series = df.get('NumeroInterno', empty) if 'NumeroInterno' in df.columns else df.get('NumeroDesembolso', empty)
-        disbursement_date = pd.to_datetime(df.get('FechaDesembolso', empty), errors='coerce')
+        disbursement_date = pd.to_datetime(df.get('FechaDesembolso', empty), errors='coerce', format='mixed')
         principal_outstanding = pd.to_numeric(df.get('TotalSaldoVigente', pd.Series(index=df.index, dtype='float64')), errors='coerce').fillna(0.0)
-        due_date = pd.to_datetime(df.get('FechaPagoProgramado', empty), errors='coerce')
+        due_date = pd.to_datetime(df.get('FechaPagoProgramado', empty), errors='coerce', format='mixed')
         dpd = (snapshot_month.normalize() - due_date).dt.days.clip(lower=0).fillna(0)
         dpd = dpd.where(disbursement_date.notna() & (disbursement_date <= snapshot_month), 0).astype(int)
         kam_hunter = _first_non_empty(df, ['Cod_Kam_hunter', 'CJ'])

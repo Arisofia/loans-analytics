@@ -32,16 +32,16 @@ def cohort_pancake_analysis(loans_df: pd.DataFrame, payments_df: pd.DataFrame, m
     pay_date_s = str(pay_date)
     pay_amt_s = str(pay_amt)
     loans = loans_df[[loan_id_s, cust_col, disb_col_s]].copy() if cust_col else loans_df[[loan_id_s, disb_col_s]].copy()
-    loans['_cohort'] = pd.to_datetime(loans[disb_col_s], errors='coerce').dt.to_period('M')
+    loans['_cohort'] = pd.to_datetime(loans[disb_col_s], errors='coerce', format='mixed').dt.to_period('M')
     pay = payments_df[[loan_id_s, pay_date_s, pay_amt_s]].copy()
-    pay['_pay_month'] = pd.to_datetime(pay[pay_date_s], errors='coerce').dt.to_period('M')
+    pay['_pay_month'] = pd.to_datetime(pay[pay_date_s], errors='coerce', format='mixed').dt.to_period('M')
     pay['_amt'] = _num(pay, pay_amt_s)
     merged = pay.merge(loans[[loan_id_s, '_cohort']], on=loan_id_s, how='left').dropna(subset=['_cohort'])
     merged['_age'] = (merged['_pay_month'] - merged['_cohort']).apply(lambda x: x.n if hasattr(x, 'n') else 0).clip(lower=0, upper=max_age_months)
     matrix = merged.groupby(['_cohort', '_age'])['_amt'].sum().unstack(fill_value=0)
     matrix = matrix.sort_index()
     if cust_col in loans_df.columns:
-        coh_clients = loans_df.groupby(pd.to_datetime(loans_df[disb_col_s], errors='coerce').dt.to_period('M'))[cust_col].nunique().rename('client_count')
+        coh_clients = loans_df.groupby(pd.to_datetime(loans_df[disb_col_s], errors='coerce', format='mixed').dt.to_period('M'))[cust_col].nunique().rename('client_count')
     else:
         coh_clients = pd.Series(dtype=int)
     cohort_rows = []

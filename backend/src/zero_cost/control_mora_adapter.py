@@ -59,15 +59,15 @@ class ControlMoraAdapter:
                 df[col] = pd.to_numeric(df[col], errors='coerce').astype('Int64')
         for col in ['disbursement_date']:
             if col in df.columns:
-                df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=False)
+                df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=False, format='mixed')
         return df
 
     def _apply_snapshot_month(self, df: pd.DataFrame, path: Path) -> pd.DataFrame:
         if self.snapshot_month:
-            raw = pd.to_datetime(self.snapshot_month)
+            raw = pd.to_datetime(self.snapshot_month, format='mixed')
             df['snapshot_month'] = (raw + pd.offsets.MonthEnd(0)).normalize()
         elif 'snapshot_month' in df.columns:
-            df['snapshot_month'] = pd.to_datetime(df['snapshot_month'], errors='coerce') + pd.offsets.MonthEnd(0)
+            df['snapshot_month'] = pd.to_datetime(df['snapshot_month'], errors='coerce', format='mixed') + pd.offsets.MonthEnd(0)
         else:
             match = re.search('(\\d{4}[-_]\\d{2}|\\d{6}|\\w{3}\\d{4})', path.stem)
             if match:

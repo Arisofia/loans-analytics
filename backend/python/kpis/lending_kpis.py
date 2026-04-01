@@ -125,7 +125,7 @@ def cdr_by_cohort(loans_df: pd.DataFrame) -> dict[str, Any]:
     if not disb_col or not status_col:
         return {'status': 'missing_columns'}
     df = loans_df.copy()
-    df['_date'] = pd.to_datetime(df[disb_col], errors='coerce')
+    df['_date'] = pd.to_datetime(df[disb_col], errors='coerce', format='mixed')
     df['_cohort'] = df['_date'].dt.to_period('M')
     df['_disb'] = _num(df, disb_amt) if disb_amt else pd.Series(1.0, index=df.index)
     df['_bal'] = _num(df, bal_col) if bal_col else df['_disb']
@@ -216,7 +216,7 @@ def balance_sheet_proxy(loans_df: pd.DataFrame, payments_df: pd.DataFrame, month
     monthly_rev = 0.0
     if pay_date and pay_int:
         pay_df = payments_df.copy()
-        pay_df['_month'] = pd.to_datetime(pay_df[pay_date], errors='coerce').dt.to_period('M')
+        pay_df['_month'] = pd.to_datetime(pay_df[pay_date], errors='coerce', format='mixed').dt.to_period('M')
         pay_df['_rev'] = _num(pay_df, pay_int) + (_num(pay_df, pay_fee) if pay_fee else 0)
         latest = pay_df['_month'].max()
         monthly_rev = float(pay_df[pay_df['_month'] == latest]['_rev'].sum())

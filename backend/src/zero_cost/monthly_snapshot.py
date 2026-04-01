@@ -31,8 +31,8 @@ class MonthlySnapshotBuilder:
         if payments_df is not None:
             df = self._join_monthly_income(df, payments_df)
         if 'disbursement_date' in df.columns:
-            snap_dates = pd.to_datetime(df['snapshot_month'])
-            disb_dates = pd.to_datetime(df['disbursement_date'])
+            snap_dates = pd.to_datetime(df['snapshot_month'], format='mixed')
+            disb_dates = pd.to_datetime(df['disbursement_date'], format='mixed')
             df['months_on_book'] = ((snap_dates.dt.year - disb_dates.dt.year) * 12 + (snap_dates.dt.month - disb_dates.dt.month)).clip(lower=0)
         logger.info('MonthlySnapshotBuilder: built %d snapshot rows for %s', len(df), df['snapshot_month'].iloc[0] if len(df) > 0 else 'n/a')
         return df
@@ -51,7 +51,7 @@ class MonthlySnapshotBuilder:
             tables['dim_client'] = dim_client
         if 'snapshot_month' in snapshot_df.columns:
             time_df = snapshot_df[['snapshot_month']].drop_duplicates().copy()
-            time_df['snapshot_month'] = pd.to_datetime(time_df['snapshot_month'])
+            time_df['snapshot_month'] = pd.to_datetime(time_df['snapshot_month'], format='mixed')
             time_df['year'] = time_df['snapshot_month'].dt.year
             time_df['month'] = time_df['snapshot_month'].dt.month
             time_df['quarter'] = time_df['snapshot_month'].dt.quarter
@@ -128,7 +128,7 @@ class MonthlySnapshotBuilder:
 
     def _set_snapshot_month(self, df: pd.DataFrame, as_of_month: str | date | None) -> pd.DataFrame:
         if as_of_month is not None:
-            raw = pd.to_datetime(str(as_of_month))
+            raw = pd.to_datetime(str(as_of_month), format='mixed')
             df['snapshot_month'] = (raw + pd.offsets.MonthEnd(0)).normalize()
         elif 'snapshot_month' not in df.columns:
             today = pd.Timestamp('today').normalize()
@@ -136,7 +136,7 @@ class MonthlySnapshotBuilder:
             df['snapshot_month'] = current_month_end
             logger.warning('snapshot_month not provided — defaulting to current month-end %s', current_month_end.date())
         else:
-            df['snapshot_month'] = pd.to_datetime(df['snapshot_month'], errors='coerce') + pd.offsets.MonthEnd(0)
+            df['snapshot_month'] = pd.to_datetime(df['snapshot_month'], errors='coerce', format='mixed') + pd.offsets.MonthEnd(0)
         return df
 
     def _join_monthly_income(self, df: pd.DataFrame, payments_df: pd.DataFrame) -> pd.DataFrame:

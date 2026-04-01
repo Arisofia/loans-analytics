@@ -185,7 +185,7 @@ def _monthly_sum_series(df: pd.DataFrame, date_col: str | None, amount_col: str 
     if not (date_col and amount_col):
         return pd.Series(dtype=float)
     monthly_df = df.copy()
-    monthly_df['_month'] = pd.to_datetime(monthly_df[date_col], errors='coerce').dt.to_period('M')
+    monthly_df['_month'] = pd.to_datetime(monthly_df[date_col], errors='coerce', format='mixed').dt.to_period('M')
     return monthly_df.groupby('_month')[amount_col].apply(lambda series: pd.to_numeric(series, errors='coerce').fillna(0).sum()).tail(tail_months)
 
 def _par_history_series(loans_df: pd.DataFrame, dpd_col: str | None, disb_col: str | None, bal_col: str | None, status_col: str | None) -> tuple[pd.Series, pd.Series]:
@@ -194,7 +194,7 @@ def _par_history_series(loans_df: pd.DataFrame, dpd_col: str | None, disb_col: s
     df_par = loans_df.copy()
     df_par['_dpd'] = pd.to_numeric(df_par[dpd_col], errors='coerce').fillna(0)
     df_par['_bal'] = pd.to_numeric(df_par[bal_col], errors='coerce').fillna(0)
-    df_par['_month'] = pd.to_datetime(df_par[disb_col], errors='coerce').dt.to_period('M')
+    df_par['_month'] = pd.to_datetime(df_par[disb_col], errors='coerce', format='mixed').dt.to_period('M')
     month_rows: list[dict[str, float | pd.Period]] = []
     for month, month_df in df_par.groupby('_month'):
         month_status = month_df[status_col].astype(str) if status_col and status_col in month_df.columns else pd.Series(['active'] * len(month_df), index=month_df.index)
