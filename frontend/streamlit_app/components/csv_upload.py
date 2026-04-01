@@ -153,7 +153,7 @@ def _to_datetime_mixed(series: pd.Series) -> pd.Series:
     try:
         return pd.to_datetime(series, errors='coerce', format='mixed')
     except TypeError:
-        return pd.to_datetime(series, errors='coerce')
+        return pd.to_datetime(series, errors='coerce', format='mixed')
 
 def _canonicalize_status(value: Any) -> str:
     raw = str(value).strip().lower()
@@ -505,7 +505,7 @@ def _detect_as_of_date(df: pd.DataFrame) -> tuple[str | None, str | None]:
         try:
             parsed = pd.to_datetime(df[col], errors='coerce', dayfirst=True, format='mixed')
         except TypeError:
-            parsed = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+            parsed = pd.to_datetime(df[col], errors='coerce', format='mixed', dayfirst=True)
         max_dt = parsed.max()
         if pd.notna(max_dt):
             return (str(max_dt.date()), col)

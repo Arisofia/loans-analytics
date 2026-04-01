@@ -70,7 +70,7 @@ class ScorecardModel:
     @staticmethod
     def _add_date_and_ratio_features(loan_df: pd.DataFrame, date_col: Optional[str]) -> None:
         if date_col:
-            loan_df[date_col] = pd.to_datetime(loan_df[date_col], errors='coerce')
+            loan_df[date_col] = pd.to_datetime(loan_df[date_col], errors='coerce', format='mixed')
             loan_df['loan_age_days'] = (pd.Timestamp.today() - loan_df[date_col]).dt.days.clip(lower=0)
             loan_df['vintage_quarter'] = loan_df[date_col].dt.to_period('Q').astype(str)
         if 'outstanding_balance' in loan_df.columns and 'collateral_value' in loan_df.columns:
@@ -113,7 +113,7 @@ class ScorecardModel:
             vol.columns = [loan_id_col_loan, 'payment_amount_std']
             beh = beh.merge(vol, on=loan_id_col_loan, how='left')
         if date_pay_col and date_col:
-            payment_df[date_pay_col] = pd.to_datetime(payment_df[date_pay_col], errors='coerce')
+            payment_df[date_pay_col] = pd.to_datetime(payment_df[date_pay_col], errors='coerce', format='mixed')
             first_late = payment_df[payment_df['_is_late'] == 1].sort_values(date_pay_col).groupby(loan_id_col_pay)[date_pay_col].first().reset_index()
             first_late.columns = [loan_id_col_loan, '_first_late_date']
             loan_df = loan_df.merge(first_late, on=loan_id_col_loan, how='left')

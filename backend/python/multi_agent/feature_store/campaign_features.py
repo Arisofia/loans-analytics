@@ -29,7 +29,7 @@ def build_campaign_features(marketing: pd.DataFrame) -> pd.DataFrame:
 
     # Origination month cohort
     if "origination_date" in df.columns:
-        orig = pd.to_datetime(df["origination_date"], errors="coerce")
+        orig = pd.to_datetime(df["origination_date"], errors="coerce", format="mixed")
         df["origination_month"] = orig.dt.to_period("M").astype(str)
     else:
         df["origination_month"] = "unknown"

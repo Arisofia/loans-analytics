@@ -66,7 +66,7 @@ def _build_dpd_lookup(intermedia_df: pd.DataFrame) -> tuple[dict[str, float], di
     else:
         fpp_col = _col(df, ['FechaPagoProgramado', 'payment_due_date'])
         if fpp_col:
-            df['_due'] = pd.to_datetime(df[fpp_col], errors='coerce')
+            df['_due'] = pd.to_datetime(df[fpp_col], errors='coerce', format='mixed')
             cutoff = pd.Timestamp('2026-03-13')
             df['_dpd'] = (cutoff - df['_due']).dt.days.clip(lower=0).fillna(0)
         else:
@@ -84,7 +84,7 @@ def _compute_hhi(series: pd.Series, df: pd.DataFrame, total: float) -> dict:
 def _estimate_ltv(loans_df: pd.DataFrame, payments_df: pd.DataFrame, cust_col: str, disb_col: str, pay_date: str | None, pay_amt: str | None, window_start: Any, trailing_months: int) -> tuple[float, float]:
     if not (pay_date and pay_amt):
         return (0.0, 0.0)
-    pay_dates = pd.to_datetime(payments_df[pay_date], errors='coerce')
+    pay_dates = pd.to_datetime(payments_df[pay_date], errors='coerce', format='mixed')
     recent = payments_df[pay_dates >= window_start]
     total_rev = _num(recent, pay_amt).sum()
     n_clients = int(loans_df[cust_col].nunique())
@@ -329,10 +329,10 @@ def calc_unit_economics(loans_df: pd.DataFrame, payments_df: pd.DataFrame, marke
     pay_amt = _col(payments_df, ['true_total_payment', 'payment_amount'])
     if disb_col is None or cust_col is None:
         return {'status': 'error', 'message': 'Missing disbursement_date or customer_id'}
-    dates = pd.to_datetime(loans_df[disb_col], errors='coerce')
+    dates = pd.to_datetime(loans_df[disb_col], errors='coerce', format='mixed')
     cutoff = dates.max()
     window_start = cutoff - pd.DateOffset(months=trailing_months)
-    all_first = loans_df.groupby(cust_col).apply(lambda g: pd.to_datetime(g[disb_col], errors='coerce').min())
+    all_first = loans_df.groupby(cust_col).apply(lambda g: pd.to_datetime(g[disb_col], errors='coerce', format='mixed').min())
     new_clients = int((all_first >= window_start).sum())
     marketing_val = marketing_spend_usd
     if marketing_val is None:
@@ -377,7 +377,7 @@ def npl_benchmarks(intermedia_df: pd.DataFrame) -> dict[str, Any]:
     if fpp_col:
         cutoff = pd.Timestamp('2026-03-13')
         active = active.copy()
-        active['_due'] = pd.to_datetime(active[fpp_col], errors='coerce')
+        active['_due'] = pd.to_datetime(active[fpp_col], errors='coerce', format='mixed')
         active['_dpd'] = (cutoff - active['_due']).dt.days.clip(lower=0).fillna(0)
     else:
         active = active.copy()

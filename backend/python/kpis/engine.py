@@ -696,7 +696,7 @@ class KPIEngineV2:
         try:
             work["_date"] = pd.to_datetime(work[date_col], format="mixed", errors="coerce")
         except TypeError:
-            work["_date"] = pd.to_datetime(work[date_col], errors="coerce")
+            work["_date"] = pd.to_datetime(work[date_col], errors="coerce", format="mixed")
         work = work.dropna(subset=["_date"])
         work["period"] = work["_date"].dt.to_period("M").astype(str)
         work["tpv"] = pd.to_numeric(work[amount_col], errors="coerce").fillna(0.0)

@@ -128,7 +128,7 @@ class SegmentationModel:
 
         date_col = next((c for c in payment_df.columns if "date" in c or "fecha" in c), None)
         if date_col:
-            payment_df[date_col] = pd.to_datetime(payment_df[date_col], errors="coerce")
+            payment_df[date_col] = pd.to_datetime(payment_df[date_col], errors="coerce", format="mixed")
             payment_df["_month"] = payment_df[date_col].dt.month
 
         beh = payment_df.groupby(loan_id_col).agg(

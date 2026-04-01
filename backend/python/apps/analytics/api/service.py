@@ -1509,7 +1509,7 @@ class KPIService:
             )
         df = df.copy()
         now = pd.Timestamp.now().normalize()
-        origination = pd.to_datetime(df["origination_date"], errors="coerce").dt.tz_localize(None)
+        origination = pd.to_datetime(df["origination_date"], errors="coerce", format="mixed").dt.tz_localize(None)
         if origination.isna().any():
             missing_count = int(origination.isna().sum())
             logger.warning(
@@ -2718,7 +2718,7 @@ class KPIService:
             if source_column in df.columns
             else pd.Series([None] * len(df), index=df.index)
         )
-        parsed = pd.to_datetime(source, errors="coerce")
+        parsed = pd.to_datetime(source, errors="coerce", format="mixed")
         return parsed.dt.to_period("M").astype(str).replace("NaT", "unknown")
 
     @staticmethod

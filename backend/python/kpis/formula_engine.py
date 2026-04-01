@@ -326,7 +326,7 @@ class KPIFormulaEngine:
         date_column = next(
             (col for col in snapshot_date_candidates
              if col in self.df.columns
-             and pd.to_datetime(self.df[col], errors="coerce").nunique(dropna=True) > 1),
+             and pd.to_datetime(self.df[col], errors="coerce", format="mixed").nunique(dropna=True) > 1),
             None,
         )
         if date_column is None:
@@ -340,7 +340,7 @@ class KPIFormulaEngine:
             date_column = next(
                 (col for col in fallback_candidates
                  if col in self.df.columns
-                 and pd.to_datetime(self.df[col], errors="coerce").nunique(dropna=True) > 1),
+                 and pd.to_datetime(self.df[col], errors="coerce", format="mixed").nunique(dropna=True) > 1),
                 None,
             )
         if date_column is None:
@@ -413,7 +413,7 @@ class KPIFormulaEngine:
         date_column = next(
             (col for col in snapshot_date_candidates
              if col in self.df.columns
-             and pd.to_datetime(self.df[col], errors="coerce").nunique(dropna=True) > 1),
+             and pd.to_datetime(self.df[col], errors="coerce", format="mixed").nunique(dropna=True) > 1),
             None,
         )
         if date_column is None:
@@ -698,6 +698,6 @@ class KPIFormulaEngine:
         try:
             dt = pd.to_datetime(self.df[column], errors="coerce", format="mixed")
         except TypeError:
-            dt = pd.to_datetime(self.df[column], errors="coerce")
+            dt = pd.to_datetime(self.df[column], errors="coerce", format="mixed")
         self._datetime_cache[column] = dt
         return dt

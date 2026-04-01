@@ -46,7 +46,7 @@ def build_loan_features(portfolio: pd.DataFrame) -> pd.DataFrame:
 
     # Days since origination
     if "origination_date" in df.columns:
-        orig = pd.to_datetime(df["origination_date"], errors="coerce")
+        orig = pd.to_datetime(df["origination_date"], errors="coerce", format="mixed")
         df["days_since_origination"] = (pd.Timestamp.now() - orig).dt.days.fillna(0).astype(int)
     else:
         df["days_since_origination"] = 0

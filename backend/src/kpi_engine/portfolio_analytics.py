@@ -462,7 +462,7 @@ def compute_churn_analysis(
 
     seg_cols = [segment_col] if segment_col and segment_col in portfolio.columns else []
     df = portfolio[[customer_col, date_col, *seg_cols]].copy()
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce", format="mixed")
     df = df.dropna(subset=[date_col])
 
     if df.empty:

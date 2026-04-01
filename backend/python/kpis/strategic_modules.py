@@ -244,7 +244,7 @@ def _resolve_compliance_columns(loans_df: pd.DataFrame) -> dict[str, str | None]
 def _compute_rotation(loans_df: pd.DataFrame, disb_col: str | None, bal_col: str | None, total_bal: float) -> float:
     if not (disb_col and bal_col and total_bal > 0):
         return 0.0
-    dates = pd.to_datetime(loans_df[disb_col], errors='coerce')
+    dates = pd.to_datetime(loans_df[disb_col], errors='coerce', format='mixed')
     disb_amt = _col(loans_df, ['disbursement_amount', 'MontoDesembolsado'])
     if not disb_amt:
         return 0.0
@@ -289,10 +289,10 @@ def _compute_ce_6m(loans_df: pd.DataFrame, payments_df: pd.DataFrame, disb_col: 
     pay_date = _col(payments_df, ['true_payment_date', 'payment_date'])
     if not (pay_amt and pay_date and disb_col):
         return None
-    payment_dates = pd.to_datetime(payments_df[pay_date], errors='coerce')
+    payment_dates = pd.to_datetime(payments_df[pay_date], errors='coerce', format='mixed')
     mask6m = payment_dates >= payment_dates.max() - pd.DateOffset(months=6)
     collected6 = _num(payments_df[mask6m], pay_amt).sum() if mask6m.any() else 0.0
-    disb_dates = pd.to_datetime(loans_df[disb_col], errors='coerce')
+    disb_dates = pd.to_datetime(loans_df[disb_col], errors='coerce', format='mixed')
     loan_6m = disb_dates >= disb_dates.max() - pd.DateOffset(months=6)
     if sched:
         sched_total = _num(loans_df[loan_6m], sched).sum() if loan_6m.any() else 0.0

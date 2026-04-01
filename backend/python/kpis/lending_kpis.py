@@ -252,7 +252,7 @@ def cure_rate_by_period(payments_df: pd.DataFrame) -> dict[str, Any]:
     if not cust_col or not stat_col or (not date_col):
         return {'status': 'missing_columns'}
     pay = payments_df.copy()
-    pay['_date'] = pd.to_datetime(pay[date_col], errors='coerce')
+    pay['_date'] = pd.to_datetime(pay[date_col], errors='coerce', format='mixed')
     pay['_month'] = pay['_date'].dt.to_period('M')
     pay['_status'] = pay[stat_col].astype(str).str.strip()
     pay = pay.sort_values([cust_col, '_date'])
@@ -277,7 +277,7 @@ def promise_to_pay_metrics(payments_df: pd.DataFrame) -> dict[str, Any]:
     if not cust_col or not stat_col:
         return {'status': 'missing_columns'}
     pay = payments_df.copy()
-    pay['_date'] = pd.to_datetime(pay[date_col], errors='coerce') if date_col else pd.NaT
+    pay['_date'] = pd.to_datetime(pay[date_col], errors='coerce', format='mixed') if date_col else pd.NaT
     pay['_status'] = pay[stat_col].astype(str).str.strip()
     pay['_amt'] = _num(pay, amt_col) if amt_col else pd.Series(1.0, index=pay.index)
     pay = pay.sort_values([cust_col, '_date'])
@@ -437,7 +437,7 @@ def collection_efficiency_6m(
         }
 
     df = loans_df.copy()
-    df['_due'] = pd.to_datetime(df[due_col], errors='coerce')
+    df['_due'] = pd.to_datetime(df[due_col], errors='coerce', format='mixed')
     df['_bal'] = pd.to_numeric(df[bal_col], errors='coerce').fillna(0)
 
     today = pd.Timestamp.now()
@@ -471,7 +471,7 @@ def collection_efficiency_6m(
             window_ids = set(window_df[loan_id_col].astype(str))
             flt = payments_df[payments_df[pay_lid].astype(str).isin(window_ids)].copy()
             if pay_date_col:
-                flt['_pdate'] = pd.to_datetime(flt[pay_date_col], errors='coerce')
+                flt['_pdate'] = pd.to_datetime(flt[pay_date_col], errors='coerce', format='mixed')
                 flt = flt[(flt['_pdate'] >= cutoff) & (flt['_pdate'] <= today)]
             collected_usd = float(pd.to_numeric(flt[pay_amt], errors='coerce').fillna(0).sum())
             if collected_usd > 0:
@@ -525,8 +525,8 @@ def sla_targets(loans_df: pd.DataFrame | None = None) -> dict[str, Any]:
         orig_col = _col(loans_df, ['origination_date', 'disbursement_date', 'fechadesembolso'])
         if app_col and orig_col:
             tmp = loans_df.copy()
-            tmp['_app'] = pd.to_datetime(tmp[app_col], errors='coerce')
-            tmp['_orig'] = pd.to_datetime(tmp[orig_col], errors='coerce')
+            tmp['_app'] = pd.to_datetime(tmp[app_col], errors='coerce', format='mixed')
+            tmp['_orig'] = pd.to_datetime(tmp[orig_col], errors='coerce', format='mixed')
             tmp['_hrs'] = (tmp['_orig'] - tmp['_app']).dt.total_seconds() / 3600
             valid = tmp['_hrs'].dropna()
             positive = valid[valid > 0]
@@ -691,7 +691,7 @@ def cost_of_debt_dscr(
                 raw_income -= float(pd.to_numeric(payments_df[pay_tax], errors='coerce').fillna(0).sum())
 
             if pay_date_col:
-                dates = pd.to_datetime(payments_df[pay_date_col], errors='coerce').dropna()
+                dates = pd.to_datetime(payments_df[pay_date_col], errors='coerce', format='mixed').dropna()
                 if len(dates) > 1:
                     months_covered = max(1.0, (dates.max() - dates.min()).days / 30)
                     annual_interest_income = raw_income / months_covered * 12

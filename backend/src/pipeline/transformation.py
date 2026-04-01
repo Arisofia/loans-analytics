@@ -295,7 +295,7 @@ class TransformationPhase:
         # (e.g. FechaDesembolso and "Fecha de Desembolso" both → origination_date)
         df = self._collapse_duplicate_columns(df)
         if "loan_id" in df.columns and "origination_date" in df.columns:
-            dates = pd.to_datetime(df["origination_date"], errors="coerce").dt.strftime("%Y%m%d")
+            dates = pd.to_datetime(df["origination_date"], errors="coerce", format="mixed").dt.strftime("%Y%m%d")
             df["loan_uid"] = df["loan_id"].astype(str) + "_" + dates.fillna("00000000")
             logger.info("Generated composite loan_uid for %d records", len(df))
         if "outstanding_balance" in df.columns:
@@ -445,7 +445,7 @@ class TransformationPhase:
         try:
             return pd.to_datetime(series, errors="coerce", dayfirst=True, format="mixed")
         except TypeError:
-            return pd.to_datetime(series, errors="coerce", dayfirst=True)
+            return pd.to_datetime(series, errors="coerce", format="mixed", dayfirst=True)
 
     @staticmethod
     def _coerce_numeric_loose(series: pd.Series) -> pd.Series:
