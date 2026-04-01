@@ -14,7 +14,7 @@ class PortfolioMartRow(BaseModel):
     vintage: str
     funded_amount: Decimal = Field(ge=Decimal("0"))
     outstanding_principal: Decimal = Field(ge=Decimal("0"))
-    apr: float = Field(ge=0)
+    apr: Decimal = Field(ge=Decimal("0"))
     term_days: int = Field(gt=0)
     days_past_due: int = Field(ge=0)
     dpd_bucket: str

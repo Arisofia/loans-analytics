@@ -5,7 +5,7 @@
  * in your environment or .env file.
  */
 export const projectId: string =
-  import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "sddviizcgheusvwqpthm";
+  import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "";
 
 export const publicAnonKey: string =
   import.meta.env.VITE_SUPABASE_ANON_KEY ?? "";

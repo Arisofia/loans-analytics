@@ -790,10 +790,11 @@ def irr_by_cohort(
         # Bracket search: NPV must be negative at r=0 sign and positive at r<0
         try:
             from scipy.optimize import brentq  # type: ignore[import-untyped]
-            f = lambda r: _npv(r, cash_flows)  # noqa: E731
-            if f(-0.999) * f(10.0) >= 0:
+            def _f(r: float) -> float:
+                return _npv(r, cash_flows)
+            if _f(-0.999) * _f(10.0) >= 0:
                 return None
-            return float(brentq(f, -0.999, 10.0, xtol=1e-8, maxiter=500))
+            return float(brentq(_f, -0.999, 10.0, xtol=1e-8, maxiter=500))
         except Exception:
             # Newton-Raphson fallback (no scipy dependency)
             r = 0.01
