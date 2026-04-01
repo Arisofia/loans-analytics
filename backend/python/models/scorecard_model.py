@@ -372,6 +372,64 @@ class ScorecardModel:
         log_odds = np.log(pd_prob / (1 - pd_prob))
         return int(self._scale_score(np.array([log_odds]))[0])
 
+    def batch_score(self, loan_records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Score a batch of loan records in a single vectorised pass.
+
+        Parameters
+        ----------
+        loan_records:
+            List of dicts, each matching the schema expected by ``predict_proba``.
+            Records may optionally include a ``loan_id`` key which is echoed back.
+
+        Returns
+        -------
+        List of dicts with keys: ``loan_id`` (if present), ``pd``, ``score``,
+        ``risk_band`` (A–D based on score quartiles: ≥700 A, 600–699 B, 500–599 C,
+        <500 D).
+        """
+        if self.lr_model is None:
+            raise RuntimeError("Model not trained or loaded")
+        if not loan_records:
+            return []
+
+        rows_df = pd.DataFrame(loan_records)
+        loan_ids = rows_df.get("loan_id", pd.Series(range(len(rows_df)), name="loan_id"))
+
+        woe_df = self._transform_woe(rows_df, self.selected_features)
+        for col in self.feature_names_woe:
+            if col not in woe_df.columns:
+                woe_df[col] = 0.0
+        woe_df = woe_df[self.feature_names_woe]
+
+        pd_probs = self.lr_model.predict_proba(woe_df.values)[:, 1]
+        pd_clipped = np.clip(pd_probs, 1e-6, 1 - 1e-6)
+        log_odds = np.log(pd_clipped / (1 - pd_clipped))
+        scores = self._scale_score(log_odds)
+
+        def _risk_band(s: int) -> str:
+            if s >= 700:
+                return "A"
+            if s >= 600:
+                return "B"
+            if s >= 500:
+                return "C"
+            return "D"
+
+        results = []
+        for i, (pd_val, score) in enumerate(zip(pd_clipped.tolist(), scores.tolist())):
+            record: Dict[str, Any] = {
+                "pd": round(float(pd_val), 6),
+                "score": int(score),
+                "risk_band": _risk_band(int(score)),
+            }
+            lid = loan_ids.iloc[i] if hasattr(loan_ids, "iloc") else loan_ids[i]
+            if lid is not None and not (isinstance(lid, float) and np.isnan(lid)):
+                record["loan_id"] = lid
+            results.append(record)
+
+        logger.info("batch_score: %d records scored", len(results))
+        return results
+
     def save(self, model_dir: str='models/scorecard') -> str:
         import pickle
         path = Path(model_dir)

@@ -36,3 +36,4 @@ ordered_migrations:
   - 20260324094000_create_kpi_targets_table.sql
   - 20260328100000_ensure_complete_kpi_definitions.sql
   - 20260401000000_add_real_payment_loan_id_fk.sql
+  - 20260401010000_encrypt_customer_pii.sql
