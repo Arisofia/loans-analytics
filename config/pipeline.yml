@@ -35,7 +35,7 @@ ingestion:
   targets:
     enabled: true
     source: "google_sheets"
-    spreadsheet_id: "${GOOGLE_SHEETS_SPREADSHEET_ID}"
+    spreadsheet_id: null
     worksheet: "TARGETS_2026"
     expected_columns:
       - "Month"
