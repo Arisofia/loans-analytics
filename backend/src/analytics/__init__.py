@@ -49,7 +49,7 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
         enriched['ltv_ratio'] = enriched['loan_amount'] / enriched['appraised_value'].replace(0, np.nan)
     income_positive = enriched['borrower_income'] > 0
     enriched['dti_ratio'] = np.nan
-    enriched.loc[income_positive, 'dti_ratio'] = enriched.loc[income_positive, 'monthly_debt'] / (enriched.loc[income_positive, 'borrower_income'] / 12.0)
+    enriched.loc[income_positive, 'dti_ratio'] = enriched.loc[income_positive, 'monthly_debt'] / (enriched.loc[income_positive, 'borrower_income'] / 12)
     principal_series = enriched['principal_balance'].dropna()
     principal_sum = Decimal(str(principal_series.sum()))
     delinquent_mask = enriched['loan_status'].astype(str).str.lower().eq('delinquent')
@@ -64,8 +64,14 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
     portfolio_yield = float(
         weighted_interest_sum / principal_sum
     ) if principal_sum > 0 else 0.0
-    average_ltv = 0.0 if enriched['ltv_ratio'].dropna().empty else float(enriched['ltv_ratio'].mean(skipna=True))
-    average_dti = 0.0 if enriched['dti_ratio'].dropna().empty else float(enriched['dti_ratio'].mean(skipna=True))
+    ltv_values = enriched['ltv_ratio'].dropna()
+    average_ltv = 0.0 if ltv_values.empty else float(
+        Decimal(str(float(ltv_values.sum()))) / Decimal(str(len(ltv_values)))
+    )
+    dti_values = enriched['dti_ratio'].dropna()
+    average_dti = 0.0 if dti_values.empty else float(
+        Decimal(str(float(dti_values.sum()))) / Decimal(str(len(dti_values)))
+    )
     metrics = {'delinquency_rate': delinquency_rate, 'portfolio_yield': portfolio_yield, 'average_ltv': average_ltv, 'average_dti': average_dti}
     return (metrics, enriched)
 
