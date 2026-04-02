@@ -73,7 +73,6 @@ def get_threshold_status(
         return _eval_only_warning(value, float(warning_val))
 
 
-
 def enrich_kpis_with_thresholds(
     kpi_snapshot: dict[str, Any], thresholds_map: Optional[dict[str, dict]] = None
 ) -> dict[str, dict[str, Any]]:
