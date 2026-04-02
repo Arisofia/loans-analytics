@@ -267,7 +267,7 @@ class KPIFormulaEngine:
         return any(kw in formula for kw in ("current_month", "previous_month", "current_year", "previous_year"))
 
     def _is_arithmetic_formula(self, formula: str) -> bool:
-        return any((op in formula for op in [" + ", " - ", " * ", " / "])) and "(" in formula
+        return any((op in formula for op in [" + ", " - ", " * ", " / "]))
 
     def _execute_comparison_formula(self, formula: str, *, strict_errors: bool = False) -> Decimal:
         expression = formula
@@ -306,9 +306,7 @@ class KPIFormulaEngine:
             return left * right
         if isinstance(operator, ast.Div):
             if right == 0:
-                if strict:
-                    raise KPIFormulaError("Division by zero in KPI formula")
-                return Decimal("0.0")
+                raise ZeroDivisionError("division by zero in KPI formula")
             return safe_decimal_divide(left, right, precision=8)
         raise ValueError(f"Unsupported binary operator: {type(operator).__name__}")
 
@@ -478,6 +476,8 @@ class KPIFormulaEngine:
             token = formula[start:end]
             replacement = str(self._execute_simple_formula(token))
             expression = expression[:start] + replacement + expression[end:]
+        # Resolve bare column references before evaluating
+        expression = self._resolve_bare_column_references(expression, original_formula=formula)
         try:
             return self._safe_eval_numeric_expression(expression)
         except ZeroDivisionError as exc:
@@ -542,6 +542,31 @@ class KPIFormulaEngine:
                 str(filtered_df[column].nunique() if distinct else filtered_df[column].count())
             )
         return result
+
+    def _resolve_bare_column_references(self, expression: str, *, original_formula: str = "") -> str:
+        """
+        Replace bare identifier tokens (column names) with their SUM values.
+        Raises FormulaExecutionError for any identifier that is not a DataFrame column.
+        This ensures formulas like 'a / b' are evaluated as SUM(a)/SUM(b) and that
+        unknown identifiers (e.g. 'None', missing columns) never silently return zero.
+        """
+        identifiers = set(re.findall(r'\b[a-zA-Z_]\w*\b', expression))
+        # Sort longest-first to prevent shorter names from partially replacing longer ones
+        for token in sorted(identifiers, key=len, reverse=True):
+            if token not in self.df.columns:
+                raise FormulaExecutionError(
+                    formula_id="arithmetic",
+                    reason=f"identifier '{token}' is not a column in the data",
+                    context={
+                        "expression": expression,
+                        "original_formula": original_formula,
+                        "run_id": self.run_id,
+                    },
+                )
+            numeric = pd.to_numeric(self.df[token], errors="coerce").dropna()
+            value = safe_decimal_sum(numeric.tolist())
+            expression = re.sub(r'\b' + re.escape(token) + r'\b', str(value), expression)
+        return expression
 
     def _apply_where_clause(self, condition: str) -> pd.DataFrame:
         cached_mask = self._where_cache.get(condition)

@@ -38,11 +38,20 @@ def test_numeric_expression_fuzz_is_stable(a: float, b: float, c: float) -> None
 @settings(max_examples=120, deadline=None)
 @given(numerator=_finite_float)
 def test_division_by_zero_fails_closed(numerator: float) -> None:
+    """Division by zero must raise FormulaExecutionError, never silently return 0.0."""
+    from backend.loans_analytics.kpis.formula_engine import FormulaExecutionError
     engine = KPIFormulaEngine(_sample_df())
-    result = engine._safe_eval_numeric_expression(f"({numerator}) / 0")
-    from decimal import Decimal
-
-    assert result == Decimal("0.0")
+    try:
+        result = engine._safe_eval_numeric_expression(f"({numerator}) / 0")
+        # Should not reach here
+        raise AssertionError(f"Expected FormulaExecutionError but got result: {result}")
+    except ZeroDivisionError:
+        # This is wrapped by _safe_eval_numeric_expression in _execute_arithmetic_formula
+        # For direct _safe_eval_numeric_expression call, ZeroDivisionError is acceptable
+        pass
+    except FormulaExecutionError as e:
+        # Also acceptable if wrapped
+        assert "division by zero" in str(e).lower()
 
 
 @settings(max_examples=150, deadline=None, suppress_health_check=[HealthCheck.too_slow])
@@ -51,11 +60,18 @@ def test_division_by_zero_fails_closed(numerator: float) -> None:
 @example("current_month_balance / (previous_month_balance - previous_month_balance)")
 @given(payload=st.text(alphabet=_formula_alphabet, min_size=1, max_size=120))
 def test_untrusted_formula_input_never_crashes(payload: str) -> None:
+    """Untrusted input must not crash the engine; it raises FormulaExecutionError or returns a result.
+    
+    This test ensures the formula engine is resilient to malformed and malicious input without
+    crashing the interpreter. Raising FormulaExecutionError is the expected controlled failure.
+    """
+    from backend.loans_analytics.kpis.formula_engine import FormulaExecutionError
     engine = KPIFormulaEngine(_sample_df())
     try:
         result = engine.calculate(payload)
         from decimal import Decimal
 
         assert isinstance(result, Decimal)
-    except KPIFormulaError:
-        pass  # Controlled failure is acceptable for untrusted input
+    except (KPIFormulaError, FormulaExecutionError):
+        # Controlled failure is acceptable for untrusted input
+        pass
