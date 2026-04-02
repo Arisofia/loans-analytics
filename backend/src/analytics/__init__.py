@@ -64,13 +64,24 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
     portfolio_yield = float(
         weighted_interest_sum / principal_sum
     ) if principal_sum > 0 else 0.0
-    ltv_values = enriched['ltv_ratio'].dropna()
-    average_ltv = 0.0 if ltv_values.empty else float(
-        Decimal(str(float(ltv_values.sum()))) / Decimal(str(len(ltv_values)))
+    ltv_pairs = [
+        (Decimal(str(la)), Decimal(str(av)))
+        for la, av in zip(enriched['loan_amount'], enriched['appraised_value'])
+        if pd.notna(la) and pd.notna(av) and av != 0
+    ]
+    average_ltv = 0.0 if not ltv_pairs else float(
+        sum(la / av for la, av in ltv_pairs) / Decimal(str(len(ltv_pairs)))
     )
-    dti_values = enriched['dti_ratio'].dropna()
-    average_dti = 0.0 if dti_values.empty else float(
-        Decimal(str(float(dti_values.sum()))) / Decimal(str(len(dti_values)))
+    dti_pairs = [
+        (Decimal(str(md)), Decimal(str(bi)))
+        for md, bi in zip(
+            enriched.loc[income_positive, 'monthly_debt'],
+            enriched.loc[income_positive, 'borrower_income'],
+        )
+        if pd.notna(md) and pd.notna(bi)
+    ]
+    average_dti = 0.0 if not dti_pairs else float(
+        sum(md / (bi / Decimal('12')) for md, bi in dti_pairs) / Decimal(str(len(dti_pairs)))
     )
     metrics = {'delinquency_rate': delinquency_rate, 'portfolio_yield': portfolio_yield, 'average_ltv': average_ltv, 'average_dti': average_dti}
     return (metrics, enriched)
