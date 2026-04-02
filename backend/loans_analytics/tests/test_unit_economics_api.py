@@ -20,67 +20,67 @@ class TestUnitEconomicsEndpoint:
         client = TestClient(app)
         payload = {'loans': _mixed_portfolio()}
         response = client.post('/analytics/unit-economics', json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 200  # nosec B101
 
     def test_response_has_all_top_level_keys(self):
         client = TestClient(app)
         payload = {'loans': _mixed_portfolio()}
         body = client.post('/analytics/unit-economics', json=payload).json()
         expected_keys = {'generated_at', 'npl', 'lgd', 'cost_of_risk', 'nim', 'payback', 'cure_rate', 'dpd_migration'}
-        assert expected_keys.issubset(body.keys())
+        assert expected_keys.issubset(body.keys())  # nosec B101
 
     def test_npl_structure(self):
         client = TestClient(app)
         payload = {'loans': _mixed_portfolio()}
         body = client.post('/analytics/unit-economics', json=payload).json()
         npl = body['npl']
-        assert 'npl_ratio' in npl
-        assert 'npl_balance' in npl
-        assert 'total_balance' in npl
-        assert 'npl_loan_count' in npl
-        assert 'formula' in npl
-        assert npl['npl_ratio'] > 0
+        assert 'npl_ratio' in npl  # nosec B101
+        assert 'npl_balance' in npl  # nosec B101
+        assert 'total_balance' in npl  # nosec B101
+        assert 'npl_loan_count' in npl  # nosec B101
+        assert 'formula' in npl  # nosec B101
+        assert npl['npl_ratio'] > 0  # nosec B101
 
     def test_lgd_structure(self):
         client = TestClient(app)
         payload = {'loans': _mixed_portfolio()}
         body = client.post('/analytics/unit-economics', json=payload).json()
         lgd = body['lgd']
-        assert 'lgd_pct' in lgd
-        assert 'recovery_rate_pct' in lgd
-        assert 'defaulted_balance' in lgd
-        assert 'recovered_amount' in lgd
-        assert 0.0 <= lgd['lgd_pct'] <= 100.0
+        assert 'lgd_pct' in lgd  # nosec B101
+        assert 'recovery_rate_pct' in lgd  # nosec B101
+        assert 'defaulted_balance' in lgd  # nosec B101
+        assert 'recovered_amount' in lgd  # nosec B101
+        assert 0.0 <= lgd['lgd_pct'] <= 100.0  # nosec B101
 
     def test_cost_of_risk_structure(self):
         client = TestClient(app)
         payload = {'loans': _mixed_portfolio()}
         body = client.post('/analytics/unit-economics', json=payload).json()
         cor = body['cost_of_risk']
-        assert 'cost_of_risk_pct' in cor
-        assert 'npl_ratio' in cor
-        assert 'lgd_pct' in cor
-        assert 'expected_loss_balance' in cor
+        assert 'cost_of_risk_pct' in cor  # nosec B101
+        assert 'npl_ratio' in cor  # nosec B101
+        assert 'lgd_pct' in cor  # nosec B101
+        assert 'expected_loss_balance' in cor  # nosec B101
 
     def test_nim_structure_and_values(self):
         client = TestClient(app)
         payload = {'loans': _mixed_portfolio(), 'funding_cost_rate': 0.06}
         body = client.post('/analytics/unit-economics', json=payload).json()
         nim = body['nim']
-        assert 'nim_pct' in nim
-        assert 'gross_yield_pct' in nim
-        assert 'funding_cost_pct' in nim
-        assert nim['funding_cost_pct'] == pytest.approx(6.0, abs=0.01)
+        assert 'nim_pct' in nim  # nosec B101
+        assert 'gross_yield_pct' in nim  # nosec B101
+        assert 'funding_cost_pct' in nim  # nosec B101
+        assert nim['funding_cost_pct'] == pytest.approx(6.0, abs=0.01)  # nosec B101
 
     def test_payback_period_with_cac_and_arpu(self):
         client = TestClient(app)
         payload = {'loans': _mixed_portfolio(), 'cac': 100.0, 'monthly_arpu': 25.0}
         body = client.post('/analytics/unit-economics', json=payload).json()
         payback = body['payback']
-        assert 'payback_months' in payback
-        assert payback['payback_months'] == pytest.approx(4.0, abs=0.01)
-        assert payback['cac'] == pytest.approx(100.0)
-        assert payback['monthly_arpu'] == pytest.approx(25.0)
+        assert 'payback_months' in payback  # nosec B101
+        assert payback['payback_months'] == pytest.approx(4.0, abs=0.01)  # nosec B101
+        assert payback['cac'] == pytest.approx(100.0)  # nosec B101
+        assert payback['monthly_arpu'] == pytest.approx(25.0)  # nosec B101
 
     def test_payback_period_zero_arpu(self):
         client = TestClient(app)
