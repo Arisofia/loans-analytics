@@ -2,17 +2,20 @@
 
 on:
   push:
-    branches: ["main", "develop"]
+    branches:
+      - main
+      - develop
     paths-ignore:
-      - "frontend/**"
-      - "**/*.md"
-      - "docs/**"
+      - frontend/**
+      - '**/*.md'
+      - docs/**
   pull_request:
-    branches: ["main"]
+    branches:
+      - main
     paths-ignore:
-      - "frontend/**"
-      - "**/*.md"
-      - "docs/**"
+      - frontend/**
+      - '**/*.md'
+      - docs/**
   workflow_dispatch:
 
 jobs:
