@@ -171,10 +171,17 @@ cash_flow_kpis:
     unit: "USD"
     description: "Total current cash position across portfolio"
 
-  net_interest_margin:
-    formula: "(AVG(interest_rate) - 0.08) * 100"
-    unit: "percentage"
-    description: "Approximate NIM using an 8% funding-cost proxy: (average portfolio yield - 8% funding cost) * 100"
+  nim_proxy:
+    id: nim_proxy
+    label: "NIM Proxy"
+    formula: "(avg_interest_rate - {funding_cost_rate}) * 100"
+    parameter_refs:
+      funding_cost_rate: "financial_assumptions.funding_cost_rate"
+    unit: percent
+    precision: 2
+    rounding: ROUND_HALF_UP
+    ssot: true
+    note: "funding_cost_rate injected from business_parameters.yml at runtime. Never hardcoded."
     thresholds:
       warning: 5
       target: 10

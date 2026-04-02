@@ -1,4 +1,4 @@
-﻿name: "Security Scan"
+name: "Security Scan"
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@v4
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
@@ -61,7 +61,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@v4
 
       - name: Skip Snyk scan when token is missing
         if: ${{ env.SNYK_TOKEN == '' }}
@@ -89,7 +89,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@v4
 
       - name: Set up Python
         run: |
@@ -98,7 +98,7 @@ jobs:
           elif command -v python3 >/dev/null 2>&1; then
             PYTHON_BIN="python3"
           else
-            echo "❌ Python is not available on runner"
+            echo "? Python is not available on runner"
             exit 1
           fi
           echo "PYTHON_BIN=$PYTHON_BIN" >> "$GITHUB_ENV"
@@ -117,17 +117,17 @@ jobs:
           
           # Run safety check and capture exit code
           if safety check --save-json safety-report.json; then
-            echo "✅ Safety check passed - no known vulnerabilities detected"
+            echo "? Safety check passed - no known vulnerabilities detected"
           else
             safety_exit_code=$?
             
-            # Exit 64 = vulnerabilities found (informational — tracked via pip-audit separately)
+            # Exit 64 = vulnerabilities found (informational � tracked via pip-audit separately)
             # Exit 65 = auth error (offline DB used, acceptable)
             # Other exit codes are warnings only
             if [ "$safety_exit_code" -eq 64 ] || [ "$safety_exit_code" -eq 65 ]; then
-              echo "⚠️ Safety reported vulnerabilities or auth issue (exit $safety_exit_code) — see safety-report.json"
+              echo "?? Safety reported vulnerabilities or auth issue (exit $safety_exit_code) � see safety-report.json"
             else
-              echo "⚠️ Safety check completed with exit code $safety_exit_code"
+              echo "?? Safety check completed with exit code $safety_exit_code"
             fi
           fi
 
@@ -146,19 +146,19 @@ jobs:
             echo "Scanning directories: ${SCAN_DIRS[*]}"
             # Generate JSON report for analysis
             bandit -r "${SCAN_DIRS[@]}" -f json -o bandit-report.json || {
-              echo "⚠️ Bandit found issues (JSON report generated)"
+              echo "?? Bandit found issues (JSON report generated)"
             }
             # Generate SARIF report for GitHub Security tab
             bandit -r "${SCAN_DIRS[@]}" -f sarif -o bandit-results.sarif \
               --severity-level medium || {
-              echo "⚠️ Bandit found medium+ severity issues (SARIF report generated)"
+              echo "?? Bandit found medium+ severity issues (SARIF report generated)"
             }
             # Display results
             bandit -r "${SCAN_DIRS[@]}" --severity-level medium -f screen || {
-              echo "⚠️ Bandit found issues"
+              echo "?? Bandit found issues"
             }
           else
-            echo "⚠️ No Python source directories found to scan"
+            echo "?? No Python source directories found to scan"
             echo "[]" > bandit-report.json
             printf '%s\n' "{\"version\":\"2.1.0\",\"\$schema\":\"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json\",\"runs\":[]}" > bandit-results.sarif
           fi
@@ -198,7 +198,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@v4
 
       - name: Run Gitleaks
         shell: bash
@@ -228,7 +228,7 @@ jobs:
           
           # Run detection (failures are reported but don't block workflow)
           gitleaks detect --source . --config .gitleaks.toml --redact --verbose || {
-            echo "⚠️ Gitleaks found potential secrets - see output above"
+            echo "?? Gitleaks found potential secrets - see output above"
           }
 
   container-scan:
@@ -239,7 +239,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@v4
 
       - name: Build pipeline image for scanning
         shell: bash

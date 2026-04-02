@@ -50,3 +50,25 @@ portfolio_targets_2026:
   "2026-10": 11200000
   "2026-11": 11600000
   "2026-12": 12000000
+
+financial_assumptions:
+  funding_cost_rate: 0.08          # Cost of funds (decimal). Sourced: treasury review Q1 2026.
+                                    # MUST be reviewed quarterly. Drives NIM proxy.
+  lgd_method: "empirical"          # "empirical" = compute from recovery_amount/disbursed
+                                    # "fixed" = use lgd_fixed_rate below
+  lgd_fixed_rate: 0.90             # Used only when lgd_method = "fixed"
+  lgd_floor: 0.40                  # Minimum LGD even when empirical recovery is high
+  lgd_ceil: 0.95                   # Maximum LGD cap
+
+pd_assignment:
+  source: "scorecard"              # "scorecard" | "dpd_bucket" | "blend"
+  scorecard_model_path: "backend/loans_analytics/models/scorecard_model.pkl"
+  dpd_buckets:                     # Fallback when scorecard unavailable
+    current:   0.005
+    dpd_30:    0.050
+    dpd_60:    0.150
+    dpd_90:    0.350
+    dpd_180:   0.700
+    defaulted: 1.000
+  blend_weight_scorecard: 0.70     # Used only when source = "blend"
+  blend_weight_dpd:        0.30

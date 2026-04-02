@@ -1,7 +1,8 @@
 # Loans Analytics — Decision Intelligence Platform
 
-[![Pipeline](https://img.shields.io/badge/Pipeline-Operational-brightgreen)]()
-[![KPIs](https://img.shields.io/badge/KPIs-40%2B_Production-blue)]()
+[![Pipeline](https://img.shields.io/badge/Pipeline-Phases_1--4_Operational-brightgreen)]()
+[![KPIs](https://img.shields.io/badge/KPIs-40%2B_Validated-blue)]()
+[![Phase5](https://img.shields.io/badge/Phase_5-In_Development-orange)]()
 [![Python](https://img.shields.io/badge/Python-3.12-blue)]()
 [![Tests](https://img.shields.io/badge/Tests-CI_Verified-success)]()
 [![License](https://img.shields.io/badge/License-Proprietary-red)]()
@@ -231,7 +232,7 @@ backend/
 │   ├── anomaly_detection.py # Z-score + IQR outlier detection
 │   ├── blocking_policy.py  # BLOCKING severity enforcement
 │   └── engine.py           # run_quality_engine() facade
-├── python/
+├── loans_analytics/
 │   ├── kpis/
 │   │   ├── engine.py              # KPIEngineV2 (SSOT, Decimal, audit trail)
 │   │   ├── ssot_asset_quality.py  # Single Source of Truth PAR/NPL
@@ -244,7 +245,6 @@ backend/
 │   │   ├── orchestrator.py         # LLM-based: 22 scenarios, 9 agent roles
 │   │   ├── protocol.py             # Agent communication protocol
 │   │   ├── guardrails.py           # PII redaction, input sanitization
-│   │   ├── decision_orchestrator.py # Backward-compat monolithic orchestrator
 │   │   ├── orchestrator/           # Modular decision orchestrator subpackage
 │   │   │   ├── decision_orchestrator.py # Main orchestrator (15+ agents)
 │   │   │   ├── priority_rules.py       # 7-level priority hierarchy

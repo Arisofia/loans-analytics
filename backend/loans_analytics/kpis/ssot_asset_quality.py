@@ -1,7 +1,16 @@
 from __future__ import annotations
+from decimal import ROUND_HALF_UP, Decimal, getcontext
 from collections.abc import Sequence
 import pandas as pd
 from backend.loans_analytics.kpis.formula_engine import KPIFormulaEngine
+
+# Enforce decimal context at import time — not at function call time.
+# Any module-level misconfiguration of the decimal context is caught immediately.
+_CTX = getcontext()
+assert _CTX.rounding == ROUND_HALF_UP, (
+    f"FATAL: Decimal rounding mode is '{_CTX.rounding}', expected ROUND_HALF_UP. "
+    "Call decimal.getcontext().rounding = ROUND_HALF_UP before importing this module."
+)
 
 _METRIC_ALIAS_TO_ID: dict[str, str] = {
     "par30": "par_30",

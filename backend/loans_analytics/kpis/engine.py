@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 KPIEngineV2 — DEPRECATED.
 Canonical engine: backend/src/kpi_engine/engine.py (run_metric_engine).
@@ -6,7 +7,6 @@ All new code MUST import from backend.src.kpi_engine.engine.
 """
 import warnings
 from backend.src.kpi_engine.engine import run_metric_engine  # noqa: F401
-from __future__ import annotations
 import hashlib
 import json
 from datetime import datetime

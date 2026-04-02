@@ -60,6 +60,23 @@ def load_business_rules(rules_path: Optional[Path] = None) -> Dict[str, Any]:
         raise FileNotFoundError(f'Business rules file not found at {rules_path}. Critical business logic depends on this configuration.')
     return _load_required_yaml_dict(rules_path, 'Business rules')
 
+
+def load_business_parameters(params_path: Optional[Path] = None) -> Dict[str, Any]:
+    """
+    Load business parameters from YAML file.
+
+    Args:
+        params_path: Path to business_parameters.yml
+
+    Returns:
+        Dictionary of business parameters
+    """
+    if params_path is None:
+        params_path = Path(__file__).parent.parent.parent.parent / 'config' / 'business_parameters.yml'
+    if not params_path.exists():
+        raise FileNotFoundError(f'Business parameters file not found at {params_path}.')
+    return _load_required_yaml_dict(params_path, 'Business parameters')
+
 def load_kpi_definitions(kpi_path: Optional[Path]=None) -> Dict[str, Any]:
     if kpi_path is None:
         kpi_path = Path(__file__).parent.parent.parent.parent / 'config' / 'kpis' / 'kpi_definitions.yaml'
