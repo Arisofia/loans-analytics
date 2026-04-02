@@ -3,8 +3,16 @@
 on:
   push:
     branches: ["main", "develop"]
+    paths-ignore:
+      - "frontend/**"
+      - "**/*.md"
+      - "docs/**"
   pull_request:
     branches: ["main"]
+    paths-ignore:
+      - "frontend/**"
+      - "**/*.md"
+      - "docs/**"
   workflow_dispatch:
 
 jobs:
