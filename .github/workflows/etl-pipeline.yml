@@ -200,6 +200,11 @@ jobs:
           echo "❌ PostgreSQL readiness acknowledgement not received in time."
           exit 1
 
+      - name: Validate prod lock file (dry-run)
+        run: |
+          grep -viE '^(pywin32==)' requirements.prod.lock.txt > /tmp/requirements.prod.linux.txt
+          python -m pip install --dry-run -r /tmp/requirements.prod.linux.txt
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
