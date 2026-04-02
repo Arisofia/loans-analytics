@@ -1,0 +1,9 @@
+# Exclude frontend TypeScript/JavaScript from CodeQL analysis
+# This repository focuses on Python backend analysis
+frontend/
+node_modules/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
