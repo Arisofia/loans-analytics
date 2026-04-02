@@ -6,7 +6,7 @@ import json
 import logging
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -25,20 +25,20 @@ IV_MEDIUM = 0.3
 class ScorecardModel:
 
     def __init__(self) -> None:
-        self.binning_map: Dict[str, Any] = {}
+        self.binning_map: dict[str, Any] = {}
         self.iv_table: pd.DataFrame = pd.DataFrame()
-        self.selected_features: List[str] = []
-        self.lr_model: Optional[LogisticRegression] = None
+        self.selected_features: list[str] = []
+        self.lr_model: LogisticRegression | None = None
         self.scorecard_table: pd.DataFrame = pd.DataFrame()
-        self.metadata: Dict[str, Any] = {}
-        self.feature_names_woe: List[str] = []
+        self.metadata: dict[str, Any] = {}
+        self.feature_names_woe: list[str] = []
 
     @staticmethod
     def _normalize_columns(df: pd.DataFrame) -> None:
         df.columns = [str(c).strip().lower().replace(' ', '_') for c in df.columns]
 
     @staticmethod
-    def _find_col(df: pd.DataFrame, *patterns: str) -> Optional[str]:
+    def _find_col(df: pd.DataFrame, *patterns: str) -> str | None:
         for col in df.columns:
             for pat in patterns:
                 if pat in col:
@@ -46,12 +46,12 @@ class ScorecardModel:
         return None
 
     @staticmethod
-    def _coerce_alias_column(loan_df: pd.DataFrame, source_col: Optional[str], target_col: str) -> None:
+    def _coerce_alias_column(loan_df: pd.DataFrame, source_col: str | None, target_col: str) -> None:
         if source_col and source_col != target_col:
             loan_df[target_col] = pd.to_numeric(loan_df[source_col], errors='coerce')
 
     @staticmethod
-    def _add_core_loan_features(loan_df: pd.DataFrame) -> Optional[str]:
+    def _add_core_loan_features(loan_df: pd.DataFrame) -> str | None:
         status_col = ScorecardModel._find_col(loan_df, 'status', 'estado', 'estatus')
         if status_col is None:
             raise ValueError("No status column found in loan_df. Expected a column containing 'status' or 'estado'.")
@@ -68,7 +68,7 @@ class ScorecardModel:
         return ScorecardModel._find_col(loan_df, 'disburs', 'originat', 'fecha_desembolso')
 
     @staticmethod
-    def _add_date_and_ratio_features(loan_df: pd.DataFrame, date_col: Optional[str]) -> None:
+    def _add_date_and_ratio_features(loan_df: pd.DataFrame, date_col: str | None) -> None:
         if date_col:
             loan_df[date_col] = pd.to_datetime(loan_df[date_col], errors='coerce', format='mixed')
             loan_df['loan_age_days'] = (pd.Timestamp.today() - loan_df[date_col]).dt.days.clip(lower=0)
@@ -90,7 +90,7 @@ class ScorecardModel:
         return max_c
 
     @staticmethod
-    def _merge_payment_behavior_features(loan_df: pd.DataFrame, payment_df: pd.DataFrame, date_col: Optional[str]) -> pd.DataFrame:
+    def _merge_payment_behavior_features(loan_df: pd.DataFrame, payment_df: pd.DataFrame, date_col: str | None) -> pd.DataFrame:
         loan_id_col_pay = ScorecardModel._find_col(payment_df, 'loan_id', 'prestamo_id', 'id_prestamo')
         loan_id_col_loan = ScorecardModel._find_col(loan_df, 'loan_id', 'id_prestamo', 'prestamo_id')
         if not (loan_id_col_pay and loan_id_col_loan):
@@ -162,7 +162,7 @@ class ScorecardModel:
             return 'Weak'
         return 'Medium' if iv_val < IV_MEDIUM else 'Strong'
 
-    def _build_iv_record(self, feat: str, iv_val: float, n_bins: int, woe_range: float, dtype: str) -> Dict[str, Any]:
+    def _build_iv_record(self, feat: str, iv_val: float, n_bins: int, woe_range: float, dtype: str) -> dict[str, Any]:
         return {
             'feature': feat,
             'iv': round(iv_val, 4),
@@ -177,7 +177,7 @@ class ScorecardModel:
         return len(np.unique(values)) >= 2
 
     @staticmethod
-    def _prepare_feature_target_arrays(df: pd.DataFrame, feat: str, target: str) -> Optional[Tuple[pd.Series, np.ndarray, np.ndarray]]:
+    def _prepare_feature_target_arrays(df: pd.DataFrame, feat: str, target: str) -> tuple[pd.Series, np.ndarray, np.ndarray] | None:
         series = df[feat]
         y = df[target]
         mask = series.notna()
@@ -193,20 +193,20 @@ class ScorecardModel:
         return ob.binning_table.build()
 
     @staticmethod
-    def _calculate_binning_metrics(bt: pd.DataFrame) -> Tuple[float, int, float]:
+    def _calculate_binning_metrics(bt: pd.DataFrame) -> tuple[float, int, float]:
         iv_val = float(bt.loc[bt.index[:-1], 'IV'].sum())
         woe_vals = bt.loc[bt.index[:-1], 'WoE'].dropna()
         woe_range = round(float(woe_vals.max() - woe_vals.min()), 4) if len(woe_vals) > 0 else 0.0
         n_bins = len(bt) - 1
         return iv_val, n_bins, woe_range
 
-    def _compute_binning_stats(self, feat: str, dtype: str, x_clean: np.ndarray, y_clean: np.ndarray) -> Tuple[Any, float, int, float]:
+    def _compute_binning_stats(self, feat: str, dtype: str, x_clean: np.ndarray, y_clean: np.ndarray) -> tuple[Any, float, int, float]:
         ob = self._create_optimal_binning(feat, dtype)
         bt = self._fit_and_build_binning(ob, x_clean, y_clean)
         iv_val, n_bins, woe_range = self._calculate_binning_metrics(bt)
         return (ob, iv_val, n_bins, woe_range)
 
-    def _compute_feature_iv_record(self, df: pd.DataFrame, feat: str, target: str) -> Optional[Tuple[Any, Dict[str, Any]]]:
+    def _compute_feature_iv_record(self, df: pd.DataFrame, feat: str, target: str) -> tuple[Any, dict[str, Any]] | None:
         prepared = self._prepare_feature_target_arrays(df, feat, target)
         if prepared is None:
             return None
@@ -230,8 +230,8 @@ class ScorecardModel:
         from optbinning import OptimalBinning
         return OptimalBinning(name=feat, dtype=dtype, solver='cp', max_n_bins=8, min_bin_size=0.03)
 
-    def _collect_iv_records(self, df: pd.DataFrame, candidate_features: List[str], target: str) -> List[Dict[str, Any]]:
-        records: List[Dict[str, Any]] = []
+    def _collect_iv_records(self, df: pd.DataFrame, candidate_features: list[str], target: str) -> list[dict[str, Any]]:
+        records: list[dict[str, Any]] = []
         self.binning_map = {}
         for feat in candidate_features:
             if feat not in df.columns:
@@ -244,14 +244,14 @@ class ScorecardModel:
             records.append(record)
         return records
 
-    def compute_iv_table(self, df: pd.DataFrame, candidate_features: List[str], target: str='is_default') -> pd.DataFrame:
+    def compute_iv_table(self, df: pd.DataFrame, candidate_features: list[str], target: str = 'is_default') -> pd.DataFrame:
         self._ensure_optbinning_installed()
         records = self._collect_iv_records(df, candidate_features, target)
         iv_df = pd.DataFrame(records).sort_values('iv', ascending=False).reset_index(drop=True)
         self.iv_table = iv_df
         return iv_df
 
-    def _transform_woe(self, df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
+    def _transform_woe(self, df: pd.DataFrame, features: list[str]) -> pd.DataFrame:
         woe_df = pd.DataFrame(index=df.index)
         for feat in features:
             if feat not in self.binning_map:
@@ -274,7 +274,7 @@ class ScorecardModel:
         scores = offset - factor * log_odds
         return np.clip(scores, 300, 850).astype(int)
 
-    def fit(self, loan_df: pd.DataFrame, payment_df: pd.DataFrame, customer_df: pd.DataFrame, iv_threshold: float=IV_USELESS, cv_folds: int=5, feature_allowlist: Optional[List[str]]=None) -> Dict[str, Any]:
+    def fit(self, loan_df: pd.DataFrame, payment_df: pd.DataFrame, customer_df: pd.DataFrame, iv_threshold: float = IV_USELESS, cv_folds: int = 5, feature_allowlist: list[str] | None = None) -> dict[str, Any]:
         logger.info('Building model dataset...')
         model_df = self.build_model_dataset(loan_df, payment_df, customer_df)
         target = 'is_default'
@@ -355,7 +355,7 @@ class ScorecardModel:
                 rows.append({'feature': feat, 'bin': str(row.get('Bin', '')), 'count': int(row.get('Count', 0)), 'event_rate': round(float(row.get('Event rate', 0)) * 100, 2), 'woe': round(float(woe_val), 4), 'iv_bin': round(float(row.get('IV', 0)), 4), 'points': round(float(points), 1)})
         return pd.DataFrame(rows)
 
-    def predict_proba(self, loan_data: Dict[str, Any]) -> float:
+    def predict_proba(self, loan_data: dict[str, Any]) -> float:
         if self.lr_model is None:
             raise RuntimeError('Model not trained or loaded')
         row = pd.DataFrame([loan_data])
@@ -366,13 +366,13 @@ class ScorecardModel:
         woe_df = woe_df[self.feature_names_woe]
         return float(self.lr_model.predict_proba(woe_df.values)[:, 1][0])
 
-    def predict_score(self, loan_data: Dict[str, Any]) -> int:
+    def predict_score(self, loan_data: dict[str, Any]) -> int:
         pd_prob = self.predict_proba(loan_data)
         pd_prob = max(1e-06, min(1 - 1e-06, pd_prob))
         log_odds = np.log(pd_prob / (1 - pd_prob))
         return int(self._scale_score(np.array([log_odds]))[0])
 
-    def batch_score(self, loan_records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def batch_score(self, loan_records: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Score a batch of loan records in a single vectorised pass.
 
         Parameters
@@ -415,9 +415,9 @@ class ScorecardModel:
                 return "C"
             return "D"
 
-        results = []
+        results: list[dict[str, Any]] = []
         for i, (pd_val, score) in enumerate(zip(pd_clipped.tolist(), scores.tolist())):
-            record: Dict[str, Any] = {
+            record: dict[str, Any] = {
                 "pd": round(float(pd_val), 6),
                 "score": int(score),
                 "risk_band": _risk_band(int(score)),
@@ -430,7 +430,7 @@ class ScorecardModel:
         logger.info("batch_score: %d records scored", len(results))
         return results
 
-    def save(self, model_dir: str='models/scorecard') -> str:
+    def save(self, model_dir: str = 'models/scorecard') -> str:
         import pickle
         path = Path(model_dir)
         path.mkdir(parents=True, exist_ok=True)
@@ -446,7 +446,7 @@ class ScorecardModel:
         return str(path)
 
     @classmethod
-    def load(cls, model_dir: str='models/scorecard') -> 'ScorecardModel':
+    def load(cls, model_dir: str = 'models/scorecard') -> ScorecardModel:
         import pickle
         path = Path(model_dir)
         if not path.exists():

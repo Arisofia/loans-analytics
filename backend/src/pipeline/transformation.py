@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 import numpy as np
 import pandas as pd
 from backend.python.logging_config import get_logger
@@ -107,7 +109,7 @@ class TransformationPhase:
             k.lower(): v
             for k, v in self.business_rules.get("status_mappings", {}).items()
         }
-        self._status_mappings: Dict[str, str] = _br_mappings if _br_mappings else dict(self.STATUS_MAPPINGS)
+        self._status_mappings: dict[str, str] = _br_mappings or dict(self.STATUS_MAPPINGS)
         if not _br_mappings:
             logger.debug(
                 "No status_mappings in business_rules — using hardcoded defaults. "

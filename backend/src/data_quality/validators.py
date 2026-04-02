@@ -17,8 +17,7 @@ __all__ = ["RULE_REGISTRY"]
 # ── Completeness checks ─────────────────────────────────────────────────
 def _check_required_fields(df: pd.DataFrame) -> RuleResult:
     required = {"loan_id", "borrower_id", "amount", "status"}
-    missing = required - set(df.columns)
-    if missing:
+    if missing := required - set(df.columns):
         return RuleResult(
             rule_id="required_fields",
             passed=False,
@@ -29,7 +28,7 @@ def _check_required_fields(df: pd.DataFrame) -> RuleResult:
     bad = {k: v for k, v in null_counts.items() if v > 0}
     return RuleResult(
         rule_id="required_fields",
-        passed=len(bad) == 0,
+        passed=not bad,
         severity=Severity.BLOCKING,
         detail={"null_counts": bad},
         affected_rows=sum(bad.values()),

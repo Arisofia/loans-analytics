@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 import numpy as np
 import pandas as pd
 from backend.python.kpis.graph_analytics import build_graph_kpi_report
@@ -15,7 +15,7 @@ class KPICatalogProcessor:
     customers_df: pd.DataFrame
     collateral_df: pd.DataFrame = field(default_factory=pd.DataFrame)
     intermedia_df: pd.DataFrame = field(default_factory=pd.DataFrame)
-    schedule_df: Optional[pd.DataFrame] = None
+    schedule_df: pd.DataFrame | None = None
 
     def __post_init__(self) -> None:
         self.loans_df = self.loans_df if self.loans_df is not None else pd.DataFrame()
@@ -26,7 +26,7 @@ class KPICatalogProcessor:
         self.schedule_df = self.schedule_df if self.schedule_df is not None else pd.DataFrame()
 
     @staticmethod
-    def _first_existing_column(df: pd.DataFrame, candidates: list[str]) -> Optional[str]:
+    def _first_existing_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
         if df.empty:
             return None
         return next(filter(df.columns.__contains__, candidates), None)
@@ -38,13 +38,13 @@ class KPICatalogProcessor:
             parsed = parsed.dt.tz_convert(None)
         return parsed
 
-    def _loan_columns(self) -> dict[str, Optional[str]]:
+    def _loan_columns(self) -> dict[str, str | None]:
         return {'loan_id': self._first_existing_column(self.loans_df, ['loan_id', 'application_id']), 'customer_id': self._first_existing_column(self.loans_df, ['customer_id', 'client_id', 'borrower_id', 'customer_id_cust']), 'segment': self._first_existing_column(self.loans_df, ['client_segment', 'segment', 'categoria', 'category', 'product_type']), 'channel': self._first_existing_column(self.loans_df, ['sales_channel', 'channel', 'sales_agent']), 'date': self._first_existing_column(self.loans_df, ['origination_date', 'disbursement_date', 'loan_date', 'month']), 'outstanding': self._first_existing_column(self.loans_df, ['outstanding_loan_value', 'outstanding_balance', 'outstanding']), 'principal': self._first_existing_column(self.loans_df, ['principal_amount', 'disbursement_amount', 'tpv', 'amount']), 'apr': self._first_existing_column(self.loans_df, ['interest_rate_apr', 'interest_rate', 'apr']), 'fee': self._first_existing_column(self.loans_df, ['origination_fee', 'fee_amount', 'fee']), 'fee_tax': self._first_existing_column(self.loans_df, ['origination_fee_taxes', 'fee_tax', 'taxes']), 'dpd': self._first_existing_column(self.loans_df, ['days_past_due', 'days_in_default', 'dpd', 'dpd_days'])}
 
-    def _payment_columns(self) -> dict[str, Optional[str]]:
+    def _payment_columns(self) -> dict[str, str | None]:
         return {'date': self._first_existing_column(self.payments_df, ['payment_date', 'month', 'date', 'paid_at', 'posted_at']), 'customer_id': self._first_existing_column(self.payments_df, ['customer_id', 'client_id', 'borrower_id', 'customer_id_cust']), 'amount': self._first_existing_column(self.payments_df, ['recv_revenue_for_month', 'payment_amount', 'amount', 'total_payment', 'payment', 'amount_paid']), 'interest': self._first_existing_column(self.payments_df, ['recv_interest_for_month', 'true_interest_payment', 'interest_payment', 'interest_paid']), 'fee': self._first_existing_column(self.payments_df, ['recv_fee_for_month', 'true_fee_payment', 'fee_payment', 'fee_paid']), 'other': self._first_existing_column(self.payments_df, ['true_other_payment', 'other_payment', 'other_income']), 'rebates': self._first_existing_column(self.payments_df, ['true_rebates', 'rebates', 'rebate_amount'])}
 
-    def _customer_columns(self) -> dict[str, Optional[str]]:
+    def _customer_columns(self) -> dict[str, str | None]:
         return {'customer_id': self._first_existing_column(self.customers_df, ['customer_id', 'client_id', 'borrower_id']), 'created_at': self._first_existing_column(self.customers_df, ['created_at', 'signup_date', 'onboarding_date', 'first_loan_date']), 'marketing_spend': self._first_existing_column(self.customers_df, ['marketing_spend', 'commercial_expense', 'acquisition_cost', 'cac_spend'])}
 
     def _build_intermedia_from_loans(self) -> pd.DataFrame:
@@ -83,7 +83,7 @@ class KPICatalogProcessor:
             return float(metric_value)
         return None
 
-    def _resolve_total_customers(self, loan_cols: dict[str, Optional[str]], customer_cols: dict[str, Optional[str]]) -> int:
+    def _resolve_total_customers(self, loan_cols: dict[str, str | None], customer_cols: dict[str, str | None]) -> int:
         customer_id_col = customer_cols['customer_id']
         if customer_id_col is not None:
             return int(self.customers_df[customer_id_col].nunique())
@@ -96,7 +96,7 @@ class KPICatalogProcessor:
     def _known_customers_by_month(first_seen: pd.Series, months: pd.Series) -> list[int]:
         return [int((first_seen <= month).sum()) for month in months]
 
-    def _build_monthly_marketing_spend(self, created_at_col: Optional[str], marketing_spend_col: Optional[str]) -> pd.DataFrame:
+    def _build_monthly_marketing_spend(self, created_at_col: str | None, marketing_spend_col: str | None) -> pd.DataFrame:
         empty_result = pd.DataFrame({'month': pd.Series(dtype='datetime64[ns]'), 'marketing_spend_usd': pd.Series(dtype='float64')})
         if self.customers_df.empty or created_at_col is None or marketing_spend_col is None:
             return empty_result
@@ -159,7 +159,7 @@ class KPICatalogProcessor:
         summary['sched_revenue'] = summary['recv_revenue_for_month']
         return summary
 
-    def _build_monthly_revenue_from_payments(self, payment_cols: dict[str, Optional[str]]) -> pd.DataFrame:
+    def _build_monthly_revenue_from_payments(self, payment_cols: dict[str, str | None]) -> pd.DataFrame:
         date_col = payment_cols['date']
         if date_col is None:
             return pd.DataFrame()
@@ -177,13 +177,13 @@ class KPICatalogProcessor:
     def _empty_monthly_revenue_frame() -> pd.DataFrame:
         return pd.DataFrame(columns=['month', 'recv_revenue_for_month', 'recv_interest_for_month', 'recv_fee_for_month', 'sched_revenue'])
 
-    def _populate_payment_component_columns(self, monthly: pd.DataFrame, payment_cols: dict[str, Optional[str]]) -> None:
+    def _populate_payment_component_columns(self, monthly: pd.DataFrame, payment_cols: dict[str, str | None]) -> None:
         for source_col, target_col in [('interest', 'recv_interest_for_month'), ('fee', 'recv_fee_for_month'), ('other', 'recv_other_for_month'), ('rebates', 'recv_rebates_for_month')]:
             col_name = payment_cols[source_col]
             monthly[target_col] = pd.to_numeric(monthly[col_name], errors='coerce').fillna(0) if col_name is not None else 0.0
 
     @staticmethod
-    def _compute_received_revenue(monthly: pd.DataFrame, payment_cols: dict[str, Optional[str]]) -> pd.Series:
+    def _compute_received_revenue(monthly: pd.DataFrame, payment_cols: dict[str, str | None]) -> pd.Series:
         amount_col = payment_cols['amount']
         if amount_col is not None:
             return pd.to_numeric(monthly[amount_col], errors='coerce').fillna(0)
@@ -274,7 +274,7 @@ class KPICatalogProcessor:
             records.append({'month': month_start, 'active_90d': int(active), 'inactive_90d': int(inactive), 'churn90d_pct': float(churn_pct)})
         return records
 
-    def get_unit_economics(self, revenue_df: Optional[pd.DataFrame]=None, churn_90d: Optional[list[dict[str, Any]]]=None) -> list[dict[str, Any]]:
+    def get_unit_economics(self, revenue_df: pd.DataFrame | None = None, churn_90d: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
         revenue_df = revenue_df if revenue_df is not None else self.get_monthly_revenue_df()
         if revenue_df.empty:
             return []
@@ -347,7 +347,7 @@ class KPICatalogProcessor:
         denom = float(weights.sum())
         return 0.0 if denom <= 0 else float((values * weights).sum() / denom)
 
-    def _build_monthly_pricing_rows(self, pricing: pd.DataFrame, date_col: Optional[str]) -> list[dict[str, Any]]:
+    def _build_monthly_pricing_rows(self, pricing: pd.DataFrame, date_col: str | None) -> list[dict[str, Any]]:
         if date_col is None:
             return []
         monthly_input = pricing.copy()
@@ -361,7 +361,7 @@ class KPICatalogProcessor:
     def get_monthly_pricing(self) -> dict:
         return self.get_pricing_analytics()
 
-    def get_dpd_buckets(self, thresholds: list[int] | None=None) -> dict:
+    def get_dpd_buckets(self, thresholds: list[int] | None = None) -> dict:
         if thresholds is None:
             thresholds = [7, 15, 30, 60, 90, 180]
         loan_cols = self._loan_columns()
@@ -404,7 +404,7 @@ class KPICatalogProcessor:
         denom = disb.sum()
         return 0.0 if denom == 0 else float(fee.sum() / denom)
 
-    def get_concentration(self, top_n: list[int] | None=None) -> dict:
+    def get_concentration(self, top_n: list[int] | None = None) -> dict:
         if top_n is None:
             top_n = [1, 3, 5, 10]
         loan_cols = self._loan_columns()
@@ -434,7 +434,7 @@ class KPICatalogProcessor:
         result['hhi'] = float(shares.pow(2).sum() * 10000)
         return result
 
-    def get_portfolio_rotation(self, months: int=12) -> dict:
+    def get_portfolio_rotation(self, months: int = 12) -> dict:
         loan_cols = self._loan_columns()
         disb_col = loan_cols.get('date') or self._find_col(['disbursement_date', 'FechaDesembolso', 'disburse_date'])
         amount_col = loan_cols.get('principal') or self._find_col(['disbursement_amount', 'loan_amount', 'MontoDesembolsado'])
@@ -457,7 +457,7 @@ class KPICatalogProcessor:
             result['theoretical_rotation_x'] = round(365 / median_term_value, 1) if median_term_value and median_term_value > 0 else None
         return result
 
-    def get_customer_types(self, window_months: int=3, recurrent_periods: int=2, reactivation_gap_days: int=90) -> dict:
+    def get_customer_types(self, window_months: int = 3, recurrent_periods: int = 2, reactivation_gap_days: int = 90) -> dict:
         loan_cols = self._loan_columns()
         disb_col = loan_cols.get('date') or self._find_col(['disbursement_date', 'FechaDesembolso'])
         cust_col = loan_cols.get('customer_id') or self._find_col(['customer_id', 'CodCliente', 'borrower_id'])
@@ -493,7 +493,7 @@ class KPICatalogProcessor:
     def _find_col(self, candidates: list[str]) -> str | None:
         return next(filter(self.loans_df.columns.__contains__, candidates), None)
 
-    def get_revenue_forecast(self, revenue_df: Optional[pd.DataFrame]=None, horizon_months: int=6) -> list[dict[str, Any]]:
+    def get_revenue_forecast(self, revenue_df: pd.DataFrame | None = None, horizon_months: int = 6) -> list[dict[str, Any]]:
         revenue_df = revenue_df if revenue_df is not None else self.get_monthly_revenue_df()
         if revenue_df.empty or len(revenue_df) < 2:
             return []
@@ -544,7 +544,7 @@ class KPICatalogProcessor:
         quality_score = max(0.0, 1 - (0.5 * (1 - completeness_mean) + 0.3 * duplicate_rate + 0.2 * freshness_penalty))
         return {'quality_score': quality_score, 'completeness': completeness_checks, 'duplicate_rate': duplicate_rate, 'freshness_days': freshness_days, 'governance_status': self._governance_status(quality_score)}
 
-    def _build_completeness_checks(self, loan_cols: dict[str, Optional[str]], payment_cols: dict[str, Optional[str]]) -> dict[str, float]:
+    def _build_completeness_checks(self, loan_cols: dict[str, str | None], payment_cols: dict[str, str | None]) -> dict[str, float]:
         required_fields = {'loan_id': loan_cols['loan_id'], 'customer_id': loan_cols['customer_id'], 'outstanding': loan_cols['outstanding'], 'apr': loan_cols['apr'], 'origination_date': loan_cols['date'], 'payment_date': payment_cols['date']}
         completeness_checks: dict[str, float] = {}
         for key, col_name in required_fields.items():
@@ -555,7 +555,7 @@ class KPICatalogProcessor:
             completeness_checks[key] = 0.0 if source_df.empty else float(source_df[col_name].notna().mean())
         return completeness_checks
 
-    def _compute_freshness_days(self, loan_cols: dict[str, Optional[str]], payment_cols: dict[str, Optional[str]]) -> Optional[int]:
+    def _compute_freshness_days(self, loan_cols: dict[str, str | None], payment_cols: dict[str, str | None]) -> int | None:
         date_candidates: list[pd.Series] = []
         if loan_cols['date'] is not None and (not self.loans_df.empty):
             date_candidates.append(self._coerce_datetime(self.loans_df[loan_cols['date']]))
@@ -665,16 +665,7 @@ class KPICatalogProcessor:
                     'days_past_due': previous_dpd.loc[valid].fillna(0),
                     'outstanding_principal': t0_balance,
                 })
-                roll_data = compute_roll_rates(t0, t1)
-                transition = roll_data.get('roll_rate_matrix', {}).get('1_30_to_31_60', {})
-                return {
-                    'status': 'ok',
-                    'flow_rate_31_60_pct': float(transition.get('roll_rate_pct', 0.0)),
-                    'from_balance_usd': float(transition.get('from_balance', 0.0)),
-                    'to_balance_usd': float(transition.get('to_balance', 0.0)),
-                    'data_source': 'previous_snapshot_fields',
-                    'last_updated': pd.Timestamp.now(tz='UTC').isoformat(),
-                }
+                return self._compute_flow_31_60_result(t0, t1, 'previous_snapshot_fields')
 
         # Fallback path: infer T-1 and T snapshots from duplicated loan rows by date.
         date_col = loan_cols.get('date')
@@ -702,16 +693,7 @@ class KPICatalogProcessor:
                         'days_past_due': pd.to_numeric(t1[current_dpd_col], errors='coerce').fillna(0),
                         'outstanding_principal': pd.to_numeric(t1[current_balance_col], errors='coerce').fillna(0),
                     })
-                    roll_data = compute_roll_rates(t0_frame, t1_frame)
-                    transition = roll_data.get('roll_rate_matrix', {}).get('1_30_to_31_60', {})
-                    return {
-                        'status': 'ok',
-                        'flow_rate_31_60_pct': float(transition.get('roll_rate_pct', 0.0)),
-                        'from_balance_usd': float(transition.get('from_balance', 0.0)),
-                        'to_balance_usd': float(transition.get('to_balance', 0.0)),
-                        'data_source': 'derived_from_historical_rows',
-                        'last_updated': pd.Timestamp.now(tz='UTC').isoformat(),
-                    }
+                    return self._compute_flow_31_60_result(t0_frame, t1_frame, 'derived_from_historical_rows')
 
         return {
             'status': 'requires_new_data',
@@ -720,6 +702,23 @@ class KPICatalogProcessor:
             'to_balance_usd': 0.0,
             'data_source': 'none',
             'note': 'Requires consecutive snapshots or explicit previous DPD fields',
+            'last_updated': pd.Timestamp.now(tz='UTC').isoformat(),
+        }
+
+    def _compute_flow_31_60_result(
+        self,
+        t0: pd.DataFrame,
+        t1: pd.DataFrame,
+        data_source: str,
+    ) -> dict[str, Any]:
+        roll_data = compute_roll_rates(t0, t1)
+        transition = roll_data.get('roll_rate_matrix', {}).get('1_30_to_31_60', {})
+        return {
+            'status': 'ok',
+            'flow_rate_31_60_pct': float(transition.get('roll_rate_pct', 0.0)),
+            'from_balance_usd': float(transition.get('from_balance', 0.0)),
+            'to_balance_usd': float(transition.get('to_balance', 0.0)),
+            'data_source': data_source,
             'last_updated': pd.Timestamp.now(tz='UTC').isoformat(),
         }
 
@@ -767,7 +766,7 @@ class KPICatalogProcessor:
             }
 
         pair_counts = df.groupby([cust_col, line_col]).size()
-        repline_pairs = (pair_counts > 1).sum()
+        repline_pairs = int((pair_counts > 1).sum())
         repline_loans = int(pair_counts[pair_counts > 1].sum())
         repline_rate = repline_loans / total_loans
         deviation = repline_rate - max_deviation
@@ -775,13 +774,13 @@ class KPICatalogProcessor:
 
         return {
             'status': 'ok',
-            'repline_count': int(repline_loans),
-            'repline_pair_count': int(repline_pairs),
+            'repline_count': repline_loans,
+            'repline_pair_count': repline_pairs,
             'total_loans': total_loans,
             'repline_rate_pct': round(repline_rate * 100, 2),
             'max_deviation_pct': round(max_deviation * 100, 2),
             'deviation_from_target': round(deviation * 100, 2),
-            'breach': bool(breach),
+            'breach': breach,
         }
 
     def get_ticket_segments(self) -> dict:
@@ -917,21 +916,27 @@ class KPICatalogProcessor:
         weighted_apr = eir.get('weighted_apr_pct')
         apr_ratio = weighted_apr / 100.0 if weighted_apr is not None else None
         if apr_ratio is not None:
-            results.append({
+            in_range = g.target_apr_min <= apr_ratio <= g.target_apr_max
+            weighted_apr_entry = {
                 'kpi': 'weighted_apr',
                 'current': round(apr_ratio, 4),
                 'limit_min': g.target_apr_min,
                 'limit_max': g.target_apr_max,
-                'breach': not (g.target_apr_min <= apr_ratio <= g.target_apr_max),
-                'alert_level': 'MEDIUM' if not (g.target_apr_min <= apr_ratio <= g.target_apr_max) else 'OK',
+                'breach': not in_range,
+                'alert_level': 'OK' if in_range else 'MEDIUM',
                 'unit': 'ratio',
-            })
+            }
         else:
-            results.append({
-                'kpi': 'weighted_apr', 'current': None,
-                'limit_min': g.target_apr_min, 'limit_max': g.target_apr_max,
-                'breach': False, 'alert_level': 'UNKNOWN', 'unit': 'ratio',
-            })
+            weighted_apr_entry = {
+                'kpi': 'weighted_apr',
+                'current': None,
+                'limit_min': g.target_apr_min,
+                'limit_max': g.target_apr_max,
+                'breach': False,
+                'alert_level': 'UNKNOWN',
+                'unit': 'ratio',
+            }
+        results.append(weighted_apr_entry)
 
         dscr_kpi = lending.get('cost_of_debt_dscr', {})
         dscr_val = dscr_kpi.get('dscr')
