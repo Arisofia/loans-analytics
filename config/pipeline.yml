@@ -19,7 +19,7 @@ ingestion:
 
     - type: "google_sheets"
       enabled: true
-      spreadsheet_id: "${GOOGLE_SHEETS_SPREADSHEET_ID}"
+      spreadsheet_id: null
       worksheets:
         - "DESEMBOLSOS"
         - "INTERMEDIA"
@@ -28,7 +28,7 @@ ingestion:
   google_sheets:
     enabled: true
     credentials_path: "credentials/google-service-account.json"
-    spreadsheet_id: "${GOOGLE_SHEETS_SPREADSHEET_ID}"
+    spreadsheet_id: null
     worksheet: "DESEMBOLSOS"
 
   # 2026 Portfolio Targets Configuration
