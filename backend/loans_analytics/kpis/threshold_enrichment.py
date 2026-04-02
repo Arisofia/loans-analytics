@@ -71,7 +71,7 @@ def get_threshold_status(
         return _eval_only_critical(value, float(critical_val))
     if warning_val is not None:
         return _eval_only_warning(value, float(warning_val))
-    return "not_configured"
+
 
 
 def enrich_kpis_with_thresholds(
