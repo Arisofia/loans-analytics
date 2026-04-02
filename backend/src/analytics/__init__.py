@@ -12,11 +12,48 @@ Do NOT add new financial math here.  Any new metric must be added to the
 canonical KPI engine and routed through the SSoT layer.
 """
 from __future__ import annotations
+import re
 from datetime import datetime, timezone
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from typing import Any, Optional
 import numpy as np
 import pandas as pd
 from backend.python.config.mype_rules import MYPEBusinessRules
+
+_DECIMAL_SYMBOL_RE = re.compile(r'[$€£¥₽%,\s]')
+_DECIMAL_NONNUM_RE = re.compile(r'[^0-9\-.]')
+
+
+def _to_decimal(val: Any) -> Optional[Decimal]:
+    """Convert a value to Decimal without an intermediate float coercion.
+
+    Integers and existing Decimals are converted exactly.  Floats use Python's
+    shortest-repr ``str()`` (safe for normal financial magnitudes).  Strings are
+    cleaned of formatting characters (currency symbols, commas, whitespace) and
+    then parsed directly, bypassing any float step.
+
+    Returns None for null / unparseable values.
+    """
+    if val is None:
+        return None
+    if isinstance(val, Decimal):
+        return val
+    if isinstance(val, int):
+        return Decimal(val)
+    if isinstance(val, float):
+        if val != val:  # NaN
+            return None
+        return Decimal(str(val))
+    # String path — clean without float intermediate
+    s = _DECIMAL_SYMBOL_RE.sub('', str(val).strip())
+    s = _DECIMAL_NONNUM_RE.sub('', s)
+    if not s:  # all letter/symbol variants cleaned to '' by regex above
+        return None
+    try:
+        return Decimal(s)
+    except InvalidOperation:
+        return None
+
 
 def standardize_numeric(series: pd.Series) -> pd.Series:
     if pd.api.types.is_numeric_dtype(series):
@@ -42,6 +79,9 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
         raise ValueError(f"Missing required columns: {', '.join(missing)}")
     if df.empty:
         return ({'delinquency_rate': 0.0, 'portfolio_yield': 0.0, 'average_ltv': 0.0, 'average_dti': 0.0}, df.copy())
+
+    # Standardize columns to float64 for the enriched DataFrame returned to
+    # callers (backward-compatibility requirement).
     enriched = df.copy()
     for col in ['loan_amount', 'appraised_value', 'borrower_income', 'monthly_debt', 'principal_balance', 'interest_rate']:
         enriched[col] = standardize_numeric(enriched[col])
@@ -49,23 +89,52 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
         enriched['ltv_ratio'] = enriched['loan_amount'] / enriched['appraised_value'].replace(0, np.nan)
     income_positive = enriched['borrower_income'] > 0
     enriched['dti_ratio'] = np.nan
-    enriched.loc[income_positive, 'dti_ratio'] = enriched.loc[income_positive, 'monthly_debt'] / (enriched.loc[income_positive, 'borrower_income'] / 12.0)
-    principal_series = enriched['principal_balance'].dropna()
-    principal_sum = Decimal(str(principal_series.sum()))
+    enriched.loc[income_positive, 'dti_ratio'] = enriched.loc[income_positive, 'monthly_debt'] / (enriched.loc[income_positive, 'borrower_income'] / 12)
+
     delinquent_mask = enriched['loan_status'].astype(str).str.lower().eq('delinquent')
-    delinquent_principal = Decimal(str(
-        enriched.loc[delinquent_mask, 'principal_balance'].dropna().sum()
-    ))
-    delinquency_rate = float(
-        delinquent_principal / principal_sum
-    ) if principal_sum > 0 else 0.0
-    weighted_interest = (enriched['principal_balance'] * enriched['interest_rate']).dropna()
-    weighted_interest_sum = Decimal(str(weighted_interest.sum()))
-    portfolio_yield = float(
-        weighted_interest_sum / principal_sum
-    ) if principal_sum > 0 else 0.0
-    average_ltv = 0.0 if enriched['ltv_ratio'].dropna().empty else float(enriched['ltv_ratio'].mean(skipna=True))
-    average_dti = 0.0 if enriched['dti_ratio'].dropna().empty else float(enriched['dti_ratio'].mean(skipna=True))
+
+    # Compute all Decimal aggregations in a single pass over the original df
+    # columns, avoiding any float intermediate.  Using a single pass also avoids
+    # materializing six separate per-column lists in memory.
+    _D_ZERO = Decimal('0')
+    _D_12 = Decimal('12')
+    principal_sum = _D_ZERO
+    delinquent_principal = _D_ZERO
+    weighted_interest_sum = _D_ZERO
+    ltv_sum = _D_ZERO
+    ltv_count = 0
+    dti_sum = _D_ZERO
+    dti_count = 0
+
+    delinquent_list = delinquent_mask.tolist()
+    income_positive_list = income_positive.tolist()
+    for i, (la, av, bi, md, pb, ir) in enumerate(zip(
+        df['loan_amount'], df['appraised_value'], df['borrower_income'],
+        df['monthly_debt'], df['principal_balance'], df['interest_rate'],
+    )):
+        d_pb = _to_decimal(pb)
+        if d_pb is not None:
+            principal_sum += d_pb
+            if delinquent_list[i]:
+                delinquent_principal += d_pb
+            d_ir = _to_decimal(ir)
+            if d_ir is not None:
+                weighted_interest_sum += d_pb * d_ir
+        d_la, d_av = _to_decimal(la), _to_decimal(av)
+        if d_la is not None and d_av is not None and d_av != _D_ZERO:
+            ltv_sum += d_la / d_av
+            ltv_count += 1
+        if income_positive_list[i]:
+            d_md, d_bi = _to_decimal(md), _to_decimal(bi)
+            if d_md is not None and d_bi is not None:
+                dti_sum += d_md / (d_bi / _D_12)
+                dti_count += 1
+
+    delinquency_rate = float(delinquent_principal / principal_sum) if principal_sum > _D_ZERO else 0.0
+    portfolio_yield = float(weighted_interest_sum / principal_sum) if principal_sum > _D_ZERO else 0.0
+    average_ltv = 0.0 if ltv_count == 0 else float(ltv_sum / Decimal(ltv_count))
+    average_dti = 0.0 if dti_count == 0 else float(dti_sum / Decimal(dti_count))
+
     metrics = {'delinquency_rate': delinquency_rate, 'portfolio_yield': portfolio_yield, 'average_ltv': average_ltv, 'average_dti': average_dti}
     return (metrics, enriched)
 
