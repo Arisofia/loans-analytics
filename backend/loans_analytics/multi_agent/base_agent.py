@@ -48,7 +48,7 @@ class BaseAgent(ABC):
 
     def _init_gemini_client(self) -> Any:
         try:
-            import google.genai as genai
+            from google import genai
         except ImportError as exc:
             raise ImportError('google-genai package required') from exc
         api_key = os.getenv('GEMINI_API_KEY')

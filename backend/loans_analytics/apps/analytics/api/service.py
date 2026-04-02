@@ -56,7 +56,6 @@ from backend.loans_analytics.kpis.unit_economics import (
     calculate_cost_of_risk,
     calculate_lgd,
     calculate_nim,
-    calculate_npl_ratio,
 )
 from backend.loans_analytics.logging_config import get_logger
 from backend.loans_analytics.supabase_pool import get_pool
@@ -1405,10 +1404,6 @@ class KPIService:
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_90_PLUS, regex=True, na=False), 100.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_60_89, regex=True, na=False), 75.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_30_59, regex=True, na=False), 45.0)
-        status_series = self._normalize_default_status(
-            df.get("loan_status", pd.Series([""] * len(df), index=df.index))
-        )
-        default_mask = status_series.eq("defaulted")
         status_series = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
         default_mask = status_series.str.contains(STATUS_PATTERN_DEFAULT, regex=True, na=False)
         collected = (
@@ -1621,10 +1616,6 @@ class KPIService:
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_90_PLUS, regex=True, na=False), 100.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_60_89, regex=True, na=False), 75.0)
             dpd = dpd.mask(status.str.contains(STATUS_PATTERN_30_59, regex=True, na=False), 45.0)
-        default_mask = self._normalize_default_status(
-            df.get("loan_status", pd.Series([""] * len(df), index=df.index))
-        )
-        default_mask = default_mask.eq("defaulted")
         default_mask = (
             df.get("loan_status", pd.Series([""] * len(df)))
             .astype(str)

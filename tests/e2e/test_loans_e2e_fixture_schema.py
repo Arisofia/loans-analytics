@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-import pytest
 import pandas as pd
 
 def test_loans_e2e_fixture_schema_up_to_date():

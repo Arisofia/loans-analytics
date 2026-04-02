@@ -12,6 +12,7 @@ Do NOT add new financial math here.  Any new metric must be added to the
 canonical KPI engine and routed through the SSoT layer.
 """
 from __future__ import annotations
+import math
 import re
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
@@ -41,7 +42,7 @@ def _to_decimal(val: Any) -> Optional[Decimal]:
     if isinstance(val, int):
         return Decimal(val)
     if isinstance(val, float):
-        if val != val:  # NaN
+        if math.isnan(val):
             return None
         return Decimal(str(val))
     # String path — clean without float intermediate

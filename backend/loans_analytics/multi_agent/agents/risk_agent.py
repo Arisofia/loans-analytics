@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 import pandas as pd
 
 from backend.loans_analytics.multi_agent.agents.decision_agent_base import AgentContext, AgentOutput, DecisionAgent

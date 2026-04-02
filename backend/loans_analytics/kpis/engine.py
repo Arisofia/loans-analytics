@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 KPIEngineV2 - DEPRECATED compatibility shim.
 
@@ -7,6 +5,8 @@ Canonical KPI authority is backend.src.kpi_engine.engine.run_metric_engine.
 This module remains only to avoid import-time breaks while migration completes.
 All calculations are delegated to run_metric_engine.
 """
+
+from __future__ import annotations
 
 import warnings
 from typing import Any, Dict, Optional
