@@ -10,6 +10,18 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 _MAX_TOP10_CONCENTRATION = 0.30  # 30% from business_parameters.yml
+_HHI_SCALE = 10000
+
+
+def _assert_hhi_formula_constant() -> None:
+    """Fail fast if the module HHI normalization constant drifts from SSOT definition."""
+    if _HHI_SCALE != 10000:
+        raise ValueError(
+            "CRITICAL: HHI formula constant mismatch. Expected 10000 for HHI = sum(share^2) * 10000."
+        )
+
+
+_assert_hhi_formula_constant()
 
 
 def compute_hhi(portfolio: pd.DataFrame) -> Dict[str, Any]:
@@ -25,7 +37,7 @@ def compute_hhi(portfolio: pd.DataFrame) -> Dict[str, Any]:
         return {"hhi_index": 0.0, "concentration_level": "unknown"}
 
     shares = borrower_totals / total
-    hhi = float((shares ** 2).sum() * 10000)
+    hhi = float((shares ** 2).sum() * _HHI_SCALE)
 
     level = "low"
     if hhi >= 2500:
@@ -145,7 +157,7 @@ def compute_kam_concentration(
         }
 
     shares = kam_totals / total
-    hhi = float((shares ** 2).sum() * 10_000)
+    hhi = float((shares ** 2).sum() * _HHI_SCALE)
 
     level = "low"
     if hhi >= 2500:

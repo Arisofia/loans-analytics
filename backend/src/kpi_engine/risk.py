@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal, ROUND_HALF_UP
 import logging
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
@@ -65,6 +65,8 @@ def compute_lgd(
     total_recovered: Optional[Decimal],
     method: str,
     fixed_rate: Decimal = Decimal("0.90"),
+    floor: Decimal = _LGD_FLOOR,
+    ceil: Decimal = _LGD_CEIL,
 ) -> Decimal:
     """
     Compute Loss Given Default.
@@ -87,7 +89,7 @@ def compute_lgd(
         lgd = (Decimal("1") - recovery_rate).quantize(
             Decimal("0.0001"), rounding=ROUND_HALF_UP
         )
-        lgd = max(_LGD_FLOOR, min(_LGD_CEIL, lgd))
+        lgd = max(floor, min(ceil, lgd))
         logger.info(
             "lgd_computed method=empirical recovery_rate=%s lgd=%s",
             recovery_rate, lgd,
@@ -102,7 +104,7 @@ def compute_lgd(
         )
 
     lgd = fixed_rate.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
-    lgd = max(_LGD_FLOOR, min(_LGD_CEIL, lgd))
+    lgd = max(floor, min(ceil, lgd))
     return lgd
 
 
@@ -195,14 +197,13 @@ def compute_expected_loss(
     # Scorecard integration
     if scorecard_df is not None and "loan_id" in scorecard_df.columns and "loan_id" in df.columns:
         sc_cols = ["loan_id"]
-        if "pd" in scorecard_df.columns:
+        if "pd_scorecard" in scorecard_df.columns:
+            sc_cols.append("pd_scorecard")
+        elif "pd" in scorecard_df.columns:
             sc_cols.append("pd")
-        df = df.merge(
-            scorecard_df[sc_cols], on="loan_id", how="left", suffixes=("", "_scorecard")
-        )
-        if "pd_scorecard" not in df.columns and "pd" in df.columns:
-            # If the merge created a duplicate 'pd' or it already existed
-            pass
+        df = df.merge(scorecard_df[sc_cols], on="loan_id", how="left", suffixes=("", "_scorecard"))
+        if "pd_scorecard" not in df.columns and "pd" in sc_cols:
+            df["pd_scorecard"] = pd.to_numeric(df.get("pd"), errors="coerce")
 
     # Assign PD
     df["pd_final"] = compute_pd(df, pd_params, scorecard_pd_col="pd_scorecard")
@@ -210,17 +211,35 @@ def compute_expected_loss(
     # Assign LGD
     method = fin_params.get("lgd_method", "fixed")
     fixed_rate = Decimal(str(fin_params.get("lgd_fixed_rate", "0.90")))
+    lgd_floor = Decimal(str(fin_params.get("lgd_floor", str(_LGD_FLOOR))))
+    lgd_ceil = Decimal(str(fin_params.get("lgd_ceil", str(_LGD_CEIL))))
 
-    # Calculate LGD per loan (if data allows) or aggregate
-    # For EL calculation at loan level, we typically use the global or cohort LGD
-    # but the compute_lgd function expects aggregate disbursed/recovered.
-    # Here we use the global param-driven LGD.
-    global_lgd = float(compute_lgd(
-        total_disbursed=Decimal("1"),  # Mock for global rate retrieval
-        total_recovered=None,
-        method="fixed",
-        fixed_rate=fixed_rate
-    ))
+    disbursed_col = (
+        "principal_amount"
+        if "principal_amount" in df.columns
+        else ("original_principal" if "original_principal" in df.columns else "outstanding_principal")
+    )
+    recovered_col = (
+        "recovery_amount"
+        if "recovery_amount" in df.columns
+        else ("recovered_amount" if "recovered_amount" in df.columns else "last_payment_amount")
+    )
+
+    total_disbursed = Decimal(str(pd.to_numeric(df.get(disbursed_col), errors="coerce").fillna(0).sum()))
+    total_recovered = Decimal(str(pd.to_numeric(df.get(recovered_col), errors="coerce").fillna(0).sum()))
+    recovered_input = total_recovered if method == "empirical" else None
+
+    # Use a single global LGD per run to ensure deterministic EL and auditability.
+    global_lgd = float(
+        compute_lgd(
+            total_disbursed=total_disbursed,
+            total_recovered=recovered_input,
+            method=method,
+            fixed_rate=fixed_rate,
+            floor=lgd_floor,
+            ceil=lgd_ceil,
+        )
+    )
     df["lgd_final"] = global_lgd
 
     if "ead" not in df.columns:
