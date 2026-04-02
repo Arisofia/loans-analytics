@@ -70,8 +70,8 @@ format:
 	$(BIN)/isort .
 lint:
 	$(BIN)/ruff check .
-	$(BIN)/flake8 backend/src backend/python scripts
-	$(BIN)/pylint backend/src backend/python scripts
+	$(BIN)/flake8 backend/src backend/loans_analytics scripts
+	$(BIN)/pylint backend/src backend/loans_analytics scripts
 type-check:
 	$(BIN)/mypy --check-untyped-defs backend/src
 test:
@@ -87,7 +87,7 @@ test-zero-cost:
 e2e:
 	RUN_E2E=1 "$(PYTHON)" -m pytest tests/e2e -m e2e
 security-check:
-	$(BIN)/bandit -r backend/src backend/python --quiet -x "**/test_*.py,**/tests.py"
+	$(BIN)/bandit -r backend/src backend/loans_analytics --quiet -x "**/test_*.py,**/tests.py"
 	@if $(BIN)/pip list | grep -q safety; then $(BIN)/safety check --continue-on-error; else echo "safety not installed, skipping"; fi
 clean:
 	@find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
@@ -155,7 +155,16 @@ zero-cost-schema:
 	"$(PYTHON)" scripts/data/init_duckdb_schema.py
 
 etl-local:
-	@echo "Running local ETL pipeline..."
+	@if [ -z "$(INPUT)" ] || [ "$(INPUT)" = "gsheets://DESEMBOLSOS" ]; then \
+		echo ""; \
+		echo "  *** WARNING: This will read from LIVE PRODUCTION Google Sheet ***"; \
+		echo "  *** To use a local file: make etl-local INPUT=/path/to/file.csv ***"; \
+		echo ""; \
+		printf "Type CONFIRM to proceed against production source: "; \
+		read REPLY; \
+		if [ "$$REPLY" != "CONFIRM" ]; then echo "Aborted."; exit 1; fi; \
+	fi
+	@echo "[AUDIT] etl-local triggered. input=$(or $(INPUT), gsheets://DESEMBOLSOS) operator=$(USER) ts=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"
 	"$(PYTHON)" scripts/data/run_data_pipeline.py \
 		--input $(or $(INPUT), gsheets://DESEMBOLSOS) \
 		--mode  $(or $(MODE), full) \

@@ -1,7 +1,14 @@
+"""
+KPIEngineV2 — DEPRECATED.
+Canonical engine: backend/src/kpi_engine/engine.py (run_metric_engine).
+This module is a shim retained for backward compatibility.
+All new code MUST import from backend.src.kpi_engine.engine.
+"""
+import warnings
+from backend.src.kpi_engine.engine import run_metric_engine  # noqa: F401
 from __future__ import annotations
 import hashlib
 import json
-import warnings
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple
@@ -28,6 +35,12 @@ class KPIEngineV2:
         run_id: Optional[str] = None,
         kpi_definitions: Optional[Dict[str, Any]] = None,
     ):
+        warnings.warn(
+            "KPIEngineV2 is deprecated and will be removed in v1.4.0. "
+            "Use run_metric_engine() from backend.src.kpi_engine.engine.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.df = self._ensure_loan_count_column(df if df is not None else pd.DataFrame())
         self.actor = actor
         self.kpi_definitions = kpi_definitions or {}

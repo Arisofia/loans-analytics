@@ -1,5 +1,5 @@
 [project]
-name = "loans-loans-analytics"
+name = "loans-analytics"
 version = "1.3.0"
 description = "Production lending analytics platform with multi-agent KPI engine"
 readme = "README.md"
@@ -113,7 +113,7 @@ filterwarnings = [
 #   - Controlled CI matrix that prevents silent API calls
 # To run agent tests: pytest --co -m integration tests/
 testpaths = [
-  "backend/python/tests",
+  "backend/loans_analytics/tests",
   "tests",
 ]
 norecursedirs = [
