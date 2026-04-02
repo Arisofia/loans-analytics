@@ -113,7 +113,7 @@ hyperframe==6.1.0
 hypothesis==6.151.10
 idna==3.11
 immutabledict==4.3.1
-importlib_metadata==8.7.1
+importlib_metadata==9.0.0
 iniconfig==2.3.0
 isodate==0.7.2
 isort==8.0.1
