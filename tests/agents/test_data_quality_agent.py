@@ -5,8 +5,8 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from backend.python.multi_agent.agents.data_quality_agent import DataQualityAgent
-from backend.python.multi_agent.agents.decision_agent_base import AgentContext
+from backend.loans_analytics.multi_agent.agents.data_quality_agent import DataQualityAgent
+from backend.loans_analytics.multi_agent.agents.decision_agent_base import AgentContext
 
 
 @pytest.fixture()

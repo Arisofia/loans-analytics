@@ -3,7 +3,7 @@ import logging
 from datetime import date
 from decimal import Decimal
 import pandas as pd
-from backend.python.kpis.dpd_calculator import dpd_to_bucket
+from backend.loans_analytics.kpis.dpd_calculator import dpd_to_bucket
 from .storage import ZeroCostStorage
 logger = logging.getLogger(__name__)
 

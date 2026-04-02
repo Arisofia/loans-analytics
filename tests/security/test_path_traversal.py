@@ -1,5 +1,5 @@
 import pytest
-from backend.python.apps.analytics.api.main import _sanitize_and_resolve
+from backend.loans_analytics.apps.analytics.api.main import _sanitize_and_resolve
 
 class TestPathTraversalPrevention:
 

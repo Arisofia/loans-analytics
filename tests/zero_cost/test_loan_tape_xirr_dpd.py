@@ -303,7 +303,7 @@ class TestDPDCalculator:
         return (dim_loan, fact_schedule, fact_real_payment)
 
     def test_build_snapshots_returns_dataframe(self):
-        from backend.python.kpis.dpd_calculator import DPDCalculator
+        from backend.loans_analytics.kpis.dpd_calculator import DPDCalculator
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
         snap = calc.build_snapshots(dim_loan, sched, pays, ['2026-02-28'])
@@ -311,7 +311,7 @@ class TestDPDCalculator:
         assert len(snap) == 2
 
     def test_current_loan_has_zero_dpd(self):
-        from backend.python.kpis.dpd_calculator import DPDCalculator
+        from backend.loans_analytics.kpis.dpd_calculator import DPDCalculator
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
         snap = calc.build_snapshots(dim_loan, sched, pays, ['2026-01-31'])
@@ -319,7 +319,7 @@ class TestDPDCalculator:
         assert l2_row['dpd'] == 0
 
     def test_overdue_loan_has_positive_dpd(self):
-        from backend.python.kpis.dpd_calculator import DPDCalculator
+        from backend.loans_analytics.kpis.dpd_calculator import DPDCalculator
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
         snap = calc.build_snapshots(dim_loan, sched, pays, ['2026-03-15'])
@@ -327,7 +327,7 @@ class TestDPDCalculator:
         assert l1_row['dpd'] > 0
 
     def test_par_flags_set_correctly(self):
-        from backend.python.kpis.dpd_calculator import DPDCalculator
+        from backend.loans_analytics.kpis.dpd_calculator import DPDCalculator
         calc = DPDCalculator(par_thresholds=[1, 30])
         dim_loan, sched, pays = self._make_inputs()
         snap = calc.build_snapshots(dim_loan, sched, pays, ['2026-03-15'])
@@ -338,7 +338,7 @@ class TestDPDCalculator:
         assert not l2_row['par_1']
 
     def test_mora_bucket_is_populated(self):
-        from backend.python.kpis.dpd_calculator import DPDCalculator
+        from backend.loans_analytics.kpis.dpd_calculator import DPDCalculator
         calc = DPDCalculator()
         dim_loan, sched, pays = self._make_inputs()
         snap = calc.build_snapshots(dim_loan, sched, pays, ['2026-02-28'])

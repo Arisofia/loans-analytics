@@ -4,9 +4,9 @@ This module provides utility functions (standardize_numeric, calculate_quality_s
 portfolio_kpis, project_growth) retained for backward compatibility and test support.
 
 It is NOT the KPI Single Source of Truth.  Canonical KPI formulas live in:
-  - backend.python.kpis.ssot_asset_quality  (PAR, NPL, asset-quality)
-  - backend.python.kpis.engine              (KPIEngineV2)
-  - backend.python.kpis.health_score        (portfolio health scoring)
+  - backend.loans_analytics.kpis.ssot_asset_quality  (PAR, NPL, asset-quality)
+  - backend.loans_analytics.kpis.engine              (KPIEngineV2)
+  - backend.loans_analytics.kpis.health_score        (portfolio health scoring)
 
 Do NOT add new financial math here.  Any new metric must be added to the
 canonical KPI engine and routed through the SSoT layer.
@@ -18,7 +18,7 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Any, Optional
 import numpy as np
 import pandas as pd
-from backend.python.config.mype_rules import MYPEBusinessRules
+from backend.loans_analytics.config.mype_rules import MYPEBusinessRules
 
 _DECIMAL_SYMBOL_RE = re.compile(r'[$€£¥₽%,\s]')
 _DECIMAL_NONNUM_RE = re.compile(r'[^0-9\-.]')

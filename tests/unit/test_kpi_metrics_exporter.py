@@ -1,5 +1,5 @@
 import pytest
-from backend.python.monitoring.kpi_metrics import KPIMetricsExporter
+from backend.loans_analytics.monitoring.kpi_metrics import KPIMetricsExporter
 
 class TestKPIMetricsExporter:
 

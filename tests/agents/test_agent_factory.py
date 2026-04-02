@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import Mock, patch
-from backend.python.multi_agent.agent_factory import agent_with_role
-from backend.python.multi_agent.base_agent import BaseAgent
-from backend.python.multi_agent.protocol import AgentRole, LLMProvider
+from backend.loans_analytics.multi_agent.agent_factory import agent_with_role
+from backend.loans_analytics.multi_agent.base_agent import BaseAgent
+from backend.loans_analytics.multi_agent.protocol import AgentRole, LLMProvider
 
 class TestAgentFactory(unittest.TestCase):
 
@@ -16,7 +16,7 @@ class TestAgentFactory(unittest.TestCase):
         self.assertTrue(hasattr(TestAgent, '__init__'))
         self.assertIsNotNone(TestAgent.__init__)
 
-    @patch('backend.python.multi_agent.base_agent.BaseAgent._init_client')
+    @patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client')
     def test_decorated_agent_initializes_with_correct_role(self, mock_init_client):
         mock_init_client.return_value = Mock()
 
@@ -28,7 +28,7 @@ class TestAgentFactory(unittest.TestCase):
         agent = TestAgent()
         self.assertEqual(agent.role, AgentRole.COMPLIANCE)
 
-    @patch('backend.python.multi_agent.base_agent.BaseAgent._init_client')
+    @patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client')
     def test_decorated_agent_accepts_provider_parameter(self, mock_init_client):
         mock_init_client.return_value = Mock()
 
@@ -42,7 +42,7 @@ class TestAgentFactory(unittest.TestCase):
         agent2 = TestAgent(provider=LLMProvider.GEMINI)
         self.assertEqual(agent2.provider, LLMProvider.GEMINI)
 
-    @patch('backend.python.multi_agent.base_agent.BaseAgent._init_client')
+    @patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client')
     def test_decorated_agent_accepts_kwargs(self, mock_init_client):
         mock_init_client.return_value = Mock()
 

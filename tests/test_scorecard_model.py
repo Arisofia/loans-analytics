@@ -8,7 +8,7 @@ import pytest
 
 optbinning = pytest.importorskip("optbinning", reason="optbinning not installed")
 
-from backend.python.models.scorecard_model import ScorecardModel
+from backend.loans_analytics.models.scorecard_model import ScorecardModel
 INDUSTRIES = ['Comercio al por menor', 'Otras actividades especializadas de construccion', 'Transporte de carga', 'Servicios de alimentacion', 'Manufactura textil', 'Agricultura y ganaderia', 'Servicios profesionales']
 LOAN_STATUSES = ['active', 'closed', 'defaulted', 'active', 'active', 'closed']
 
@@ -168,7 +168,7 @@ class TestScoreScaling:
         assert defaults_score < non_defaults_score, f'Defaults score ({defaults_score}) should be < non-defaults ({non_defaults_score}). Score direction is inverted - check scaling logic.'
 
     def test_single_loan_score_in_range(self, trained_model, sample_data):
-        from backend.python.models.scorecard_model import ScorecardModel
+        from backend.loans_analytics.models.scorecard_model import ScorecardModel
         model, _ = trained_model
         loan_df, payment_df, customer_df = sample_data
         df = ScorecardModel.build_model_dataset(loan_df.copy(), payment_df.copy(), customer_df.copy())
@@ -177,7 +177,7 @@ class TestScoreScaling:
         assert 300 <= score <= 850, f'Score {score} outside valid range [300, 850]'
 
     def test_single_loan_pd_in_range(self, trained_model, sample_data):
-        from backend.python.models.scorecard_model import ScorecardModel as SC
+        from backend.loans_analytics.models.scorecard_model import ScorecardModel as SC
         model, _ = trained_model
         loan_df, payment_df, customer_df = sample_data
         df = SC.build_model_dataset(loan_df.copy(), payment_df.copy(), customer_df.copy())
@@ -188,7 +188,7 @@ class TestScoreScaling:
 class TestPersistence:
 
     def test_save_and_load_roundtrip(self, trained_model, tmp_path):
-        from backend.python.models.scorecard_model import ScorecardModel as SC
+        from backend.loans_analytics.models.scorecard_model import ScorecardModel as SC
         model, _ = trained_model
         save_dir = str(tmp_path / 'scorecard_test')
         model.save(save_dir)
@@ -204,7 +204,7 @@ class TestPersistence:
         assert not loaded.scorecard_table.empty
 
     def test_loaded_model_produces_same_score(self, trained_model, sample_data, tmp_path):
-        from backend.python.models.scorecard_model import ScorecardModel as SC
+        from backend.loans_analytics.models.scorecard_model import ScorecardModel as SC
         model, _ = trained_model
         loan_df, payment_df, customer_df = sample_data
         df = SC.build_model_dataset(loan_df.copy(), payment_df.copy(), customer_df.copy())

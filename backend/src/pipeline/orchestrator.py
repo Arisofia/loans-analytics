@@ -9,7 +9,7 @@ from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
-from backend.python.logging_config import get_logger
+from backend.loans_analytics.logging_config import get_logger
 from .calculation import CalculationPhase
 from .config import PipelineConfig, load_business_rules, load_kpi_definitions
 from .ingestion import IngestionPhase
@@ -323,9 +323,9 @@ def run_decision_slice(canonical_bundle: dict) -> dict:
     """Run the first-live decision slice end-to-end."""
     import pandas as pd
 
-    from backend.python.multi_agent.feature_store.builder import build_feature_store
-    from backend.python.multi_agent.orchestrator.decision_orchestrator import DecisionOrchestrator
-    from backend.python.multi_agent.orchestrator.run_first_live_agents import run_first_live_agents
+    from backend.loans_analytics.multi_agent.feature_store.builder import build_feature_store
+    from backend.loans_analytics.multi_agent.orchestrator.decision_orchestrator import DecisionOrchestrator
+    from backend.loans_analytics.multi_agent.orchestrator.run_first_live_agents import run_first_live_agents
     from backend.src.data_quality.engine import run_data_quality
     from backend.src.kpi_engine.engine import run_metric_engine
     from backend.src.marts.build_all_marts import build_all_marts

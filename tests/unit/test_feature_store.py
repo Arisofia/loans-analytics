@@ -5,10 +5,10 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from backend.python.multi_agent.feature_store.campaign_features import (
+from backend.loans_analytics.multi_agent.feature_store.campaign_features import (
     build_campaign_features,
 )
-from backend.python.multi_agent.feature_store.treasury_features import (
+from backend.loans_analytics.multi_agent.feature_store.treasury_features import (
     build_treasury_features,
 )
 

@@ -14,9 +14,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger('retrain_pipeline')
 
 def run_pipeline(loan_path: Path, payment_path: Optional[Path]=None, customer_path: Optional[Path]=None, model_dir: Path=Path('models/risk'), threshold_auc: float=0.7, iv_threshold: float=0.02) -> bool:
-    from backend.python.features.feature_store import FeatureStore
-    from backend.python.models.default_risk_model import DefaultRiskModel
-    from backend.python.models.scorecard_model import ScorecardModel
+    from backend.loans_analytics.features.feature_store import FeatureStore
+    from backend.loans_analytics.models.default_risk_model import DefaultRiskModel
+    from backend.loans_analytics.models.scorecard_model import ScorecardModel
     logger.info('Starting retraining pipeline...')
     if not loan_path.exists():
         logger.error('Loan data not found: %s', loan_path)

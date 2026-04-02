@@ -107,14 +107,21 @@ monitoring-health:
 	@bash scripts/monitoring/health_check_monitoring.sh
 api:
 	@echo "Starting API server on http://127.0.0.1:8000 with hot-reload..."
-	"$(PYTHON)" -m uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir backend/python --reload-dir backend/src --reload-dir config
+	"$(PYTHON)" -m uvicorn loans_analytics.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir backend/loans_analytics --reload-dir backend/src --reload-dir config
 dev: api
 
 agents:
-	"$(PYTHON)" -m python.multi_agent.cli list-scenarios
+	"$(PYTHON)" -m loans_analytics.multi_agent.cli list-scenarios
 
 kpis:
-	"$(PYTHON)" scripts/data/run_data_pipeline.py --input data/samples/loans_sample_data_20260202.csv
+ifndef INPUT
+	$(error INPUT is required. Usage: make kpis INPUT=/path/to/production.csv)
+endif
+	@echo "[AUDIT] Running KPI pipeline against: $(INPUT)"
+	"$(PYTHON)" scripts/data/run_data_pipeline.py \
+		--input "$(INPUT)" \
+		--mode full \
+		--verbose
 
 train-scorecard-if-ready:
 	"$(PYTHON)" scripts/ml/train_scorecard_if_ready.py

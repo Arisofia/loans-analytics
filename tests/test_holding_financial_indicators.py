@@ -6,7 +6,7 @@ Validates all 10 recommendations from the EEFF Consolidado analysis.
 from __future__ import annotations
 
 import pytest
-from backend.python.kpis.holding_financial_indicators import (
+from backend.loans_analytics.kpis.holding_financial_indicators import (
     calculate_cash_conversion_cycle,
     calculate_d_ebitda_sensitivity,
     calculate_liquidity_reserve,

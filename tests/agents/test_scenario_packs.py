@@ -1,12 +1,12 @@
 import unittest
 from unittest.mock import patch
-from backend.python.multi_agent.orchestrator import MultiAgentOrchestrator
-from backend.python.multi_agent.protocol import AgentRole
+from backend.loans_analytics.multi_agent.orchestrator import MultiAgentOrchestrator
+from backend.loans_analytics.multi_agent.protocol import AgentRole
 
 class TestRetailLoanScenarios(unittest.TestCase):
 
     def setUp(self):
-        with patch('backend.python.multi_agent.base_agent.BaseAgent._init_client'):
+        with patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client'):
             self.orchestrator = MultiAgentOrchestrator()
 
     def test_retail_origination_scenario_exists(self):
@@ -68,7 +68,7 @@ class TestRetailLoanScenarios(unittest.TestCase):
 class TestScenarioIntegration(unittest.TestCase):
 
     def setUp(self):
-        with patch('backend.python.multi_agent.base_agent.BaseAgent._init_client'):
+        with patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client'):
             self.orchestrator = MultiAgentOrchestrator()
 
     def test_total_scenario_count(self):
@@ -109,7 +109,7 @@ class TestScenarioIntegration(unittest.TestCase):
 class TestSMELoanScenarios(unittest.TestCase):
 
     def setUp(self):
-        with patch('backend.python.multi_agent.base_agent.BaseAgent._init_client'):
+        with patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client'):
             self.orchestrator = MultiAgentOrchestrator()
 
     def test_sme_underwriting_scenario(self):
@@ -141,7 +141,7 @@ class TestSMELoanScenarios(unittest.TestCase):
 class TestAutoLoanScenarios(unittest.TestCase):
 
     def setUp(self):
-        with patch('backend.python.multi_agent.base_agent.BaseAgent._init_client'):
+        with patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client'):
             self.orchestrator = MultiAgentOrchestrator()
 
     def test_auto_origination_scenario(self):
@@ -172,7 +172,7 @@ class TestAutoLoanScenarios(unittest.TestCase):
 class TestPortfolioScenarios(unittest.TestCase):
 
     def setUp(self):
-        with patch('backend.python.multi_agent.base_agent.BaseAgent._init_client'):
+        with patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client'):
             self.orchestrator = MultiAgentOrchestrator()
 
     def test_portfolio_health_check_scenario(self):

@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
-from backend.python.kpis.ltv import calculate_ltv_sintetico
-from backend.python.kpis.engine import KPIEngineV2
-from backend.python.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+from backend.loans_analytics.kpis.ltv import calculate_ltv_sintetico
+from backend.loans_analytics.kpis.engine import KPIEngineV2
+from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 try:
     import umap
     _UMAP_AVAILABLE = True

@@ -106,8 +106,13 @@ filterwarnings = [
   "ignore:KPIEngine \\(v1\\) is deprecated.*:DeprecationWarning",
   "ignore:pkg_resources is deprecated.*:DeprecationWarning",
 ]
+# Prevent LLM agent tests from running without explicit opt-in.
+# Multi-agent tests are excluded by default from standard CI runs — they require:
+#   - External LLM API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
+#   - Explicit @pytest.mark.integration or equivalent user annotation
+#   - Controlled CI matrix that prevents silent API calls
+# To run agent tests: pytest --co -m integration tests/
 testpaths = [
-  "backend/python/multi_agent",
   "backend/python/tests",
   "tests",
 ]
@@ -119,7 +124,7 @@ norecursedirs = [
   ".hypothesis",
 ]
 pythonpath = ["backend", "frontend"]
-addopts = "--import-mode=importlib --cov-report=term --cov-report=html --cov=backend/python --cov=backend/src --cov=frontend/streamlit_app"
+addopts = "--import-mode=importlib --strict-markers --cov-report=term --cov-report=html --cov=backend/loans_analytics --cov=backend/src --cov=frontend/streamlit_app"
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

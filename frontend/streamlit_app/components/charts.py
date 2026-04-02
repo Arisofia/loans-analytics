@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from backend.python.utils.dashboard import compute_cat_agg, format_kpi_value
+from backend.loans_analytics.utils.dashboard import compute_cat_agg, format_kpi_value
 from .visualizations import apply_theme
 
 def render_cashflow_trends(analytics_facts):

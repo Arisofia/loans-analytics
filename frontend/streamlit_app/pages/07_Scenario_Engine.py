@@ -3,8 +3,8 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from backend.python.config.theme import ANALYTICS_THEME
-from backend.python.models.default_risk_model import DefaultRiskModel
+from backend.loans_analytics.config.theme import ANALYTICS_THEME
+from backend.loans_analytics.models.default_risk_model import DefaultRiskModel
 st.set_page_config(page_title='Scenario Engine', page_icon='🎭', layout='wide')
 st.markdown(f"\n    <style>\n    .main {{\n        background-color: {ANALYTICS_THEME['colors']['background']};\n        color: {ANALYTICS_THEME['colors']['white']};\n    }}\n    .metric-container {{\n        background-color: #1e2130;\n        padding: 20px;\n        border-radius: 10px;\n        border: 1px solid #30363d;\n    }}\n    </style>\n    ", unsafe_allow_html=True)
 st.title('🎭 Scenario Engine')

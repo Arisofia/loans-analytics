@@ -1,7 +1,7 @@
 from __future__ import annotations
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from backend.python.multi_agent.guardrails import Guardrails
+from backend.loans_analytics.multi_agent.guardrails import Guardrails
 
 @settings(max_examples=150, deadline=None)
 @given(user_input=st.text(min_size=0, max_size=2000))

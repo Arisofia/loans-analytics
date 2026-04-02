@@ -69,20 +69,20 @@ class TestDataIntegrity:
         assert len(violations) == 0, f'Found {len(violations)} fixture files outside test directories:\n' + '\n'.join([f'  {v}' for v in violations]) + '\n\nFixture files must be in tests/ directory only.'
 
     def test_environment_config_exists(self):
-        from backend.python.config import settings
+        from backend.loans_analytics.config import settings
         assert hasattr(settings, 'environment'), "Settings must have 'environment' attribute for environment-based configuration"
         assert hasattr(settings.environment, 'get_data_root'), "EnvironmentSettings must have 'get_data_root' method"
         assert hasattr(settings.environment, 'get_test_data_root'), "EnvironmentSettings must have 'get_test_data_root' method"
 
     def test_test_data_root_blocked_in_production(self):
-        from backend.python.config import EnvironmentSettings
+        from backend.loans_analytics.config import EnvironmentSettings
         prod_env = EnvironmentSettings(environment='prod', prod_data_path='/mnt/prod-data')
         with pytest.raises(RuntimeError, match='not available in production'):
             prod_env.get_test_data_root()
 
     def test_environment_validation(self):
         from pydantic import ValidationError
-        from backend.python.config import EnvironmentSettings
+        from backend.loans_analytics.config import EnvironmentSettings
         for env in ['dev', 'staging', 'prod']:
             config = EnvironmentSettings(environment=env)
             assert config.environment == env

@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def _safe_import_holding():
     """Lazily import the holding indicators module."""
     try:
-        from backend.python.kpis.holding_financial_indicators import (
+        from backend.loans_analytics.kpis.holding_financial_indicators import (
             calculate_liquidity_reserve,
             compare_scenarios,
             load_holding_config,

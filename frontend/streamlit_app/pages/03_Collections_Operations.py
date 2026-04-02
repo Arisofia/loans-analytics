@@ -10,9 +10,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import requests
 import streamlit as st
-from backend.python.multi_agent.guardrails import Guardrails
-from backend.python.multi_agent.orchestrator import MultiAgentOrchestrator
-from backend.python.multi_agent.protocol import LLMProvider
+from backend.loans_analytics.multi_agent.guardrails import Guardrails
+from backend.loans_analytics.multi_agent.orchestrator import MultiAgentOrchestrator
+from backend.loans_analytics.multi_agent.protocol import LLMProvider
 from frontend.streamlit_app.components.csv_upload import BORROWER_ID_COLS, classify_loan_id_duplicates as _classify_loan_id_duplicates, coerce_numeric as _coerce_amount
 from frontend.streamlit_app.utils.security import sanitize_api_base
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent

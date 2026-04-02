@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 from pathlib import Path
-from backend.python.models.default_risk_model import DefaultRiskModel
+from backend.loans_analytics.models.default_risk_model import DefaultRiskModel
 from .visualizations import apply_theme, styled_df
 MODEL_PATH = Path(__file__).resolve().parents[3] / 'models' / 'risk' / 'default_risk_xgb.ubj'
 

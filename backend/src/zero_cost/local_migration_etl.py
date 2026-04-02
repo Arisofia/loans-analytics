@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 import pandas as pd
-from backend.python.kpis.dpd_calculator import DPDCalculator
+from backend.loans_analytics.kpis.dpd_calculator import DPDCalculator
 from .loan_tape_loader import LoanTapeLoader
 from .xirr import contractual_apr, portfolio_xirr
 logger = logging.getLogger(__name__)

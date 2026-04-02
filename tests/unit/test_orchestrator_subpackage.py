@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 
-from backend.python.multi_agent.orchestrator.priority_rules import (
+from backend.loans_analytics.multi_agent.orchestrator.priority_rules import (
     PRIORITY_HIERARCHY,
     AGENT_TO_CATEGORY,
     priority_rank,
     rank_actions,
     resolve_conflicts,
 )
-from backend.python.multi_agent.orchestrator.dependency_graph import (
+from backend.loans_analytics.multi_agent.orchestrator.dependency_graph import (
     topological_sort,
 )
-from backend.python.multi_agent.orchestrator.action_router import (
+from backend.loans_analytics.multi_agent.orchestrator.action_router import (
     route_actions,
 )
 

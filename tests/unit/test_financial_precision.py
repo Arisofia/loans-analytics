@@ -1,6 +1,6 @@
 import pytest
 from decimal import Decimal, ROUND_HALF_UP
-from backend.python.financial_precision import dollars_to_cents, cents_to_dollars, interest_rate_to_basis_points, basis_points_to_interest_rate, safe_decimal_sum, safe_decimal_divide, validate_monetary_field
+from backend.loans_analytics.financial_precision import dollars_to_cents, cents_to_dollars, interest_rate_to_basis_points, basis_points_to_interest_rate, safe_decimal_sum, safe_decimal_divide, validate_monetary_field
 
 class TestMonetaryConversions:
 

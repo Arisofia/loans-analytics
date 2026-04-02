@@ -13,7 +13,7 @@ the specialized Control-de-Mora and historical loan-tape reconciliation path.
 """
 from .control_mora_adapter import ControlMoraAdapter
 from .crosswalk import Crosswalk
-from backend.python.kpis.dpd_calculator import DPDCalculator
+from backend.loans_analytics.kpis.dpd_calculator import DPDCalculator
 from .exporter import Exporter
 from .fuzzy_matcher import FuzzyIncomeMatcher
 from .lend_id_mapper import LendIdMapper

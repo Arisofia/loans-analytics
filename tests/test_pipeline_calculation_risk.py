@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 import numpy as np
 import backend.src.pipeline.calculation as calc_module
-from backend.python.kpis.engine import KPIEngineV2
+from backend.loans_analytics.kpis.engine import KPIEngineV2
 
 CalculationPhase = calc_module.CalculationPhase
 

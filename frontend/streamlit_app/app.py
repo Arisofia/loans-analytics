@@ -6,14 +6,14 @@ from pathlib import Path
 from typing import Optional
 import pandas as pd
 import streamlit as st
-from backend.python.config.theme import ANALYTICS_THEME
-from backend.python.config.tracing_setup import enable_auto_instrumentation, init_tracing
-from backend.python.kpis.catalog_processor import KPICatalogProcessor
-from backend.python.kpis.strategic_reporting import build_strategic_summary, write_strategic_report
-from backend.python.kpis.threshold_enrichment import enrich_kpis_with_thresholds
-from backend.python.utils.dashboard import format_kpi_value, kpi_label
-from backend.python.utils.normalization import normalize_dataframe_complete
-from backend.python.utils.usage_tracker import UsageTracker
+from backend.loans_analytics.config.theme import ANALYTICS_THEME
+from backend.loans_analytics.config.tracing_setup import enable_auto_instrumentation, init_tracing
+from backend.loans_analytics.kpis.catalog_processor import KPICatalogProcessor
+from backend.loans_analytics.kpis.strategic_reporting import build_strategic_summary, write_strategic_report
+from backend.loans_analytics.kpis.threshold_enrichment import enrich_kpis_with_thresholds
+from backend.loans_analytics.utils.dashboard import format_kpi_value, kpi_label
+from backend.loans_analytics.utils.normalization import normalize_dataframe_complete
+from backend.loans_analytics.utils.usage_tracker import UsageTracker
 from frontend.streamlit_app.components.analytics_tabs import render_advanced_intelligence
 from frontend.streamlit_app.components.charts import render_cashflow_trends, render_category_breakdown, render_growth_analysis
 from frontend.streamlit_app.components.kpi_metrics import render_executive_summary, render_kpi_snapshot

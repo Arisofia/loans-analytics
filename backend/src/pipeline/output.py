@@ -6,7 +6,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 import pandas as pd
-from backend.python.logging_config import get_logger
+from backend.loans_analytics.logging_config import get_logger
 
 try:
     import httpx
@@ -18,7 +18,7 @@ except ImportError:
     Client = None  # type: ignore[assignment,misc]
     create_client = None  # type: ignore[assignment]
 if TYPE_CHECKING:
-    from backend.python.kpis.engine import KPIEngineV2
+    from backend.loans_analytics.kpis.engine import KPIEngineV2
 logger = get_logger(__name__)
 KPI_DEFINITIONS_TABLE = "monitoring.kpi_definitions"
 _BOOL_ENV_TRUE = frozenset({"1", "true", "yes", "on"})

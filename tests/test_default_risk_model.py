@@ -16,18 +16,18 @@ def _make_mock_classifier(proba_values):
 class TestDefaultRiskModel:
 
     def test_import(self):
-        from backend.python.models.default_risk_model import FEATURE_COLUMNS
+        from backend.loans_analytics.models.default_risk_model import FEATURE_COLUMNS
 
         assert len(FEATURE_COLUMNS) > 0
 
     def test_load_file_not_found(self):
-        from backend.python.models.default_risk_model import DefaultRiskModel
+        from backend.loans_analytics.models.default_risk_model import DefaultRiskModel
 
         with pytest.raises(FileNotFoundError):
             DefaultRiskModel.load("/nonexistent/path/model.ubj")
 
     def test_predict_proba(self):
-        from backend.python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
+        from backend.loans_analytics.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
         mock_clf = _make_mock_classifier([0.42])
         model = DefaultRiskModel(model=mock_clf)
@@ -37,7 +37,7 @@ class TestDefaultRiskModel:
         assert 0.0 <= prob <= 1.0
 
     def test_predict_proba_high(self):
-        from backend.python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
+        from backend.loans_analytics.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
         mock_clf = _make_mock_classifier([0.95])
         model = DefaultRiskModel(model=mock_clf)
@@ -47,7 +47,7 @@ class TestDefaultRiskModel:
         assert prob >= 0.9
 
     def test_predict_proba_low(self):
-        from backend.python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
+        from backend.loans_analytics.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
         mock_clf = _make_mock_classifier([0.01])
         model = DefaultRiskModel(model=mock_clf)
@@ -57,7 +57,7 @@ class TestDefaultRiskModel:
         assert prob <= 0.05
 
     def test_predict_proba_not_loaded_raises(self):
-        from backend.python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
+        from backend.loans_analytics.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
         model = DefaultRiskModel(model=None)
         loan = dict.fromkeys(ALL_FEATURES, 1.0)
@@ -65,7 +65,7 @@ class TestDefaultRiskModel:
             model.predict_proba(loan)
 
     def test_predict_batch(self):
-        from backend.python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
+        from backend.loans_analytics.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
         mock_clf = _make_mock_classifier([0.3, 0.7])
         model = DefaultRiskModel(model=mock_clf)
@@ -74,19 +74,19 @@ class TestDefaultRiskModel:
         assert len(probs) == 2
 
     def test_predict_proba_validates_features(self):
-        from backend.python.models.default_risk_model import DefaultRiskModel
+        from backend.loans_analytics.models.default_risk_model import DefaultRiskModel
 
         model = DefaultRiskModel(model=_make_mock_classifier([0.5]))
         with pytest.raises(ValueError, match="Missing required features"):
             model.predict_proba({"principal_amount": 100})
 
     def test_feature_columns_alias(self):
-        from backend.python.models.default_risk_model import ALL_FEATURES, FEATURE_COLUMNS
+        from backend.loans_analytics.models.default_risk_model import ALL_FEATURES, FEATURE_COLUMNS
 
         assert FEATURE_COLUMNS == ALL_FEATURES
 
     def test_metadata_empty_on_init(self):
-        from backend.python.models.default_risk_model import DefaultRiskModel
+        from backend.loans_analytics.models.default_risk_model import DefaultRiskModel
 
         model = DefaultRiskModel()
         assert model.metadata == {}
@@ -96,14 +96,14 @@ class TestDefaultRiskModel:
 class TestPredictionModels:
 
     def test_request_model(self):
-        from backend.python.apps.analytics.api.models import DefaultPredictionRequest
+        from backend.loans_analytics.apps.analytics.api.models import DefaultPredictionRequest
 
         req = DefaultPredictionRequest(loan_amount=50000.0, interest_rate=12.5, term_months=24)
         assert req.loan_amount == pytest.approx(50000.0)
         assert req.ltv_ratio == pytest.approx(0.0)
 
     def test_response_model(self):
-        from backend.python.apps.analytics.api.models import DefaultPredictionResponse
+        from backend.loans_analytics.apps.analytics.api.models import DefaultPredictionResponse
 
         resp = DefaultPredictionResponse(
             probability=0.42, risk_level="medium", model_version="xgb_v1"
@@ -119,7 +119,7 @@ class TestPredictEndpoint:
         fastapi_app = None
         try:
             from fastapi.testclient import TestClient
-            from backend.python.apps.analytics.api.main import app as fastapi_app
+            from backend.loans_analytics.apps.analytics.api.main import app as fastapi_app
         except ImportError:
             pytest.skip("FastAPI not available")
         if fastapi_app is None:
@@ -128,7 +128,7 @@ class TestPredictEndpoint:
 
     def test_predict_default_no_model(self):
         client = self._build_test_client_or_skip()
-        from backend.python.apps.analytics.api import main as main_mod
+        from backend.loans_analytics.apps.analytics.api import main as main_mod
 
         if hasattr(main_mod, "_risk_model_cache"):
             main_mod._risk_model_cache.clear()
@@ -141,7 +141,7 @@ class TestPredictEndpoint:
 
     def test_predict_default_with_model(self):
         client = self._build_test_client_or_skip()
-        from backend.python.apps.analytics.api import main as main_mod
+        from backend.loans_analytics.apps.analytics.api import main as main_mod
 
         mock_model = MagicMock()
         mock_model.predict_proba.return_value = 0.35

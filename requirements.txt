@@ -1,14 +1,14 @@
 # Runtime dependencies for Loans Loans Analytics
 
 # Multi-Agent / LLM stack
-openai==2.30.0
+openai>=1.55.0,<2.0.0
 google-genai==1.68.0
 langchain>=1.2.10,<2.0.0
 langchain-openai>=1.1.9,<2.0.0
 langchain-core>=1.2.14,<2.0.0
 grpcio==1.78.0
 grpcio-status==1.78.0
-protobuf>=6.33.5,<8.0.0
+protobuf>=4.25.0,<6.0.0
 
 # Core data and analytics
 python-dotenv==1.2.2

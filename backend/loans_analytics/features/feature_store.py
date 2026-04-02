@@ -1,0 +1,78 @@
+from __future__ import annotations
+import json
+import logging
+from contextlib import suppress
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+import numpy as np
+import pandas as pd
+logger = logging.getLogger(__name__)
+
+class FeatureStore:
+
+    def __init__(self, storage_dir: str='data/features') -> None:
+        self.storage_dir = Path(storage_dir)
+        self.storage_dir.mkdir(parents=True, exist_ok=True)
+
+    def compute_features(self, loan_df: pd.DataFrame, payment_df: pd.DataFrame | None=None, customer_df: pd.DataFrame | None=None) -> pd.DataFrame:
+        from backend.loans_analytics.models.scorecard_model import ScorecardModel
+        p_df = payment_df if payment_df is not None else pd.DataFrame()
+        c_df = customer_df if customer_df is not None else pd.DataFrame()
+        enriched_df = ScorecardModel.build_model_dataset(loan_df.copy(), p_df.copy(), c_df.copy())
+        exclude = ['is_default', 'loan_id', 'customer_id', 'disbursement_date', 'status', 'current_status', '_is_late']
+        feature_cols = [c for c in enriched_df.columns if c not in exclude]
+        features = enriched_df[feature_cols].copy()
+        features = features.loc[:, ~features.columns.duplicated()]
+        for col in features.columns:
+            if features[col].dtype == object:
+                with suppress(ValueError, TypeError):
+                    features[col] = pd.to_numeric(features[col])
+        features = features.select_dtypes(include=[np.number, 'bool'])
+        if 'loan_id' in enriched_df.columns:
+            features.insert(0, 'loan_id', enriched_df['loan_id'])
+        features = features.fillna(0.0)
+        return features
+
+    def get_features_for_loan(self, loan_id: str) -> dict[str, Any] | None:
+        try:
+            df = self.get_latest_features()
+            if 'loan_id' not in df.columns:
+                return None
+            loan_features = df[df['loan_id'] == loan_id]
+            if loan_features.empty:
+                return None
+            return loan_features.iloc[0].drop('loan_id').to_dict()
+        except Exception as e:
+            logger.error('Error retrieving features for loan %s: %s', loan_id, e)
+            return None
+
+    def save_features(self, features: pd.DataFrame, version: str | None=None) -> Path:
+        if version is None:
+            version = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+        version_dir = self.storage_dir / version
+        version_dir.mkdir(parents=True, exist_ok=True)
+        file_path = version_dir / 'features.parquet'
+        try:
+            features.to_parquet(file_path, index=False)
+        except ImportError:
+            file_path = version_dir / 'features.csv'
+            features.to_csv(file_path, index=False)
+        metadata = {'version': version, 'timestamp': datetime.now(timezone.utc).isoformat(), 'num_rows': len(features), 'columns': list(features.columns)}
+        with open(version_dir / 'metadata.json', 'w') as f:
+            json.dump(metadata, f, indent=2)
+        logger.info('Saved version %s to %s', version, file_path)
+        return file_path
+
+    def get_latest_features(self) -> pd.DataFrame:
+        versions = sorted([d for d in self.storage_dir.iterdir() if d.is_dir()])
+        if not versions:
+            raise FileNotFoundError('No feature versions found')
+        latest_dir = versions[-1]
+        parquet_path = latest_dir / 'features.parquet'
+        if parquet_path.exists():
+            return pd.read_parquet(parquet_path)
+        csv_path = latest_dir / 'features.csv'
+        if csv_path.exists():
+            return pd.read_csv(csv_path)
+        raise FileNotFoundError(f'No feature files found in {latest_dir}')

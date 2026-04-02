@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime
-from backend.python.models.kpi_models import KpiDefinition, KpiRegistry, KpiValidationConfig
-from backend.python.multi_agent.kpi_integration import KpiContextProvider, KpiValue
+from backend.loans_analytics.models.kpi_models import KpiDefinition, KpiRegistry, KpiValidationConfig
+from backend.loans_analytics.multi_agent.kpi_integration import KpiContextProvider, KpiValue
 
 class TestKpiIntegration(unittest.TestCase):
 

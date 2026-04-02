@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from backend.python.utils.dashboard import format_kpi_value, kpi_label
+from backend.loans_analytics.utils.dashboard import format_kpi_value, kpi_label
 
 def get_threshold_badge_html(threshold_status: str) -> str:
     status_config = {'normal': ('✅ Normal', '#10B981'), 'warning': ('⚠️ Warning', '#FB923C'), 'critical': ('🔴 Critical', '#DC2626'), 'not_configured': ('⊙ Not Set', '#6B7280')}

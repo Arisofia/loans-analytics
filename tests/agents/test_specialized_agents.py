@@ -1,11 +1,11 @@
 import unittest
 from unittest.mock import Mock, patch
-from backend.python.multi_agent.protocol import AgentRole
-from backend.python.multi_agent.specialized_agents import CollectionsAgent, CustomerRetentionAgent, DatabaseDesignerAgent, FraudDetectionAgent, PricingAgent
+from backend.loans_analytics.multi_agent.protocol import AgentRole
+from backend.loans_analytics.multi_agent.specialized_agents import CollectionsAgent, CustomerRetentionAgent, DatabaseDesignerAgent, FraudDetectionAgent, PricingAgent
 
 class TestCollectionsAgent(unittest.TestCase):
 
-    @patch('backend.python.multi_agent.base_agent.BaseAgent._init_client')
+    @patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client')
     def setUp(self, mock_init_client):
         mock_init_client.return_value = Mock()
         self.agent = CollectionsAgent()
@@ -21,7 +21,7 @@ class TestCollectionsAgent(unittest.TestCase):
 
 class TestFraudDetectionAgent(unittest.TestCase):
 
-    @patch('backend.python.multi_agent.base_agent.BaseAgent._init_client')
+    @patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client')
     def setUp(self, mock_init_client):
         mock_init_client.return_value = Mock()
         self.agent = FraudDetectionAgent()
@@ -37,7 +37,7 @@ class TestFraudDetectionAgent(unittest.TestCase):
 
 class TestPricingAgent(unittest.TestCase):
 
-    @patch('backend.python.multi_agent.base_agent.BaseAgent._init_client')
+    @patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client')
     def setUp(self, mock_init_client):
         mock_init_client.return_value = Mock()
         self.agent = PricingAgent()
@@ -53,7 +53,7 @@ class TestPricingAgent(unittest.TestCase):
 
 class TestCustomerRetentionAgent(unittest.TestCase):
 
-    @patch('backend.python.multi_agent.base_agent.BaseAgent._init_client')
+    @patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client')
     def setUp(self, mock_init_client):
         mock_init_client.return_value = Mock()
         self.agent = CustomerRetentionAgent()
@@ -69,7 +69,7 @@ class TestCustomerRetentionAgent(unittest.TestCase):
 
 class TestSpecializedAgentIntegration(unittest.TestCase):
 
-    @patch('backend.python.multi_agent.base_agent.BaseAgent._init_client')
+    @patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client')
     def setUp(self, mock_init_client):
         mock_init_client.return_value = Mock()
         self.collections = CollectionsAgent()

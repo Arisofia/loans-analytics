@@ -88,7 +88,7 @@ def realistic_portfolio_df() -> pd.DataFrame:
 @pytest.fixture(scope="session")
 def realistic_loan_records() -> list:
     """Session-scoped list of 25 LoanRecord-compatible dicts for analytics endpoints."""
-    from backend.python.apps.analytics.api.models import LoanRecord
+    from backend.loans_analytics.apps.analytics.api.models import LoanRecord
 
     rng = random.Random(99)
     today = date(2026, 3, 26)

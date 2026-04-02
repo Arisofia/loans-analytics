@@ -7,8 +7,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Dict, Optional
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from backend.python.config import settings
-from backend.python.supabase_pool import SupabaseConnectionPool
+from backend.loans_analytics.config import settings
+from backend.loans_analytics.supabase_pool import SupabaseConnectionPool
 
 class MetricsRegistry:
 

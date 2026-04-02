@@ -8,7 +8,7 @@ pytestmark = pytest.mark.skipif(not os.getenv('RUN_REAL_SUPABASE_TESTS'), reason
 
 @pytest.fixture(scope='module')
 def supabase_backend():
-    from backend.python.multi_agent.historical_backend_supabase import SupabaseHistoricalBackend
+    from backend.loans_analytics.multi_agent.historical_backend_supabase import SupabaseHistoricalBackend
     if not os.getenv('SUPABASE_URL') or not os.getenv('SUPABASE_ANON_KEY'):
         pytest.fail('SUPABASE_URL and SUPABASE_ANON_KEY environment variables required for real Supabase integration tests')
     supabase_url = os.getenv('SUPABASE_URL', '')
@@ -29,7 +29,7 @@ def supabase_backend():
 
 @pytest.fixture(scope='module')
 def historical_provider(supabase_backend):
-    from backend.python.multi_agent.historical_context import HistoricalContextProvider
+    from backend.loans_analytics.multi_agent.historical_context import HistoricalContextProvider
     return HistoricalContextProvider(mode='REAL', backend=supabase_backend)
 
 @pytest.fixture(scope='module')

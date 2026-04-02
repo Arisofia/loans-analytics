@@ -7,7 +7,7 @@ import pandas as pd
 from backend.src.infrastructure.google_sheets_adapter import ControlMoraSheetsAdapter
 from .control_mora_adapter import ControlMoraAdapter
 from .loan_tape_loader import LoanTapeLoader
-from backend.python.kpis.dpd_calculator import dpd_to_bucket
+from backend.loans_analytics.kpis.dpd_calculator import dpd_to_bucket
 logger = logging.getLogger(__name__)
 _PIVOT_MONTH = pd.Timestamp('2026-02-01')
 

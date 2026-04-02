@@ -3,8 +3,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from backend.python.config.mype_rules import IndustryType, MYPEBusinessRules, RiskLevel
-from backend.python.config import settings
+from backend.loans_analytics.config.mype_rules import IndustryType, MYPEBusinessRules, RiskLevel
+from backend.loans_analytics.config import settings
 from backend.src.analytics import calculate_quality_score, portfolio_kpis, project_growth, standardize_numeric
 
 @pytest.fixture

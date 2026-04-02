@@ -8,7 +8,7 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
-from backend.python.models.scorecard_model import ScorecardModel
+from backend.loans_analytics.models.scorecard_model import ScorecardModel
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s - %(message)s')
 logger = logging.getLogger('train_scorecard')
 

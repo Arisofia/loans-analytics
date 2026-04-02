@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 import numpy as np
 import pandas as pd
-from backend.python.logging_config import get_logger
+from backend.loans_analytics.logging_config import get_logger
 
 logger = get_logger(__name__)
 DATETIME64_NS_DTYPE = "datetime64[ns]"

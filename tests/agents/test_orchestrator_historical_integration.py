@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from backend.python.multi_agent.orchestrator import MultiAgentOrchestrator
-from backend.python.multi_agent.protocol import AgentResponse, AgentRole, Message, MessageRole
+from backend.loans_analytics.multi_agent.orchestrator import MultiAgentOrchestrator
+from backend.loans_analytics.multi_agent.protocol import AgentResponse, AgentRole, Message, MessageRole
 
 class TestOrchestratorHistoricalIntegration(unittest.TestCase):
 
@@ -9,7 +9,7 @@ class TestOrchestratorHistoricalIntegration(unittest.TestCase):
     def _response(role: AgentRole, trace_id: str, content: str) -> AgentResponse:
         return AgentResponse(trace_id=trace_id, agent_role=role, message=Message(role=MessageRole.ASSISTANT, content=content), tokens_used=90, cost_usd=0.0015, latency_ms=25.0)
 
-    @patch('backend.python.multi_agent.base_agent.BaseAgent._init_client')
+    @patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client')
     def test_auto_enriches_and_injects_historical_context(self, mock_init_client):
         mock_init_client.return_value = MagicMock()
         provider = MagicMock()
@@ -33,7 +33,7 @@ class TestOrchestratorHistoricalIntegration(unittest.TestCase):
         self.assertIn('historical_context', captured['context'])
         self.assertIn('historical_trends', captured['context'])
 
-    @patch('backend.python.multi_agent.base_agent.BaseAgent._init_client')
+    @patch('backend.loans_analytics.multi_agent.base_agent.BaseAgent._init_client')
     def test_preserves_explicit_historical_context(self, mock_init_client):
         mock_init_client.return_value = MagicMock()
         provider = MagicMock()

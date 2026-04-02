@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from backend.python.multi_agent.orchestrator.decision_orchestrator import (
+from backend.loans_analytics.multi_agent.orchestrator.decision_orchestrator import (
     DecisionOrchestrator,
 )
 from backend.src.contracts.agent_schema import AgentAlert, AgentOutput

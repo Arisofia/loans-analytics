@@ -4,8 +4,8 @@ from typing import List
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-from backend.python.multi_agent.config_historical import build_historical_context_provider
-from backend.python.multi_agent.historical_context import HistoricalContextProvider, KpiProjection, KpiHistoricalValue
+from backend.loans_analytics.multi_agent.config_historical import build_historical_context_provider
+from backend.loans_analytics.multi_agent.historical_context import HistoricalContextProvider, KpiProjection, KpiHistoricalValue
 st.set_page_config(page_title='Agent Insights', page_icon='🤖', layout='wide')
 DEFAULT_KPI_IDS = ['default_rate', 'delinquency_rate_30', 'collection_efficiency', 'approval_rate', 'portfolio_growth']
 

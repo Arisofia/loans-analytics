@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 import pandas as pd
-from backend.python.logging_config import get_logger
+from backend.loans_analytics.logging_config import get_logger
 from backend.src.infrastructure.google_sheets_adapter import ControlMoraSheetsAdapter
 from backend.src.pipeline.constants import GSHEETS_URI_PREFIX
 logger = get_logger(__name__)

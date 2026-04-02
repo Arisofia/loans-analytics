@@ -2,8 +2,8 @@ from __future__ import annotations
 import os
 import unittest
 from unittest.mock import MagicMock, patch
-from backend.python.multi_agent.base_agent import BaseAgent
-from backend.python.multi_agent.protocol import AgentRequest, AgentRole, LLMProvider, Message, MessageRole
+from backend.loans_analytics.multi_agent.base_agent import BaseAgent
+from backend.loans_analytics.multi_agent.protocol import AgentRequest, AgentRole, LLMProvider, Message, MessageRole
 
 class _TestAgent(BaseAgent):
 
@@ -30,7 +30,7 @@ class TestBaseAgentGrok(unittest.TestCase):
     @patch.object(BaseAgent, '_init_client', return_value=MagicMock())
     def test_init_grok_client_uses_xai_settings(self, _mock_init_client):
         agent = _TestAgent(role=AgentRole.RISK_ANALYST, provider=LLMProvider.GROK)
-        with patch('backend.python.multi_agent.base_agent.OpenAI') as mock_openai, patch.dict(os.environ, {'XAI_API_KEY': 'xai-test-key', 'XAI_BASE_URL': 'https://api.x.ai/v1', 'LLM_TIMEOUT': '30', 'LLM_MAX_RETRIES': '4'}, clear=False):
+        with patch('backend.loans_analytics.multi_agent.base_agent.OpenAI') as mock_openai, patch.dict(os.environ, {'XAI_API_KEY': 'xai-test-key', 'XAI_BASE_URL': 'https://api.x.ai/v1', 'LLM_TIMEOUT': '30', 'LLM_MAX_RETRIES': '4'}, clear=False):
             _ = agent._init_grok_client()
             mock_openai.assert_called_once_with(api_key='xai-test-key', base_url='https://api.x.ai/v1', timeout=30.0, max_retries=4)
 

@@ -17,7 +17,7 @@ except ImportError as exc:
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
-from backend.python.kpis.target_loader import TargetLoader
+from backend.loans_analytics.kpis.target_loader import TargetLoader
 
 
 def get_actuals_by_month(conn, report_date: str) -> dict:

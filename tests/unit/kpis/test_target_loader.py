@@ -2,7 +2,7 @@
 
 import pytest
 from decimal import Decimal
-from backend.python.kpis.target_loader import TargetLoader, get_2026_targets
+from backend.loans_analytics.kpis.target_loader import TargetLoader, get_2026_targets
 import pandas as pd
 
 

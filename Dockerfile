@@ -63,4 +63,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Entrypoint
-ENTRYPOINT ["python", "-m", "python.apps.analytics.api.main"]
+ENTRYPOINT ["python", "-m", "loans_analytics.apps.analytics.api.main"]

@@ -86,7 +86,7 @@ class DecisionPhase:
                 }
 
             # ── Build features ──────────────────────────────────────────
-            from backend.python.multi_agent.feature_store.builder import build_feature_store
+            from backend.loans_analytics.multi_agent.feature_store.builder import build_feature_store
 
             features = build_feature_store(marts, phase3_results.get("kpis", {}))
             logger.info("Built features: %s", list(features.keys()))
@@ -112,7 +112,7 @@ class DecisionPhase:
 
             # ── Default rate reconciliation (F10) ───────────────────────
             try:
-                from backend.python.kpis.holding_financial_indicators import reconcile_default_rates
+                from backend.loans_analytics.kpis.holding_financial_indicators import reconcile_default_rates
 
                 reconciliation = reconcile_default_rates()
                 metrics_seed["default_rate_reconciliation"] = reconciliation
@@ -132,8 +132,8 @@ class DecisionPhase:
             logger.info("Projected %d scenarios", len(scenarios_dicts))
 
             # ── Run decision orchestrator (subpackage) ──────────────────
-            from backend.python.multi_agent.orchestrator import DecisionOrchestrator
-            from backend.python.multi_agent.orchestrator.run_first_live_agents import (
+            from backend.loans_analytics.multi_agent.orchestrator import DecisionOrchestrator
+            from backend.loans_analytics.multi_agent.orchestrator.run_first_live_agents import (
                 run_first_live_agents,
             )
 

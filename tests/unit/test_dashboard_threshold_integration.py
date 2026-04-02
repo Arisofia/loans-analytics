@@ -1,5 +1,5 @@
 import pytest
-from backend.python.kpis.threshold_enrichment import get_threshold_status, load_kpi_thresholds, enrich_kpis_with_thresholds
+from backend.loans_analytics.kpis.threshold_enrichment import get_threshold_status, load_kpi_thresholds, enrich_kpis_with_thresholds
 
 class TestThresholdEnrichmentIntegration:
 

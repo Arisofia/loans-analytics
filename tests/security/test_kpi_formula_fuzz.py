@@ -2,7 +2,7 @@ from __future__ import annotations
 import pandas as pd
 from hypothesis import HealthCheck, example, given, settings
 from hypothesis import strategies as st
-from backend.python.kpis.formula_engine import KPIFormulaEngine, KPIFormulaError
+from backend.loans_analytics.kpis.formula_engine import KPIFormulaEngine, KPIFormulaError
 
 
 def _sample_df() -> pd.DataFrame:

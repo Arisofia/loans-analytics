@@ -1,6 +1,6 @@
 import asyncio
-from backend.python.apps.analytics.api.models import LoanRecord
-from backend.python.apps.analytics.api.service import KPIService
+from backend.loans_analytics.apps.analytics.api.models import LoanRecord
+from backend.loans_analytics.apps.analytics.api.service import KPIService
 
 
 def _sample_loans() -> list[LoanRecord]:

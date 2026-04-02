@@ -1,7 +1,7 @@
 import json
 import pandas as pd
 import pytest
-from backend.python.utils.usage_tracker import UsageTracker
+from backend.loans_analytics.utils.usage_tracker import UsageTracker
 
 @pytest.fixture
 def temp_storage(tmp_path):
