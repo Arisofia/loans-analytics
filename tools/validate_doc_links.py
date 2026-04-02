@@ -73,7 +73,7 @@ def main():
         print(f"  {error}")
     if args.fix:
         print("\n[FIX NOT IMPLEMENTED] Manual review required")
-        print("See: docs/operations/MASTER_DELIVERY_TODO.md, Phase 3 Documentation")
+        print("See: docs/README.md and docs/operations/SCRIPT_CANONICAL_MAP.md")
     return 1
 
 

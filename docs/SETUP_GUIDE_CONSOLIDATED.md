@@ -348,10 +348,10 @@ supabase link --project-ref your-project-ref
 supabase db push
 ```
 
-### Load Sample Data
+### Load Real Pipeline Data
 
 ```bash
-python scripts/data/load_sample_kpis_supabase.py
+python scripts/data/run_data_pipeline.py --input gsheets://DESEMBOLSOS --mode full
 ```
 
 **See**: [OBSERVABILITY.md](OBSERVABILITY.md) for Supabase metrics integration details

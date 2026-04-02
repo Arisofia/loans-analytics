@@ -172,11 +172,23 @@ jobs:
 
       - name: Upload security reports
         if: always()
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p artifacts
-          tar -czf "artifacts/security-reports-${{ github.run_number }}.tar.gz" \
-            safety-report.json safety-results.json bandit-report.json bandit-results.sarif 2>/dev/null || true
-          echo "Generated local archive: artifacts/security-reports-${{ github.run_number }}.tar.gz"
+          report_files=()
+          for report in safety-report.json safety-results.json bandit-report.json bandit-results.sarif; do
+            if [ -f "$report" ]; then
+              report_files+=("$report")
+            fi
+          done
+
+          if [ "${#report_files[@]}" -gt 0 ]; then
+            tar -czf "artifacts/security-reports-${{ github.run_number }}.tar.gz" "${report_files[@]}"
+            echo "Generated local archive: artifacts/security-reports-${{ github.run_number }}.tar.gz"
+          else
+            echo "No security reports were generated to archive"
+          fi
 
   secret-scanning:
     name: Secret Scanning (Gitleaks)
@@ -230,9 +242,14 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Build pipeline image for scanning
+        shell: bash
         run: |
-          docker build -f Dockerfile.pipeline -t loans-analytics-pipeline:scan . 2>&1 || \
-            docker build -f Dockerfile -t loans-analytics-pipeline:scan . 2>&1
+          set -euo pipefail
+          if [ -f Dockerfile.pipeline ]; then
+            docker build -f Dockerfile.pipeline -t loans-analytics-pipeline:scan .
+          else
+            docker build -f Dockerfile -t loans-analytics-pipeline:scan .
+          fi
 
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0

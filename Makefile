@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test test-quick test-baseline test-zero-cost e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic train-scorecard-if-ready zero-cost-schema etl-local snapshot-build push-kv run
+.PHONY: help setup format lint type-check test test-quick test-baseline test-zero-cost e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map report-strategic train-scorecard-if-ready zero-cost-schema etl-local snapshot-build sync-kv run
 PYTHON ?= $(shell \
 	for p in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do \
 		if command -v $$p >/dev/null 2>&1 && $$p -c "import pytest" >/dev/null 2>&1; then \
@@ -34,7 +34,6 @@ help:
 	@echo "make security-check - Run bandit and safety checks"
 	@echo "make dev            - Alias of make api"
 	@echo "make repo-map       - Open architecture map (docs/README.md)"
-	@echo "make owner-map      - Open ownership map (docs/OWNER_MAP.md)"
 	@echo ""
 	@echo "Monitoring Stack:"
 	@echo "make monitoring-start    - Auto-start Prometheus + Grafana + Alertmanager"
@@ -133,10 +132,6 @@ repo-map:
 	@echo "Open docs/README.md"
 	@sed -n '1,200p' docs/README.md
 
-owner-map:
-	@echo "Open docs/OWNER_MAP.md"
-	@sed -n '1,220p' docs/OWNER_MAP.md
-
 report-strategic:
 	$(BIN)/python scripts/reporting/generate_strategic_report.py
 
@@ -172,12 +167,13 @@ snapshot-build:
 	MONTH=$(or $(MONTH),) \
 	"$(PYTHON)" scripts/data/build_snapshot.py
 
-push-kv:
-	@echo "Pushing analytics sections to Supabase KV..."
-	"$(PYTHON)" scripts/data/push_to_kv.py
+sync-kv:
+	@echo "Syncing latest pipeline outputs to Supabase KV..."
+	"$(PYTHON)" scripts/reporting/sync_to_supabase.py
 
 run:
 	@echo "Running zero-cost ETL pipeline (ingest + snapshot)..."
 	$(MAKE) etl-local
 	$(MAKE) zero-cost-schema
 	$(MAKE) snapshot-build
+	$(MAKE) sync-kv

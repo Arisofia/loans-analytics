@@ -329,6 +329,14 @@ jobs:
             fi
           fi
 
+      - name: Sync latest outputs to Supabase KV
+        if: success()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          python scripts/reporting/sync_to_supabase.py
+
       - name: Upload pipeline artifacts
         if: always()
         run: |

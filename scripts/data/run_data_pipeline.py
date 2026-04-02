@@ -81,7 +81,7 @@ def main():
         logger.error('Configuration file not found: %s', e)
         print('\n[FAILED] Error: Configuration file not found')
         print(f'Please create {args.config} with pipeline settings')
-        print('\nSee UNIFIED_WORKFLOW.md for configuration details')
+        print('\nSee docs/operations/UNIFIED_WORKFLOW.md for configuration details')
         sys.exit(1)
     except Exception as e:
         logger.error('Pipeline execution failed: %s', e, exc_info=True)

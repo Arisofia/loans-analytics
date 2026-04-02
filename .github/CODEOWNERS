@@ -10,7 +10,6 @@ REPO_MAP.md @Arisofia
 /config/kpis/ @Arisofia
 
 # Deployment & Release
-/docs/operations/MASTER_DELIVERY_TODO.md @Arisofia
 /docs/PRODUCTION_DEPLOYMENT_GUIDE.md @Arisofia
 
 # Observability & Monitoring

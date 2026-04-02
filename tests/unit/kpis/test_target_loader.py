@@ -10,12 +10,12 @@ class TestTargetLoaderBasics:
     """Test basic target retrieval."""
     
     def test_get_2026_targets_dict(self):
-        """Verify hardcoded 2026 targets dict."""
+        """Verify normalized 2026 targets dict loaded from settings."""
         targets = get_2026_targets()
         assert len(targets) == 12
         assert targets["Jan"] == 8500000
         assert targets["Dec"] == 12000000
-        assert targets["Jul"] == 10500000
+        assert targets["Jul"] == 10300000
     
     def test_loader_get_target_by_month_number(self):
         """Test retrieving target by month number (1-12)."""
@@ -23,8 +23,8 @@ class TestTargetLoaderBasics:
         
         assert loader.get_target(1) == Decimal("8500000")
         assert loader.get_target(12) == Decimal("12000000")
-        assert loader.get_target(6) == Decimal("10200000")
-        assert loader.get_target(7) == Decimal("10500000")
+        assert loader.get_target(6) == Decimal("10000000")
+        assert loader.get_target(7) == Decimal("10300000")
     
     def test_loader_get_target_by_month_name(self):
         """Test retrieving target by month name (Jan-Dec, case-insensitive)."""
@@ -32,8 +32,8 @@ class TestTargetLoaderBasics:
         
         assert loader.get_target("Jan") == Decimal("8500000")
         assert loader.get_target("DEC") == Decimal("12000000")  # Case insensitive
-        assert loader.get_target("Jun") == Decimal("10200000")  # Note: capitalized for month lookup
-        assert loader.get_target("JUL") == Decimal("10500000")  # Case insensitive
+        assert loader.get_target("Jun") == Decimal("10000000")  # Note: capitalized for month lookup
+        assert loader.get_target("JUL") == Decimal("10300000")  # Case insensitive
     
     def test_loader_get_target_invalid(self):
         """Test that invalid month raises ValueError."""
@@ -174,16 +174,26 @@ class TestDataFrameOperations:
 
 class TestTargetSequence:
     """Test that 2026 target sequence is correct."""
-    
-    def test_monthly_growth_consistent(self):
-        """Verify monthly growth is consistent ($300k/month after Feb)."""
+
+    def test_monthly_targets_match_config(self):
+        """Verify loader targets match business_parameters.yml sequence."""
         loader = TargetLoader()
-        assert loader.get_target(2) - loader.get_target(1) == Decimal("500000")
-        for month in range(3, 13):
-            prev_target = loader.get_target(month - 1)
-            curr_target = loader.get_target(month)
-            growth = curr_target - prev_target
-            assert growth == Decimal("300000"), f"Month {month} growth is {growth}, expected 300000"
+        expected = [
+            Decimal("8500000"),
+            Decimal("8800000"),
+            Decimal("9100000"),
+            Decimal("9400000"),
+            Decimal("9700000"),
+            Decimal("10000000"),
+            Decimal("10300000"),
+            Decimal("10600000"),
+            Decimal("10900000"),
+            Decimal("11200000"),
+            Decimal("11600000"),
+            Decimal("12000000"),
+        ]
+        for month in range(1, 13):
+            assert loader.get_target(month) == expected[month - 1]
     
     def test_year_growth_target(self):
         """Verify total year growth is $3.5M."""

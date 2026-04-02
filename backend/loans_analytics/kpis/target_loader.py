@@ -1,4 +1,7 @@
-"""Target loading and variance calculation for 2026 portfolio goals."""
+"""Target loading and variance calculation for 2026 portfolio goals.
+
+Source of truth: ``config/business_parameters.yml`` via application settings.
+"""
 from __future__ import annotations
 
 import logging
@@ -7,23 +10,78 @@ from decimal import Decimal
 from typing import Any, Dict, Optional
 
 import pandas as pd
+from backend.loans_analytics.config import settings
 
 logger = logging.getLogger(__name__)
 
-PORTFOLIO_TARGETS_2026 = {
-    "Jan": Decimal("8500000"),
-    "Feb": Decimal("9000000"),
-    "Mar": Decimal("9300000"),
-    "Apr": Decimal("9600000"),
-    "May": Decimal("9900000"),
-    "Jun": Decimal("10200000"),
-    "Jul": Decimal("10500000"),
-    "Aug": Decimal("10800000"),
-    "Sep": Decimal("11100000"),
-    "Oct": Decimal("11400000"),
-    "Nov": Decimal("11700000"),
-    "Dec": Decimal("12000000"),
+MONTH_ABBREV_TO_NUM = {
+    "Jan": 1,
+    "Feb": 2,
+    "Mar": 3,
+    "Apr": 4,
+    "May": 5,
+    "Jun": 6,
+    "Jul": 7,
+    "Aug": 8,
+    "Sep": 9,
+    "Oct": 10,
+    "Nov": 11,
+    "Dec": 12,
 }
+
+
+def _targets_from_settings() -> Dict[str, Decimal]:
+    """Load monthly targets from app settings and normalize to Jan-Dec keys."""
+    targets_by_ym = getattr(settings, "portfolio_targets_2026", {}) or {}
+    by_month_num: Dict[int, Decimal] = {}
+    for ym_key, raw_value in targets_by_ym.items():
+        try:
+            year_str, month_str = str(ym_key).split("-", 1)
+            if year_str != "2026":
+                continue
+            month_num = int(month_str)
+            if 1 <= month_num <= 12:
+                by_month_num[month_num] = Decimal(str(raw_value))
+        except (ValueError, ArithmeticError):
+            continue
+
+    if len(by_month_num) != 12:
+        logger.warning(
+            "portfolio_targets_2026 is incomplete (%d/12). Falling back to conservative defaults.",
+            len(by_month_num),
+        )
+        return {
+            "Jan": Decimal("8500000"),
+            "Feb": Decimal("8800000"),
+            "Mar": Decimal("9100000"),
+            "Apr": Decimal("9400000"),
+            "May": Decimal("9700000"),
+            "Jun": Decimal("10000000"),
+            "Jul": Decimal("10300000"),
+            "Aug": Decimal("10600000"),
+            "Sep": Decimal("10900000"),
+            "Oct": Decimal("11200000"),
+            "Nov": Decimal("11600000"),
+            "Dec": Decimal("12000000"),
+        }
+
+    return {
+        "Jan": by_month_num[1],
+        "Feb": by_month_num[2],
+        "Mar": by_month_num[3],
+        "Apr": by_month_num[4],
+        "May": by_month_num[5],
+        "Jun": by_month_num[6],
+        "Jul": by_month_num[7],
+        "Aug": by_month_num[8],
+        "Sep": by_month_num[9],
+        "Oct": by_month_num[10],
+        "Nov": by_month_num[11],
+        "Dec": by_month_num[12],
+    }
+
+
+PORTFOLIO_TARGETS_2026 = _targets_from_settings()
 
 
 class TargetLoader:
@@ -195,5 +253,5 @@ class TargetLoader:
 
 
 def get_2026_targets() -> Dict[str, Decimal]:
-    """Returns hardcoded 2026 portfolio growth targets."""
+    """Returns normalized 2026 monthly targets loaded from app settings."""
     return PORTFOLIO_TARGETS_2026.copy()

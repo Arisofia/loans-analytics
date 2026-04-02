@@ -85,7 +85,6 @@
 - `API_SECURITY_GUIDE.md` — API endpoint hardening
 - `operations/` — Operational procedures
   - `SCRIPT_CANONICAL_MAP.md` — All production-ready scripts & their purpose
-  - `MASTER_DELIVERY_TODO.md` — *(DocumentationP8)* Pre-production checklist
 
 ### Testing
 
@@ -141,7 +140,6 @@
 1. `SETUP_GUIDE_CONSOLIDATED.md` — Environment setup
 2. `OPERATIONS.md` — Daily operations
 3. `PRODUCTION_DEPLOYMENT_GUIDE.md` — Release process
-4. `docs/operations/MASTER_DELIVERY_TODO.md` — Pre-prod checklist
 
 **Governance & Compliance:**
 1. `GOVERNANCE.md` — Data handling, audit trail, SSoT enforcement
@@ -164,4 +162,4 @@
 
 ## Contact & Ownership
 
-For ownership questions, see `OWNER_MAP.md` in docs/.
+Ownership is defined through `.github/CODEOWNERS`.

@@ -20,7 +20,6 @@ This index contains only active documentation paths for the Loans Analytics plat
 - [DATA_DICTIONARY.md](DATA_DICTIONARY.md)
 - [KPI.md](KPI.md) - Canonical KPI reference (definitions, governance, formulas)
 - [kpi_lineage.md](kpi_lineage.md)
-- [TARGETS_2026.md](TARGETS_2026.md)
 
 ## Operations
 
