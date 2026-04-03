@@ -8,34 +8,34 @@ def _segment_loans() -> list[LoanRecord]:
 def test_calculate_segment_analytics_risk_band():
     service = KPIService(actor='test_user')
     response = asyncio.run(service.calculate_segment_analytics(loans=_segment_loans(), dimension='risk_band', top_n=10))
-    assert isinstance(response, SegmentAnalyticsResponse)
-    assert response.summary.dimension == 'risk_band'
-    assert response.summary.total_loans == 3
-    assert len(response.segments) >= 2
-    assert response.summary.largest_segment is not None
-    assert response.summary.riskiest_segment is not None
+    assert isinstance(response, SegmentAnalyticsResponse)  # nosec B101
+    assert response.summary.dimension == 'risk_band'  # nosec B101
+    assert response.summary.total_loans == 3  # nosec B101
+    assert len(response.segments) >= 2  # nosec B101
+    assert response.summary.largest_segment is not None  # nosec B101
+    assert response.summary.riskiest_segment is not None  # nosec B101
 
 def test_calculate_segment_analytics_ticket_size():
     service = KPIService(actor='test_user')
     response = asyncio.run(service.calculate_segment_analytics(loans=_segment_loans(), dimension='ticket_size_band', top_n=10))
     segments = {row.segment for row in response.segments}
-    assert 'ticket_<1k' in segments
-    assert 'ticket_1k_5k' in segments
-    assert 'ticket_10k_plus' in segments
+    assert 'ticket_<1k' in segments  # nosec B101
+    assert 'ticket_1k_5k' in segments  # nosec B101
+    assert 'ticket_10k_plus' in segments  # nosec B101
 
 def test_calculate_segment_analytics_company_dimension():
     service = KPIService(actor='test_user')
     response = asyncio.run(service.calculate_segment_analytics(loans=_segment_loans(), dimension='company', top_n=10))
     segments = {row.segment for row in response.segments}
-    assert response.summary.dimension == 'company'
-    assert 'CompanyA' in segments
-    assert 'CompanyB' in segments
+    assert response.summary.dimension == 'company'  # nosec B101
+    assert 'CompanyA' in segments  # nosec B101
+    assert 'CompanyB' in segments  # nosec B101
 
 def test_calculate_segment_analytics_utilization_band_dimension():
     service = KPIService(actor='test_user')
     response = asyncio.run(service.calculate_segment_analytics(loans=_segment_loans(), dimension='utilization_band', top_n=10))
     segments = {row.segment for row in response.segments}
-    assert response.summary.dimension == 'utilization_band'
-    assert '0_25' in segments
-    assert '50_75' in segments
-    assert '75_100' in segments
+    assert response.summary.dimension == 'utilization_band'  # nosec B101
+    assert '0_25' in segments  # nosec B101
+    assert '50_75' in segments  # nosec B101
+    assert '75_100' in segments  # nosec B101

@@ -7,32 +7,32 @@ def _payload() -> dict:
 def test_segment_analytics_endpoint_returns_segment_rows_and_summary():
     client = TestClient(app)
     response = client.post('/analytics/segments', json=_payload())
-    assert response.status_code == 200
+    assert response.status_code == 200  # nosec B101
     body = response.json()
-    assert 'generated_at' in body
-    assert 'segments' in body
-    assert 'summary' in body
-    assert body['summary']['dimension'] == 'risk_band'
-    assert body['summary']['total_loans'] == 3
-    assert len(body['segments']) >= 2
+    assert 'generated_at' in body  # nosec B101
+    assert 'segments' in body  # nosec B101
+    assert 'summary' in body  # nosec B101
+    assert body['summary']['dimension'] == 'risk_band'  # nosec B101
+    assert body['summary']['total_loans'] == 3  # nosec B101
+    assert len(body['segments']) >= 2  # nosec B101
 
 def test_segment_analytics_endpoint_supports_ticket_size_dimension():
     client = TestClient(app)
     payload = _payload()
     payload['dimension'] = 'ticket_size_band'
     response = client.post('/analytics/segments', json=payload)
-    assert response.status_code == 200
+    assert response.status_code == 200  # nosec B101
     body = response.json()
-    assert body['summary']['dimension'] == 'ticket_size_band'
+    assert body['summary']['dimension'] == 'ticket_size_band'  # nosec B101
 
 def test_segment_analytics_endpoint_supports_company_dimension():
     client = TestClient(app)
     payload = _payload()
     payload['dimension'] = 'company'
     response = client.post('/analytics/segments', json=payload)
-    assert response.status_code == 200
+    assert response.status_code == 200  # nosec B101
     body = response.json()
-    assert body['summary']['dimension'] == 'company'
+    assert body['summary']['dimension'] == 'company'  # nosec B101
     segments = {row['segment'] for row in body['segments']}
-    assert 'CompanyA' in segments
-    assert 'CompanyB' in segments
+    assert 'CompanyA' in segments  # nosec B101
+    assert 'CompanyB' in segments  # nosec B101

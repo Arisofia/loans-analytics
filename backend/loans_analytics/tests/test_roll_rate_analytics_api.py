@@ -7,19 +7,19 @@ def _payload() -> dict:
 def test_roll_rate_endpoint_returns_transition_rows_and_summary():
     client = TestClient(app)
     response = client.post('/analytics/roll-rates', json=_payload())
-    assert response.status_code == 200
+    assert response.status_code == 200  # nosec B101
     body = response.json()
-    assert 'generated_at' in body
-    assert 'transition_matrix' in body
-    assert 'bucket_summaries' in body
-    assert 'summary' in body
+    assert 'generated_at' in body  # nosec B101
+    assert 'transition_matrix' in body  # nosec B101
+    assert 'bucket_summaries' in body  # nosec B101
+    assert 'summary' in body  # nosec B101
     summary = body['summary']
-    assert summary['total_loans'] == 5
-    assert summary['historical_coverage_pct'] == 100.0
-    assert summary['portfolio_cure_rate_pct'] == 33.33
-    assert summary['portfolio_roll_forward_rate_pct'] == 50.0
-    assert summary['worst_migration_path'] == '61_90->90_plus'
-    assert summary['best_cure_source'] == '31_60'
+    assert summary['total_loans'] == 5  # nosec B101
+    assert summary['historical_coverage_pct'] == 100.0  # nosec B101
+    assert summary['portfolio_cure_rate_pct'] == 33.33  # nosec B101
+    assert summary['portfolio_roll_forward_rate_pct'] == 50.0  # nosec B101
+    assert summary['worst_migration_path'] == '61_90->90_plus'  # nosec B101
+    assert summary['best_cure_source'] == '31_60'  # nosec B101
     transition_pairs = {(row['from_bucket'], row['to_bucket']) for row in body['transition_matrix']}
-    assert ('31_60', 'current') in transition_pairs
-    assert ('61_90', '90_plus') in transition_pairs
+    assert ('31_60', 'current') in transition_pairs  # nosec B101
+    assert ('61_90', '90_plus') in transition_pairs  # nosec B101
