@@ -68,8 +68,8 @@ def test_calculate_par_standard(clean_portfolio):
     par_30 = results['par_30']
     par_90 = results['par_90']
 
-    assert np.isclose(par_30, 80.0), f'Expected 80.0, got {par_30}'  # nosec B101
-    assert np.isclose(par_90, 70.0), f'Expected 70.0, got {par_90}'  # nosec B101
+    assert np.isclose(par_30, 80.0), f'Expected 80.0, got {par_30}'
+    assert np.isclose(par_90, 70.0), f'Expected 70.0, got {par_90}'
 
 
 def test_calculate_npl_90_ratio_mapping(clean_portfolio):
@@ -80,7 +80,7 @@ def test_calculate_npl_90_ratio_mapping(clean_portfolio):
         actor='test',
         metric_aliases=['par_90', 'npl90']
     )
-    assert results['par_90'] == results['npl90'], 'NPL drifted from PAR90 semantics.'  # nosec B101
+    assert results['par_90'] == results['npl90'], 'NPL drifted from PAR90 semantics.'
 
 
 def test_calculate_default_rate_combined_logic(clean_portfolio):
@@ -92,7 +92,7 @@ def test_calculate_default_rate_combined_logic(clean_portfolio):
         metric_aliases=['default_rate']
     )
     # 15000 / 50000 * 100 = 30.0
-    assert np.isclose(results['default_rate'], 30.0), f"Expected 30.0, got {results['default_rate']}"  # nosec B101
+    assert np.isclose(results['default_rate'], 30.0), f"Expected 30.0, got {results['default_rate']}"
 
 
 def test_calculate_par_zero_total_principal():
@@ -121,10 +121,10 @@ def test_engine_dispatch_success(clean_portfolio):
 
     results = engine.compute_all(df)
 
-    assert 'par_30' in results  # nosec B101
-    assert 'npl_90_ratio' in results  # nosec B101
-    assert 'default_rate' in results  # nosec B101
-    assert np.isclose(results['par_30'], 80.0)  # nosec B101
+    assert 'par_30' in results
+    assert 'npl_90_ratio' in results
+    assert 'default_rate' in results
+    assert np.isclose(results['par_30'], 80.0)
 
 
 def test_engine_unsupported_kpi(clean_portfolio):

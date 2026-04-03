@@ -7,22 +7,22 @@ def _payload() -> dict:
 def test_stress_test_endpoint_returns_baseline_and_stressed_metrics():
     client = TestClient(app)
     response = client.post('/analytics/stress-test', json=_payload())
-    assert response.status_code == 200  # nosec B101
+    assert response.status_code == 200
     body = response.json()
-    assert body['scenario_id']  # nosec B101
-    assert set(body.keys()) == {'scenario_id', 'generated_at', 'assumptions', 'baseline', 'stressed', 'deltas', 'alerts'}  # nosec B101
-    assert body['stressed']['par30_pct'] >= body['baseline']['par30_pct']  # nosec B101
-    assert body['stressed']['collection_rate_pct'] <= body['baseline']['collection_rate_pct']  # nosec B101
-    assert body['stressed']['expected_credit_loss_usd'] >= body['baseline']['expected_credit_loss_usd']  # nosec B101
+    assert body['scenario_id']
+    assert set(body.keys()) == {'scenario_id', 'generated_at', 'assumptions', 'baseline', 'stressed', 'deltas', 'alerts'}
+    assert body['stressed']['par30_pct'] >= body['baseline']['par30_pct']
+    assert body['stressed']['collection_rate_pct'] <= body['baseline']['collection_rate_pct']
+    assert body['stressed']['expected_credit_loss_usd'] >= body['baseline']['expected_credit_loss_usd']
 
 def test_stress_test_endpoint_allows_custom_shocks():
     client = TestClient(app)
     payload = _payload()
     payload.update({'par_deterioration_pct': 60.0, 'collection_efficiency_pct': -35.0, 'recovery_efficiency_pct': -45.0, 'funding_cost_bps': 400.0})
     response = client.post('/analytics/stress-test', json=payload)
-    assert response.status_code == 200  # nosec B101
+    assert response.status_code == 200
     body = response.json()
-    assert body['assumptions']['par_deterioration_pct'] == 60.0  # nosec B101
-    assert body['assumptions']['funding_cost_bps'] == 400.0  # nosec B101
-    assert body['stressed']['gross_margin_pct'] <= body['baseline']['gross_margin_pct']  # nosec B101
-    assert len(body['alerts']) >= 1  # nosec B101
+    assert body['assumptions']['par_deterioration_pct'] == 60.0
+    assert body['assumptions']['funding_cost_bps'] == 400.0
+    assert body['stressed']['gross_margin_pct'] <= body['baseline']['gross_margin_pct']
+    assert len(body['alerts']) >= 1

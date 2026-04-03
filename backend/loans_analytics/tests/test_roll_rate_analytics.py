@@ -15,18 +15,18 @@ def _roll_rate_loans() -> list[LoanRecord]:
 def test_calculate_roll_rate_analytics_returns_transition_matrix_and_summary():
     service = KPIService(actor='test_user')
     response = asyncio.run(service.calculate_roll_rate_analytics(loans=_roll_rate_loans()))
-    assert isinstance(response, RollRateAnalyticsResponse)  # nosec B101
-    assert response.summary.total_loans == 5  # nosec B101
-    assert response.summary.historical_coverage_pct == 100.0  # nosec B101
-    assert response.summary.portfolio_cure_rate_pct == 33.33  # nosec B101
-    assert response.summary.portfolio_roll_forward_rate_pct == 50.0  # nosec B101
-    assert response.summary.worst_migration_path == '61_90->90_plus'  # nosec B101
-    assert response.summary.best_cure_source == '31_60'  # nosec B101
+    assert isinstance(response, RollRateAnalyticsResponse)
+    assert response.summary.total_loans == 5
+    assert response.summary.historical_coverage_pct == 100.0
+    assert response.summary.portfolio_cure_rate_pct == 33.33
+    assert response.summary.portfolio_roll_forward_rate_pct == 50.0
+    assert response.summary.worst_migration_path == '61_90->90_plus'
+    assert response.summary.best_cure_source == '31_60'
     transitions = {(row.from_bucket, row.to_bucket): row for row in response.transition_matrix}
-    assert ('31_60', 'current') in transitions  # nosec B101
-    assert transitions['31_60', 'current'].loan_count == 1  # nosec B101
-    assert transitions['31_60', 'current'].loan_share_pct == 100.0  # nosec B101
+    assert ('31_60', 'current') in transitions
+    assert transitions['31_60', 'current'].loan_count == 1
+    assert transitions['31_60', 'current'].loan_share_pct == 100.0
     buckets = {row.from_bucket: row for row in response.bucket_summaries}
-    assert buckets['31_60'].cure_rate_pct == 100.0  # nosec B101
-    assert buckets['61_90'].roll_forward_rate_pct == 100.0  # nosec B101
-    assert buckets['90_plus'].stability_rate_pct == 0.0  # nosec B101
+    assert buckets['31_60'].cure_rate_pct == 100.0
+    assert buckets['61_90'].roll_forward_rate_pct == 100.0
+    assert buckets['90_plus'].stability_rate_pct == 0.0
