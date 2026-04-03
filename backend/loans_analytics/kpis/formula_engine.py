@@ -499,7 +499,11 @@ class KPIFormulaEngine:
         result = Decimal("0.0")
         agg_match = re.match("(SUM|AVG|COUNT)\\s*\\(", formula, re.IGNORECASE)
         if not agg_match:
-            return result
+            raise FormulaExecutionError(
+                formula_id="simple",
+                reason="formula must start with SUM/AVG/COUNT",
+                context={"formula": formula, "run_id": self.run_id},
+            )
         agg_func = agg_match[1].upper()
         # Extract content inside balanced parentheses
         depth = 0
@@ -527,7 +531,11 @@ class KPIFormulaEngine:
             filtered_df = self.df
         if filtered_df.empty or column not in filtered_df.columns:
             if column not in filtered_df.columns:
-                logger.debug("Column '%s' not found in data", column)
+                raise FormulaExecutionError(
+                    formula_id="simple",
+                    reason=f"column '{column}' not found in data",
+                    context={"formula": formula, "run_id": self.run_id},
+                )
             return result
         numeric_values = pd.to_numeric(filtered_df[column], errors="coerce").dropna().tolist()
         if agg_func == "SUM":
