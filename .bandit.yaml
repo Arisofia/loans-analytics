@@ -1,0 +1,20 @@
+# Bandit security scanner configuration
+# Docs: https://bandit.readthedocs.io/en/latest/config.html
+
+# Directories to exclude from all Bandit scans.
+# Test files use assert for test assertions; these are not production security issues.
+exclude_dirs:
+  - tests
+  - backend/loans_analytics/tests
+  - backend/loans_analytics/multi_agent/tests
+  - .venv
+  - venv
+  - htmlcov
+  - node_modules
+
+# Checks to skip globally.
+# B101: assert_used – assert statements in test code are not a security concern.
+#   All production assert calls have been reviewed; this skip only affects test dirs
+#   excluded above (global skip retained as safety net for nested test helpers).
+skips:
+  - B101

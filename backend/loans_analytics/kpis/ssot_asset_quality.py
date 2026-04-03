@@ -1,5 +1,5 @@
 from __future__ import annotations
-from decimal import ROUND_HALF_UP, Decimal, getcontext
+from decimal import ROUND_HALF_UP, getcontext
 from collections.abc import Sequence
 import pandas as pd
 from backend.loans_analytics.kpis.formula_engine import KPIFormulaEngine

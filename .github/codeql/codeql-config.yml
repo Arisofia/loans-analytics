@@ -1,0 +1,16 @@
+# CodeQL configuration for Python analysis.
+# Excludes test directories to prevent false-positive quality alerts
+# (e.g. py/statement-has-no-effect on pytest assertions) from inflating
+# the GitHub Security alert count.
+# Docs: https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning
+
+name: "loans-analytics CodeQL config"
+
+paths-ignore:
+  - tests/**
+  - "**/tests/**"
+  - conftest.py
+  - htmlcov/**
+
+queries:
+  - uses: security-and-quality

@@ -189,7 +189,7 @@ def main() -> None:
     print('    static_configs:')
     print(f"      - targets: ['localhost:{port}']")
     print('=' * 60)
-    server = HTTPServer(('0.0.0.0', port), MetricsHandler)
+    server = HTTPServer(('0.0.0.0', port), MetricsHandler)  # nosec B104 - intentional bind to all interfaces for Prometheus scraping
     try:
         server.serve_forever()
     except KeyboardInterrupt:

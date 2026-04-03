@@ -13,7 +13,7 @@ class BaseAgent(abc.ABC):
     @abc.abstractmethod
     def agent_id(self) -> str:
         """Stable agent identifier."""
-        ...
+        pass
 
     @abc.abstractmethod
     def run(
@@ -24,4 +24,4 @@ class BaseAgent(abc.ABC):
         quality: dict[str, Any],
     ) -> AgentOutput:
         """Execute agent logic and return structured output."""
-        ...
+        pass

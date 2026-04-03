@@ -62,6 +62,7 @@ class ZeroCostStorage:
         return conn.execute(sql).df()
 
     def read_parquet(self, table_name: str) -> pd.DataFrame:
+        self._validate_identifier(table_name)
         table_dir = self.base_dir / table_name
         if not table_dir.exists():
             raise FileNotFoundError(f"No data found for table '{table_name}' at {table_dir}")
