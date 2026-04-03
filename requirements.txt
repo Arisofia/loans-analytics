@@ -8,7 +8,7 @@ langchain-openai>=1.1.9,<2.0.0
 langchain-core>=1.2.14,<2.0.0
 grpcio>=1.67.0,<1.81.0
 grpcio-status>=1.67.0,<1.81.0
-protobuf>=5.29.6,<8.0.0
+protobuf>=5.29.6,<6.0.0
 
 # Core data and analytics
 python-dotenv==1.2.2
