@@ -1,4 +1,4 @@
-name: Train Scorecard On Raw Data
+﻿name: Train Scorecard On Raw Data
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python 3.12 (no external action)
         run: |

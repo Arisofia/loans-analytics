@@ -1,4 +1,4 @@
-name: Tests
+﻿name: Tests
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
@@ -62,13 +62,13 @@ jobs:
         run: |
           for i in {1..30}; do
             if pg_isready; then
-              echo "✅ PostgreSQL is ready."
+              echo "Ã¢Å“â€¦ PostgreSQL is ready."
               exit 0
             fi
             echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
             sleep 2
           done
-          echo "❌ PostgreSQL readiness acknowledgement not received in time."
+          echo "Ã¢ÂÅ’ PostgreSQL readiness acknowledgement not received in time."
           exit 1
 
       - name: Install dependencies
@@ -200,7 +200,7 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
@@ -223,13 +223,13 @@ jobs:
         run: |
           for i in {1..30}; do
             if pg_isready; then
-              echo "✅ PostgreSQL is ready."
+              echo "Ã¢Å“â€¦ PostgreSQL is ready."
               exit 0
             fi
             echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
             sleep 2
           done
-          echo "❌ PostgreSQL readiness acknowledgement not received in time."
+          echo "Ã¢ÂÅ’ PostgreSQL readiness acknowledgement not received in time."
           exit 1
 
       - name: Install dependencies
@@ -269,7 +269,7 @@ jobs:
       HISTORICAL_CONTEXT_MODE: MOCK
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
@@ -305,7 +305,7 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
@@ -400,7 +400,7 @@ jobs:
       PYTHONPATH: ".:backend:frontend"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
