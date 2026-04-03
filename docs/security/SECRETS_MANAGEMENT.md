@@ -17,6 +17,9 @@ access.
 
 - OPENAI_API_KEY
 - SUPABASE_SERVICE_ROLE
+- SUPABASE_SERVICE_ROLE_KEY
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
 - OPIK_TOKEN
 - PHOENIX_TOKEN
 - CLAUDE_ROCKET_TOKEN
@@ -27,6 +30,9 @@ access.
 - AMPLITUDE_API_KEY
 - META_ACCESS_TOKEN
 - SENTRY_DSN
+- GOOGLE_SHEETS_CREDENTIALS_JSON (optional in CI; used to materialize credentials/google-service-account.json)
+- GOOGLE_SHEETS_CREDENTIALS_PATH (runtime path used by ingestion code)
+- GOOGLE_SHEETS_SPREADSHEET_ID
 
 ## Best Practices
 
