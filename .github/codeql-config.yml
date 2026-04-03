@@ -18,7 +18,7 @@ paths-ignore:
 
 # Paths to specifically include
 paths:
-  - 'backend/python/**'
+  - 'backend/loans_analytics/**'
   - 'backend/src/**'
   - 'frontend/streamlit_app/**'
   - 'scripts/**'
@@ -29,7 +29,7 @@ query-filters:
   - exclude:
       id: py/path-injection
       paths:
-        - backend/python/apps/analytics/api/main.py
+        - backend/loans_analytics/apps/analytics/api/main.py
 
   # Include all critical and high severity issues
   - include:

@@ -69,7 +69,7 @@ All financial calculations (sums, divisions, percentages) use Python `Decimal` w
 When monetary data enters the system (from CSV, API, etc.), it MUST be converted:
 
 ```python
-from backend.python.financial_precision import dollars_to_cents
+from backend.loans_analytics.financial_precision import dollars_to_cents
 
 # CSV input: "10.50"
 amount_str = "10.50"
@@ -99,7 +99,7 @@ cents = dollars_to_cents(amount_float)  # Returns: 1050
 Use `validate_monetary_field()` for error logging + conversion:
 
 ```python
-from backend.python.financial_precision import validate_monetary_field
+from backend.loans_analytics.financial_precision import validate_monetary_field
 
 try:
     loan_amount_cents = validate_monetary_field("loan_amount", "10.50")
@@ -158,7 +158,7 @@ for loan in loans:
 
 ✅ **CORRECT**: Using Decimal sum
 ```python
-from backend.python.financial_precision import safe_decimal_sum
+from backend.loans_analytics.financial_precision import safe_decimal_sum
 
 # Convert cents back to Decimal for calculation
 balances_decimal = [cents_to_dollars(loan.principal_balance) for loan in loans]
@@ -174,7 +174,7 @@ par_rate = float(par_amount) / float(total_balance)  # ❌ Drift in rate calcula
 
 ✅ **CORRECT**: Decimal division
 ```python
-from backend.python.financial_precision import safe_decimal_divide
+from backend.loans_analytics.financial_precision import safe_decimal_divide
 
 par_rate = safe_decimal_divide(par_amount, total_balance, precision=4)
 # Returns: Decimal('0.0400') for exact 4% (no drift)
@@ -189,7 +189,7 @@ accrued_interest = float(principal) * float(rate)  # ❌ Drift
 
 ✅ **CORRECT**: Decimal multiplication
 ```python
-from backend.python.financial_precision import (
+from backend.loans_analytics.financial_precision import (
     cents_to_dollars,
     basis_points_to_interest_rate,
     safe_decimal_divide,
@@ -209,7 +209,7 @@ accrued_interest = principal_dec * rate_dec  # ✅ Exact
 When returning data to API / Dashboard:
 
 ```python
-from backend.python.financial_precision import cents_to_dollars, basis_points_to_interest_rate
+from backend.loans_analytics.financial_precision import cents_to_dollars, basis_points_to_interest_rate
 
 # Internal: Int64 (cents + basis points)
 internal_amount = 1050
@@ -277,7 +277,7 @@ pytest tests/unit/test_financial_precision.py::TestAggregationPrecision -v
 Every ingestion validates schema immediately:
 
 ```python
-from backend.python.schemas import validate_ingestion_contract
+from backend.loans_analytics.schemas import validate_ingestion_contract
 
 df = load_csv("loans.csv")
 validate_ingestion_contract(df)  # ❌ Fails if monetary columns are Float64
@@ -322,8 +322,8 @@ Before approving any PR that touches monetary code:
 
 ```python
 import polars as pl
-from backend.python.financial_precision import dollars_to_cents
-from backend.python.schemas import LOAN_SCHEMA, validate_ingestion_contract
+from backend.loans_analytics.financial_precision import dollars_to_cents
+from backend.loans_analytics.schemas import LOAN_SCHEMA, validate_ingestion_contract
 
 # Load CSV (initially as strings to preserve precision)
 raw_df = pl.read_csv("loans.csv", dtypes={
@@ -346,7 +346,7 @@ validate_ingestion_contract(df)  # ✅ Passes
 ### 8.2 Computing PAR Rates
 
 ```python
-from backend.python.financial_precision import (
+from backend.loans_analytics.financial_precision import (
     cents_to_dollars,
     safe_decimal_divide,
 )
@@ -367,7 +367,7 @@ par_rate = compute_par_rate(100_000, 2_500_000)  # Returns Decimal('0.0400')
 ### 8.3 Aggregating Loan Balances
 
 ```python
-from backend.python.financial_precision import safe_decimal_sum, cents_to_dollars
+from backend.loans_analytics.financial_precision import safe_decimal_sum, cents_to_dollars
 
 def total_portfolio_balance(loans_df: pl.DataFrame) -> Decimal:
     """Sum all loan balances with precision."""
@@ -411,8 +411,8 @@ If encountering old `Float64` code:
 
 ## 10. References & Resources
 
-- **Implementation**: `backend/python/financial_precision.py`
-- **Schemas**: `backend/python/schemas.py` (LOAN_SCHEMA)
+- **Implementation**: `backend/loans_analytics/financial_precision.py`
+- **Schemas**: `backend/loans_analytics/schemas.py` (LOAN_SCHEMA)
 - **Tests**: `tests/unit/test_financial_precision.py`
 - **Governance**: `docs/GOVERNANCE.md` (this file)
 

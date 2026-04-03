@@ -29,7 +29,7 @@
 - `src/analytics/__init__.py` — Compatibility analytics helpers
   - Utility-only module retained for legacy/test support; not the KPI SSoT owner.
 
-#### `python/` — Python application layer (backend/python/)
+#### `loans_analytics/` — Python application layer (`backend/loans_analytics/`)
 - `kpis/` — **KPI engine (SSoT)** — all KPI computation routes through here
   - `engine.py` — KPIEngineV2 (standard & derived KPIs)
   - `ssot_asset_quality.py` — PAR/NPL canonical formulas
@@ -97,7 +97,7 @@
 - `security/` — Security regression tests
 - `zero_cost/` — Zero-cost path tests (validates `backend/src/zero_cost/` canonical legacy flow)
 
-#### `backend/python/tests/` — Unit tests for Python libraries
+#### `backend/loans_analytics/tests/` — Unit tests for Python libraries
 - `test_kpi_engine.py` — KPIEngineV2 unit tests
 - `test_strategic_modules.py` — Strategic reporting tests
 - `test_ssot_asset_quality.py` — Asset quality formula tests
@@ -120,8 +120,8 @@
 
 | Component | Owner File | Purpose |
 |-----------|-----------|---------|
-| **KPI Formulas** | `backend/python/kpis/ssot_asset_quality.py` | All PAR, NPL, asset quality metrics |
-| **Risk Model** | `backend/python/models/default_risk_model.py` | Canonical default probability |
+| **KPI Formulas** | `backend/loans_analytics/kpis/ssot_asset_quality.py` | All PAR, NPL, asset quality metrics |
+| **Risk Model** | `backend/loans_analytics/models/default_risk_model.py` | Canonical default probability |
 | **Pipeline Phases** | `src/pipeline/` — 4-phase coordinator | All data flows must route through here |
 | **Business Rules** | `config/business_rules.yaml` | Audit trail for rule changes |
 
@@ -154,7 +154,7 @@
 
 ## Deprecated Components (Retired 2026-01)
 
-- `backend/src/agents/multi_agent/__init__.py` — Legacy shim (use `backend.python.multi_agent` directly)
+- `backend/src/agents/multi_agent/__init__.py` — Legacy shim (use `backend.loans_analytics.multi_agent` directly)
   - Deprecation target: Q2 2026
   - Status: Explicit imports with DeprecationWarning added
 

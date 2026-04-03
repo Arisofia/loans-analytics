@@ -89,7 +89,7 @@ NPL-90 Ratio (Strict)
 ```
 Default Risk Probability (XGBoost Model)
     ├→ Inputs: APR, DPD, Term, Line Utilization, LTV, Payment History
-    ├→ Model: backend/python/models/default_risk_model.py
+    ├→ Model: backend/loans_analytics/models/default_risk_model.py
     ├→ Output: Probability [0.0, 1.0]
     └→ Used for: Portfolio-level default expectation, stress testing
 
@@ -182,7 +182,7 @@ CSV Input File
 
 1. **`backend/src/agents/multi_agent/__init__.py`** (Deprecated 2026-03)
    - Old import path: `from backend.src.agents.multi_agent import ...`
-   - New import path: `from backend.python.multi_agent import ...`
+    - New import path: `from backend.loans_analytics.multi_agent import ...`
    - Removal target: Q2 2026
    - Status: Explicit imports with DeprecationWarning
 

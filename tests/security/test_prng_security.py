@@ -1,12 +1,18 @@
 import re
 import sys
+import importlib
 from pathlib import Path
-import pytest
 fixtures_root = Path(__file__).parent.parent / 'fixtures'
 sys.path.insert(0, str(fixtures_root))
 
+
+def _import_fixture_module(module_name: str):
+    """Import fixture generator modules via string to avoid static import-resolution noise."""
+    return importlib.import_module(module_name)
+
 def test_mexican_rfc_generation_uses_secrets():
-    from generate_sample_data import generate_mexican_rfc
+    generate_sample_data = _import_fixture_module("generate_sample_data")
+    generate_mexican_rfc = generate_sample_data.generate_mexican_rfc
     rfcs = [generate_mexican_rfc() for _ in range(10)]
     pattern = '^[A-Z]{4}\\d{6}[A-Z0-9]{3}$'
     for rfc in rfcs:
@@ -15,7 +21,8 @@ def test_mexican_rfc_generation_uses_secrets():
     assert len(set(rfcs)) == len(rfcs), 'RFCs should be unique'
 
 def test_spanish_dni_generation_uses_secrets():
-    from seed_spanish_loans import generate_dni
+    seed_spanish_loans = _import_fixture_module("seed_spanish_loans")
+    generate_dni = seed_spanish_loans.generate_dni
     dnis = [generate_dni() for _ in range(10)]
     pattern = '^\\d{8}[A-Z]$'
     for dni in dnis:
@@ -28,7 +35,8 @@ def test_spanish_dni_generation_uses_secrets():
     assert len(set(dnis)) == len(dnis), 'DNIs should be unique'
 
 def test_spanish_nie_generation_uses_secrets():
-    from seed_spanish_loans import generate_nie
+    seed_spanish_loans = _import_fixture_module("seed_spanish_loans")
+    generate_nie = seed_spanish_loans.generate_nie
     nies = [generate_nie() for _ in range(10)]
     pattern = '^[XYZ]\\d{7}[A-Z]$'
     for nie in nies:
@@ -39,7 +47,8 @@ def test_spanish_nie_generation_uses_secrets():
 def test_reproducible_test_data_uses_random_with_seed():
     import random
     from datetime import date
-    from generate_sample_data import generate_loan
+    generate_sample_data = _import_fixture_module("generate_sample_data")
+    generate_loan = generate_sample_data.generate_loan
     random.seed(42)
     loan1 = generate_loan(1, date(2024, 1, 1))
     random.seed(42)
@@ -50,7 +59,8 @@ def test_reproducible_test_data_uses_random_with_seed():
 
 def test_kpi_data_generation_reproducibility():
     from datetime import date
-    from load_sample_kpis_supabase import KpiDataLoader
+    load_sample_kpis_supabase = _import_fixture_module("load_sample_kpis_supabase")
+    KpiDataLoader = load_sample_kpis_supabase.KpiDataLoader
     loader = KpiDataLoader(seed=42)
     series1 = loader.generate_kpi_series('test_kpi', date(2024, 1, 1), days=5, base_value=100.0, trend=0.001, noise=0.05)
     loader2 = KpiDataLoader(seed=42)
@@ -58,6 +68,3 @@ def test_kpi_data_generation_reproducibility():
     assert len(series1) == len(series2) == 5
     for i in range(5):
         assert series1[i].value == series2[i].value, 'KPI values should be reproducible with same seed'
-if __name__ == '__main__':
-    import pytest
-    pytest.main([__file__, '-v'])

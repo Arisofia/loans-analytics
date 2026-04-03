@@ -15,9 +15,9 @@ This reference defines:
 ## Canonical Sources of Truth
 
 - KPI definitions registry: config/kpis/kpi_definitions.yaml
-- Formula execution engine: backend/python/kpis/formula_engine.py
-- Core KPI calculations: backend/python/kpis/engine.py
-- Risk-focused SSOT module: backend/python/kpis/ssot_asset_quality.py
+- Formula execution engine: backend/loans_analytics/kpis/formula_engine.py
+- Core KPI calculations: backend/loans_analytics/kpis/engine.py
+- Risk-focused SSOT module: backend/loans_analytics/kpis/ssot_asset_quality.py
 - Data lineage reference: docs/kpi_lineage.md
 
 ## KPI Domains
@@ -34,7 +34,7 @@ This reference defines:
 - Data and analytics own implementation, test coverage, and release readiness.
 - Every KPI formula change must update:
   - config/kpis/kpi_definitions.yaml
-  - calculation code path in backend/python/kpis/
+  - calculation code path in backend/loans_analytics/kpis/
   - tests for formula correctness and edge cases
   - changelog and governance notes in docs/GOVERNANCE.md when policy-impacting
 

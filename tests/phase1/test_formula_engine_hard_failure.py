@@ -153,14 +153,14 @@ class TestMakefileKPIsTarget:
 
 
 class TestPackageNamespaceShadowing:
-    """F1.5 Remediation: Verify backend/python package does not shadow system namespace."""
+    """F1.5 Remediation: Verify backend package does not shadow system namespace."""
 
     def test_python_package_import_resolves_correctly(self):
         """Verify standard library 'python' module is not shadowed by project."""
         import sys
         import importlib
         
-        # The project package backend/python should not shadow sys.builtin_module_names
+        # The project backend package should not shadow sys.builtin_module_names
         # Verify that sys and os module attributes are accessible
         sys_attrs = dir(importlib.import_module('sys'))
         os_attrs = dir(importlib.import_module('os'))
@@ -169,11 +169,11 @@ class TestPackageNamespaceShadowing:
         assert len(sys_attrs) > 0, "sys module should have attributes"
         assert len(os_attrs) > 0, "os module should have attributes"
         
-        # backend.python package exists and performs name shadowing detection
+        # backend.loans_analytics package exists and does not collide with stdlib names
         try:
-            from backend.python import __name__ as backend_package_name
-            # If backend.python imports, verify it's not colliding with system python
-            assert "backend" in backend_package_name or "python" in backend_package_name
+            from backend.loans_analytics import __name__ as backend_package_name
+            # If backend package imports, verify it's from project namespace.
+            assert "backend" in backend_package_name or "loans_analytics" in backend_package_name
         except ImportError:
             # If it doesn't import, that's actually fine for this test
             pass
@@ -183,7 +183,7 @@ class TestPytestConfigurationGuards:
     """F1.6 Remediation: Verify pytest configuration prevents uncontrolled agent test execution."""
 
     def test_pytest_config_excludes_multi_agent_by_default(self):
-        """Verify pyproject.toml testpaths does NOT include backend/python/multi_agent."""
+        """Verify pyproject.toml testpaths does NOT include backend/loans_analytics/multi_agent."""
         from pathlib import Path
         import toml
         
@@ -191,8 +191,8 @@ class TestPytestConfigurationGuards:
         config = toml.loads(pyproject)
         
         testpaths = config.get("tool", {}).get("pytest", {}).get("ini_options", {}).get("testpaths", [])
-        assert "backend/python/multi_agent" not in testpaths, (
-            "backend/python/multi_agent must NOT be in testpaths. "
+        assert "backend/loans_analytics/multi_agent" not in testpaths, (
+            "backend/loans_analytics/multi_agent must NOT be in testpaths. "
             "Agent tests require explicit @pytest.mark.integration to prevent silent LLM API calls."
         )
 

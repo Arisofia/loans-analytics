@@ -21,7 +21,7 @@ on:
     branches: [main]
     paths:
       - "backend/src/**"
-      - "backend/python/**"
+      - "backend/loans_analytics/**"
       - "frontend/streamlit_app/**"
       - "Dockerfile*"
       - "requirements*.txt"

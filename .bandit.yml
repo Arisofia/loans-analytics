@@ -1,6 +1,6 @@
 exclude_dirs:
   - tests
-  - backend/python/tests
+  - backend/loans_analytics/tests
   - apps/analytics/tests
   - data_samples
   - infra
