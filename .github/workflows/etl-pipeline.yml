@@ -1,5 +1,5 @@
 ﻿# =============================================================================
-# ETL Pipeline Ã¢â‚¬â€ Zero-cost GitHub Actions workflow
+# ETL Pipeline - Zero-cost GitHub Actions workflow
 # Replaces: Azure Functions / Azure Data Factory pipelines
 # Runs on: GitHub Actions free tier (2 000 min/month public repos, 500 MB cache)
 #
@@ -10,14 +10,14 @@
 #   - Monthly snapshot: 08:00 UTC on the 1st of each month
 #
 # Required secrets (fail-fast guard in 'preflight' job):
-#   SUPABASE_URL              Ã¢â‚¬â€ Supabase project URL
-#   SUPABASE_SERVICE_ROLE_KEY Ã¢â‚¬â€ Supabase service-role key (write access)
-#   SUPABASE_ANON_KEY         Ã¢â‚¬â€ Supabase anon/public key (read access)
+#   SUPABASE_URL              - Supabase project URL
+#   SUPABASE_SERVICE_ROLE_KEY - Supabase service-role key (write access)
+#   SUPABASE_ANON_KEY         - Supabase anon/public key (read access)
 #
 # Optional secrets (used when available; silently skipped if absent):
-#   RENDER_API_KEY / RENDER_SERVICE_ID  Ã¢â‚¬â€ Render.com deployment
-#   RAILWAY_TOKEN / RAILWAY_PROJECT_ID  Ã¢â‚¬â€ Railway deployment
-#   FLY_API_TOKEN                       Ã¢â‚¬â€ Fly.io deployment
+#   RENDER_API_KEY / RENDER_SERVICE_ID  - Render.com deployment
+#   RAILWAY_TOKEN / RAILWAY_PROJECT_ID  - Railway deployment
+#   FLY_API_TOKEN                       - Fly.io deployment
 # =============================================================================
 
 name: ETL Pipeline (Zero-Cost)
@@ -67,7 +67,7 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # 1. Validate inputs & environment Ã¢â‚¬â€ fail fast if required secrets are absent
+  # 1. Validate inputs & environment - fail fast if required secrets are absent
   # ---------------------------------------------------------------------------
   preflight:
     name: Preflight checks
@@ -103,13 +103,14 @@ jobs:
             exit 0
           fi
           echo "supabase_ready=true" >> "$GITHUB_OUTPUT"
-          echo "Ã¢Å“â€¦ All required secrets present"
+          echo "OK: All required secrets present"
 
       - name: Resolve pipeline inputs and verify files
         id: resolve
         env:
-          GOOGLE_SHEETS_CREDENTIALS_JSON: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS_JSON }}
+          ALL_SECRETS_JSON: ${{ toJson(secrets) }}
         run: |
+          GOOGLE_SHEETS_CREDENTIALS_JSON="$(python3 -c "import json, os, sys; sys.stdout.write(json.loads(os.environ.get('ALL_SECRETS_JSON', '{}')).get('GOOGLE_SHEETS_CREDENTIALS_JSON', ''))")"
           CSV="${{ github.event.inputs.input_csv }}"
           MODE="${{ github.event.inputs.mode }}"
           RTYPE="${{ github.event.inputs.run_type }}"
@@ -120,7 +121,7 @@ jobs:
             [ "$HOUR" = "08" ] && RTYPE="snapshot" || RTYPE="ingest"
           fi
 
-          # Default values Ã¢â‚¬â€ Google Sheets is the primary data source
+          # Default values - Google Sheets is the primary data source
           CSV="${CSV:-gsheets://DESEMBOLSOS}"
           MODE="${MODE:-full}"
           RTYPE="${RTYPE:-ingest}"
@@ -128,16 +129,16 @@ jobs:
           # For gsheets:// URIs no file check is needed; for local files, verify existence
           if [[ "$CSV" == gsheets://* ]]; then
             if [ -z "$GOOGLE_SHEETS_CREDENTIALS_JSON" ]; then
-              echo "::warning::Google Sheets source selected but GOOGLE_SHEETS_CREDENTIALS_JSON is missing Ã¢â‚¬â€ switching to dry-run mode"
+              echo "::warning::Google Sheets source selected but GOOGLE_SHEETS_CREDENTIALS_JSON is missing - switching to dry-run mode"
               MODE="dry-run"
             else
-              echo "Ã¢Å“â€¦ Google Sheets source: $CSV"
+              echo "OK: Google Sheets source: $CSV"
             fi
           elif [ "$MODE" != "dry-run" ] && [ ! -f "$CSV" ]; then
-            echo "Ã¢Å¡Â Ã¯Â¸Â  Input CSV '$CSV' not found Ã¢â‚¬â€ switching to dry-run mode"
+            echo "WARNING: Input CSV '$CSV' not found - switching to dry-run mode"
             MODE="dry-run"
           else
-            [ "$MODE" != "dry-run" ] && echo "Ã¢Å“â€¦ Input file found: $CSV"
+            [ "$MODE" != "dry-run" ] && echo "OK: Input file found: $CSV"
           fi
 
           echo "input_csv=${CSV}" >> "$GITHUB_OUTPUT"
@@ -191,13 +192,13 @@ jobs:
         run: |
           for i in {1..30}; do
             if pg_isready; then
-              echo "Ã¢Å“â€¦ PostgreSQL is ready."
+              echo "OK: PostgreSQL is ready."
               exit 0
             fi
             echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
             sleep 2
           done
-          echo "Ã¢ÂÅ’ PostgreSQL readiness acknowledgement not received in time."
+          echo "ERROR: PostgreSQL readiness acknowledgement not received in time."
           exit 1
 
       - name: Validate prod lock file (dry-run)
@@ -271,30 +272,31 @@ jobs:
           sudo apt-get install -y --no-install-recommends postgresql-client
           for i in {1..30}; do
             if pg_isready; then
-              echo "Ã¢Å“â€¦ PostgreSQL is ready."
+              echo "OK: PostgreSQL is ready."
               exit 0
             fi
             echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
             sleep 2
           done
-          echo "Ã¢ÂÅ’ PostgreSQL readiness acknowledgement not received in time."
+          echo "ERROR: PostgreSQL readiness acknowledgement not received in time."
           exit 1
 
       - name: Run pipeline
         env:
+          ALL_SECRETS_JSON: ${{ toJson(secrets) }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          GOOGLE_SHEETS_CREDENTIALS_JSON: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS_JSON }}
           SNAPSHOT_MONTH: ${{ github.event.inputs.snapshot_month }}
           INPUT: ${{ needs.preflight.outputs.input_csv }}
           MODE: ${{ needs.preflight.outputs.mode }}
         run: |
+          GOOGLE_SHEETS_CREDENTIALS_JSON="$(python3 -c "import json, os, sys; sys.stdout.write(json.loads(os.environ.get('ALL_SECRETS_JSON', '{}')).get('GOOGLE_SHEETS_CREDENTIALS_JSON', ''))")"
           # Write Google Sheets credentials from secret if available
           if [ -n "$GOOGLE_SHEETS_CREDENTIALS_JSON" ]; then
             mkdir -p credentials
             echo "$GOOGLE_SHEETS_CREDENTIALS_JSON" > credentials/google-service-account.json
-            echo "Ã¢Å“â€¦ Google Sheets credentials written from secret"
+            echo "OK: Google Sheets credentials written from secret"
           fi
           make etl-local
 
@@ -315,7 +317,7 @@ jobs:
               echo "::error::$MISSING rows in $UNMATCHED have no reason_code. Review crosswalk output."
               exit 1
             fi
-            echo "Ã¢Å“â€¦ All unmatched records have reason_code"
+            echo "OK: All unmatched records have reason_code"
           fi
 
           # Warn (do not fail) if dim_loan export is empty
@@ -323,9 +325,9 @@ jobs:
           if [ -f "$DIM_LOAN" ]; then
             ROWS=$(tail -n +2 "$DIM_LOAN" | wc -l | tr -d ' ')
             if [ "$ROWS" -eq 0 ]; then
-              echo "::warning file=$DIM_LOAN::dim_loan.csv is empty Ã¢â‚¬â€ verify control_mora_path was provided"
+              echo "::warning file=$DIM_LOAN::dim_loan.csv is empty - verify control_mora_path was provided"
             else
-              echo "Ã¢Å“â€¦ dim_loan.csv has $ROWS rows"
+              echo "OK: dim_loan.csv has $ROWS rows"
             fi
           fi
 
