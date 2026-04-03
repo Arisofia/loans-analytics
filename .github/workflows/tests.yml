@@ -62,13 +62,13 @@ jobs:
         run: |
           for i in {1..30}; do
             if pg_isready; then
-              echo "Ã¢Å“â€¦ PostgreSQL is ready."
+              echo "OK: PostgreSQL is ready."
               exit 0
             fi
             echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
             sleep 2
           done
-          echo "Ã¢ÂÅ’ PostgreSQL readiness acknowledgement not received in time."
+          echo "ERROR: PostgreSQL readiness acknowledgement not received in time."
           exit 1
 
       - name: Install dependencies
@@ -223,13 +223,13 @@ jobs:
         run: |
           for i in {1..30}; do
             if pg_isready; then
-              echo "Ã¢Å“â€¦ PostgreSQL is ready."
+              echo "OK: PostgreSQL is ready."
               exit 0
             fi
             echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
             sleep 2
           done
-          echo "Ã¢ÂÅ’ PostgreSQL readiness acknowledgement not received in time."
+          echo "ERROR: PostgreSQL readiness acknowledgement not received in time."
           exit 1
 
       - name: Install dependencies

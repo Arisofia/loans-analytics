@@ -53,13 +53,13 @@ jobs:
         run: |
           for i in {1..30}; do
             if pg_isready; then
-              echo "Ã¢Å“â€¦ PostgreSQL is ready."
+              echo "OK: PostgreSQL is ready."
               exit 0
             fi
             echo "PostgreSQL not ready yet (attempt $i/30); waiting 2s..."
             sleep 2
           done
-          echo "Ã¢ÂÅ’ PostgreSQL readiness acknowledgement not received in time."
+          echo "ERROR: PostgreSQL readiness acknowledgement not received in time."
           exit 1
 
       - name: Install QA tools
@@ -121,10 +121,10 @@ jobs:
         run: |
           STATUS="${JOB_STATUS:-unknown}"
           case "$STATUS" in
-            success) SUMMARY="Ã¢Å“â€¦ Basic QA checks passed." ;;
-            failure) SUMMARY="Ã¢ÂÅ’ Basic QA checks failed." ;;
-            cancelled) SUMMARY="Ã¢Å¡Â Ã¯Â¸Â Basic QA checks were cancelled." ;;
-            *) SUMMARY="Ã¢â€žÂ¹Ã¯Â¸Â Basic QA checks finished with status: $STATUS." ;;
+            success) SUMMARY="OK: Basic QA checks passed." ;;
+            failure) SUMMARY="ERROR: Basic QA checks failed." ;;
+            cancelled) SUMMARY="WARNING: Basic QA checks were cancelled." ;;
+            *) SUMMARY="INFO: Basic QA checks finished with status: $STATUS." ;;
           esac
 
           ISSUE_NUMBER="${{ github.event.pull_request.number }}"
