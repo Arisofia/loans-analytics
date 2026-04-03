@@ -8,17 +8,17 @@ def _stress_loans() -> list[LoanRecord]:
 def test_calculate_stress_test_returns_expected_structure_and_directionality():
     service = KPIService(actor='test_user')
     response = asyncio.run(service.calculate_stress_test(loans=_stress_loans()))
-    assert isinstance(response, StressTestResponse)
-    assert response.scenario_id
-    assert response.baseline.par30_pct >= 0.0
-    assert response.stressed.par30_pct >= response.baseline.par30_pct
-    assert response.stressed.collection_rate_pct <= response.baseline.collection_rate_pct
-    assert response.stressed.revenue_forecast_6m_usd <= response.baseline.revenue_forecast_6m_usd
-    assert response.deltas.expected_credit_loss_usd == round(response.stressed.expected_credit_loss_usd - response.baseline.expected_credit_loss_usd, 2)
+    assert isinstance(response, StressTestResponse)  # nosec B101
+    assert response.scenario_id  # nosec B101
+    assert response.baseline.par30_pct >= 0.0  # nosec B101
+    assert response.stressed.par30_pct >= response.baseline.par30_pct  # nosec B101
+    assert response.stressed.collection_rate_pct <= response.baseline.collection_rate_pct  # nosec B101
+    assert response.stressed.revenue_forecast_6m_usd <= response.baseline.revenue_forecast_6m_usd  # nosec B101
+    assert response.deltas.expected_credit_loss_usd == round(response.stressed.expected_credit_loss_usd - response.baseline.expected_credit_loss_usd, 2)  # nosec B101
 
 def test_calculate_stress_test_handles_empty_inputs():
     service = KPIService(actor='test_user')
     response = asyncio.run(service.calculate_stress_test(loans=[]))
-    assert response.baseline.par30_pct == 0.0
-    assert response.stressed.par30_pct == 0.0
-    assert response.alerts == []
+    assert response.baseline.par30_pct == 0.0  # nosec B101
+    assert response.stressed.par30_pct == 0.0  # nosec B101
+    assert response.alerts == []  # nosec B101
