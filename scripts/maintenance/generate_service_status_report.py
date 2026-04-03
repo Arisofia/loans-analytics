@@ -1,6 +1,6 @@
 import json
 import os
-import subprocess  # nosec B404
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -52,7 +52,7 @@ class ServiceStatusChecker:
 
     def run_command(self, cmd: list[str], timeout: int=30) -> tuple[bool, str, str]:
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=self.repo_root, check=False)  # nosec B603
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=self.repo_root, check=False)
             return (result.returncode == 0, result.stdout, result.stderr)
         except subprocess.TimeoutExpired:
             return (False, '', f'Command timed out after {timeout}s')

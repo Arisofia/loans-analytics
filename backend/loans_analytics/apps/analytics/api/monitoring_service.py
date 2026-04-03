@@ -146,7 +146,7 @@ class MonitoringService:
             f"SELECT id, event_type, severity, source, correlation_id,"
             f" payload, created_at, acknowledged_at"
             f" FROM monitoring.operational_events"
-            f" {where}"  # nosec B608
+            f" {where}"
             f" ORDER BY created_at DESC"
             f" LIMIT ${idx} OFFSET ${idx + 1}"
         )
@@ -228,7 +228,7 @@ class MonitoringService:
             f"SELECT id, command_type, status, requested_by, event_id,"
             f" parameters, result, created_at, started_at, completed_at"
             f" FROM monitoring.commands"
-            f" {where}"  # nosec B608
+            f" {where}"
             f" ORDER BY created_at DESC"
             f" LIMIT ${idx}"
         )

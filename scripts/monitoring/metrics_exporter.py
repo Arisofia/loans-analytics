@@ -189,7 +189,7 @@ def main() -> None:
     print('    static_configs:')
     print(f"      - targets: ['localhost:{port}']")
     print('=' * 60)
-    server = HTTPServer(('0.0.0.0', port), MetricsHandler)  # nosec B104
+    server = HTTPServer(('0.0.0.0', port), MetricsHandler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

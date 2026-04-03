@@ -179,7 +179,7 @@ def _build_dashboard(uid: str, datasource_uid: str, datasource_type: str) -> dic
         return (
             f"SELECT value_num AS value "
             f"FROM monitoring.kpi_values "
-            f"WHERE kpi_key = '{kpi_key}' "  # nosec B608
+            f"WHERE kpi_key = '{kpi_key}' "
             f"AND value_num IS NOT NULL "
             f"{lower_bound_filter}"
             f"ORDER BY as_of_date DESC "

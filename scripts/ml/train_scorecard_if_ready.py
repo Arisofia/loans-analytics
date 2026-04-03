@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
-import subprocess  # nosec B404
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -34,7 +34,7 @@ def _resolve(path: Path) -> Path:
 def _git_commit_hash() -> str:
     git_exe = shutil.which("git") or "git"
     try:
-        result = subprocess.run(  # nosec B603
+        result = subprocess.run(
             [git_exe, "rev-parse", "HEAD"],
             cwd=REPO_ROOT,
             text=True,
@@ -92,7 +92,7 @@ def main() -> int:
 
     command = _build_train_command(args)
     print("Running scorecard training...")
-    subprocess.run(command, cwd=REPO_ROOT, check=True)  # nosec B603
+    subprocess.run(command, cwd=REPO_ROOT, check=True)
 
     metadata = _read_metadata(output_dir)
     metrics = metadata.get("metrics", {})

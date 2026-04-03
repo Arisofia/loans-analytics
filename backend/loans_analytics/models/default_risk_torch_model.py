@@ -30,9 +30,9 @@ class TorchDefaultRiskModel:
         if not path.exists():
             raise FileNotFoundError(f'PyTorch model checkpoint not found: {checkpoint_path}')
         try:
-            payload = torch.load(path, map_location='cpu', weights_only=True)  # nosec B614
+            payload = torch.load(path, map_location='cpu', weights_only=True)
         except TypeError:
-            payload = torch.load(path, map_location='cpu')  # nosec B614
+            payload = torch.load(path, map_location='cpu')
         if 'state_dict' not in payload:
             raise ValueError('Invalid checkpoint: missing state_dict')
         input_dim = int(payload.get('input_dim', len(FEATURE_ORDER)))

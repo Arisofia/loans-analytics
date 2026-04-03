@@ -4,7 +4,7 @@ import base64
 import json
 import os
 import secrets
-import subprocess  # nosec B404
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -73,7 +73,7 @@ def api_request(url: str, *, method: str='GET', data: dict | None=None, token: s
     payload = json.dumps(data).encode('utf-8') if data else None
     request = urllib.request.Request(url, data=payload, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(request) as response:  # nosec B310
+        with urllib.request.urlopen(request) as response:
             content = response.read()
     except urllib.error.HTTPError as error:
         raise RuntimeError(f'HTTP {error.code}') from error
@@ -83,7 +83,7 @@ def ensure_pynacl() -> None:
     try:
         import nacl  # noqa: F401
     except ImportError:
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'PyNaCl', '-q'])  # nosec B603 B607
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'PyNaCl', '-q'])
 
 def get_repo_public_key(token: str) -> tuple[str, str]:
     response = api_request(f'{API_BASE}/repos/{REPO}/actions/secrets/public-key', token=token)
