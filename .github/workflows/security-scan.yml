@@ -77,7 +77,7 @@ jobs:
           fi
           npm install --global snyk
           snyk auth "$SNYK_TOKEN"
-          snyk test --file=requirements.txt --package-manager=pip --severity-threshold=high
+          snyk test --file=requirements.prod.lock.txt --package-manager=pip --severity-threshold=high
 
   security-audit:
     name: Python Security Audit
