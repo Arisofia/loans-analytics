@@ -37,7 +37,7 @@ jobs:
             fi
           fi
 
-            PYPROJECT_VERSION=$(python -c "import pathlib,re; t=pathlib.Path('pyproject.toml').read_text(encoding='utf-8'); m=re.search(r'^version\\s*=\\s*\"([0-9]+\\.[0-9]+\\.[0-9]+)\"', t, re.M); print(m.group(1) if m else (_ for _ in ()).throw(SystemExit('Unable to find [project].version in pyproject.toml')))" )
+          PYPROJECT_VERSION=$(python -c "import pathlib,re; t=pathlib.Path('pyproject.toml').read_text(encoding='utf-8'); m=re.search(r'^version\\s*=\\s*\"([0-9]+\\.[0-9]+\\.[0-9]+)\"', t, re.M); print(m.group(1) if m else (_ for _ in ()).throw(SystemExit('Unable to find [project].version in pyproject.toml')))")
 
           if [ -n "$TAG" ]; then
             TAG_VERSION="${TAG#v}"
