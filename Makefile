@@ -51,8 +51,14 @@ setup:
 	}
 	"$(PYTHON)" -m venv --clear $(VENV)
 	$(BIN)/pip install --upgrade pip
-	$(BIN)/pip install -r requirements.txt
-	$(BIN)/pip install -r requirements-dev.txt
+	@if [ "$(CI)" = "true" ]; then \
+		echo "[CI] Installing from requirements.prod.lock.txt (pinned)"; \
+		$(BIN)/pip install -r requirements.prod.lock.txt; \
+	else \
+		echo "[DEV] Installing from requirements.txt + requirements-dev.txt"; \
+		$(BIN)/pip install -r requirements.txt; \
+		$(BIN)/pip install -r requirements-dev.txt; \
+	fi
 	@if [ -d .git ]; then \
 		if [ -x "$(BIN)/pre-commit" ]; then \
 			HOOKS_PATH=$$(git config --get core.hooksPath || true); \

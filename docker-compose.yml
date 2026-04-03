@@ -50,9 +50,13 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/app/data
+      # Local named volume for data. In cloud environments, replace with managed object storage mount/sync.
+      # Mapping guidance:
+      # - PARQUET_BASE_DIR -> object storage prefix (e.g., s3://bucket/parquet or az://container/parquet)
+      # - DUCKDB_PATH -> persistent attached volume path or managed DB replacement
+      - app_data:/app/data
       - ./config:/app/config
-      - ./logs:/app/logs
+      - app_logs:/app/logs
     environment:
       <<: *common-env
       API_HOST: 0.0.0.0
@@ -76,7 +80,7 @@ services:
     ports:
       - "8501:8501"
     volumes:
-      - ./data:/app/data
+      - app_data:/app/data
       - ./config:/app/config
     environment:
       <<: *common-env
@@ -104,9 +108,9 @@ services:
       dockerfile: Dockerfile.pipeline
     image: ghcr.io/arisofia/loans-analytics-pipeline:local
     volumes:
-      - ./data:/app/data
+      - app_data:/app/data
       - ./config:/app/config
-      - ./logs:/app/logs
+      - app_logs:/app/logs
     environment:
       <<: *common-env
     command: >
@@ -220,6 +224,8 @@ services:
       - monitoring
 
 volumes:
+  app_data:
+  app_logs:
   postgres_data:
   prometheus_data:
   grafana_data:

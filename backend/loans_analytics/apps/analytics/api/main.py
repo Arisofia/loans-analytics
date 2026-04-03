@@ -9,6 +9,31 @@ from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
+
+logger = logging.getLogger('apps.analytics.api')
+
+ENVIRONMENT = os.environ.get('ENVIRONMENT', '').strip().lower()
+VALID_ENVIRONMENTS = {'development', 'staging', 'production'}
+if ENVIRONMENT not in VALID_ENVIRONMENTS:
+    raise RuntimeError(f"ENVIRONMENT='{ENVIRONMENT}' is invalid. Must be one of: {VALID_ENVIRONMENTS}.")
+
+if ENVIRONMENT == 'production':
+    _mock_flags = {
+        'MOCK': os.environ.get('MOCK', 'false'),
+        'HISTORICAL_CONTEXT_MODE': os.environ.get('HISTORICAL_CONTEXT_MODE', 'REAL'),
+        'API_RELOAD': os.environ.get('API_RELOAD', 'false'),
+    }
+    if _mock_flags['MOCK'].lower() == 'true':
+        raise RuntimeError('MOCK=true is not permitted in ENVIRONMENT=production.')
+    if _mock_flags['HISTORICAL_CONTEXT_MODE'].upper() != 'REAL':
+        raise RuntimeError(
+            f"HISTORICAL_CONTEXT_MODE must be REAL in production. Got: {_mock_flags['HISTORICAL_CONTEXT_MODE']}"
+        )
+    if _mock_flags['API_RELOAD'].lower() == 'true':
+        raise RuntimeError('API_RELOAD=true (uvicorn hot-reload) is not permitted in production.')
+
+logger.info('API startup: environment=%s', ENVIRONMENT)
+
 try:
     import jwt as _jwt
     jwt: Any = _jwt
@@ -29,7 +54,13 @@ try:
     from backend.loans_analytics.multi_agent.orchestrator import MultiAgentOrchestrator
     from backend.loans_analytics.middleware.rate_limiter import api_limiter, auth_limiter
     init_sentry(service_name='analytics-api')
-    app: Optional[FastAPI] = FastAPI(title='Loans Analytics API')
+    app: Optional[FastAPI] = FastAPI(
+        title='Loans Analytics API',
+        version='1.3.0',
+        docs_url='/docs' if ENVIRONMENT != 'production' else None,
+        redoc_url='/redoc' if ENVIRONMENT != 'production' else None,
+        openapi_url='/openapi.json' if ENVIRONMENT != 'production' else None,
+    )
     # --- Decision Intelligence routes ---
     from backend.loans_analytics.apps.analytics.api.routes.metrics import router as metrics_router
     from backend.loans_analytics.apps.analytics.api.routes.agents import router as agents_router
@@ -70,7 +101,6 @@ except ImportError:
             self.args = args
             self.kwargs = kwargs
     app = None
-logger = logging.getLogger('apps.analytics.api')
 DOCS_PATH = '/docs'
 REDOC_PATH = '/redoc'
 EMPTY_PATH_ERROR = 'empty path'
