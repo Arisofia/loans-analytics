@@ -48,6 +48,20 @@ tags = ["private-key", "pem", "credentials"]
 entropy = 0
 keywords = ["PRIVATE KEY"]
 
+[[rules]]
+id = "google-sheets-id"
+description = "Google Sheets Spreadsheet ID committed to repository"
+regex = '''[0-9A-Za-z\-_]{44}'''
+tags = ["google", "sheets", "spreadsheet-id"]
+entropy = 0
+keywords = ["spreadsheet_id", "SPREADSHEET_ID", "sheets_id", "SPREADSHEET_ID"]
+
+[rules.allowlist]
+regexes = [
+  '''<your-google-sheets''',
+  '''1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms''',  # Google's public example Sheets ID
+]
+
 [allowlist]
 description = "Paths and patterns excluded from secret scanning (false positives)"
 

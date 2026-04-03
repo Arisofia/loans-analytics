@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from decimal import Decimal, ROUND_HALF_UP
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
@@ -125,3 +126,39 @@ def compute_growth_vs_targets(
         })
 
     return rows
+
+
+def compute_nim_proxy(
+    avg_interest_rate: Decimal,
+    config_path: Optional[str] = None,
+) -> Decimal:
+    """Net Interest Margin proxy: (avg_interest_rate - funding_cost_rate) * 100.
+
+    Reads ``funding_cost_rate`` from ``config/business_parameters.yml``
+    (or ``config_path`` if provided) so it is never hardcoded.
+
+    Parameters
+    ----------
+    avg_interest_rate:
+        Weighted average interest rate as a fraction (e.g. 0.18 for 18%).
+    config_path:
+        Path to the YAML config file. Defaults to ``config/business_parameters.yml``.
+
+    Returns
+    -------
+    Decimal — NIM as a percentage (e.g. 8.00 for 8%), rounded to 2dp ROUND_HALF_UP.
+    """
+    import yaml  # local import to avoid adding yaml as top-level dep where not needed
+    import os
+
+    resolved_path = config_path or os.environ.get(
+        "BUSINESS_PARAMS_PATH", "config/business_parameters.yml"
+    )
+    with open(resolved_path) as fh:
+        params = yaml.safe_load(fh)
+
+    funding_cost_rate = Decimal(
+        str(params["financial_assumptions"]["funding_cost_rate"])
+    )
+    nim = (avg_interest_rate - funding_cost_rate) * Decimal("100")
+    return nim.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)

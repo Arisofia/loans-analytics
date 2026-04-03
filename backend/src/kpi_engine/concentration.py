@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from decimal import Decimal, ROUND_HALF_UP
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Sequence
 
 import pandas as pd
 
@@ -187,3 +188,25 @@ def compute_kam_concentration(
         "top_kam_pct": top_kam_pct,
         "by_kam": by_kam,
     }
+
+
+def calculate_hhi(balances: Sequence[Decimal]) -> Decimal:
+    """Scalar HHI from a sequence of outstanding balances.
+
+    HHI = Σ(share_i²) × 10000, rounded to the nearest integer (ROUND_HALF_UP).
+    Range: 0 (perfect competition) to 10000 (monopoly).
+
+    Parameters
+    ----------
+    balances:
+        Sequence of non-negative Decimal balances, one per obligor/segment.
+
+    Returns
+    -------
+    Decimal — HHI on the 0–10000 scale.
+    """
+    total = sum(balances, Decimal("0"))
+    if total <= 0:
+        return Decimal("0")
+    hhi = sum((b / total) ** 2 for b in balances) * Decimal(str(_HHI_SCALE))
+    return hhi.quantize(Decimal("1"), rounding=ROUND_HALF_UP)

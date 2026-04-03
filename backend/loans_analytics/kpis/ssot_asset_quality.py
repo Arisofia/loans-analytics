@@ -1,5 +1,5 @@
 from __future__ import annotations
-from decimal import ROUND_HALF_UP, getcontext
+from decimal import Decimal, ROUND_HALF_UP, getcontext
 from collections.abc import Sequence
 import pandas as pd
 from backend.loans_analytics.kpis.formula_engine import KPIFormulaEngine
@@ -137,3 +137,47 @@ def calculate_asset_quality_metrics(
             continue
         values[alias] = float(engine.calculate_kpi(metric_id)["value"])
     return values
+
+
+def calculate_par(
+    balances_at_risk: Decimal,
+    total_portfolio: Decimal,
+    dpd_threshold: int = 30,
+) -> Decimal:
+    """PAR (Portfolio at Risk) as a percentage, computed from aggregate balance figures.
+
+    PAR = (balances_at_risk / total_portfolio) * 100, rounded to 3dp ROUND_HALF_UP.
+    This is the scalar variant for cases where the caller has already aggregated
+    outstanding balances by DPD bucket. Use ``calculate_asset_quality_metrics`` when
+    working with a loan-level DataFrame.
+    """
+    if total_portfolio <= 0:
+        raise ValueError(
+            f"calculate_par: total_portfolio must be > 0 (got {total_portfolio})"
+        )
+    ratio = (balances_at_risk / total_portfolio * Decimal("100")).quantize(
+        Decimal("0.001"), rounding=ROUND_HALF_UP
+    )
+    return ratio
+
+
+def calculate_npl(
+    df: "pd.DataFrame",
+    balance_col: str = "balance",
+    dpd_col: str = "dpd",
+    status_col: str = "status",
+) -> Decimal:
+    """NPL percentage per Basel II/III: DPD >= 90 OR status = 'defaulted'.
+
+    Returns
+    -------
+    Decimal — NPL% rounded to 2dp ROUND_HALF_UP.
+    """
+    total = Decimal(str(df[balance_col].sum()))
+    if total <= 0:
+        raise ValueError("calculate_npl: sum of balances must be > 0")
+    npl_mask = (df[dpd_col] >= 90) | (df[status_col].str.lower() == "defaulted")
+    npl_balance = Decimal(str(df.loc[npl_mask, balance_col].sum()))
+    return (npl_balance / total * Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )

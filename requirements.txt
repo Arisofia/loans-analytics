@@ -68,3 +68,6 @@ supabase>=2.0
 # Google Sheets integration (ControlMoraSheetsAdapter)
 gspread>=5.0
 google-auth>=2.0
+
+# Safe formula evaluation (auditable arithmetic sandbox — prevents eval() attack surface)
+asteval>=0.9.31
