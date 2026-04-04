@@ -1,6 +1,6 @@
 import hashlib
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 import pandas as pd
@@ -19,7 +19,7 @@ class IngestionPhase:
 
     def execute(self, input_path: Optional[Path]=None, run_dir: Optional[Path]=None) -> Dict[str, Any]:
         logger.info('Starting Phase 1: Ingestion')
-        ingestion_timestamp = datetime.now().isoformat()
+        ingestion_timestamp = datetime.now(timezone.utc).isoformat()
         if self._should_use_google_sheets(input_path):
             ingestion_source = 'google_sheets'
             df = self._load_from_google_sheets(input_path)

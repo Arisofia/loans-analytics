@@ -140,3 +140,17 @@ class TestExecuteProvenanceKeys:
         assert result['data_as_of_date'] == '2026-03-15'
         assert result['data_as_of_column'] == 'FechaDesembolso'
 
+    def test_ingestion_timestamp_is_utc_aware(self, tmp_path: pathlib.Path) -> None:
+        """execute() timestamp must be UTC-aware (contains +00:00 offset)."""
+        csv_file = tmp_path / 'loans.csv'
+        csv_file.write_text('loan_id,amount,status\nL-1,100.0,active\n')
+        phase = IngestionPhase(config={'required_columns': []})
+        result = phase.execute(input_path=csv_file, run_dir=None)
+        ts = result.get('timestamp')
+        assert ts is not None
+        from datetime import datetime
+        parsed = datetime.fromisoformat(ts)
+        assert parsed.tzinfo is not None, "timestamp must be timezone-aware"
+        # Should be equivalent to UTC
+        assert parsed.utcoffset().total_seconds() == 0
+
