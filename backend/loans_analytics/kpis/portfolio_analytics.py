@@ -171,7 +171,7 @@ def collection_efficiency_by_segment(loans_df: pd.DataFrame, payments_df: pd.Dat
     real_amt = _col(payments_df, ['true_total_payment', 'payment_amount'])
     cat_col = _col(loans_df, ['categorialineacredito', 'credit_line_category'])
     agent_col = _col(loans_df, ['sales_agent', 'kam']) or (_col(customer_df, ['sales_agent']) if customer_df is not None else None)
-    if not all([loan_id, sched_amt, real_amt]):
+    if loan_id is None or sched_amt is None or real_amt is None:
         return {'status': 'missing_columns'}
     sched_agg = _aggregate_numeric_sum(schedule_df, loan_id, sched_amt, 'sched')
     real_agg = _aggregate_numeric_sum(payments_df, loan_id, real_amt, 'real')
