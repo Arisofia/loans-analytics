@@ -43,6 +43,10 @@ class KPIEngineV2:
             portfolio = pd.DataFrame()
         return {"portfolio_mart": portfolio}
 
+    def get_audit_trail(self) -> pd.DataFrame:
+        """Return an empty audit trail — full audit is in the canonical engine."""
+        return pd.DataFrame(columns=["kpi_name", "status", "value", "timestamp"])
+
     def calculate(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Legacy entrypoint retained for compatibility; delegates to canonical engine."""
         warnings.warn(
@@ -54,7 +58,7 @@ class KPIEngineV2:
         metric_map: Dict[str, Any] = {}
         for section in ("risk_metrics", "pricing_metrics", "executive_metrics"):
             for metric in result.get(section, []):
-                metric_map[metric.id] = metric.value
+                metric_map[metric.metric_id] = metric.value
         return metric_map
 
     def calculate_all(
@@ -72,11 +76,11 @@ class KPIEngineV2:
         normalized: Dict[str, Dict[str, Any]] = {}
         for section in ("risk_metrics", "pricing_metrics", "executive_metrics"):
             for metric in result.get(section, []):
-                normalized[metric.id] = {
+                normalized[metric.metric_id] = {
                     "value": metric.value,
                     "context": {
                         "type": "run_metric_engine",
-                        "domain": metric.domain,
+                        "domain": metric.source_mart,
                         "owner": metric.owner,
                     },
                 }

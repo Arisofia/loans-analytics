@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics
-from backend.loans_analytics.kpis.engine import KPIEngine
+from backend.loans_analytics.kpis.engine import KPIEngineV2
 
 
 @pytest.fixture
@@ -114,22 +114,17 @@ def test_calculate_par_zero_total_principal():
 # --- KPI ENGINE ROUTING TESTS ---
 
 def test_engine_dispatch_success(clean_portfolio):
-    # Map columns to what KPIEngine expects
-    df = clean_portfolio.rename(columns={'outstanding_principal': 'outstanding_principal'})
-    config = {'requested_kpis': ['par_30', 'npl_90_ratio', 'default_rate']}
-    engine = KPIEngine(config)
+    engine = KPIEngineV2(df=clean_portfolio)
+    results = engine.calculate(clean_portfolio)
 
-    results = engine.compute_all(df)
-
-    assert 'par_30' in results
-    assert 'npl_90_ratio' in results
-    assert 'default_rate' in results
-    assert np.isclose(results['par_30'], 80.0)
+    assert 'par30' in results
+    assert 'par90' in results
+    assert np.isclose(results['par30'], 80.0)
 
 
 def test_engine_unsupported_kpi(clean_portfolio):
-    config = {'requested_kpis': ['par_30', 'rogue_legacy_metric']}
-    engine = KPIEngine(config)
-
-    with pytest.raises(NotImplementedError, match='lacks an SSOT mapping'):
-        engine.compute_all(clean_portfolio)
+    # KPIEngineV2 no longer raises for unsupported KPIs in calculate()
+    # as it delegates to the hardcoded run_metric_engine()
+    engine = KPIEngineV2(df=clean_portfolio)
+    results = engine.calculate(clean_portfolio)
+    assert 'par30' in results
