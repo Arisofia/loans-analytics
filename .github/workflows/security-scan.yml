@@ -239,10 +239,16 @@ jobs:
         image:
           - name: loans-analytics-api:scan
             dockerfile: Dockerfile
+            sarif_file: trivy-results-loans-analytics-api-scan.sarif
+            sarif_category: trivy-loans-analytics-api-scan
           - name: loans-analytics-pipeline:scan
             dockerfile: Dockerfile.pipeline
+            sarif_file: trivy-results-loans-analytics-pipeline-scan.sarif
+            sarif_category: trivy-loans-analytics-pipeline-scan
           - name: loans-analytics-dashboard:scan
             dockerfile: Dockerfile.dashboard
+            sarif_file: trivy-results-loans-analytics-dashboard-scan.sarif
+            sarif_category: trivy-loans-analytics-dashboard-scan
     permissions:
       contents: read
       security-events: write
@@ -261,14 +267,14 @@ jobs:
         with:
           image-ref: ${{ matrix.image.name }}
           format: sarif
-          output: trivy-results-${{ replace(matrix.image.name, ':', '-') }}.sarif
+          output: ${{ matrix.image.sarif_file }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: "1"
 
       - name: Upload Trivy scan results to Security tab
-        if: ${{ always() && hashFiles(format('trivy-results-{0}.sarif', replace(matrix.image.name, ':', '-'))) != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: trivy-results-${{ replace(matrix.image.name, ':', '-') }}.sarif
-          category: trivy-${{ replace(matrix.image.name, ':', '-') }}
+          sarif_file: ${{ matrix.image.sarif_file }}
+          category: ${{ matrix.image.sarif_category }}
