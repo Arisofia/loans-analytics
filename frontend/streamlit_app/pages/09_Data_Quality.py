@@ -6,7 +6,7 @@ and blocking rule enforcement from the DQ engine.
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -257,6 +257,10 @@ def _render_kpi_deep_dive(kpi_data: Dict[str, Any]) -> None:
 # Main Page
 # ──────────────────────────────────────────────────────────────────────
 
+_STALENESS_CURRENT_DAYS = 1   # ≤ 1 day old → current
+_STALENESS_WARNING_DAYS = 7  # ≤ 7 days old → warning; > 7 days → stale
+
+
 def _render_data_freshness(run_dir: Optional[Path]) -> None:
     """Render data freshness and pipeline provenance information."""
     st.subheader("Data Freshness")
@@ -305,12 +309,12 @@ def _render_data_freshness(run_dir: Optional[Path]) -> None:
     with col4:
         if data_as_of:
             try:
-                as_of_dt = datetime.fromisoformat(data_as_of)
-                now = datetime.now()
+                as_of_dt = datetime.fromisoformat(data_as_of).replace(tzinfo=timezone.utc)
+                now = datetime.now(tz=timezone.utc)
                 days_stale = (now - as_of_dt).days
                 staleness_label = (
-                    "🟢 Current" if days_stale <= 1
-                    else f"🟡 {days_stale}d old" if days_stale <= 7
+                    "🟢 Current" if days_stale <= _STALENESS_CURRENT_DAYS
+                    else f"🟡 {days_stale}d old" if days_stale <= _STALENESS_WARNING_DAYS
                     else f"🔴 {days_stale}d old"
                 )
                 st.metric("Staleness", staleness_label)
