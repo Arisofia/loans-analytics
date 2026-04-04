@@ -341,5 +341,5 @@ try:
         if _freshness_parts:
             st.info('🗓️ ' + ' · '.join(_freshness_parts))
 except Exception:
-    pass
+    logger.exception("Data freshness banner failed to load")
 st.caption(f"Loans Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

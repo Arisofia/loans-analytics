@@ -365,7 +365,7 @@ def _render_data_freshness(run_dir: Optional[Path]) -> None:
         st.error(f"❌ Pipeline status: **{status}**")
 
 
-
+def main() -> None:
     st.title("💰 Capital & Economics")
     st.markdown(
         "Unit economics, financial indicators, profitability analysis, "
