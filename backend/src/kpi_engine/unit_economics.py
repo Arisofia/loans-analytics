@@ -8,26 +8,32 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def compute_avg_ticket(sales_mart: pd.DataFrame) -> float:
+from decimal import Decimal, ROUND_HALF_UP
+
+def compute_avg_ticket(sales_mart: pd.DataFrame) -> Decimal:
     if sales_mart.empty or "approved_ticket" not in sales_mart.columns:
-        return 0.0
-    return float(sales_mart["approved_ticket"].dropna().mean() or 0.0)
+        return Decimal("0.0")
+    val = sales_mart["approved_ticket"].dropna().mean()
+    if pd.isna(val):
+        return Decimal("0.0")
+    return Decimal(str(val)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
-def compute_win_rate(sales_mart: pd.DataFrame) -> float:
+def compute_win_rate(sales_mart: pd.DataFrame) -> Decimal:
     if sales_mart.empty:
-        return 0.0
+        return Decimal("0.0")
     total = len(sales_mart)
     if total == 0:
-        return 0.0
+        return Decimal("0.0")
     wins = int(sales_mart["funded_flag"].fillna(False).sum())
-    return float(wins / total)
+    return (Decimal(wins) / Decimal(total)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 
 
-def compute_contribution_margin(finance_mart: pd.DataFrame) -> float:
+def compute_contribution_margin(finance_mart: pd.DataFrame) -> Decimal:
     if finance_mart.empty:
-        return 0.0
-    return float(finance_mart["gross_margin"].sum())
+        return Decimal("0.0")
+    val = finance_mart["gross_margin"].sum()
+    return Decimal(str(val)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def compute_arpu_by_segment(

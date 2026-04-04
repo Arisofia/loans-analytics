@@ -8,11 +8,13 @@ All calculations are delegated to run_metric_engine.
 
 from __future__ import annotations
 
+from decimal import Decimal, ROUND_HALF_UP
 import warnings
 from typing import Any, Dict, Optional
 
 import pandas as pd
 
+from backend.loans_analytics.kpis.ltv import calculate_ltv_sintetico
 from backend.src.kpi_engine.engine import run_metric_engine
 
 
@@ -85,6 +87,89 @@ class KPIEngineV2:
                     },
                 }
         return normalized
+
+    @staticmethod
+    def _calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
+        return calculate_ltv_sintetico(df)
+
+    @staticmethod
+    def _resolve_col(df: pd.DataFrame, *candidates: str) -> Optional[str]:
+        return next((column for column in candidates if column in df.columns), None)
+
+    def _compute_portfolio_velocity_of_default(self, df: pd.DataFrame) -> Optional[Decimal]:
+        date_col = self._resolve_col(df, "as_of_date", "measurement_date", "period")
+        if date_col is None:
+            return None
+
+        work = df.copy()
+        work["_period_date"] = pd.to_datetime(work[date_col], errors="coerce", format="mixed")
+        work = work.dropna(subset=["_period_date"])
+        if work.empty:
+            return None
+
+        if "status" in work.columns:
+            status = work["status"].astype(str).str.lower().fillna("active")
+            work = work.loc[status != "closed"].copy()
+            work["_is_defaulted"] = status.loc[work.index] == "defaulted"
+        else:
+            work["_is_defaulted"] = False
+
+        if work.empty:
+            return None
+
+        work["_period"] = work["_period_date"].dt.to_period("M")
+        grouped = work.groupby("_period", sort=True)["_is_defaulted"].mean() * 100.0
+        if len(grouped) < 2:
+            return None
+
+        deltas = grouped.diff().dropna()
+        if deltas.empty:
+            return None
+        return Decimal(str(round(float(deltas.iloc[-1]), 6)))
+
+    def _calculate_derived_risk_kpis(self, df: pd.DataFrame) -> Dict[str, Decimal]:
+        if df.empty:
+            zero = Decimal("0.0")
+            return {"npl_ratio": zero, "npl_90_ratio": zero}
+
+        dpd_col = self._resolve_col(df, "dpd", "days_past_due")
+        status_col = self._resolve_col(df, "status", "loan_status")
+        if dpd_col is None:
+            zero = Decimal("0.0")
+            return {"npl_ratio": zero, "npl_90_ratio": zero}
+
+        dpd = pd.to_numeric(df[dpd_col], errors="coerce").fillna(0.0)
+        status = (
+            df[status_col].astype(str).str.lower().fillna("active")
+            if status_col is not None
+            else pd.Series("active", index=df.index, dtype=str)
+        )
+        total = len(df.index)
+        npl_90_ratio = Decimal(str(round(float((dpd >= 90).sum() / total * 100.0), 6)))
+        npl_ratio = Decimal(
+            str(round(float(((dpd >= 90) | (status == "defaulted")).sum() / total * 100.0), 6))
+        )
+        return {"npl_ratio": npl_ratio, "npl_90_ratio": npl_90_ratio}
+
+    def calculate_ltv(self) -> tuple[Decimal, Dict[str, Any]]:
+        loan_col = self._resolve_col(self.df, "loan_amount", "principal_amount", "amount")
+        collateral_col = self._resolve_col(self.df, "collateral_value", "appraised_value", "valor_garantia")
+        if loan_col is None or collateral_col is None:
+            raise ValueError("missing required columns")
+
+        loan_amount = Decimal(str(pd.to_numeric(self.df[loan_col], errors="coerce").fillna(0.0).sum()))
+        collateral_value = Decimal(str(pd.to_numeric(self.df[collateral_col], errors="coerce").fillna(0.0).sum()))
+        if collateral_value <= 0:
+            raise ValueError("CRITICAL: LTV denominator must be > 0")
+
+        value = (loan_amount / collateral_value * Decimal("100")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        return value, {
+            "calculation_method": "v2_engine",
+            "loan_column": loan_col,
+            "collateral_column": collateral_col,
+        }
 
 
 __all__ = ["KPIEngineV2", "run_metric_engine"]

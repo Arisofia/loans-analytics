@@ -5,6 +5,7 @@ import re
 import sys
 import uuid
 import asyncio
+from decimal import ROUND_HALF_UP, getcontext
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,7 +13,9 @@ from typing import TYPE_CHECKING, Any, Optional
 
 logger = logging.getLogger('apps.analytics.api')
 
-ENVIRONMENT = os.environ.get('ENVIRONMENT', '').strip().lower()
+getcontext().rounding = ROUND_HALF_UP
+
+ENVIRONMENT = (os.environ.get('ENVIRONMENT') or 'development').strip().lower()
 VALID_ENVIRONMENTS = {'development', 'staging', 'production'}
 if ENVIRONMENT not in VALID_ENVIRONMENTS:
     raise RuntimeError(f"ENVIRONMENT='{ENVIRONMENT}' is invalid. Must be one of: {VALID_ENVIRONMENTS}.")

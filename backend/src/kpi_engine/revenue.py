@@ -6,25 +6,58 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 
-def compute_net_yield(finance_mart: pd.DataFrame) -> float:
+def compute_net_yield(finance_mart: pd.DataFrame) -> Decimal:
     if finance_mart.empty:
-        return 0.0
-    income = finance_mart["interest_income"].sum() + finance_mart["fee_income"].sum()
-    debt = finance_mart["debt_balance"].mean()
+        return Decimal("0.0")
+    income = Decimal(str(finance_mart["interest_income"].sum())) + Decimal(str(finance_mart["fee_income"].sum()))
+    debt = Decimal(str(finance_mart["debt_balance"].mean()))
     if debt == 0:
-        return 0.0
-    return float(income / debt)
+        return Decimal("0.0")
+    return (income / debt).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 
 
-def compute_spread(finance_mart: pd.DataFrame) -> float:
+def compute_spread(finance_mart: pd.DataFrame) -> Decimal:
     if finance_mart.empty:
-        return 0.0
-    income = finance_mart["interest_income"].sum() + finance_mart["fee_income"].sum()
-    cost = finance_mart["funding_cost"].sum()
-    debt = finance_mart["debt_balance"].mean()
+        return Decimal("0.0")
+    income = Decimal(str(finance_mart["interest_income"].sum())) + Decimal(str(finance_mart["fee_income"].sum()))
+    cost = Decimal(str(finance_mart["funding_cost"].sum()))
+    debt = Decimal(str(finance_mart["debt_balance"].mean()))
     if debt == 0:
-        return 0.0
-    return float((income - cost) / debt)
+        return Decimal("0.0")
+    return ((income - cost) / debt).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+
+
+def compute_eir(portfolio_mart: pd.DataFrame) -> Decimal:
+    """
+    Compute Effective Interest Rate (EIR).
+    Formula: ((1 + APR / 365) ^ 365) - 1 (Compounded Daily)
+    """
+    if portfolio_mart.empty:
+        return Decimal("0.0")
+    
+    avg_apr = Decimal(str(portfolio_mart["apr"].fillna(0).mean()))
+    if avg_apr == 0:
+        return Decimal("0.0")
+        
+    eir = (Decimal("1") + avg_apr / Decimal("365")) ** 365 - Decimal("1")
+    return eir.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+
+
+def compute_portfolio_irr(finance_mart: pd.DataFrame) -> Decimal:
+    """
+    Compute Simplified Portfolio IRR.
+    Formula: (Interest Income + Fee Income) / Average Debt Balance (Annualized)
+    """
+    if finance_mart.empty:
+        return Decimal("0.0")
+        
+    income = Decimal(str(finance_mart["interest_income"].sum())) + Decimal(str(finance_mart["fee_income"].sum()))
+    avg_debt = Decimal(str(finance_mart["debt_balance"].mean()))
+    
+    if avg_debt == 0:
+        return Decimal("0.0")
+        
+    return (income / avg_debt).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 
 
 def compute_growth_vs_targets(

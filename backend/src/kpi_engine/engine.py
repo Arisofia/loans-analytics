@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any
+from decimal import Decimal
+from typing import Any, Dict, List
 
 import pandas as pd
 
@@ -9,11 +10,13 @@ from backend.src.contracts.metric_schema import MetricResult
 from backend.src.kpi_engine import cohorts, revenue, risk, unit_economics
 
 
-def _mr(metric_id: str, name: str, value: float, unit: str, mart: str, owner: str) -> MetricResult:
+def _mr(metric_id: str, name: str, value: Decimal | float, unit: str, mart: str, owner: str) -> MetricResult:
+    # Ensure all values passed to MetricResult are converted to float for JSON compatibility
+    # but the internal computation remains Decimal-safe.
     return MetricResult(
         metric_id=metric_id,
         metric_name=name,
-        value=value,
+        value=float(value) if isinstance(value, Decimal) else value,
         unit=unit,
         as_of_date=str(date.today()),
         source_mart=mart,
@@ -22,26 +25,29 @@ def _mr(metric_id: str, name: str, value: float, unit: str, mart: str, owner: st
 
 
 def run_metric_engine(
-    marts: dict[str, pd.DataFrame],
-    quality_result: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+    marts: Dict[str, pd.DataFrame],
+    quality_result: Dict[str, Any] | None = None,
+) -> Dict[str, Any]:
     portfolio = marts.get("portfolio_mart", pd.DataFrame())
     finance = marts.get("finance_mart", pd.DataFrame())
     sales = marts.get("sales_mart", pd.DataFrame())
 
-    executive: list[MetricResult] = []
-    risk_metrics: list[MetricResult] = []
-    pricing: list[MetricResult] = []
+    executive: List[MetricResult] = []
+    risk_metrics: List[MetricResult] = []
+    pricing: List[MetricResult] = []
 
     # Risk
     risk_metrics.append(_mr("par30", "PAR 30", risk.compute_par30(portfolio), "ratio", "portfolio", "risk"))
     risk_metrics.append(_mr("par60", "PAR 60", risk.compute_par60(portfolio), "ratio", "portfolio", "risk"))
     risk_metrics.append(_mr("par90", "PAR 90", risk.compute_par90(portfolio), "ratio", "portfolio", "risk"))
     risk_metrics.append(_mr("expected_loss", "Expected Loss", risk.compute_expected_loss(portfolio), "currency", "portfolio", "risk"))
+    risk_metrics.append(_mr("provision_coverage", "Provision Coverage Ratio", risk.compute_provision_coverage_ratio(portfolio, finance), "ratio", "finance", "risk"))
 
     # Revenue / pricing
     pricing.append(_mr("net_yield", "Net Yield", revenue.compute_net_yield(finance), "ratio", "finance", "cfo"))
     pricing.append(_mr("spread", "Spread", revenue.compute_spread(finance), "ratio", "finance", "cfo"))
+    pricing.append(_mr("eir", "Effective Interest Rate", revenue.compute_eir(portfolio), "ratio", "portfolio", "cfo"))
+    pricing.append(_mr("portfolio_irr", "Portfolio IRR", revenue.compute_portfolio_irr(finance), "ratio", "finance", "cfo"))
 
     # Unit economics → executive
     executive.append(_mr("avg_ticket", "Avg Ticket", unit_economics.compute_avg_ticket(sales), "currency", "sales", "commercial"))

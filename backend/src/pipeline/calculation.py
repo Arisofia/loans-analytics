@@ -1,13 +1,16 @@
 import logging
 import re
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP, getcontext
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
+
+getcontext().rounding = ROUND_HALF_UP
+
 from backend.loans_analytics.kpis.ltv import calculate_ltv_sintetico
 from backend.loans_analytics.kpis.engine import KPIEngineV2
 from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics

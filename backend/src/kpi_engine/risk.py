@@ -21,43 +21,67 @@ _DPD_BUCKET_LABELS: List[tuple] = [
 ]
 
 
-def compute_par30(portfolio_mart: pd.DataFrame) -> float:
+def compute_par30(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return 0.0
-    total = portfolio_mart["outstanding_principal"].fillna(0).sum()
+        return Decimal("0.0")
+    total = Decimal(str(portfolio_mart["outstanding_principal"].fillna(0).sum()))
     if total == 0:
-        return 0.0
-    overdue = portfolio_mart.loc[
+        return Decimal("0.0")
+    overdue = Decimal(str(portfolio_mart.loc[
         portfolio_mart["days_past_due"].fillna(0) >= 30,
         "outstanding_principal",
-    ].sum()
-    return float(overdue / total)
+    ].sum()))
+    return (overdue / total).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 
 
-def compute_par60(portfolio_mart: pd.DataFrame) -> float:
+def compute_par60(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return 0.0
-    total = portfolio_mart["outstanding_principal"].fillna(0).sum()
+        return Decimal("0.0")
+    total = Decimal(str(portfolio_mart["outstanding_principal"].fillna(0).sum()))
     if total == 0:
-        return 0.0
-    overdue = portfolio_mart.loc[
+        return Decimal("0.0")
+    overdue = Decimal(str(portfolio_mart.loc[
         portfolio_mart["days_past_due"].fillna(0) >= 60,
         "outstanding_principal",
-    ].sum()
-    return float(overdue / total)
+    ].sum()))
+    return (overdue / total).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 
 
-def compute_par90(portfolio_mart: pd.DataFrame) -> float:
+def compute_par90(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return 0.0
-    total = portfolio_mart["outstanding_principal"].fillna(0).sum()
+        return Decimal("0.0")
+    total = Decimal(str(portfolio_mart["outstanding_principal"].fillna(0).sum()))
     if total == 0:
-        return 0.0
-    overdue = portfolio_mart.loc[
+        return Decimal("0.0")
+    overdue = Decimal(str(portfolio_mart.loc[
         portfolio_mart["days_past_due"].fillna(0) >= 90,
         "outstanding_principal",
-    ].sum()
-    return float(overdue / total)
+    ].sum()))
+    return (overdue / total).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+
+
+def compute_provision_coverage_ratio(
+    portfolio_mart: pd.DataFrame,
+    finance_mart: pd.DataFrame,
+) -> Decimal:
+    """
+    Compute Provision Coverage Ratio.
+    Formula: SUM(provision_expense) / SUM(outstanding_principal WHERE dpd >= 90 OR default_flag = True)
+    """
+    if portfolio_mart.empty or finance_mart.empty:
+        return Decimal("0.0")
+
+    total_provisions = Decimal(str(finance_mart["provision_expense"].fillna(0).sum()))
+    
+    npl_balance = Decimal(str(portfolio_mart.loc[
+        (portfolio_mart["days_past_due"].fillna(0) >= 90) | (portfolio_mart["default_flag"] == True),
+        "outstanding_principal",
+    ].sum()))
+
+    if npl_balance == 0:
+        return Decimal("1.0") if total_provisions > 0 else Decimal("0.0")
+
+    return (total_provisions / npl_balance).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 
 
 def compute_lgd(
@@ -153,10 +177,14 @@ def compute_pd(
         axis=1,
     )
 
-    if source == "dpd_bucket":
+    if source == "dpd_bucket" or scorecard_pd_col not in df.columns:
         return dpd_pd
 
-    sc_pd = pd.to_numeric(df.get(scorecard_pd_col), errors="coerce").fillna(dpd_pd)
+    if scorecard_pd_col in df.columns:
+        scorecard_values = df[scorecard_pd_col]
+    else:
+        scorecard_values = pd.Series(index=df.index, dtype=float)
+    sc_pd = pd.to_numeric(scorecard_values, errors="coerce").fillna(dpd_pd)
 
     if source == "scorecard":
         return sc_pd
@@ -206,7 +234,7 @@ def compute_expected_loss(
             df["pd_scorecard"] = pd.to_numeric(df.get("pd"), errors="coerce")
 
     # Assign PD
-    df["pd_final"] = compute_pd(df, pd_params, scorecard_pd_col="pd_scorecard")
+    df["pd_final"] = compute_pd(df, pd_params, scorecard_pd_col="pd_scorecard").apply(lambda x: Decimal(str(x)))
 
     # Assign LGD
     method = fin_params.get("lgd_method", "fixed")
@@ -225,25 +253,28 @@ def compute_expected_loss(
         else ("recovered_amount" if "recovered_amount" in df.columns else "last_payment_amount")
     )
 
-    total_disbursed = Decimal(str(pd.to_numeric(df.get(disbursed_col), errors="coerce").fillna(0).sum()))
-    total_recovered = Decimal(str(pd.to_numeric(df.get(recovered_col), errors="coerce").fillna(0).sum()))
+    disbursed_vals = pd.to_numeric(df[disbursed_col], errors="coerce") if disbursed_col in df.columns else pd.Series(0, index=df.index)
+    recovered_vals = pd.to_numeric(df[recovered_col], errors="coerce") if recovered_col in df.columns else pd.Series(0, index=df.index)
+
+    total_disbursed = Decimal(str(disbursed_vals.fillna(0).sum()))
+    total_recovered = Decimal(str(recovered_vals.fillna(0).sum()))
     recovered_input = total_recovered if method == "empirical" else None
 
     # Use a single global LGD per run to ensure deterministic EL and auditability.
-    global_lgd = float(
-        compute_lgd(
-            total_disbursed=total_disbursed,
-            total_recovered=recovered_input,
-            method=method,
-            fixed_rate=fixed_rate,
-            floor=lgd_floor,
-            ceil=lgd_ceil,
-        )
+    global_lgd = compute_lgd(
+        total_disbursed=total_disbursed,
+        total_recovered=recovered_input,
+        method=method,
+        fixed_rate=fixed_rate,
+        floor=lgd_floor,
+        ceil=lgd_ceil,
     )
     df["lgd_final"] = global_lgd
 
     if "ead" not in df.columns:
-        df["ead"] = df["outstanding_principal"].fillna(0)
+        df["ead"] = df["outstanding_principal"].fillna(0).apply(lambda x: Decimal(str(x)))
+    else:
+        df["ead"] = df["ead"].apply(lambda x: Decimal(str(x)))
 
     return float((df["pd_final"] * df["lgd_final"] * df["ead"]).sum())
 
