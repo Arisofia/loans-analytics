@@ -42,11 +42,11 @@ def compute_eir(portfolio_mart: pd.DataFrame) -> Decimal:
     if "apr" not in portfolio_mart.columns:
         return Decimal("0.0")
 
-    apr_series = pd.to_numeric(portfolio_mart["apr"], errors="coerce").dropna()
-    if apr_series.empty:
+    valid_apr_values = pd.to_numeric(portfolio_mart["apr"], errors="coerce").dropna()
+    if valid_apr_values.empty:
         return Decimal("0.0")
 
-    avg_apr = Decimal(str(apr_series.mean()))
+    avg_apr = Decimal(str(valid_apr_values.mean()))
     if avg_apr == 0:
         return Decimal("0.0")
 

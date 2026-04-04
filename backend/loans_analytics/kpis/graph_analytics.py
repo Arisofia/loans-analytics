@@ -390,7 +390,11 @@ def npl_benchmarks(intermedia_df: pd.DataFrame) -> dict[str, Any]:
         if "lgd_fixed_rate" in _fin:
             lgd = float(_fin["lgd_fixed_rate"])
         else:
-            raise KeyError("lgd_fixed_rate not in financial_assumptions")
+            raise KeyError(
+                "financial_assumptions.lgd_fixed_rate key is missing from "
+                "business_parameters.yml. Set lgd_fixed_rate under financial_assumptions "
+                "to define the canonical ECL LGD for provisioning calculations."
+            )
     except Exception as _lgd_exc:
         logger.warning(
             "npl_benchmarks: could not load financial_assumptions.lgd_fixed_rate (%s). "
