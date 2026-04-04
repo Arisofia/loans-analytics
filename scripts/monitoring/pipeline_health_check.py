@@ -11,12 +11,16 @@ from __future__ import annotations
 
 import argparse
 import sys
+from decimal import ROUND_HALF_UP, getcontext
 from pathlib import Path
 
 # Ensure project root is on PYTHONPATH
 _project_root = Path(__file__).resolve().parents[2]
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
+
+# Keep Decimal behavior consistent with KPI modules that assert ROUND_HALF_UP at import time.
+getcontext().rounding = ROUND_HALF_UP
 
 
 def _check_imports() -> bool:
@@ -27,7 +31,7 @@ def _check_imports() -> bool:
         from backend.src.pipeline.calculation import CalculationPhase  # noqa: F401
         from backend.src.pipeline.output import OutputPhase  # noqa: F401
         return True
-    except ImportError as exc:
+    except Exception as exc:  # noqa: BLE001
         print(f"[FAIL] Import error: {exc}", file=sys.stderr)
         return False
 
