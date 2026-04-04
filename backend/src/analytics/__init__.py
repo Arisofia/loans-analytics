@@ -99,9 +99,9 @@ def _compute_manual_aggregations(df: pd.DataFrame, enriched: pd.DataFrame) -> di
     _D_ZERO = Decimal('0')
     _D_12 = Decimal('12')
     ltv_sum: Decimal = _D_ZERO
-    ltv_count = 0
+    ltv_count: int = 0
     dti_sum: Decimal = _D_ZERO
-    dti_count = 0
+    dti_count: int = 0
 
     income_positive_list = (enriched['borrower_income'] > 0).tolist()
 
