@@ -262,12 +262,12 @@ class IngestionPhase:
         # Use dayfirst=True only for columns known to carry LatAm/Spanish-locale
         # dates (DD/MM/YYYY format).  English-named columns default to False to
         # avoid misinterpreting MM/DD/YYYY US-style dates.
-        _dayfirst_prefixes = ('fecha', 'Fecha')
+        _latam_date_prefixes = ('fecha', 'Fecha')
 
         for col in [*primary_candidates, *fallback_candidates]:
             if col not in df.columns:
                 continue
-            dayfirst = col.startswith(_dayfirst_prefixes)
+            dayfirst = col.startswith(_latam_date_prefixes)
             try:
                 parsed = pd.to_datetime(df[col], errors='coerce', format='mixed', dayfirst=dayfirst)
             except TypeError:

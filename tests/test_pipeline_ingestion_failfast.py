@@ -1,3 +1,4 @@
+import pathlib
 import pandas as pd
 import pytest
 from backend.src.pipeline.ingestion import IngestionPhase
@@ -86,7 +87,7 @@ class TestDetectDataAsOfDate:
 class TestExecuteProvenanceKeys:
     """execute() result must carry ingestion_source, data_as_of_date, data_as_of_column."""
 
-    def test_file_ingestion_includes_provenance_keys(self, tmp_path: 'pytest.TempPathFactory') -> None:
+    def test_file_ingestion_includes_provenance_keys(self, tmp_path: pathlib.Path) -> None:
         csv_file = tmp_path / 'loans.csv'
         csv_file.write_text(
             'loan_id,amount,status,borrower_id,as_of_date\n'
@@ -100,7 +101,7 @@ class TestExecuteProvenanceKeys:
         assert result['data_as_of_column'] == 'as_of_date'
 
     def test_file_ingestion_without_date_column_returns_none_provenance(
-        self, tmp_path: 'pytest.TempPathFactory'
+        self, tmp_path: pathlib.Path
     ) -> None:
         csv_file = tmp_path / 'loans.csv'
         csv_file.write_text('loan_id,amount,status\nL-1,100.0,active\n')
