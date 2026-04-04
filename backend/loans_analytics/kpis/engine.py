@@ -61,10 +61,6 @@ class KPIEngineV2:
                 metric_map[metric.metric_id] = metric.value
         return metric_map
 
-    def get_audit_trail(self) -> pd.DataFrame:
-        """Return an empty audit trail — full audit lives in the canonical engine."""
-        return pd.DataFrame(columns=["kpi_name", "status", "value", "timestamp"])
-
     def calculate_all(
         self, kpi_definitions: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Dict[str, Any]]:
