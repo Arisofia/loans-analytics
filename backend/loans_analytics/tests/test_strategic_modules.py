@@ -1,6 +1,10 @@
 import unittest
 from unittest.mock import patch
+from decimal import ROUND_HALF_UP, getcontext
 import pandas as pd
+
+getcontext().rounding = ROUND_HALF_UP
+
 from backend.loans_analytics.kpis.strategic_modules import build_compliance_dashboard, build_next_steps_plan, build_pd_model, predict_kpis
 
 class TestStrategicModules(unittest.TestCase):
@@ -11,9 +15,11 @@ class TestStrategicModules(unittest.TestCase):
     def _sample_payments(self) -> pd.DataFrame:
         return pd.DataFrame({'true_payment_date': ['2025-11-15', '2025-12-15', '2026-01-15', '2026-02-15', '2026-03-12'], 'true_total_payment': [350, 420, 510, 530, 490]})
 
+    def _sample_inputs(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        return self._sample_loans(), self._sample_payments()
+
     def test_compliance_uses_days_in_default_and_pagador(self):
-        loans = self._sample_loans()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
         report = build_compliance_dashboard(loans, payments)
         self.assertIn('data_sources', report)
         self.assertEqual(report['data_sources'].get('par'), 'loan.days_in_default')
@@ -32,16 +38,14 @@ class TestStrategicModules(unittest.TestCase):
         self.assertGreaterEqual(report['summary'].get('no_data', 0), 1)
 
     def test_compliance_marks_utilization_as_no_data_when_line_missing(self):
-        loans = self._sample_loans()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
         report = build_compliance_dashboard(loans, payments)
         util_row = next((row for row in report['metrics'] if row['metric'] == 'utilization_pct'))
         self.assertEqual(util_row['status'], 'no_data')
         self.assertEqual(util_row['actual'], 'NO_DATA')
 
     def test_compliance_marks_dscr_as_no_data_when_inputs_missing(self):
-        loans = self._sample_loans()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
         report = build_compliance_dashboard(loans, payments)
         dscr_row = next((row for row in report['metrics'] if row['metric'] == 'dscr'))
         self.assertEqual(dscr_row['status'], 'no_data')
@@ -49,8 +53,7 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(report['data_sources'].get('dscr'), 'NO_DATA')
 
     def test_compliance_apr_range_metric_ok_with_custom_guardrails(self):
-        loans = self._sample_loans()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
         report = build_compliance_dashboard(loans, payments, guardrails={'apr_pct_min': 30.0, 'apr_pct_max': 40.0})
         apr_row = next((row for row in report['metrics'] if row['metric'] == 'apr_pct_ann'))
         self.assertEqual(apr_row['status'], 'ok')
@@ -58,16 +61,15 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(apr_row['variance'], 0.0)
 
     def test_compliance_apr_range_metric_breach_below_min(self):
-        loans = self._sample_loans()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
         report = build_compliance_dashboard(loans, payments, guardrails={'apr_pct_min': 40.0, 'apr_pct_max': 60.0})
         apr_row = next((row for row in report['metrics'] if row['metric'] == 'apr_pct_ann'))
         self.assertEqual(apr_row['status'], 'breach')
         self.assertLess(apr_row['variance'], 0)
 
     def test_compliance_dscr_metric_ok_when_inputs_present(self):
-        loans = self._sample_loans().copy()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
+        loans = loans.copy()
         loans['net_operating_income'] = [300, 450, 360, 240, 210, 270]
         loans['debt_service'] = [200, 300, 240, 160, 140, 180]
         report = build_compliance_dashboard(loans, payments, guardrails={'dscr': 1.4, 'apr_pct_min': 30.0, 'apr_pct_max': 40.0})
@@ -77,11 +79,20 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(dscr_row['target'], 1.4)
 
     def test_pd_model_excludes_dpd_like_leakage_features(self):
-        rows = []
-        for i in range(120):
-            defaulted = i < 45
-            rows.append({'loan_id': f'L{i}', 'loan_status': 'Default' if defaulted else 'Current', 'interest_rate_apr': 0.42 if defaulted else 0.28, 'term': 75 if defaulted else 45, 'disbursement_amount': 1800 if defaulted else 1200, 'outstanding_loan_value': 1500 if defaulted else 900, 'tpv': 2200 if defaulted else 4800, 'days_in_default': 120 if defaulted else 0})
-        loans = pd.DataFrame(rows)
+        idx = pd.RangeIndex(120)
+        defaulted = idx < 45
+        loans = pd.DataFrame(
+            {
+                'loan_id': idx.map(lambda i: f'L{i}'),
+                'loan_status': pd.Series(defaulted).map({True: 'Default', False: 'Current'}),
+                'interest_rate_apr': pd.Series(defaulted).map({True: 0.42, False: 0.28}),
+                'term': pd.Series(defaulted).map({True: 75, False: 45}),
+                'disbursement_amount': pd.Series(defaulted).map({True: 1800, False: 1200}),
+                'outstanding_loan_value': pd.Series(defaulted).map({True: 1500, False: 900}),
+                'tpv': pd.Series(defaulted).map({True: 2200, False: 4800}),
+                'days_in_default': pd.Series(defaulted).map({True: 120, False: 0}),
+            }
+        )
         result = build_pd_model(loans, min_defaults=30, min_non_defaults=30, cv_folds=5)
         self.assertEqual(result.get('status'), 'ok')
         features = result.get('features_used', [])
@@ -90,8 +101,7 @@ class TestStrategicModules(unittest.TestCase):
         self.assertNotIn('line_util', features)
 
     def test_predict_kpis_emits_data_notes(self):
-        loans = self._sample_loans()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
         forecast = predict_kpis(loans, payments, horizon_months=3)
         self.assertIn('data_notes', forecast)
         self.assertIn('aum', forecast['data_notes'])
@@ -99,8 +109,7 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(len(forecast['aum_forecast']), 3)
 
     def test_compliance_numeric_regression_par_and_concentration(self):
-        loans = self._sample_loans()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
         report = build_compliance_dashboard(loans, payments)
         by_metric = {row['metric']: row for row in report['metrics']}
         self.assertEqual(by_metric['par30_pct']['actual'], 55.7)
@@ -109,8 +118,7 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(by_metric['top10_concentration_pct']['actual'], 100.0)
 
     def test_compliance_par_and_npl_use_ssot_formula_engine(self):
-        loans = self._sample_loans()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
         with patch('backend.loans_analytics.kpis.ssot_asset_quality.KPIFormulaEngine.calculate_kpi') as mock_calc:
             mock_calc.side_effect = [{'value': 10.1}, {'value': 5.2}, {'value': 1.7}]
             report = build_compliance_dashboard(loans, payments)
@@ -121,8 +129,7 @@ class TestStrategicModules(unittest.TestCase):
         self.assertEqual(mock_calc.call_count, 3)
 
     def test_compliance_output_contract_shape(self):
-        loans = self._sample_loans()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
         report = build_compliance_dashboard(loans, payments)
         self.assertIn('generated_at', report)
         self.assertIn('summary', report)
@@ -136,12 +143,10 @@ class TestStrategicModules(unittest.TestCase):
         self.assertTrue(isinstance(report['actuals'], dict))
         self.assertTrue(isinstance(report['data_sources'], dict))
         required_metric_keys = {'metric', 'actual', 'target', 'variance', 'variance_pct', 'status', 'lower_is_better', 'owner'}
-        for row in report['metrics']:
-            self.assertTrue(required_metric_keys.issubset(set(row.keys())))
+        self.assertTrue(all((required_metric_keys.issubset(set(row.keys())) for row in report['metrics'])))
 
     def test_variance_decomposition_for_apr_and_dscr_when_missing(self):
-        loans = self._sample_loans()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
         report = build_compliance_dashboard(loans, payments)
         decomp = report['variance_decomposition']
         self.assertEqual(decomp['apr_pct_ann']['driver'], 'APR within policy corridor')
@@ -149,8 +154,8 @@ class TestStrategicModules(unittest.TestCase):
         self.assertIsNone(decomp['dscr']['magnitude'])
 
     def test_variance_decomposition_for_dscr_when_available(self):
-        loans = self._sample_loans().copy()
-        payments = self._sample_payments()
+        loans, payments = self._sample_inputs()
+        loans = loans.copy()
         loans['net_operating_income'] = [300, 450, 360, 240, 210, 270]
         loans['debt_service'] = [200, 300, 240, 160, 140, 180]
         report = build_compliance_dashboard(loans, payments, guardrails={'dscr': 1.4})

@@ -1,6 +1,10 @@
 import pytest
 import pandas as pd
 import numpy as np
+from decimal import ROUND_HALF_UP, getcontext
+
+getcontext().rounding = ROUND_HALF_UP
+
 from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 from backend.loans_analytics.kpis.engine import KPIEngineV2
 

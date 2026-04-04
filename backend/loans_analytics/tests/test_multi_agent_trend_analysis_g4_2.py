@@ -44,10 +44,13 @@ class TestPolynomialTrendAnalysis(unittest.TestCase):
             self.provider.get_polynomial_trend('test_kpi', degree=6)
 
     def test_polynomial_different_degrees(self):
-        for degree in [1, 2, 3]:
-            trend = self.provider.get_polynomial_trend('test_kpi', degree=degree, periods=3)
-            self.assertIsNotNone(trend)
-            self.assertEqual(trend.kpi_id, 'test_kpi')
+        trend_d1 = self.provider.get_polynomial_trend('test_kpi', degree=1, periods=3)
+        trend_d2 = self.provider.get_polynomial_trend('test_kpi', degree=2, periods=3)
+        trend_d3 = self.provider.get_polynomial_trend('test_kpi', degree=3, periods=3)
+        self.assertTrue(all((trend_d1, trend_d2, trend_d3)))
+        self.assertEqual(trend_d1.kpi_id, 'test_kpi')
+        self.assertEqual(trend_d2.kpi_id, 'test_kpi')
+        self.assertEqual(trend_d3.kpi_id, 'test_kpi')
 
 class TestWeightedMovingAverage(unittest.TestCase):
 
@@ -84,16 +87,20 @@ class TestMultiPeriodTrends(unittest.TestCase):
         self.assertIn('30_day', trends)
         self.assertIn('90_day', trends)
         self.assertIn('yoy', trends)
-        for _period, trend in trends.items():
-            self.assertEqual(trend.kpi_id, 'test_kpi')
-            self.assertIsNotNone(trend.direction)
-            self.assertIsNotNone(trend.strength)
+        self.assertTrue(all((trend.kpi_id == 'test_kpi' for trend in trends.values())))
+        self.assertTrue(all((trend.direction is not None for trend in trends.values())))
+        self.assertTrue(all((trend.strength is not None for trend in trends.values())))
 
     def test_longer_periods_have_more_data(self):
         trends = self.provider.get_multi_period_trends('test_kpi')
-        for period in ['7_day', '30_day', '90_day', 'yoy']:
-            self.assertIn(period, trends)
-            self.assertGreater(trends[period].period_days, 0)
+        self.assertIn('7_day', trends)
+        self.assertIn('30_day', trends)
+        self.assertIn('90_day', trends)
+        self.assertIn('yoy', trends)
+        self.assertGreater(trends['7_day'].period_days, 0)
+        self.assertGreater(trends['30_day'].period_days, 0)
+        self.assertGreater(trends['90_day'].period_days, 0)
+        self.assertGreater(trends['yoy'].period_days, 0)
 
 class TestTrendConfidenceInterval(unittest.TestCase):
 
@@ -111,10 +118,15 @@ class TestTrendConfidenceInterval(unittest.TestCase):
         self.assertEqual(ci['confidence_level'], 0.95)
 
     def test_confidence_levels(self):
-        for conf in [0.9, 0.95, 0.99]:
-            ci = self.provider.get_trend_confidence_interval('test_kpi', confidence=conf, periods=3)
-            self.assertEqual(ci['confidence_level'], conf)
-            self.assertGreater(ci['upper_bound'] - ci['lower_bound'], 0)
+        ci_90 = self.provider.get_trend_confidence_interval('test_kpi', confidence=0.9, periods=3)
+        ci_95 = self.provider.get_trend_confidence_interval('test_kpi', confidence=0.95, periods=3)
+        ci_99 = self.provider.get_trend_confidence_interval('test_kpi', confidence=0.99, periods=3)
+        self.assertEqual(ci_90['confidence_level'], 0.9)
+        self.assertEqual(ci_95['confidence_level'], 0.95)
+        self.assertEqual(ci_99['confidence_level'], 0.99)
+        self.assertGreater(ci_90['upper_bound'] - ci_90['lower_bound'], 0)
+        self.assertGreater(ci_95['upper_bound'] - ci_95['lower_bound'], 0)
+        self.assertGreater(ci_99['upper_bound'] - ci_99['lower_bound'], 0)
 
     def test_interval_width_increases_with_confidence(self):
         ci_90 = self.provider.get_trend_confidence_interval('test_kpi', confidence=0.9, periods=3)
@@ -130,28 +142,27 @@ class TestChangePointDetection(unittest.TestCase):
 
     def test_change_point_detection(self):
         result = self.provider.detect_change_point('test_kpi', periods=6)
-        if result is not None:
-            self.assertIn('change_point_date', result)
-            self.assertIn('before_mean', result)
-            self.assertIn('after_mean', result)
-            self.assertIn('change_pct', result)
-            self.assertIn('direction', result)
-            self.assertGreater(result['change_pct'], 10)
+        self.assertTrue(result is None or 'change_point_date' in result)
+        self.assertTrue(result is None or 'before_mean' in result)
+        self.assertTrue(result is None or 'after_mean' in result)
+        self.assertTrue(result is None or 'change_pct' in result)
+        self.assertTrue(result is None or 'direction' in result)
+        self.assertTrue(result is None or result['change_pct'] > 10)
 
     def test_change_point_direction(self):
         result = self.provider.detect_change_point('test_kpi', periods=6)
-        if result is not None:
-            direction = result['direction']
-            self.assertIn(direction, ['increase', 'decrease'])
-            if direction == 'increase':
-                self.assertGreater(result['after_mean'], result['before_mean'])
-            else:
-                self.assertLess(result['after_mean'], result['before_mean'])
+        self.assertTrue(result is None or result['direction'] in ['increase', 'decrease'])
+        self.assertTrue(
+            result is None
+            or (
+                (result['direction'] == 'increase' and result['after_mean'] > result['before_mean'])
+                or (result['direction'] == 'decrease' and result['after_mean'] < result['before_mean'])
+            )
+        )
 
     def test_change_point_with_insufficient_data(self):
         result = self.provider.detect_change_point('test_kpi', window_size=100, periods=1)
-        if result is not None:
-            self.assertIsInstance(result, dict)
+        self.assertTrue(result is None or isinstance(result, dict))
 
 class TestTrendAnalysisIntegration(unittest.TestCase):
 

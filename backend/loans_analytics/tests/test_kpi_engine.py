@@ -186,9 +186,10 @@ class TestDerivedRiskKPIAudit(unittest.TestCase):
         df = pd.DataFrame({'dpd_30_60_usd': [0.0], 'dpd_60_90_usd': [0.0], 'dpd_90_plus_usd': [0.0], 'total_receivable_usd': [10000.0], 'dpd': [0], 'status': ['active'], 'outstanding_balance': [10000.0], 'capital_desembolsado': [8000.0], 'valor_nominal_factura': [10000.0], 'tasa_dilucion': [0.1], 'loan_amount': [8000.0], 'collateral_value': [10000.0]})
         engine = KPIEngineV2(df, actor='audit_test')
         results = engine.calculate_all()
-        if 'ltv_sintetico_mean' in results:
-            val = results['ltv_sintetico_mean']['value']
-            self.assertAlmostEqual(float(val), 0.8889, delta=0.01)
+        self.assertTrue(
+            'ltv_sintetico_mean' not in results
+            or abs(float(results['ltv_sintetico_mean']['value']) - 0.8889) <= 0.01
+        )
 
     def test_top_10_borrower_concentration_zero_without_borrower_col(self):
         engine = KPIEngineV2.__new__(KPIEngineV2)

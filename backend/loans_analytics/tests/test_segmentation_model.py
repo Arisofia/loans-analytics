@@ -100,8 +100,8 @@ class TestBuildBehavioralFeatures(unittest.TestCase):
         feat = self.model.build_behavioral_features(
             self.loan_df.copy(), self.payment_df.copy()
         )
-        for col in ['tpv', 'days_past_due', 'late_payment_rate']:
-            self.assertIn(col, feat.columns, f'Missing expected column: {col}')
+        expected = {'tpv', 'days_past_due', 'late_payment_rate'}
+        self.assertTrue(expected.issubset(set(feat.columns)), f'Missing expected columns: {expected - set(feat.columns)}')
 
     def test_missing_loan_id_raises(self):
         bad_loan = self.loan_df.rename(columns={'loan_id': 'nope'})
@@ -145,8 +145,8 @@ class TestSegmentationModelFit(unittest.TestCase):
     def test_metadata_contains_required_keys(self):
         model = SegmentationModel(n_clusters=3)
         meta = model.fit(self.loan_df.copy(), self.payment_df.copy())
-        for key in ('algorithm', 'n_clusters_found', 'segment_distribution', 'feature_columns'):
-            self.assertIn(key, meta)
+        required = {'algorithm', 'n_clusters_found', 'segment_distribution', 'feature_columns'}
+        self.assertTrue(required.issubset(set(meta.keys())))
 
     def test_algorithm_recorded(self):
         model = SegmentationModel(n_clusters=3)
@@ -168,9 +168,8 @@ class TestSegmentationModelFit(unittest.TestCase):
         model = SegmentationModel(n_clusters=3)
         model.fit(self.loan_df.copy(), self.payment_df.copy())
         self.assertGreater(len(model.cluster_profiles), 0)
-        for profile in model.cluster_profiles.values():
-            self.assertIn('segment', profile)
-            self.assertIn('n_members', profile)
+        self.assertTrue(all(('segment' in profile for profile in model.cluster_profiles.values())))
+        self.assertTrue(all(('n_members' in profile for profile in model.cluster_profiles.values())))
 
     def test_scaler_and_model_set_after_fit(self):
         model = SegmentationModel(n_clusters=3)

@@ -5,6 +5,7 @@ import requests as _requests
 from backend.loans_analytics.multi_agent.historical_backend_supabase import SupabaseHistoricalBackend
 from backend.loans_analytics.multi_agent.historical_context import HistoricalContextProvider
 REAL_SUPABASE_ENABLED = os.getenv('RUN_REAL_SUPABASE_TESTS', '0') == '1'
+SERVICE_ROLE_ENABLED = bool(os.getenv('SUPABASE_SERVICE_ROLE_KEY', '').strip())
 
 def _supabase_configured() -> bool:
     url = os.getenv('SUPABASE_URL', '').strip()
@@ -35,10 +36,9 @@ class TestHistoricalKpisSupabaseIntegration:
         assert isinstance(provider._backend, SupabaseHistoricalBackend)
 
     @pytest.mark.skipif(not REAL_SUPABASE_ENABLED, reason='Real Supabase tests disabled (set RUN_REAL_SUPABASE_TESTS=1)')
+    @pytest.mark.skipif(not SERVICE_ROLE_ENABLED, reason='SUPABASE_SERVICE_ROLE_KEY required for data seeding')
     def test_historical_context_provider_real_mode_roundtrip(self):
         service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
-        if not service_key:
-            pytest.skip('SUPABASE_SERVICE_ROLE_KEY required for data seeding')
         backend = SupabaseHistoricalBackend()
         provider = HistoricalContextProvider(cache_ttl_seconds=60, mode='REAL', backend=backend)
         kpi_id = 'npl_ratio'
@@ -64,10 +64,9 @@ class TestHistoricalKpisSupabaseIntegration:
             _requests.delete(f'{url}?kpi_id=eq.{kpi_id}&date=gte.{start_date.isoformat()}&date=lte.{end_date.isoformat()}', headers=svc_headers, timeout=10)
 
     @pytest.mark.skipif(not REAL_SUPABASE_ENABLED, reason='Real Supabase tests disabled (set RUN_REAL_SUPABASE_TESTS=1)')
+    @pytest.mark.skipif(not SERVICE_ROLE_ENABLED, reason='SUPABASE_SERVICE_ROLE_KEY required for data seeding')
     def test_mode_switching_mock_vs_real(self):
         service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
-        if not service_key:
-            pytest.skip('SUPABASE_SERVICE_ROLE_KEY required for data seeding')
         backend = SupabaseHistoricalBackend()
         provider_mock = HistoricalContextProvider(cache_ttl_seconds=60, mode='MOCK', backend=None)
         provider_real = HistoricalContextProvider(cache_ttl_seconds=60, mode='REAL', backend=backend)

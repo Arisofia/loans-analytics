@@ -93,16 +93,8 @@ class TestUnitEconomicsEndpoint:
         payload = {'loans': _mixed_portfolio()}
         body = client.post('/analytics/unit-economics', json=payload).json()
         cure = body['cure_rate']
-        if 'cure_rate_pct' not in cure:
-            pytest.fail("'cure_rate_pct' not in cure")
-        if 'delinquent_count' not in cure:
-            pytest.fail("'delinquent_count' not in cure")
-        if 'curing_count' not in cure:
-            pytest.fail("'curing_count' not in cure")
-        if 'note' not in cure:
-            pytest.fail("'note' not in cure")
-        if not (0.0 <= cure['cure_rate_pct'] <= 100.0):
-            pytest.fail("cure['cure_rate_pct'] not in [0.0, 100.0]")
+        assert {'cure_rate_pct', 'delinquent_count', 'curing_count', 'note'}.issubset(cure.keys())
+        assert 0.0 <= cure['cure_rate_pct'] <= 100.0
 
     def test_dpd_migration_structure(self):
         client = TestClient(app)
@@ -111,21 +103,15 @@ class TestUnitEconomicsEndpoint:
         migration = body['dpd_migration']
         assert isinstance(migration, list)
         assert len(migration) > 0
-        for bucket in migration:
-            assert 'bucket' in bucket
-            assert 'loan_count' in bucket
-            assert 'balance' in bucket
-            assert 'balance_share_pct' in bucket
-            assert 'risk_level' in bucket
-            assert 'recommended_action' in bucket
-            assert bucket['risk_level'] in {'low', 'medium', 'high', 'critical'}
+        required = {'bucket', 'loan_count', 'balance', 'balance_share_pct', 'risk_level', 'recommended_action'}
+        assert all((required.issubset(set(bucket.keys())) for bucket in migration))
+        assert all((bucket['risk_level'] in {'low', 'medium', 'high', 'critical'} for bucket in migration))
 
     def test_dpd_migration_recommended_actions_present(self):
         client = TestClient(app)
         payload = {'loans': _mixed_portfolio()}
         body = client.post('/analytics/unit-economics', json=payload).json()
-        for bucket in body['dpd_migration']:
-            assert bucket['recommended_action'].strip() != ''
+        assert all((bucket['recommended_action'].strip() != '' for bucket in body['dpd_migration']))
 
     def test_dpd_migration_bucket_names_normalized(self):
         client = TestClient(app)
@@ -170,9 +156,8 @@ class TestKPIServiceUnitEconomics:
         loans = [LoanRecord(id='L1', loan_amount=500.0, principal_balance=500.0, interest_rate=0.1, loan_status='current', days_past_due=0.0), LoanRecord(id='L2', loan_amount=500.0, principal_balance=500.0, interest_rate=0.2, loan_status='30-59 days past due', days_past_due=45.0)]
         result = await service.calculate_unit_economics(loans)
         assert len(result.dpd_migration) >= 2
-        for bucket in result.dpd_migration:
-            assert bucket.recommended_action.strip() != ''
-            assert bucket.risk_level in {'low', 'medium', 'high', 'critical'}
+        assert all((bucket.recommended_action.strip() != '' for bucket in result.dpd_migration))
+        assert all((bucket.risk_level in {'low', 'medium', 'high', 'critical'} for bucket in result.dpd_migration))
 
     @pytest.mark.asyncio
     async def test_calculate_unit_economics_empty_loans(self):

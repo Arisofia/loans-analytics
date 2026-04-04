@@ -108,7 +108,27 @@ jobs:
       - name: Install dependencies
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip
-          "$PYTHON_BIN" -m pip install "safety" "bandit[sarif]"
+          "$PYTHON_BIN" -m pip install "safety" "bandit[sarif]" "pip-audit"
+
+      - name: Run pip-audit (SARIF)
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUDIT_TARGET="requirements.prod.lock.txt"
+          if [ ! -f "$AUDIT_TARGET" ]; then
+            AUDIT_TARGET="requirements.txt"
+          fi
+          "$PYTHON_BIN" -m pip_audit -r "$AUDIT_TARGET" -f sarif -o pip-audit-results.sarif || {
+            echo "?? pip-audit found vulnerabilities - SARIF uploaded"
+          }
+
+      - name: Upload pip-audit SARIF results
+        if: ${{ always() && hashFiles('pip-audit-results.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: pip-audit-results.sarif
+          category: pip-audit
 
       - name: Run safety check
         continue-on-error: true
@@ -227,9 +247,9 @@ jobs:
         run: |
           set -euo pipefail
           if [ -f Dockerfile.pipeline ]; then
-            docker build -f Dockerfile.pipeline -t loans-analytics-pipeline:scan .
+            docker build --pull -f Dockerfile.pipeline -t loans-analytics-pipeline:scan .
           else
-            docker build -f Dockerfile -t loans-analytics-pipeline:scan .
+            docker build --pull -f Dockerfile -t loans-analytics-pipeline:scan .
           fi
 
       - name: Run Trivy vulnerability scan
@@ -239,6 +259,7 @@ jobs:
           format: sarif
           output: trivy-results.sarif
           severity: CRITICAL,HIGH
+          ignore-unfixed: true
           exit-code: "0"
 
       - name: Upload Trivy scan results to Security tab

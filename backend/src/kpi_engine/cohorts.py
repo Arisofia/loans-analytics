@@ -26,10 +26,7 @@ def _assign_dpd_bucket(dpd_series: pd.Series) -> pd.Series:
     dpd = pd.to_numeric(dpd_series, errors="coerce").fillna(0).clip(lower=0)
     result = pd.Series("current", index=dpd.index, dtype=str)
     for label, lo, hi in _DPD_BUCKETS:
-        if hi is None:
-            mask = dpd >= lo
-        else:
-            mask = (dpd >= lo) & (dpd < hi)
+        mask = dpd >= lo if hi is None else (dpd >= lo) & (dpd < hi)
         result[mask] = label
     return result
 
@@ -130,21 +127,19 @@ def compute_roll_rates(
 def build_cohort_default_curve(portfolio_mart: pd.DataFrame) -> pd.DataFrame:
     if portfolio_mart.empty:
         return pd.DataFrame(columns=["cohort", "default_rate"])
-    grouped = (
+    return (
         portfolio_mart.groupby("cohort", dropna=False)["default_flag"]
         .mean()
         .reset_index(name="default_rate")
     )
-    return grouped
 
 
 def build_vintage_quality_summary(portfolio_mart: pd.DataFrame) -> pd.DataFrame:
     if portfolio_mart.empty:
         return pd.DataFrame(columns=["vintage", "par30_proxy"])
-    grouped = (
+    return (
         portfolio_mart.assign(par30_flag=portfolio_mart["days_past_due"].fillna(0) >= 30)
         .groupby("vintage", dropna=False)["par30_flag"]
         .mean()
         .reset_index(name="par30_proxy")
     )
-    return grouped
