@@ -18,3 +18,10 @@ exclude_dirs:
 #   excluded above (global skip retained as safety net for nested test helpers).
 skips:
   - B101
+
+# Plugin-level configuration for assert usage in test files.
+assert_used:
+  skips:
+    - "**/tests/**"
+    - "**/test_*.py"
+    - "**/*_test.py"
