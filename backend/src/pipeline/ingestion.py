@@ -259,13 +259,19 @@ class IngestionPhase:
             'last_payment_date', 'origination_date', 'application_date',
             'FechaPago', 'fechapago',
         ]
+        # Use dayfirst=True only for columns known to carry LatAm/Spanish-locale
+        # dates (DD/MM/YYYY format).  English-named columns default to False to
+        # avoid misinterpreting MM/DD/YYYY US-style dates.
+        _dayfirst_prefixes = ('fecha', 'Fecha')
+
         for col in [*primary_candidates, *fallback_candidates]:
             if col not in df.columns:
                 continue
+            dayfirst = col.startswith(_dayfirst_prefixes)
             try:
-                parsed = pd.to_datetime(df[col], errors='coerce', format='mixed', dayfirst=True)
+                parsed = pd.to_datetime(df[col], errors='coerce', format='mixed', dayfirst=dayfirst)
             except TypeError:
-                parsed = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+                parsed = pd.to_datetime(df[col], errors='coerce', dayfirst=dayfirst)
             max_dt = parsed.max()
             if pd.notna(max_dt):
                 return (str(max_dt.date()), col)

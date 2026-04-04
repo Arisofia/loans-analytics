@@ -316,11 +316,11 @@ def _render_data_freshness(run_dir: Optional[Path]) -> None:
                     else parsed_as_of_dt.astimezone(timezone.utc)
                 )
                 now = datetime.now(tz=timezone.utc)
-                days_stale = (now - as_of_dt).days
+                days_stale = (now - as_of_dt).total_seconds() / 86400
                 staleness_label = (
                     "🟢 Current" if days_stale <= _STALENESS_CURRENT_DAYS
-                    else f"🟡 {days_stale}d old" if days_stale <= _STALENESS_WARNING_DAYS
-                    else f"🔴 {days_stale}d old"
+                    else f"🟡 {int(days_stale)}d old" if days_stale <= _STALENESS_WARNING_DAYS
+                    else f"🔴 {int(days_stale)}d old"
                 )
                 st.metric("Staleness", staleness_label)
             except ValueError:
