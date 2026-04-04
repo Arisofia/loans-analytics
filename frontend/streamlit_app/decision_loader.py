@@ -77,3 +77,20 @@ def load_run_manifest() -> Optional[Dict[str, Any]]:
     if run_dir is None:
         return None
     return _load_json(run_dir / "manifest.json")
+
+
+def load_pipeline_results() -> Optional[Dict[str, Any]]:
+    """Load the latest ``pipeline_results.json`` (full run manifest).
+
+    The file is written by :class:`~backend.src.pipeline.orchestrator.UnifiedPipeline`
+    to the run root directory (``logs/runs/<run_id>/pipeline_results.json``),
+    *not* inside the ``decision/`` sub-directory used by the other loaders.
+    It contains top-level pipeline metadata (run_id, start_time, status,
+    duration_seconds) as well as per-phase results including the ingestion
+    provenance fields (``ingestion_source``, ``data_as_of_date``,
+    ``data_as_of_column``).
+    """
+    run_dir = _latest_run_dir()
+    if run_dir is None:
+        return None
+    return _load_json(run_dir / "pipeline_results.json")

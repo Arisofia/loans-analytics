@@ -319,4 +319,30 @@ with st.expander('View all computed KPIs'):
     else:
         st.info('No extended KPIs found.')
 st.divider()
+# ── Data Freshness Banner ────────────────────────────────────────────
+try:
+    from frontend.streamlit_app.decision_loader import load_pipeline_results
+    _pipeline_results = load_pipeline_results()
+    if _pipeline_results:
+        _ingestion = _pipeline_results.get('phases', {}).get('ingestion', {})
+        _ingestion_ts = _ingestion.get('timestamp') or _pipeline_results.get('start_time')
+        _data_as_of = _ingestion.get('data_as_of_date')
+        _source = _ingestion.get('ingestion_source', 'unknown')
+        _freshness_parts = []
+        if _ingestion_ts:
+            try:
+                _ts_fmt = datetime.fromisoformat(_ingestion_ts).strftime('%Y-%m-%d %H:%M')
+            except ValueError:
+                _ts_fmt = _ingestion_ts
+            _freshness_parts.append(f"Last pipeline run: **{_ts_fmt}**")
+        if _data_as_of:
+            _source_label = 'Google Sheets' if _source == 'google_sheets' else _source.replace('_', ' ').title()
+            _freshness_parts.append(f"Data as-of date ({_source_label}): **{_data_as_of}**")
+        if _freshness_parts:
+            st.info('🗓️ ' + ' · '.join(_freshness_parts))
+except Exception:
+    logging.getLogger(__name__).warning(
+        'Failed to render data freshness banner.',
+        exc_info=True,
+    )
 st.caption(f"Loans Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
