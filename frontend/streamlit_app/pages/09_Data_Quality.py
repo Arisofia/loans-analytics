@@ -309,7 +309,12 @@ def _render_data_freshness(run_dir: Optional[Path]) -> None:
     with col4:
         if data_as_of:
             try:
-                as_of_dt = datetime.fromisoformat(data_as_of).replace(tzinfo=timezone.utc)
+                parsed_as_of_dt = datetime.fromisoformat(data_as_of)
+                as_of_dt = (
+                    parsed_as_of_dt.replace(tzinfo=timezone.utc)
+                    if parsed_as_of_dt.tzinfo is None
+                    else parsed_as_of_dt.astimezone(timezone.utc)
+                )
                 now = datetime.now(tz=timezone.utc)
                 days_stale = (now - as_of_dt).days
                 staleness_label = (
