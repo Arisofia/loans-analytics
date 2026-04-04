@@ -114,14 +114,14 @@ def test_calculate_par_zero_total_principal():
 # --- KPI ENGINE ROUTING TESTS ---
 
 def test_engine_dispatch_success(clean_portfolio):
-    engine = KPIEngineV2(df=clean_portfolio)
+    engine = KPIEngineV2()
     results = engine.calculate(clean_portfolio)
     assert isinstance(results, dict)
     assert len(results) > 0
 
 
 def test_engine_unsupported_kpi(clean_portfolio):
-    engine = KPIEngineV2(df=clean_portfolio)
+    engine = KPIEngineV2()
     results = engine.calculate(clean_portfolio)
     # KPIEngineV2 delegates to run_metric_engine, which silently ignores
     # unknown KPI keys — verify that a valid result set is still returned.
