@@ -1,2 +1,10 @@
 [bandit]
+# Exclude test directories from the Bandit scan so that assert-based test
+# assertions (B101) are never flagged as security issues.
+exclude_dirs = tests,backend/loans_analytics/tests,backend/loans_analytics/multi_agent/tests
+
+# B101 (assert_used) is suppressed globally because several pre-existing assert
+# statements exist in frozen production paths (backend/loans_analytics/kpis/)
+# that cannot be modified.  New production code should avoid bare asserts;
+# use explicit conditionals or raise statements instead.
 skips = B101
