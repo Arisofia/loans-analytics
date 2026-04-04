@@ -59,8 +59,6 @@ def get_threshold_status(
     value = float(kpi_value)
     critical_val = thresholds.get("critical")
     warning_val = thresholds.get("warning")
-    if critical_val is None and warning_val is None:
-        return "not_configured"
     if critical_val is not None and warning_val is not None:
         critical_thresh = float(critical_val)
         warning_thresh = float(warning_val)
