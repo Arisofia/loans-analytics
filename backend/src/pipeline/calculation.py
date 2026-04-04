@@ -600,9 +600,9 @@ class CalculationPhase:
 
     def _compute_portfolio_velocity_of_default(self, df: pd.DataFrame) -> Optional[Decimal]:
         vd_series = self._calculate_velocity_of_default(df)
-        if vd_series.empty:
+        if vd_series.empty or vd_series.dropna().empty:
             return None
-        return Decimal(str(round(float(vd_series.mean()), 6)))
+        return Decimal(str(round(float(vd_series.dropna().mean()), 6)))
 
     def _run_advanced_clustering(self, df: pd.DataFrame) -> Dict[str, Any]:
         metrics: Dict[str, Any] = {'umap_available': _UMAP_AVAILABLE, 'hdbscan_available': _HDBSCAN_AVAILABLE}
