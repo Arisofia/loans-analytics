@@ -75,15 +75,14 @@ class UnifiedPipeline:
 
     def _build_run_id(self, input_path: Optional[Path], mode: str) -> str:
         mode_token = mode.replace('-', '_')
-        if input_path is not None:
-            if self._is_google_sheets_uri(input_path):
-                data_hash = self._calculate_ingestion_source_hash(str(input_path))
-            else:
-                if not input_path.exists():
-                    raise FileNotFoundError(f'Input file not found: {input_path}')
-                data_hash = self._calculate_input_hash(input_path)
-        else:
+        if input_path is None:
             data_hash = self._calculate_ingestion_source_hash()
+        elif self._is_google_sheets_uri(input_path):
+            data_hash = self._calculate_ingestion_source_hash(str(input_path))
+        elif input_path.exists():
+            data_hash = self._calculate_input_hash(input_path)
+        else:
+            raise FileNotFoundError(f'Input file not found: {input_path}')
         config_hash = self._calculate_config_hash()
         code_version = self._get_code_version()
         run_signature = self._calculate_run_signature(data_hash, config_hash, code_version, mode_token)
@@ -235,10 +234,10 @@ class UnifiedPipeline:
             hasher = hashlib.sha256()
             with open(file_path, 'rb') as file_handle:
                 while True:
-                    chunk = file_handle.read(1024 * 1024)
-                    if not chunk:
+                    if chunk := file_handle.read(1024 * 1024):
+                        hasher.update(chunk)
+                    else:
                         break
-                    hasher.update(chunk)
             return hasher.hexdigest()[:16]
         except Exception as e:
             logger.error("Failed to hash input file '%s': %s", file_path, e, exc_info=True)
@@ -300,21 +299,27 @@ def main() -> int:
     parser.add_argument('--mode', choices=['full', 'live', 'validate', 'dry-run'], default='full', help='Execution mode: full/live (all phases), validate (stop after transformation), dry-run (stop after ingestion)')
     args = parser.parse_args()
     try:
-        config_path = Path(args.config) if args.config else None
-        pipeline = UnifiedPipeline(config_path=config_path)
-        input_path = Path(args.input) if args.input else None
-        mode = 'full' if args.mode == 'live' else args.mode
-        results = pipeline.execute(input_path=input_path, mode=mode)
-        if results.get('status') == 'success':
-            logger.info('✓ Pipeline completed successfully')
-            return 0
-        error_msg = results.get('error', 'Unknown error')
-        logger.error('✗ Pipeline failed: %s', error_msg)
-        return 1
+        return _run_pipeline_from_cli_args(args)
     except Exception as e:
         logger.error('Fatal error: %s', e)
         logger.error('%s', traceback.format_exc())
         return 1
+
+
+def _run_pipeline_from_cli_args(args: argparse.Namespace) -> int:
+    config_path = Path(args.config) if args.config else None
+    pipeline = UnifiedPipeline(config_path=config_path)
+    input_path = Path(args.input) if args.input else None
+    mode = 'full' if args.mode == 'live' else args.mode
+    results = pipeline.execute(input_path=input_path, mode=mode)
+    if results.get('status') == 'success':
+        logger.info('✓ Pipeline completed successfully')
+        return 0
+    error_msg = results.get('error', 'Unknown error')
+    logger.error('✗ Pipeline failed: %s', error_msg)
+    return 1
+
+
 if __name__ == '__main__':
     sys.exit(main())
 

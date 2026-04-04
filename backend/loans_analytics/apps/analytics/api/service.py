@@ -93,6 +93,10 @@ KPI_API_TO_CATALOG_ID = {
     "DEFAULT_RATE": "default_rate",
     "DEFAULT_RATE_BY_COUNT": "default_rate_by_count",
     "DEFAULT_RATE_BY_BALANCE": "default_rate_by_balance",
+    "PROVISION_COVERAGE_RATIO": "provision_coverage_ratio",
+    "EFFECTIVE_INTEREST_RATE": "effective_interest_rate",
+    "PORTFOLIO_IRR": "portfolio_irr",
+    "PORTFOLIO_IRR_PROXY": "portfolio_irr_proxy",
     "TOTAL_LOANS_COUNT": "total_loans_count",
     "LOSS_RATE": "loss_rate",
     "RECOVERY_RATE": "recovery_rate",
@@ -447,6 +451,10 @@ class KPIService:
             "LTV": ["AVG_LTV", "avg_ltv"],
             "DTI": ["AVG_DTI", "avg_dti"],
             "PortfolioYield": ["PORTFOLIO_YIELD", "portfolio_yield"],
+            "ProvisionCoverageRatio": ["PROVISION_COVERAGE_RATIO", "provision_coverage_ratio"],
+            "EffectiveInterestRate": ["EFFECTIVE_INTEREST_RATE", "effective_interest_rate"],
+            "PortfolioIRR": ["PORTFOLIO_IRR", "portfolio_irr"],
+            "PortfolioIRRProxy": ["PORTFOLIO_IRR_PROXY", "portfolio_irr_proxy"],
             "NPL": ["NPL", "npl_ratio"],
             "LGD": ["LGD", "lgd_pct"],
             "CoR": ["COR", "cost_of_risk_pct"],
@@ -473,14 +481,14 @@ class KPIService:
         if benchmark is None and "target" in thresholds:
             benchmark = thresholds.get("target")
         return {
-            "formula": default_metadata.get("formula")
-            or catalog_metadata.get("formula")
+            "formula": catalog_metadata.get("formula")
+            or default_metadata.get("formula")
             or "Not available",
-            "definition": default_metadata.get("definition")
-            or catalog_metadata.get("definition")
+            "definition": catalog_metadata.get("definition")
+            or default_metadata.get("definition")
             or f"KPI metric for {definition_fallback}",
-            "implications": default_metadata.get("implications")
-            or catalog_metadata.get("implications")
+            "implications": catalog_metadata.get("implications")
+            or default_metadata.get("implications")
             or "Interpret with trend, segmentation, and risk appetite context.",
             "thresholds": thresholds,
             "benchmark": benchmark,
@@ -780,7 +788,7 @@ class KPIService:
         )
         checks = processor.check_guardrails()
         any_breach = any(c.get("breach", False) for c in checks)
-        breach_count = sum(1 for c in checks if c.get("breach", False))
+        breach_count = sum(c.get("breach", False) for c in checks)
         return {
             "generated_at": datetime.now(timezone.utc),
             "any_breach": any_breach,
@@ -1977,7 +1985,7 @@ class KPIService:
         )
         stressed_collection = self._clamp_pct(baseline.collection_rate_pct * collection_factor)
         stressed_recovery = self._clamp_pct(baseline.recovery_rate_pct * recovery_factor)
-        funding_cost_pct = float(funding_cost_bps) / 100.0
+        funding_cost_pct = funding_cost_bps / 100.0
         loss_drag = max(0.0, stressed_loss - baseline.loss_rate_pct) * 0.35
         recovery_drag = max(0.0, baseline.recovery_rate_pct - stressed_recovery) * 0.15
         par_drag = max(0.0, stressed_par30 - baseline.par30_pct) * 0.1
@@ -2043,10 +2051,10 @@ class KPIService:
         ):
             alerts.append("Capital stress: expected credit loss increases by at least 25%.")
         assumptions = StressTestAssumptions(
-            par_deterioration_pct=round(float(par_deterioration_pct), 2),
-            collection_efficiency_pct=round(float(collection_efficiency_pct), 2),
-            recovery_efficiency_pct=round(float(recovery_efficiency_pct), 2),
-            funding_cost_bps=round(float(funding_cost_bps), 2),
+            par_deterioration_pct=round(par_deterioration_pct, 2),
+            collection_efficiency_pct=round(collection_efficiency_pct, 2),
+            recovery_efficiency_pct=round(recovery_efficiency_pct, 2),
+            funding_cost_bps=round(funding_cost_bps, 2),
         )
         return StressTestResponse(
             scenario_id=str(uuid.uuid4()),
@@ -2796,9 +2804,7 @@ class KPIService:
             return "1_30"
         if dpd_value <= 60:
             return "31_60"
-        if dpd_value <= 90:
-            return "61_90"
-        return "90_plus"
+        return "61_90" if dpd_value <= 90 else "90_plus"
 
     @staticmethod
     def _bucket_order() -> list[str]:

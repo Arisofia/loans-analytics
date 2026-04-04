@@ -10,8 +10,8 @@
 # Status values after normalization:
 #   active (was "Current"), closed (was "Complete"), defaulted (was "Default")
 
-version: "3.1.0"
-last_updated: "2026-02-28"
+version: "3.2.0"
+last_updated: "2026-04-04"
 
 # Portfolio Performance KPIs
 portfolio_kpis:
@@ -34,9 +34,15 @@ portfolio_kpis:
     description: "Average original loan amount"
 
   portfolio_yield:
-    formula: "AVG(interest_rate) * 100"
+    formula: "SUM(outstanding_balance * interest_rate) / SUM(outstanding_balance) * 100"
     unit: "percentage"
-    description: "Average annualized interest rate across portfolio"
+    description: "Exposure-weighted annualized portfolio yield across active exposure. Classified as a portfolio proxy metric."
+    category: "portfolio_metric"
+    output_type: "Decimal"
+    precision: 2
+    required_inputs: ["interest_rate", "outstanding_balance"]
+    canonical_function: "backend.src.kpi_engine.revenue.compute_portfolio_yield"
+    temporal_type: "point_in_time"
     thresholds:
       warning: 12
       target: 8
@@ -82,6 +88,12 @@ asset_quality_kpis:
     formula: "SUM(outstanding_balance WHERE dpd >= 90 OR status = 'defaulted') / SUM(outstanding_balance) * 100"
     unit: "percentage"
     description: "Non-Performing Loan ratio (strict Basel-II/III) — balance-weighted exposure to severely delinquent (DPD >= 90) or defaulted accounts. PAR30 is the early-warning metric; NPL is the severity metric."
+    category: "risk_metric"
+    output_type: "Decimal"
+    precision: 4
+    required_inputs: ["outstanding_balance", "dpd", "status"]
+    canonical_function: "backend.src.kpi_engine.risk.compute_npl_ratio"
+    temporal_type: "point_in_time"
     thresholds:
       warning: 5
       critical: 10
@@ -106,6 +118,12 @@ asset_quality_kpis:
     formula: "COUNT(loan_id WHERE status = 'defaulted') / COUNT(loan_id) * 100"
     unit: "percentage"
     description: "Percentage of loans in default (count-based)"
+    category: "risk_metric"
+    output_type: "Decimal"
+    precision: 4
+    required_inputs: ["loan_id", "status"]
+    canonical_function: "backend.src.kpi_engine.risk.compute_default_rate_by_count"
+    temporal_type: "point_in_time"
     thresholds:
       warning: 2
       critical: 5
@@ -114,6 +132,12 @@ asset_quality_kpis:
     formula: "SUM(outstanding_balance WHERE status = 'defaulted') / SUM(outstanding_balance) * 100"
     unit: "percentage"
     description: "Percentage of portfolio balance in default (balance-based)"
+    category: "risk_metric"
+    output_type: "Decimal"
+    precision: 4
+    required_inputs: ["outstanding_balance", "status"]
+    canonical_function: "backend.src.kpi_engine.risk.compute_default_rate_by_balance"
+    temporal_type: "point_in_time"
     thresholds:
       warning: 3
       critical: 6
@@ -145,6 +169,11 @@ asset_quality_kpis:
     precision: 4
     rounding: "ROUND_HALF_UP"
     description: "Provision coverage over non-performing exposure (DPD >= 90 or defaulted)."
+    category: "accounting_metric"
+    output_type: "Decimal"
+    required_inputs: ["provision_expense", "outstanding_balance", "dpd", "status"]
+    canonical_function: "backend.src.kpi_engine.risk.compute_provision_coverage_ratio"
+    temporal_type: "point_in_time"
 
   cure_rate:
     formula: "COUNT(loan_id WHERE dpd > 0 AND last_payment_amount > 0) / COUNT(loan_id WHERE dpd > 0) * 100"
@@ -179,6 +208,23 @@ cash_flow_kpis:
     precision: 4
     rounding: "ROUND_HALF_UP"
     description: "EIR from average nominal APR using daily compounding."
+    category: "accounting_metric"
+    output_type: "Decimal"
+    required_inputs: ["interest_rate"]
+    canonical_function: "backend.src.kpi_engine.revenue.compute_eir"
+    temporal_type: "derived"
+
+  portfolio_irr:
+    formula: "XIRR([-disbursement_amount at disbursement_date], [+payment_amount at payment_date])"
+    unit: "ratio"
+    precision: 4
+    rounding: "ROUND_HALF_UP"
+    description: "True portfolio IRR computed from dated cashflows when disbursement and payment linkage is available."
+    category: "portfolio_metric"
+    output_type: "Decimal"
+    required_inputs: ["disbursement_date", "disbursement_amount", "payment_date", "payment_amount"]
+    canonical_function: "backend.src.kpi_engine.revenue.compute_portfolio_irr_true"
+    temporal_type: "historical"
 
   portfolio_irr_proxy:
     formula: "(SUM(interest_income) + SUM(fee_income)) / AVG(debt_balance)"
@@ -186,6 +232,11 @@ cash_flow_kpis:
     precision: 4
     rounding: "ROUND_HALF_UP"
     description: "Proxy metric only; use true IRR from dated cashflows when payments and disbursements are available."
+    category: "proxy_metric"
+    output_type: "Decimal"
+    required_inputs: ["interest_income", "fee_income", "debt_balance"]
+    canonical_function: "backend.src.kpi_engine.revenue.compute_portfolio_irr_proxy"
+    temporal_type: "derived"
 
   cash_on_hand:
     formula: "SUM(current_balance)"

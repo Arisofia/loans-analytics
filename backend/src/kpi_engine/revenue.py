@@ -6,6 +6,10 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 
+def _first_existing_column(df: pd.DataFrame, candidates: tuple[str, ...]) -> Optional[str]:
+    return next((column for column in candidates if column in df.columns), None)
+
+
 def compute_net_yield(finance_mart: pd.DataFrame) -> Decimal:
     if finance_mart.empty:
         return Decimal("0.0")
@@ -41,6 +45,31 @@ def compute_eir(portfolio_mart: pd.DataFrame) -> Decimal:
         
     eir = (Decimal("1") + avg_apr / Decimal("365")) ** 365 - Decimal("1")
     return eir.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+
+
+def compute_portfolio_yield(portfolio_mart: pd.DataFrame) -> Decimal:
+    if portfolio_mart.empty:
+        return Decimal("0.0")
+
+    rate_col = _first_existing_column(portfolio_mart, ("interest_rate", "apr", "interest_rate_apr"))
+    balance_col = _first_existing_column(
+        portfolio_mart,
+        ("outstanding_principal", "outstanding_balance", "principal_balance", "current_balance", "amount"),
+    )
+    if rate_col is None:
+        return Decimal("0.0")
+
+    rate_series = pd.to_numeric(portfolio_mart[rate_col], errors="coerce").fillna(0)
+    if balance_col is None:
+        avg_rate = Decimal(str(rate_series.mean()))
+        return (avg_rate * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    balance_series = pd.to_numeric(portfolio_mart[balance_col], errors="coerce").fillna(0)
+    total_balance = Decimal(str(balance_series.sum()))
+    if total_balance == 0:
+        return Decimal("0.0")
+    weighted_rate_sum = Decimal(str((rate_series * balance_series).sum()))
+    return ((weighted_rate_sum / total_balance) * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def compute_portfolio_irr(finance_mart: pd.DataFrame) -> Decimal:

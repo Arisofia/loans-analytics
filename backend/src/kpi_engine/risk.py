@@ -36,6 +36,89 @@ _DPD_BUCKET_LABELS: List[tuple] = [
 ]
 
 
+def _first_existing_column(df: pd.DataFrame, candidates: tuple[str, ...]) -> Optional[str]:
+    return next((column for column in candidates if column in df.columns), None)
+
+
+def _numeric_series(df: pd.DataFrame, candidates: tuple[str, ...]) -> pd.Series:
+    column = _first_existing_column(df, candidates)
+    if column is None:
+        return pd.Series(0, index=df.index, dtype="float64")
+    return pd.to_numeric(df[column], errors="coerce").fillna(0)
+
+
+def _status_series(df: pd.DataFrame) -> pd.Series:
+    column = _first_existing_column(df, ("status", "loan_status", "estado"))
+    if column is None:
+        return pd.Series("", index=df.index, dtype="string")
+    return df[column].astype("string").str.lower().fillna("")
+
+
+def _defaulted_mask(df: pd.DataFrame) -> pd.Series:
+    if "default_flag" in df.columns:
+        return df["default_flag"].fillna(False).astype(bool)
+    return _status_series(df).eq("defaulted")
+
+
+def _active_loan_mask(df: pd.DataFrame) -> pd.Series:
+    status = _status_series(df)
+    if status.eq("").all():
+        return pd.Series(True, index=df.index, dtype=bool)
+    return ~status.eq("closed")
+
+
+def _quantize_ratio(value: Decimal) -> ComparableDecimal:
+    return ComparableDecimal(value.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP))
+
+
+def compute_default_rate_by_count(portfolio_mart: pd.DataFrame) -> Decimal:
+    if portfolio_mart.empty:
+        return ComparableDecimal("0.0")
+    active_mask = _active_loan_mask(portfolio_mart)
+    active_count = int(active_mask.sum())
+    if active_count == 0:
+        return ComparableDecimal("0.0")
+    defaulted_count = int((_defaulted_mask(portfolio_mart) & active_mask).sum())
+    return _quantize_ratio(Decimal(defaulted_count) / Decimal(active_count))
+
+
+def compute_default_rate_by_balance(portfolio_mart: pd.DataFrame) -> Decimal:
+    if portfolio_mart.empty:
+        return ComparableDecimal("0.0")
+    balance = _numeric_series(portfolio_mart, ("outstanding_principal", "outstanding_balance", "principal_balance", "current_balance", "amount"))
+    active_mask = _active_loan_mask(portfolio_mart)
+    total_balance = Decimal(str(balance.loc[active_mask].sum()))
+    if total_balance == 0:
+        return ComparableDecimal("0.0")
+    defaulted_balance = Decimal(str(balance.loc[_defaulted_mask(portfolio_mart) & active_mask].sum()))
+    return _quantize_ratio(defaulted_balance / total_balance)
+
+
+def compute_npl_ratio(portfolio_mart: pd.DataFrame) -> Decimal:
+    if portfolio_mart.empty:
+        return ComparableDecimal("0.0")
+    balance = _numeric_series(portfolio_mart, ("outstanding_principal", "outstanding_balance", "principal_balance", "current_balance", "amount"))
+    dpd = _numeric_series(portfolio_mart, ("days_past_due", "dpd", "dpd_adjusted"))
+    active_mask = _active_loan_mask(portfolio_mart)
+    total_balance = Decimal(str(balance.loc[active_mask].sum()))
+    if total_balance == 0:
+        return ComparableDecimal("0.0")
+    npl_mask = ((dpd >= 90) | _defaulted_mask(portfolio_mart)) & active_mask
+    npl_balance = Decimal(str(balance.loc[npl_mask].sum()))
+    return _quantize_ratio(npl_balance / total_balance)
+
+
+def compute_delinquency_rate_by_balance(portfolio_mart: pd.DataFrame) -> Decimal:
+    if portfolio_mart.empty:
+        return ComparableDecimal("0.0")
+    balance = _numeric_series(portfolio_mart, ("outstanding_principal", "outstanding_balance", "principal_balance", "current_balance", "amount"))
+    total_balance = Decimal(str(balance.sum()))
+    if total_balance == 0:
+        return ComparableDecimal("0.0")
+    delinquent_balance = Decimal(str(balance.loc[_status_series(portfolio_mart).eq("delinquent")].sum()))
+    return _quantize_ratio(delinquent_balance / total_balance)
+
+
 def compute_par30(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
         return ComparableDecimal("0.0")
@@ -88,11 +171,13 @@ def compute_provision_coverage_ratio(
 
     provision_col = "provision_expense" if "provision_expense" in finance_mart.columns else None
     total_provisions = Decimal(str(finance_mart[provision_col].fillna(0).sum())) if provision_col else Decimal("0.0")
-    
-    npl_balance = Decimal(str(portfolio_mart.loc[
-        (portfolio_mart["days_past_due"].fillna(0) >= 90) | (portfolio_mart["default_flag"] == True),
-        "outstanding_principal",
-    ].sum()))
+
+    balance = _numeric_series(
+        portfolio_mart,
+        ("outstanding_principal", "outstanding_balance", "principal_balance", "current_balance", "amount"),
+    )
+    dpd = _numeric_series(portfolio_mart, ("days_past_due", "dpd", "dpd_adjusted"))
+    npl_balance = Decimal(str(balance.loc[(dpd >= 90) | _defaulted_mask(portfolio_mart)].sum()))
 
     if npl_balance == 0:
         return Decimal("1.0") if total_provisions > 0 else Decimal("0.0")

@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 import pandas as pd
 from backend.loans_analytics.logging_config import get_logger
+from backend.src.kpi_engine.revenue import compute_portfolio_yield
+from backend.src.kpi_engine.risk import compute_default_rate_by_count
 
 try:
     import httpx
@@ -525,7 +527,14 @@ class OutputPhase:
             "avg_dpd": float(Decimal(str(group["__dpd"].mean()))),
         }
         if group["__interest_rate"].notna().any():
-            portfolio_yield = Decimal(str(group["__interest_rate"].mean())) * Decimal("100")
+            portfolio_yield = compute_portfolio_yield(
+                pd.DataFrame(
+                    {
+                        "interest_rate": group["__interest_rate"],
+                        "outstanding_principal": group["__balance"],
+                    }
+                )
+            )
             row["portfolio_yield"] = float(portfolio_yield)
         return row
 
@@ -551,8 +560,15 @@ class OutputPhase:
     def _segment_default_rate(group: pd.DataFrame, loan_count: int) -> Decimal:
         if loan_count <= 0:
             return Decimal("0")
-        defaulted_count = int((group["__status"] == "defaulted").sum())
-        return Decimal(defaulted_count) / Decimal(loan_count) * Decimal("100")
+        canonical_ratio = compute_default_rate_by_count(
+            pd.DataFrame(
+                {
+                    "status": group["__status"],
+                    "outstanding_principal": group["__balance"],
+                }
+            )
+        )
+        return Decimal(str(float(canonical_ratio) * 100))
 
     @staticmethod
     def _derive_segment_as_of_date(df: pd.DataFrame) -> Optional[str]:

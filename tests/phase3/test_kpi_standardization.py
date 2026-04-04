@@ -93,3 +93,54 @@ def test_npl_definition_basel_aligned():
     result = calculate_npl(df, balance_col="balance", dpd_col="dpd", status_col="status")
     expected = Decimal("64.71")
     assert abs(result - expected) < Decimal("0.01"), f"NPL={result}, expected~{expected}"
+
+
+def test_portfolio_yield_is_exposure_weighted_and_decimal_safe():
+    from backend.src.kpi_engine.revenue import compute_portfolio_yield
+    import pandas as pd
+
+    portfolio = pd.DataFrame(
+        {
+            "outstanding_principal": [Decimal("100.00"), Decimal("300.00")],
+            "interest_rate": [Decimal("0.10"), Decimal("0.20")],
+        }
+    )
+
+    result = compute_portfolio_yield(portfolio)
+    expected = Decimal("17.50")
+    assert result == expected, f"Expected exposure-weighted yield {expected}, got {result}"
+
+
+def test_provision_coverage_uses_status_when_default_flag_missing():
+    from backend.src.kpi_engine.risk import compute_provision_coverage_ratio
+    import pandas as pd
+
+    portfolio = pd.DataFrame(
+        {
+            "outstanding_principal": [Decimal("100.00"), Decimal("300.00")],
+            "days_past_due": [0, 0],
+            "status": ["active", "defaulted"],
+        }
+    )
+    finance = pd.DataFrame({"provision_expense": [Decimal("90.00")]})
+
+    result = compute_provision_coverage_ratio(portfolio, finance)
+    assert result == Decimal("0.3000")
+
+
+def test_default_rate_count_and_balance_remain_distinct_metrics():
+    from backend.src.kpi_engine.risk import compute_default_rate_by_balance, compute_default_rate_by_count
+    import pandas as pd
+
+    portfolio = pd.DataFrame(
+        {
+            "loan_id": ["L1", "L2", "L3"],
+            "status": ["defaulted", "active", "active"],
+            "outstanding_principal": [Decimal("900.00"), Decimal("50.00"), Decimal("50.00")],
+        }
+    )
+
+    by_count = compute_default_rate_by_count(portfolio)
+    by_balance = compute_default_rate_by_balance(portfolio)
+    assert by_count == Decimal("0.3333")
+    assert by_balance == Decimal("0.9000")

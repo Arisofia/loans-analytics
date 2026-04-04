@@ -225,14 +225,11 @@ class TransformationPhase:
         return (cleaned_df, metrics)
 
     def _normalize_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
-        # Surface normalisation: lowercase, strip, spaces → underscores.
-        # Handles Google Sheets columns like "Fecha actual" → "fecha_actual".
-        surface = {
+        if surface := {
             col: col.strip().lower().replace(" ", "_")
             for col in df.columns
             if col != col.strip().lower().replace(" ", "_")
-        }
-        if surface:
+        }:
             df = df.rename(columns=surface)
             logger.info("Surface-normalised %d column names", len(surface))
         column_mapping = {
@@ -408,26 +405,35 @@ class TransformationPhase:
                 df["status"].isna()
                 | (df["status"].astype(str).str.strip() == "")
             )
-            if empty_status.mean() > 0.5:
-                dpd_vals = pd.to_numeric(df["dpd"], errors="coerce")
-                status_from_dpd = pd.Series("unknown", index=df.index, dtype="object")
-                status_from_dpd.loc[dpd_vals.notna() & (dpd_vals <= 0)] = "active"
-                status_from_dpd.loc[dpd_vals > 0] = "delinquent"
-                status_from_dpd.loc[dpd_vals > 90] = "defaulted"
-                df.loc[empty_status, "status"] = status_from_dpd.loc[empty_status]
+            if self._apply_status_from_dpd(df, empty_status):
                 derived.append("status")
         elif "status" not in df.columns and "dpd" in df.columns:
-            dpd_vals = pd.to_numeric(df["dpd"], errors="coerce")
-            status_from_dpd = pd.Series("unknown", index=df.index, dtype="object")
-            status_from_dpd.loc[dpd_vals.notna() & (dpd_vals <= 0)] = "active"
-            status_from_dpd.loc[dpd_vals > 0] = "delinquent"
-            status_from_dpd.loc[dpd_vals > 90] = "defaulted"
-            df["status"] = status_from_dpd
-            derived.append("status")
+            if self._apply_status_from_dpd(df):
+                derived.append("status")
 
         if derived:
             logger.info("Derived canonical financial columns: %s", derived)
         return df
+
+    def _apply_status_from_dpd(
+        self, df: pd.DataFrame, empty_status: Optional[pd.Series] = None
+    ) -> bool:
+        if empty_status is not None and empty_status.mean() <= 0.5:
+            return False
+        status_from_dpd = self._derive_status_from_dpd(df)
+        if empty_status is None:
+            df["status"] = status_from_dpd
+        else:
+            df.loc[empty_status, "status"] = status_from_dpd.loc[empty_status]
+        return True
+
+    def _derive_status_from_dpd(self, df: pd.DataFrame) -> pd.Series:
+        dpd_vals = pd.to_numeric(df["dpd"], errors="coerce")
+        status_from_dpd = pd.Series("unknown", index=df.index, dtype="object")
+        status_from_dpd.loc[dpd_vals.notna() & (dpd_vals <= 0)] = "active"
+        status_from_dpd.loc[dpd_vals > 0] = "delinquent"
+        status_from_dpd.loc[dpd_vals > 90] = "defaulted"
+        return status_from_dpd
 
     @staticmethod
     def _collapse_duplicate_columns(df: pd.DataFrame) -> pd.DataFrame:

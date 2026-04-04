@@ -27,6 +27,34 @@ metrics:
     formula_ref: backend.src.kpi_engine.risk.compute_expected_loss
     unit: currency
 
+  - metric_id: npl_ratio
+    metric_name: NPL Ratio
+    owner: risk
+    mart: portfolio_mart
+    formula_ref: backend.src.kpi_engine.risk.compute_npl_ratio
+    unit: ratio
+
+  - metric_id: default_rate_by_count
+    metric_name: Default Rate By Count
+    owner: risk
+    mart: portfolio_mart
+    formula_ref: backend.src.kpi_engine.risk.compute_default_rate_by_count
+    unit: ratio
+
+  - metric_id: default_rate_by_balance
+    metric_name: Default Rate By Balance
+    owner: risk
+    mart: portfolio_mart
+    formula_ref: backend.src.kpi_engine.risk.compute_default_rate_by_balance
+    unit: ratio
+
+  - metric_id: provision_coverage_ratio
+    metric_name: Provision Coverage Ratio
+    owner: risk
+    mart: finance_mart
+    formula_ref: backend.src.kpi_engine.risk.compute_provision_coverage_ratio
+    unit: ratio
+
   - metric_id: net_yield
     metric_name: Net Yield
     owner: finance
@@ -39,6 +67,34 @@ metrics:
     owner: finance
     mart: finance_mart
     formula_ref: backend.src.kpi_engine.revenue.compute_spread
+    unit: ratio
+
+  - metric_id: portfolio_yield
+    metric_name: Portfolio Yield
+    owner: finance
+    mart: portfolio_mart
+    formula_ref: backend.src.kpi_engine.revenue.compute_portfolio_yield
+    unit: percentage
+
+  - metric_id: effective_interest_rate
+    metric_name: Effective Interest Rate
+    owner: finance
+    mart: portfolio_mart
+    formula_ref: backend.src.kpi_engine.revenue.compute_eir
+    unit: ratio
+
+  - metric_id: portfolio_irr
+    metric_name: Portfolio IRR
+    owner: finance
+    mart: payments_mart
+    formula_ref: backend.src.kpi_engine.revenue.compute_portfolio_irr_true
+    unit: ratio
+
+  - metric_id: portfolio_irr_proxy
+    metric_name: Portfolio IRR Proxy
+    owner: finance
+    mart: finance_mart
+    formula_ref: backend.src.kpi_engine.revenue.compute_portfolio_irr_proxy
     unit: ratio
 
   - metric_id: avg_ticket

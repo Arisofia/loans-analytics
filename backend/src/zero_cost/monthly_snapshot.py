@@ -4,6 +4,7 @@ from datetime import date
 from decimal import Decimal
 import pandas as pd
 from backend.loans_analytics.kpis.dpd_calculator import dpd_to_bucket
+from backend.src.kpi_engine.risk import compute_par30, compute_par60, compute_par90
 from .storage import ZeroCostStorage
 logger = logging.getLogger(__name__)
 
@@ -103,14 +104,20 @@ class MonthlySnapshotBuilder:
                 kpis['total_overdue'] = 0.0
         else:
             kpis['total_overdue'] = 0.0
-        for threshold in self.par_thresholds:
-            par_col = f'par_{threshold}'
-            if par_col in snapshot_df.columns and total_os > Decimal('0'):
-                par_amount_raw = snapshot_df.loc[snapshot_df[par_col], 'principal_outstanding'].sum()
-                if pd.notna(par_amount_raw):
-                    par_amount = Decimal(str(par_amount_raw))
-                    par_pct = par_amount / total_os * Decimal('100')
-                    par_value = float(par_pct)
+        if total_os > Decimal('0') and {'principal_outstanding', 'dpd'}.issubset(snapshot_df.columns):
+            canonical_frame = pd.DataFrame(
+                {
+                    'outstanding_principal': snapshot_df['principal_outstanding'],
+                    'days_past_due': snapshot_df['dpd'],
+                }
+            )
+            par_metrics = {
+                30: float(compute_par30(canonical_frame) * Decimal('100')),
+                60: float(compute_par60(canonical_frame) * Decimal('100')),
+                90: float(compute_par90(canonical_frame) * Decimal('100')),
+            }
+            for threshold, par_value in par_metrics.items():
+                if threshold in self.par_thresholds:
                     kpis[f'par_{threshold}_pct'] = par_value
                     kpis[f'par_{threshold}'] = par_value
         if 'dpd' in snapshot_df.columns:

@@ -14,6 +14,7 @@ getcontext().rounding = ROUND_HALF_UP
 from backend.loans_analytics.kpis.ltv import calculate_ltv_sintetico
 from backend.loans_analytics.kpis.engine import KPIEngineV2
 from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+from backend.src.kpi_engine.risk import compute_default_rate_by_count
 try:
     import umap
     _UMAP_AVAILABLE = True
@@ -354,8 +355,15 @@ class CalculationPhase:
 
     @staticmethod
     def _calculate_segment_default_rate(grp: pd.DataFrame, status_col: str) -> float:
-        n = len(grp)
-        return round(float((grp[status_col] == 'defaulted').sum()) / n * 100, 4) if n > 0 else 0.0
+        if grp.empty:
+            return 0.0
+        canonical_ratio = compute_default_rate_by_count(
+            pd.DataFrame({
+                'status': grp[status_col],
+                'outstanding_principal': pd.Series(1, index=grp.index, dtype='int64'),
+            })
+        )
+        return round(float(canonical_ratio) * 100, 4)
 
     @staticmethod
     def _calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
@@ -513,7 +521,23 @@ class CalculationPhase:
             par90_bal = float(grp.loc[grp['_dpd'] >= 90, '_bal'].sum())
             par90_rate = round(par90_bal / total_bal * 100, 4) if total_bal > 0 else 0.0
             default_count = int((grp[status_col] == 'defaulted').sum()) if status_col else 0
-            default_rate = round(default_count / loan_count * 100, 4) if loan_count > 0 else 0.0
+            if status_col:
+                default_rate = round(
+                    float(
+                        compute_default_rate_by_count(
+                            pd.DataFrame(
+                                {
+                                    'status': grp[status_col],
+                                    'outstanding_principal': pd.Series(1, index=grp.index, dtype='int64'),
+                                }
+                            )
+                        )
+                    )
+                    * 100,
+                    4,
+                )
+            else:
+                default_rate = 0.0
             vintage_data[str(vintage)] = {
                 'loan_count': loan_count,
                 'total_balance_usd': round(total_bal, 2),

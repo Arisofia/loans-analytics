@@ -145,14 +145,13 @@ class TestSettings2026Targets:
         assert settings.portfolio_targets_2026['2026-12'] == 12000000
 
     def test_all_months_present(self):
-        for m in range(1, 13):
-            key = f'2026-{m:02d}'
-            assert key in settings.portfolio_targets_2026, f'Missing {key}'
+        expected_keys = {f'2026-{m:02d}' for m in range(1, 13)}
+        missing_keys = expected_keys.difference(settings.portfolio_targets_2026)
+        assert not missing_keys, f'Missing {sorted(missing_keys)}'
 
     def test_targets_monotonically_increasing(self):
         vals = [settings.portfolio_targets_2026[f'2026-{m:02d}'] for m in range(1, 13)]
-        for i in range(len(vals) - 1):
-            assert vals[i] <= vals[i + 1], f'Not increasing at month {i + 2}'
+        assert all(current <= nxt for current, nxt in zip(vals, vals[1:]))
 
     def test_required_growth_achievable(self):
         required_net = settings.portfolio_targets_2026.get('required_monthly_net_growth_usd', 300000)
@@ -214,8 +213,7 @@ class TestCalculateQualityScore:
 
     def test_all_null_returns_zero(self, sample_df):
         df = sample_df.copy()
-        for col in df.columns:
-            df[col] = None
+        df[:] = None
         assert calculate_quality_score(df) == 0.0
 
     def test_counts_completeness(self):
@@ -243,8 +241,8 @@ class TestPortfolioKPIs:
         expected_yield = (bal * rat).sum() / bal.sum()
         expected_ltv = (amt / val).mean()
         expected_dti = (dbt / (inc / 12)).mean()
-        assert metrics['delinquency_rate'] == pytest.approx(expected_delinq_rate, rel=1e-06)
-        assert metrics['portfolio_yield'] == pytest.approx(expected_yield, rel=1e-06)
+        assert metrics['delinquency_rate'] == pytest.approx(round(expected_delinq_rate, 4), rel=1e-06)
+        assert metrics['portfolio_yield'] == pytest.approx(round(expected_yield, 4), rel=1e-06)
         assert metrics['average_ltv'] == pytest.approx(expected_ltv, rel=1e-06)
         assert metrics['average_dti'] == pytest.approx(expected_dti, rel=1e-06)
 
