@@ -340,8 +340,9 @@ def compute_expected_loss(
         except Exception as _bp_exc:
             logger.warning(
                 "compute_expected_loss: failed to load business_parameters.yml (%s). "
-                "PD bucket defaults will be used — EL output is NOT auditable against "
-                "production configuration. Investigate config availability.",
+                "PD bucket defaults will be used (current=0.5%%, dpd_30=5%%, dpd_60=15%%, "
+                "dpd_90=35%%, dpd_180=70%%, defaulted=100%%) — EL output is NOT auditable "
+                "against production configuration. Investigate config availability.",
                 _bp_exc,
             )
             business_params = {}

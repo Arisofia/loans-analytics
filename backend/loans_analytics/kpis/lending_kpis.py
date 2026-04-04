@@ -15,10 +15,52 @@ def _num(df: pd.DataFrame, col: str) -> pd.Series:
     return res
 
 def _resolve_lgd_config() -> float:
+    """Resolve LGD for ECL calculations from business_parameters.yml.
+
+    Reads ``financial_assumptions.lgd_fixed_rate`` (the canonical ECL LGD
+    shared with the pipeline KPI engine).  Falls back to
+    ``risk_parameters.loss_given_default`` only when the financial assumptions
+    block is unavailable, and logs a WARNING in that case.
+
+    Note: ``risk_parameters.loss_given_default`` is a covenant / guardrail
+    parameter (repline compliance).  It must NOT be used as the ECL LGD
+    directly, because it may differ from the calibrated ``lgd_fixed_rate``.
+    """
+    try:
+        from backend.src.pipeline.config import load_business_parameters
+
+        params = load_business_parameters()
+        fin = params.get("financial_assumptions", {})
+        if "lgd_fixed_rate" in fin:
+            return float(fin["lgd_fixed_rate"])
+        logger.warning(
+            "_resolve_lgd_config: financial_assumptions.lgd_fixed_rate not found in "
+            "business_parameters.yml. Falling back to risk_parameters.loss_given_default."
+        )
+    except Exception as _exc:
+        logger.warning(
+            "_resolve_lgd_config: could not load financial_assumptions.lgd_fixed_rate "
+            "(%s). Falling back to risk_parameters.loss_given_default.",
+            _exc,
+        )
     try:
         from backend.loans_analytics.config import settings
-        return settings.risk.loss_given_default
+
+        lgd = settings.risk.loss_given_default
+        logger.warning(
+            "_resolve_lgd_config: using risk_parameters.loss_given_default=%.4f as ECL LGD. "
+            "This is a covenant guardrail, not a calibrated ECL parameter. "
+            "Set financial_assumptions.lgd_fixed_rate in business_parameters.yml.",
+            lgd,
+        )
+        return lgd
     except Exception:
+        logger.warning(
+            "_resolve_lgd_config: all configuration paths failed (both "
+            "financial_assumptions.lgd_fixed_rate and risk_parameters.loss_given_default "
+            "are unavailable). Falling back to hardcoded LGD=0.1. "
+            "Check that business_parameters.yml exists and is readable."
+        )
         return 0.1
 
 def _merge_customer_segments(loans_df: pd.DataFrame, customer_df: pd.DataFrame | None, loan_id: str | None) -> pd.DataFrame:
