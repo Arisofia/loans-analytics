@@ -12,13 +12,6 @@ exclude_dirs:
   - htmlcov
   - node_modules
 
-# Checks to skip globally.
-# B101: assert_used – assert statements in test code are not a security concern.
-#   All production assert calls have been reviewed; this skip only affects test dirs
-#   excluded above (global skip retained as safety net for nested test helpers).
-skips:
-  - B101
-
 # Plugin-level configuration for assert usage in test files.
 assert_used:
   skips:

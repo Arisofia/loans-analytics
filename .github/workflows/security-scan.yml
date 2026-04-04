@@ -174,10 +174,8 @@ jobs:
               --severity-level medium || {
               echo "?? Bandit found medium+ severity issues (SARIF report generated)"
             }
-            # Display results
-            bandit -r "${SCAN_DIRS[@]}" --configfile .bandit.yaml --severity-level medium -f screen || {
-              echo "?? Bandit found issues"
-            }
+            # Enforce a merge gate on high-severity findings.
+            bandit -r "${SCAN_DIRS[@]}" --configfile .bandit.yaml --severity-level high -f screen
           else
             echo "?? No Python source directories found to scan"
             echo "[]" > bandit-report.json
