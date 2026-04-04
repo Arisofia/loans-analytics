@@ -108,7 +108,7 @@ jobs:
       - name: Install dependencies
         run: |
           "$PYTHON_BIN" -m pip install --upgrade pip
-          "$PYTHON_BIN" -m pip install "safety" "bandit[sarif]" "ruff"
+          "$PYTHON_BIN" -m pip install "safety" "bandit[sarif]"
 
       - name: Run safety check
         continue-on-error: true
@@ -170,26 +170,6 @@ jobs:
         with:
           sarif_file: bandit-results.sarif
           category: bandit
-
-      - name: Upload security reports
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts
-          report_files=()
-          for report in safety-report.json safety-results.json bandit-report.json bandit-results.sarif; do
-            if [ -f "$report" ]; then
-              report_files+=("$report")
-            fi
-          done
-
-          if [ "${#report_files[@]}" -gt 0 ]; then
-            tar -czf "artifacts/security-reports-${{ github.run_number }}.tar.gz" "${report_files[@]}"
-            echo "Generated local archive: artifacts/security-reports-${{ github.run_number }}.tar.gz"
-          else
-            echo "No security reports were generated to archive"
-          fi
 
   secret-scanning:
     name: Secret Scanning (Gitleaks)
