@@ -140,7 +140,10 @@ def realistic_loan_records() -> list:
 
 
 def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> bool | None:
-    """Run async tests without requiring pytest-asyncio plugin."""
+    """Run async tests only when pytest-asyncio is unavailable."""
+    if pyfuncitem.config.pluginmanager.hasplugin("asyncio"):
+        return None
+
     test_function = pyfuncitem.obj
     if inspect.iscoroutinefunction(test_function):
         kwargs = {
