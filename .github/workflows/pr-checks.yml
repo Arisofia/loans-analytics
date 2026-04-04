@@ -64,6 +64,28 @@ jobs:
             exit 1
           fi
 
+      - name: Block legacy orchestrator imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.sha }}"
+
+          mapfile -t PY_CHANGED < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -E '\.py$' || true)
+          if [ "${#PY_CHANGED[@]}" -eq 0 ]; then
+            exit 0
+          fi
+
+          if grep -nE 'backend\.loans_analytics\.multi_agent\._llm_agents|from\s+backend\.loans_analytics\.multi_agent\s+import\s+_llm_agents' "${PY_CHANGED[@]}"; then
+            echo "Legacy _llm_agents import detected in changed files. Rejecting."
+            exit 1
+          fi
+
+          if grep -nE 'from\s+backend\.loans_analytics\.multi_agent\s+import\s+orchestrator(\s|$)|import\s+backend\.loans_analytics\.multi_agent\.orchestrator(\s|$)' "${PY_CHANGED[@]}"; then
+            echo "Legacy module-level orchestrator import detected. Use backend.loans_analytics.multi_agent.orchestrator.<symbol> instead."
+            exit 1
+          fi
+
       - name: Set up Python 3.12
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
