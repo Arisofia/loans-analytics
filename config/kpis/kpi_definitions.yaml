@@ -139,6 +139,13 @@ asset_quality_kpis:
       warning: 3
       critical: 6
 
+  provision_coverage_ratio:
+    formula: "SUM(provision_expense) / SUM(outstanding_balance WHERE dpd >= 90 OR status = 'defaulted')"
+    unit: "ratio"
+    precision: 4
+    rounding: "ROUND_HALF_UP"
+    description: "Provision coverage over non-performing exposure (DPD >= 90 or defaulted)."
+
   cure_rate:
     formula: "COUNT(loan_id WHERE dpd > 0 AND last_payment_amount > 0) / COUNT(loan_id WHERE dpd > 0) * 100"
     unit: "percentage"
@@ -165,6 +172,20 @@ cash_flow_kpis:
       * 100
     unit: "percentage"
     description: "Recovery rate on defaulted loans"
+
+  effective_interest_rate:
+    formula: "(1 + AVG(interest_rate) / 365)^365 - 1"
+    unit: "ratio"
+    precision: 4
+    rounding: "ROUND_HALF_UP"
+    description: "EIR from average nominal APR using daily compounding."
+
+  portfolio_irr_proxy:
+    formula: "(SUM(interest_income) + SUM(fee_income)) / AVG(debt_balance)"
+    unit: "ratio"
+    precision: 4
+    rounding: "ROUND_HALF_UP"
+    description: "Proxy metric only; use true IRR from dated cashflows when payments and disbursements are available."
 
   cash_on_hand:
     formula: "SUM(current_balance)"

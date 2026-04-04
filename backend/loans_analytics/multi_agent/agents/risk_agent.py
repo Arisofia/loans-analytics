@@ -16,7 +16,7 @@ class RiskAgent(DecisionAgent):
         alerts = []
         recs = []
 
-        par30 = compute_par30(portfolio)
+        par30 = float(compute_par30(portfolio))
         el = compute_expected_loss(portfolio)
 
         if par30 > 0.05:

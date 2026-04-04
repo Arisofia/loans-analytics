@@ -31,6 +31,8 @@ def run_metric_engine(
     portfolio = marts.get("portfolio_mart", pd.DataFrame())
     finance = marts.get("finance_mart", pd.DataFrame())
     sales = marts.get("sales_mart", pd.DataFrame())
+    disbursements = marts.get("disbursements_mart", marts.get("dim_loan", marts.get("loans", pd.DataFrame())))
+    payments = marts.get("payments_mart", marts.get("fact_real_payment", marts.get("payments", pd.DataFrame())))
 
     executive: List[MetricResult] = []
     risk_metrics: List[MetricResult] = []
@@ -47,7 +49,11 @@ def run_metric_engine(
     pricing.append(_mr("net_yield", "Net Yield", revenue.compute_net_yield(finance), "ratio", "finance", "cfo"))
     pricing.append(_mr("spread", "Spread", revenue.compute_spread(finance), "ratio", "finance", "cfo"))
     pricing.append(_mr("eir", "Effective Interest Rate", revenue.compute_eir(portfolio), "ratio", "portfolio", "cfo"))
-    pricing.append(_mr("portfolio_irr", "Portfolio IRR", revenue.compute_portfolio_irr(finance), "ratio", "finance", "cfo"))
+    true_irr = revenue.compute_portfolio_irr_true(disbursements, payments)
+    if true_irr is not None:
+        pricing.append(_mr("portfolio_irr", "Portfolio IRR", true_irr, "ratio", "cashflow", "cfo"))
+    else:
+        pricing.append(_mr("portfolio_irr_proxy", "Portfolio IRR Proxy", revenue.compute_portfolio_irr_proxy(finance), "ratio", "finance", "cfo"))
 
     # Unit economics → executive
     executive.append(_mr("avg_ticket", "Avg Ticket", unit_economics.compute_avg_ticket(sales), "currency", "sales", "commercial"))

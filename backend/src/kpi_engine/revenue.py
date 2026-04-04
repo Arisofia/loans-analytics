@@ -44,20 +44,59 @@ def compute_eir(portfolio_mart: pd.DataFrame) -> Decimal:
 
 
 def compute_portfolio_irr(finance_mart: pd.DataFrame) -> Decimal:
+    """Backward-compatible alias for the explicit proxy implementation."""
+    return compute_portfolio_irr_proxy(finance_mart)
+
+
+def compute_portfolio_irr_proxy(finance_mart: pd.DataFrame) -> Decimal:
     """
-    Compute Simplified Portfolio IRR.
-    Formula: (Interest Income + Fee Income) / Average Debt Balance (Annualized)
+    Compute portfolio IRR proxy from finance balances.
+    Formula: (Interest Income + Fee Income) / Average Debt Balance
     """
     if finance_mart.empty:
         return Decimal("0.0")
-        
+
     income = Decimal(str(finance_mart["interest_income"].sum())) + Decimal(str(finance_mart["fee_income"].sum()))
     avg_debt = Decimal(str(finance_mart["debt_balance"].mean()))
-    
     if avg_debt == 0:
         return Decimal("0.0")
-        
     return (income / avg_debt).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+
+
+def compute_portfolio_irr_true(disbursements_df: pd.DataFrame, payments_df: pd.DataFrame) -> Optional[Decimal]:
+    """Compute true portfolio IRR from dated cashflows when available."""
+    if disbursements_df.empty or payments_df.empty:
+        return None
+
+    disb_date_col = next((c for c in ("disbursement_date", "origination_date", "funded_at") if c in disbursements_df.columns), None)
+    disb_amt_col = next((c for c in ("original_principal", "principal_amount", "funded_amount", "amount", "outstanding_principal") if c in disbursements_df.columns), None)
+    pay_date_col = next((c for c in ("payment_date", "paid_at", "date") if c in payments_df.columns), None)
+    pay_amt_col = next((c for c in ("paid_total", "payment_amount", "amount", "last_payment_amount") if c in payments_df.columns), None)
+
+    if not all([disb_date_col, disb_amt_col, pay_date_col, pay_amt_col]):
+        return None
+
+    disb = disbursements_df[[disb_date_col, disb_amt_col]].copy()
+    disb[disb_amt_col] = pd.to_numeric(disb[disb_amt_col], errors="coerce").fillna(0)
+    disb = disb[disb[disb_amt_col] > 0]
+
+    pays = payments_df[[pay_date_col, pay_amt_col]].copy()
+    pays[pay_amt_col] = pd.to_numeric(pays[pay_amt_col], errors="coerce").fillna(0)
+    pays = pays[pays[pay_amt_col] > 0]
+
+    if disb.empty or pays.empty:
+        return None
+
+    cashflows: list[float] = [-float(v) for v in disb[disb_amt_col].tolist()] + [float(v) for v in pays[pay_amt_col].tolist()]
+    dates = disb[disb_date_col].tolist() + pays[pay_date_col].tolist()
+
+    # Import lazily to avoid adding XIRR dependency to unrelated code paths.
+    from backend.src.zero_cost.xirr import xirr
+
+    irr_value = xirr(cashflows, dates)
+    if pd.isna(irr_value):
+        return None
+    return Decimal(str(irr_value)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 
 
 def compute_growth_vs_targets(

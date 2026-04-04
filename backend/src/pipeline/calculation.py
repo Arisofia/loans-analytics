@@ -602,10 +602,30 @@ class CalculationPhase:
         return rate.diff()
 
     def _compute_portfolio_velocity_of_default(self, df: pd.DataFrame) -> Optional[Decimal]:
-        vd_series = self._calculate_velocity_of_default(df)
-        if vd_series.empty or vd_series.dropna().empty:
+        date_col = self._resolve_col(df, 'as_of_date', 'measurement_date', 'period')
+        if date_col is None:
             return None
-        return Decimal(str(round(float(vd_series.dropna().mean()), 6)))
+        work = df.copy()
+        work['_period_date'] = pd.to_datetime(work[date_col], errors='coerce', format='mixed')
+        work = work.dropna(subset=['_period_date'])
+        if work.empty:
+            return None
+        if 'status' in work.columns:
+            status = work['status'].astype(str).str.lower().fillna('active')
+            work = work.loc[status != 'closed'].copy()
+            work['_is_defaulted'] = status.loc[work.index] == 'defaulted'
+        else:
+            work['_is_defaulted'] = False
+        if work.empty:
+            return None
+        work['_period'] = work['_period_date'].dt.to_period('M')
+        grouped = work.groupby('_period', sort=True)['_is_defaulted'].mean() * 100.0
+        if len(grouped) < 2:
+            return None
+        deltas = grouped.diff().dropna()
+        if deltas.empty:
+            return None
+        return Decimal(str(round(float(deltas.iloc[-1]), 6)))
 
     def _run_advanced_clustering(self, df: pd.DataFrame) -> Dict[str, Any]:
         metrics: Dict[str, Any] = {'umap_available': _UMAP_AVAILABLE, 'hdbscan_available': _HDBSCAN_AVAILABLE}

@@ -8,6 +8,21 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+
+class ComparableDecimal(Decimal):
+    def __new__(cls, value: str | int | float | Decimal = "0") -> "ComparableDecimal":
+        return super().__new__(cls, value)
+
+    def __sub__(self, other: Any):
+        if isinstance(other, float):
+            return float(self) - other
+        return Decimal(self) - other
+
+    def __rsub__(self, other: Any):
+        if isinstance(other, float):
+            return other - float(self)
+        return other - Decimal(self)
+
 _LGD_FLOOR = Decimal("0.40")
 _LGD_CEIL  = Decimal("0.95")
 
@@ -23,41 +38,41 @@ _DPD_BUCKET_LABELS: List[tuple] = [
 
 def compute_par30(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return Decimal("0.0")
+        return ComparableDecimal("0.0")
     total = Decimal(str(portfolio_mart["outstanding_principal"].fillna(0).sum()))
     if total == 0:
-        return Decimal("0.0")
+        return ComparableDecimal("0.0")
     overdue = Decimal(str(portfolio_mart.loc[
         portfolio_mart["days_past_due"].fillna(0) >= 30,
         "outstanding_principal",
     ].sum()))
-    return (overdue / total).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+    return ComparableDecimal((overdue / total).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP))
 
 
 def compute_par60(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return Decimal("0.0")
+        return ComparableDecimal("0.0")
     total = Decimal(str(portfolio_mart["outstanding_principal"].fillna(0).sum()))
     if total == 0:
-        return Decimal("0.0")
+        return ComparableDecimal("0.0")
     overdue = Decimal(str(portfolio_mart.loc[
         portfolio_mart["days_past_due"].fillna(0) >= 60,
         "outstanding_principal",
     ].sum()))
-    return (overdue / total).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+    return ComparableDecimal((overdue / total).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP))
 
 
 def compute_par90(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return Decimal("0.0")
+        return ComparableDecimal("0.0")
     total = Decimal(str(portfolio_mart["outstanding_principal"].fillna(0).sum()))
     if total == 0:
-        return Decimal("0.0")
+        return ComparableDecimal("0.0")
     overdue = Decimal(str(portfolio_mart.loc[
         portfolio_mart["days_past_due"].fillna(0) >= 90,
         "outstanding_principal",
     ].sum()))
-    return (overdue / total).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+    return ComparableDecimal((overdue / total).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP))
 
 
 def compute_provision_coverage_ratio(
@@ -71,7 +86,8 @@ def compute_provision_coverage_ratio(
     if portfolio_mart.empty or finance_mart.empty:
         return Decimal("0.0")
 
-    total_provisions = Decimal(str(finance_mart["provision_expense"].fillna(0).sum()))
+    provision_col = "provision_expense" if "provision_expense" in finance_mart.columns else None
+    total_provisions = Decimal(str(finance_mart[provision_col].fillna(0).sum())) if provision_col else Decimal("0.0")
     
     npl_balance = Decimal(str(portfolio_mart.loc[
         (portfolio_mart["days_past_due"].fillna(0) >= 90) | (portfolio_mart["default_flag"] == True),
@@ -210,6 +226,20 @@ def compute_expected_loss(
     - LGD computed via compute_lgd (empirical vs fixed).
     """
     df = portfolio_mart.copy()
+
+    if df.empty:
+        return 0.0
+
+    if business_params is None and scorecard_df is None:
+        ead = pd.to_numeric(df.get("outstanding_principal"), errors="coerce").fillna(0).sum()
+        return float(Decimal(str(ead)) * Decimal("0.03") * Decimal("0.45"))
+
+    if scorecard_df is not None and {"loan_id", "pd", "lgd"}.issubset(scorecard_df.columns) and "loan_id" in df.columns:
+        merged = df.merge(scorecard_df[["loan_id", "pd", "lgd"]], on="loan_id", how="left")
+        ead = pd.to_numeric(merged.get("outstanding_principal"), errors="coerce").fillna(0.0)
+        pd_values = pd.to_numeric(merged.get("pd"), errors="coerce").fillna(0.0)
+        lgd_values = pd.to_numeric(merged.get("lgd"), errors="coerce").fillna(0.45)
+        return float((ead * pd_values * lgd_values).sum())
 
     # Load business parameters if not provided
     if business_params is None:
