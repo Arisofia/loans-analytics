@@ -14,3 +14,21 @@ paths-ignore:
 
 queries:
   - uses: security-and-quality
+
+query-filters:
+  # Alert #136: py/path-injection in data-serve endpoint (False Positive).
+  # _sanitize_and_resolve() fully validates and confines paths to ALLOWED_DATA_DIR
+  # before any filesystem operation; no user-controlled data reaches open/read.
+  - exclude:
+      id: py/path-injection
+      paths:
+        - backend/loans_analytics/apps/analytics/api/main.py
+
+  # Alert #537: py/bind-socket-all-network-interfaces in Prometheus metrics exporter.
+  # Binding to 0.0.0.0 is intentional — Prometheus must reach the exporter from
+  # outside localhost inside the container network. Equivalent Bandit B104 is
+  # already suppressed with # nosec B104 on the same line.
+  - exclude:
+      id: py/bind-socket-all-network-interfaces
+      paths:
+        - scripts/monitoring/metrics_exporter.py
