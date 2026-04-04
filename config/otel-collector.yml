@@ -1,5 +1,6 @@
 # OpenTelemetry Collector Configuration
-# Receives traces/metrics from the application, exports to Prometheus and OTLP backends.
+# Receives traces/metrics from the application, exports metrics to Prometheus,
+# and sends telemetry to the debug exporter for local development.
 # This file is mounted by the otel-collector service in docker-compose.yml.
 
 receivers:
