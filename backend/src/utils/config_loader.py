@@ -3,7 +3,7 @@ import os
 from typing import Any, Dict
 import yaml
 logger = logging.getLogger(__name__)
-_UNSAFE_DEFAULTS = {'', 'password', 'postgres', 'admin', 'changeme'}
+_UNSAFE_DEFAULTS = {'', 'password', 'postgres', 'admin', 'changeme'}  # nosec B105
 
 def load_config(config_path: str) -> Dict[str, Any]:
     if not os.path.exists(config_path):

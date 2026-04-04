@@ -66,9 +66,9 @@ class ZeroCostStorage:
         table_dir = self.base_dir / table_name
         if not table_dir.exists():
             raise FileNotFoundError(f"No data found for table '{table_name}' at {table_dir}")
-        glob_path = self._escape_sql_string(str(table_dir / '**' / '*.parquet'))
-        query = f"SELECT * FROM read_parquet('{glob_path}')"
-        return self.query(query)  # nosec B608
+        glob_path = str(table_dir / '**' / '*.parquet')
+        conn = self._get_conn()
+        return conn.execute('SELECT * FROM read_parquet(?)', [glob_path]).df()
 
     def _validate_identifier(self, name: str) -> str:
         if not re.match(r'^[A-Za-z_]\w*$', name):

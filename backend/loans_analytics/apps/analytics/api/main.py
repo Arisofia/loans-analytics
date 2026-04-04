@@ -622,14 +622,14 @@ if app is not None:
         try:
             return await service.get_data_quality_profile(request.loans)
         except Exception as e:
-            _raise_internal_http_error('get_data_quality_profile', e)
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post('/data-quality/validate', response_model=ValidationResponse)
     async def validate_loan_data(request: LoanPortfolioRequest=Body(...), service: KPIService=Depends(get_kpi_service)):
         try:
             return await service.validate_loan_portfolio_schema(request.loans)
         except Exception as e:
-            _raise_internal_http_error('validate_loan_data', e)
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.get('/data/{file_path:path}')
     def get_data(file_path: str):
@@ -721,7 +721,7 @@ if app is not None:
         try:
             return await service.get_nsm_recurrent_tpv()
         except Exception as e:
-            _raise_internal_http_error('get_nsm', e)
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
 def _sanitize_for_logging(value: str, max_length: int=200) -> str:
     if not value:
