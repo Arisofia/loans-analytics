@@ -89,23 +89,29 @@ class TestDependencyVersions:
     """F1.1 & F1.4 Remediation: Verify dependency versions are resolvable and compatible."""
 
     def test_pip_can_resolve_openai_version(self):
-        """Guard against re-introduction of non-existent openai version (F1.1)."""
+        """Guard that openai is >=1.x (F1.1).
+
+        The original guard excluded version 2.30.0 as "non-existent", but that
+        release became available in PyPI.  The meaningful invariant is that the
+        installed major version is >=1 (the v0.x legacy API is not supported).
+        """
         import openai
         major = int(openai.__version__.split(".")[0])
         assert major >= 1, f"openai must be >=1.x, got {openai.__version__}"
-        # Should not be 2.30.0 which never existed
-        assert openai.__version__ != "2.30.0", "Non-existent version 2.30.0 detected"
 
     def test_protobuf_version_compatible(self):
-        """Guard against protobuf 6.x which never existed (F1.4)."""
+        """Guard that protobuf is in the supported major-version range (F1.4).
+
+        protobuf 6.x became available and is compatible with grpcio >=1.60.
+        The supported range is 4.x, 5.x, or 6.x.
+        """
         import google.protobuf as protobuf
         major = int(protobuf.__version__.split(".")[0])
         assert major in {
             4,
             5,
-        }, f"protobuf must be 4.x or 5.x, got {protobuf.__version__}"
-        # Should not be 6.x
-        assert major < 6, f"protobuf major version {major} is outside supported range [4,5]"
+            6,
+        }, f"protobuf must be 4.x, 5.x, or 6.x, got {protobuf.__version__}"
 
     def test_grpcio_protobuf_compatibility(self):
         """Verify grpcio 1.78.0 is compatible with resolved protobuf version."""

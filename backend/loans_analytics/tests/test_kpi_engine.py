@@ -1,202 +1,257 @@
+"""Tests for the KPIEngineV2 deprecated compatibility shim.
+
+The canonical KPI authority is run_metric_engine() from backend.src.kpi_engine.engine.
+These tests verify:
+  1.  KPIEngineV2 emits a DeprecationWarning on instantiation.
+  2.  calculate_all() / calculate() delegate to run_metric_engine() and return
+      a well-structured dict.
+  3.  get_audit_trail() returns an empty DataFrame with the expected columns
+      (the shim no longer tracks per-call audit records).
+  4.  NPL / PAR semantics are correct end-to-end through the shim.
+"""
+from __future__ import annotations
+
+import decimal
 import unittest
-from datetime import datetime
-from decimal import Decimal
+import warnings
+from decimal import ROUND_HALF_UP, getcontext
+
 import pandas as pd
-from backend.loans_analytics.kpis.engine import KPIEngineV2
+
+# Ensure the ROUND_HALF_UP context is active before any SSOT import in this
+# module's transitive dependency chain (ssot_asset_quality.py asserts it).
+getcontext().rounding = ROUND_HALF_UP
+
+from backend.loans_analytics.kpis.engine import KPIEngineV2  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# Shared test fixture factory
+# ---------------------------------------------------------------------------
+
+def _make_portfolio_df() -> pd.DataFrame:
+    """Minimal portfolio DataFrame accepted by run_metric_engine.
+
+    Provides the columns that risk functions access directly:
+      - outstanding_principal  (used by compute_par30/60/90)
+      - days_past_due          (used by compute_par30/60/90, compute_npl_ratio)
+      - loan_status            (used by _status_series → _defaulted_mask)
+    """
+    return pd.DataFrame(
+        {
+            "outstanding_principal": [10000.0, 8000.0, 6000.0, 4000.0, 12000.0],
+            "days_past_due": [5, 35, 95, 120, 0],
+            "loan_status": [
+                "current",
+                "delinquent",
+                "defaulted",
+                "defaulted",
+                "current",
+            ],
+        }
+    )
+
+
+# ---------------------------------------------------------------------------
+# TestKPIEngineV2 — shim interface contracts
+# ---------------------------------------------------------------------------
+
 
 class TestKPIEngineV2(unittest.TestCase):
+    """Verify the public interface of the deprecated KPIEngineV2 shim."""
 
-    def _assert_kpi_result_structure(self, kpi_name: str, results: dict) -> None:
-        self.assertIn(kpi_name, results)
-        self.assertIn('value', results[kpi_name])
-        self.assertIn('context', results[kpi_name])
-
-    def _assert_audit_columns(self, audit_df: pd.DataFrame) -> None:
-        self.assertIn('timestamp', audit_df.columns)
-        self.assertIn('run_id', audit_df.columns)
-        self.assertIn('actor', audit_df.columns)
-        self.assertIn('kpi_name', audit_df.columns)
-        self.assertIn('value', audit_df.columns)
-        self.assertIn('context', audit_df.columns)
-        self.assertIn('error', audit_df.columns)
-        self.assertIn('status', audit_df.columns)
-
-    def setUp(self):
-        self.sample_df = pd.DataFrame({'dpd_30_60_usd': [100.0, 200.0, 150.0], 'dpd_60_90_usd': [50.0, 75.0, 100.0], 'dpd_90_plus_usd': [25.0, 50.0, 75.0], 'total_receivable_usd': [5000.0, 6000.0, 7000.0], 'loan_amount': [4000.0, 5000.0, 6000.0], 'collateral_value': [5000.0, 6500.0, 7500.0]})
+    def setUp(self) -> None:
+        self.portfolio_df = _make_portfolio_df()
         self.empty_df = pd.DataFrame()
 
-    def test_engine_initialization(self):
-        engine = KPIEngineV2(self.sample_df, actor='test_user', run_id='test_run_001')
-        self.assertEqual(engine.actor, 'test_user')
-        self.assertEqual(engine.run_id, 'test_run_001')
+    # ── Construction ────────────────────────────────────────────────────────
+
+    def test_engine_initialization_stores_attributes(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            engine = KPIEngineV2(
+                self.portfolio_df, actor="test_user", run_id="test_run_001"
+            )
+        self.assertEqual(engine.actor, "test_user")
+        self.assertEqual(engine.run_id, "test_run_001")
         self.assertIsInstance(engine.df, pd.DataFrame)
-        self.assertEqual(len(engine._audit_records), 0)
 
-    def test_engine_initialization_with_defaults(self):
-        engine = KPIEngineV2(self.sample_df)
-        self.assertEqual(engine.actor, 'system')
-        self.assertIsNotNone(engine.run_id)
-        self.assertRegex(engine.run_id, '\\d{8}_\\d{6}')
+    def test_engine_initialization_default_actor(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            engine = KPIEngineV2(self.portfolio_df)
+        self.assertEqual(engine.actor, "system")
 
-    def test_calculate_par_30(self):
-        engine = KPIEngineV2(self.sample_df, actor='test_user')
-        value, context = engine.calculate_par_30()
-        self.assertIsInstance(value, Decimal)
-        self.assertGreaterEqual(value, 0.0)
-        self.assertIn('formula', context)
-        self.assertIn('rows_processed', context)
-        self.assertEqual(context['rows_processed'], 3)
-        self.assertEqual(len(engine._audit_records), 1)
-        audit_record = engine._audit_records[0]
-        self.assertEqual(audit_record['kpi_name'], 'PAR30')
-        self.assertEqual(audit_record['status'], 'success')
-        self.assertEqual(audit_record['value'], value)
-
-    def test_calculate_collection_rate(self):
-        engine = KPIEngineV2(self.sample_df, actor='test_user')
-        value, context = engine.calculate_collection_rate()
-        self.assertIsInstance(value, Decimal)
-        self.assertIn('formula', context)
-        self.assertIn('rows_processed', context)
-        self.assertEqual(len(engine._audit_records), 1)
-        audit_record = engine._audit_records[0]
-        self.assertEqual(audit_record['kpi_name'], 'COLLECTION_RATE')
-        self.assertEqual(audit_record['status'], 'success')
-
-    def test_calculate_ltv(self):
-        df_with_ltv = pd.DataFrame({'loan_amount': [1000.0, 2000.0, 3000.0], 'collateral_value': [1500.0, 2500.0, 4000.0]})
-        engine = KPIEngineV2(df_with_ltv, actor='test_user')
-        value, _ = engine.calculate_ltv()
-        self.assertIsInstance(value, Decimal)
-        self.assertGreaterEqual(float(value), 0.0)
-        self.assertEqual(len(engine._audit_records), 1)
-        audit_record = engine._audit_records[0]
-        self.assertEqual(audit_record['kpi_name'], 'LTV')
-
-    def test_calculate_all(self):
-        engine = KPIEngineV2(self.sample_df, actor='test_user')
-        results = engine.calculate_all()
-        self.assertIsInstance(results, dict)
-        self._assert_kpi_result_structure('PAR30', results)
-        self._assert_kpi_result_structure('COLLECTION_RATE', results)
-        self._assert_kpi_result_structure('LTV', results)
-        self.assertGreaterEqual(len(engine._audit_records), 3)
-
-    def test_get_audit_trail(self):
-        engine = KPIEngineV2(self.sample_df, actor='test_user', run_id='test_run_001')
-        engine.calculate_all()
-        audit_df = engine.get_audit_trail()
-        self.assertIsInstance(audit_df, pd.DataFrame)
-        self.assertGreater(len(audit_df), 0)
-        self._assert_audit_columns(audit_df)
-        self.assertTrue(all(audit_df['run_id'] == 'test_run_001'))
-        self.assertTrue(all(audit_df['actor'] == 'test_user'))
-
-    def test_get_audit_trail_empty(self):
-        engine = KPIEngineV2(self.sample_df)
-        audit_df = engine.get_audit_trail()
-        self.assertIsInstance(audit_df, pd.DataFrame)
-        self.assertEqual(len(audit_df), 0)
-        self._assert_audit_columns(audit_df)
-
-    def test_error_handling_in_calculations(self):
-        invalid_df = pd.DataFrame({'some_column': [1, 2, 3]})
-        engine = KPIEngineV2(invalid_df, actor='test_user')
-        with self.assertRaises(ValueError) as cm:
-            engine.calculate_par_30()
-        self.assertIn('CRITICAL: PAR30 calculation failed', str(cm.exception))
-
-    def test_individual_kpi_failure_isolation(self):
-        invalid_df = pd.DataFrame({'some_column': [1, 2, 3]})
-        engine = KPIEngineV2(invalid_df, actor='test_user')
-        with self.assertRaises(ValueError):
-            engine.calculate_all()
-
-    def test_audit_trail_timestamp_format(self):
-        engine = KPIEngineV2(self.sample_df, actor='test_user')
-        engine.calculate_par_30()
-        audit_df = engine.get_audit_trail()
-        timestamp_str = audit_df.iloc[0]['timestamp']
-        self.assertIsInstance(timestamp_str, str)
-        parsed_timestamp = datetime.fromisoformat(timestamp_str)
-        self.assertIsInstance(parsed_timestamp, datetime)
-
-    def test_context_serialization(self):
-        engine = KPIEngineV2(self.sample_df, actor='test_user')
-        engine.calculate_par_30()
-        audit_df = engine.get_audit_trail()
-        context_str = audit_df.iloc[0]['context']
-        self.assertIsInstance(context_str, str)
-
-class TestDerivedRiskKPIAudit(unittest.TestCase):
-
-    def _make_portfolio_df(self):
-        return pd.DataFrame({'dpd_30_60_usd': [500.0, 8000.0, 0.0, 0.0, 0.0], 'dpd_60_90_usd': [0.0, 0.0, 2000.0, 0.0, 0.0], 'dpd_90_plus_usd': [0.0, 0.0, 6000.0, 4000.0, 0.0], 'total_receivable_usd': [10000.0, 8000.0, 6000.0, 4000.0, 12000.0], 'dpd': [5, 35, 95, 120, 0], 'status': ['active', 'delinquent', 'defaulted', 'defaulted', 'active'], 'outstanding_balance': [10000.0, 8000.0, 6000.0, 4000.0, 12000.0], 'borrower_id': ['A', 'B', 'C', 'D', 'A'], 'loan_id': ['L1', 'L2', 'L3', 'L4', 'L5'], 'as_of_date': ['2026-01-31'] * 5, 'loan_amount': [10000.0, 8000.0, 6000.0, 4000.0, 12000.0], 'collateral_value': [12000.0, 10000.0, 8000.0, 5000.0, 15000.0]})
-
-    def test_velocity_of_default_appears_in_calculate_all(self):
-        df = pd.DataFrame({'dpd_30_60_usd': [100.0, 120.0], 'dpd_60_90_usd': [50.0, 60.0], 'dpd_90_plus_usd': [25.0, 30.0], 'total_receivable_usd': [5000.0, 5200.0], 'dpd': [35, 40], 'status': ['delinquent', 'defaulted'], 'outstanding_balance': [5000.0, 5200.0], 'as_of_date': pd.to_datetime(['2026-01-31', '2026-02-28']), 'loan_amount': [5000.0, 5200.0], 'collateral_value': [6000.0, 6300.0]})
-        engine = KPIEngineV2(df, actor='audit_test')
-        results = engine.calculate_all()
-        self.assertIn('velocity_of_default', results)
-        vd = results['velocity_of_default']['value']
-        self.assertIsNotNone(vd)
-        self.assertIsInstance(vd, float)
-
-    def test_avg_credit_line_utilization_computed_from_utilization_pct(self):
-        df = pd.DataFrame({'utilization_pct': [0.6, 0.75, 0.5], 'outstanding_balance': [10000.0, 8000.0, 6000.0], 'dpd_30_60_usd': [0.0, 0.0, 0.0], 'dpd_60_90_usd': [0.0, 0.0, 0.0], 'dpd_90_plus_usd': [0.0, 0.0, 0.0], 'total_receivable_usd': [5000.0, 6000.0, 7000.0], 'loan_amount': [4000.0, 5000.0, 6000.0], 'collateral_value': [5000.0, 6500.0, 7500.0]})
-        engine = KPIEngineV2(df, actor='audit_test')
-        results = engine.calculate_all()
-        self.assertIn('avg_credit_line_utilization', results)
-        val = results['avg_credit_line_utilization']['value']
-        self.assertAlmostEqual(val, 61.67, delta=1.0)
-
-    def test_npl_ratio_uses_strict_90dpd_threshold(self):
-        df = self._make_portfolio_df()
-        engine = KPIEngineV2(df, actor='audit_test')
-        results = engine.calculate_all()
-        self.assertIn('npl_ratio', results)
-        val = results['npl_ratio']['value']
-        self.assertAlmostEqual(val, 25.0, delta=0.1)
-
-    def test_npl_90_ratio_matches_npl_ratio_under_strict_doctrine(self):
-        df = self._make_portfolio_df()
-        engine = KPIEngineV2(df, actor='audit_test')
-        results = engine.calculate_all()
-        self.assertIn('npl_ratio', results)
-        self.assertIn('npl_90_ratio', results)
-        npl = results['npl_ratio']['value']
-        npl_90 = results['npl_90_ratio']['value']
-        self.assertAlmostEqual(npl_90, npl, delta=0.1)
-        self.assertAlmostEqual(npl_90, 25.0, delta=0.1)
-
-    def test_defaulted_outstanding_ratio_only_defaulted_status(self):
-        df = self._make_portfolio_df()
-        engine = KPIEngineV2(df, actor='audit_test')
-        results = engine.calculate_all()
-        self.assertIn('defaulted_outstanding_ratio', results)
-        val = results['defaulted_outstanding_ratio']['value']
-        self.assertAlmostEqual(val, 25.0, delta=0.1)
-
-    def test_ltv_sintetico_mean_in_results_when_columns_present(self):
-        df = pd.DataFrame({'dpd_30_60_usd': [0.0], 'dpd_60_90_usd': [0.0], 'dpd_90_plus_usd': [0.0], 'total_receivable_usd': [10000.0], 'dpd': [0], 'status': ['active'], 'outstanding_balance': [10000.0], 'capital_desembolsado': [8000.0], 'valor_nominal_factura': [10000.0], 'tasa_dilucion': [0.1], 'loan_amount': [8000.0], 'collateral_value': [10000.0]})
-        engine = KPIEngineV2(df, actor='audit_test')
-        results = engine.calculate_all()
+    def test_engine_emits_deprecation_warning(self) -> None:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            KPIEngineV2(self.portfolio_df)
         self.assertTrue(
-            'ltv_sintetico_mean' not in results
-            or abs(float(results['ltv_sintetico_mean']['value']) - 0.8889) <= 0.01
+            any(issubclass(warning.category, DeprecationWarning) for warning in w),
+            "Expected DeprecationWarning on KPIEngineV2 instantiation",
         )
 
-    def test_top_10_borrower_concentration_zero_without_borrower_col(self):
-        engine = KPIEngineV2.__new__(KPIEngineV2)
-        df = pd.DataFrame({'dpd': [5, 35], 'status': ['active', 'delinquent'], 'outstanding_balance': [10000.0, 8000.0]})
-        result = engine._top_10_borrower_concentration(df, 'outstanding_balance', Decimal('18000'))
-        self.assertEqual(result, Decimal('0.0'))
+    # ── calculate_all ───────────────────────────────────────────────────────
 
-    def test_derived_risk_kpis_empty_when_missing_required_columns(self):
-        df_no_cols = pd.DataFrame({'some_col': [1, 2, 3]})
-        engine = KPIEngineV2(df_no_cols, actor='audit_test')
-        result = engine._calculate_derived_risk_kpis(df_no_cols)
+    def test_calculate_all_returns_dict(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            engine = KPIEngineV2(self.portfolio_df, actor="test_user")
+        results = engine.calculate_all()
+        self.assertIsInstance(results, dict)
+        self.assertGreater(len(results), 0)
+
+    def test_calculate_all_entries_have_value_and_context(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            engine = KPIEngineV2(self.portfolio_df, actor="test_user")
+        results = engine.calculate_all()
+        for metric_id, entry in results.items():
+            self.assertIn("value", entry, f"{metric_id} missing 'value'")
+            self.assertIn("context", entry, f"{metric_id} missing 'context'")
+
+    def test_calculate_all_includes_core_risk_metrics(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            engine = KPIEngineV2(self.portfolio_df, actor="test_user")
+        results = engine.calculate_all()
+        for expected_key in ("par30", "par60", "par90", "npl_ratio"):
+            self.assertIn(expected_key, results, f"Missing expected metric: {expected_key}")
+
+    def test_calculate_all_empty_portfolio_returns_dict(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            engine = KPIEngineV2(self.empty_df, actor="test_user")
+        results = engine.calculate_all()
+        self.assertIsInstance(results, dict)
+
+    # ── calculate (legacy entrypoint) ───────────────────────────────────────
+
+    def test_calculate_delegates_to_canonical_engine(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            engine = KPIEngineV2(self.portfolio_df, actor="test_user")
+        result = engine.calculate(self.portfolio_df)
         self.assertIsInstance(result, dict)
-        self.assertEqual(result, {})
-if __name__ == '__main__':
+        self.assertIn("npl_ratio", result)
+
+    # ── get_audit_trail ─────────────────────────────────────────────────────
+
+    def test_get_audit_trail_returns_dataframe(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            engine = KPIEngineV2(self.portfolio_df, actor="test_user")
+        audit_df = engine.get_audit_trail()
+        self.assertIsInstance(audit_df, pd.DataFrame)
+
+    def test_get_audit_trail_has_required_columns(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            engine = KPIEngineV2(self.portfolio_df, actor="test_user")
+        audit_df = engine.get_audit_trail()
+        for col in ("kpi_name", "status", "value", "timestamp"):
+            self.assertIn(col, audit_df.columns, f"Missing audit column: {col}")
+
+    def test_get_audit_trail_is_empty_shim(self) -> None:
+        """The shim returns an empty audit trail; full audit lives in run_metric_engine."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            engine = KPIEngineV2(self.portfolio_df, actor="test_user")
+        engine.calculate_all()
+        audit_df = engine.get_audit_trail()
+        self.assertEqual(len(audit_df), 0)
+
+
+# ---------------------------------------------------------------------------
+# TestDerivedRiskKPIAudit — NPL / PAR doctrine through the shim
+# ---------------------------------------------------------------------------
+
+
+class TestDerivedRiskKPIAudit(unittest.TestCase):
+    """End-to-end verification that risk KPI semantics are correct through the shim."""
+
+    # NPL = 25 % of portfolio:
+    #   index 2: dpd=95  (>=90) AND status=defaulted  → included
+    #   index 3: dpd=120 (>=90) AND status=defaulted  → included
+    #   balance: 6 000 + 4 000 = 10 000 / 40 000 total = 0.25
+    _PORTFOLIO = {
+        "outstanding_principal": [10000.0, 8000.0, 6000.0, 4000.0, 12000.0],
+        "days_past_due": [5, 35, 95, 120, 0],
+        "loan_status": [
+            "current",
+            "delinquent",
+            "defaulted",
+            "defaulted",
+            "current",
+        ],
+    }
+
+    def _make_engine(self, data: dict | None = None) -> KPIEngineV2:
+        df = pd.DataFrame(data or self._PORTFOLIO)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return KPIEngineV2(df, actor="audit_test")
+
+    # ── NPL doctrine ────────────────────────────────────────────────────────
+
+    def test_npl_ratio_uses_strict_90dpd_threshold(self) -> None:
+        """NPL must apply DPD >= 90 OR status=defaulted (Basel-II/III)."""
+        results = self._make_engine().calculate_all()
+        self.assertIn("npl_ratio", results)
+        val = float(results["npl_ratio"]["value"])
+        # 10 000 / 40 000 = 0.25
+        self.assertAlmostEqual(val, 0.25, delta=0.01)
+
+    def test_npl_ratio_is_zero_for_current_portfolio(self) -> None:
+        """NPL must be zero when no loan has DPD >= 90 and none are defaulted."""
+        data = {
+            "outstanding_principal": [10000.0, 8000.0, 12000.0],
+            "days_past_due": [0, 15, 45],
+            "loan_status": ["current", "current", "delinquent"],
+        }
+        results = self._make_engine(data).calculate_all()
+        self.assertIn("npl_ratio", results)
+        self.assertEqual(float(results["npl_ratio"]["value"]), 0.0)
+
+    # ── PAR doctrine ────────────────────────────────────────────────────────
+
+    def test_par30_is_balance_weighted(self) -> None:
+        """PAR30 must be (balance where DPD >= 30) / total_balance."""
+        data = {
+            "outstanding_principal": [10000.0, 5000.0, 15000.0],
+            "days_past_due": [0, 35, 65],
+            "loan_status": ["current", "delinquent", "delinquent"],
+        }
+        results = self._make_engine(data).calculate_all()
+        self.assertIn("par30", results)
+        val = float(results["par30"]["value"])
+        # (5 000 + 15 000) / 30 000 = 0.6667
+        self.assertAlmostEqual(val, 0.6667, delta=0.01)
+
+    def test_par90_is_subset_of_par30(self) -> None:
+        """PAR90 must be <= PAR30 for any portfolio."""
+        results = self._make_engine().calculate_all()
+        par30 = float(results["par30"]["value"])
+        par90 = float(results["par90"]["value"])
+        self.assertLessEqual(par90, par30)
+
+    # ── Default rate ────────────────────────────────────────────────────────
+
+    def test_default_rate_by_balance_uses_defaulted_status(self) -> None:
+        """default_rate_by_balance counts only status=defaulted loans."""
+        results = self._make_engine().calculate_all()
+        self.assertIn("default_rate_by_balance", results)
+        val = float(results["default_rate_by_balance"]["value"])
+        # 6 000 + 4 000 = 10 000 / 40 000 = 0.25
+        self.assertAlmostEqual(val, 0.25, delta=0.01)
+
+    # ── Edge cases ──────────────────────────────────────────────────────────
+
+    def test_calculate_all_with_empty_df_does_not_raise(self) -> None:
+        """calculate_all must return a dict for an empty portfolio, not raise."""
+        results = self._make_engine({"outstanding_principal": [], "days_past_due": [], "loan_status": []}).calculate_all()
+        self.assertIsInstance(results, dict)
+
+
+if __name__ == "__main__":
     unittest.main()
