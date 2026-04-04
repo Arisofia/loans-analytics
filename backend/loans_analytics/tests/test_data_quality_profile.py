@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from backend.loans_analytics.apps.analytics.api.main import app
 
-client = TestClient(app)  # type: ignore[arg-type]
+client = TestClient(app)
 
 
 def test_data_quality_profile_none_loans_returns_zero_score():

@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 gspread: Any
 ServiceAccountCredentials: Any
 try:
-    import gspread
+    import gspread  # type: ignore[no-redef]
     from google.oauth2.service_account import Credentials as _ServiceAccountCredentials
     ServiceAccountCredentials = _ServiceAccountCredentials
 except ImportError:
