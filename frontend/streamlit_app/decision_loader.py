@@ -77,3 +77,11 @@ def load_run_manifest() -> Optional[Dict[str, Any]]:
     if run_dir is None:
         return None
     return _load_json(run_dir / "manifest.json")
+
+
+def load_pipeline_results() -> Optional[Dict[str, Any]]:
+    """Load the latest ``pipeline_results.json`` (full run manifest)."""
+    run_dir = _latest_run_dir()
+    if run_dir is None:
+        return None
+    return _load_json(run_dir / "pipeline_results.json")

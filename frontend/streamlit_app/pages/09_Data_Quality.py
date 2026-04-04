@@ -6,6 +6,7 @@ and blocking rule enforcement from the DQ engine.
 
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -256,7 +257,106 @@ def _render_kpi_deep_dive(kpi_data: Dict[str, Any]) -> None:
 # Main Page
 # ──────────────────────────────────────────────────────────────────────
 
-def main() -> None:
+def _render_data_freshness(run_dir: Optional[Path]) -> None:
+    """Render data freshness and pipeline provenance information."""
+    st.subheader("Data Freshness")
+    st.caption("When was the data last extracted and from which source?")
+
+    if run_dir is None:
+        st.info("No pipeline runs found. Run the pipeline to see data freshness information.")
+        return
+
+    pipeline_results = _load_json_artifact(run_dir, "pipeline_results.json")
+
+    if not pipeline_results:
+        st.warning("No pipeline_results.json found for the latest run.")
+        return
+
+    ingestion_phase = pipeline_results.get("phases", {}).get("ingestion", {})
+    start_time = pipeline_results.get("start_time")
+    end_time = pipeline_results.get("end_time")
+    ingestion_source = ingestion_phase.get("ingestion_source", "unknown")
+    ingestion_ts = ingestion_phase.get("timestamp") or start_time
+    data_as_of = ingestion_phase.get("data_as_of_date")
+    data_as_of_col = ingestion_phase.get("data_as_of_column")
+    row_count = ingestion_phase.get("row_count")
+    col_count = ingestion_phase.get("column_count")
+
+    source_label = (
+        "Google Sheets" if ingestion_source == "google_sheets"
+        else "CSV / File" if ingestion_source == "file"
+        else ingestion_source.replace("_", " ").title()
+    )
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Data Source", source_label)
+    with col2:
+        if ingestion_ts:
+            try:
+                ts_fmt = datetime.fromisoformat(ingestion_ts).strftime("%Y-%m-%d %H:%M")
+            except ValueError:
+                ts_fmt = ingestion_ts
+            st.metric("Last Extracted At", ts_fmt)
+        else:
+            st.metric("Last Extracted At", "N/A")
+    with col3:
+        st.metric("Data As-Of Date", data_as_of or "N/A")
+    with col4:
+        if data_as_of:
+            try:
+                as_of_dt = datetime.fromisoformat(data_as_of)
+                now = datetime.now()
+                days_stale = (now - as_of_dt).days
+                staleness_label = (
+                    "🟢 Current" if days_stale <= 1
+                    else f"🟡 {days_stale}d old" if days_stale <= 7
+                    else f"🔴 {days_stale}d old"
+                )
+                st.metric("Staleness", staleness_label)
+            except ValueError:
+                st.metric("Staleness", "N/A")
+        else:
+            st.metric("Staleness", "N/A")
+
+    st.divider()
+    st.markdown("#### Pipeline Run Details")
+    detail_cols = st.columns(2)
+    with detail_cols[0]:
+        if start_time:
+            try:
+                st.write(f"**Run Started:** {datetime.fromisoformat(start_time).strftime('%Y-%m-%d %H:%M:%S')}")
+            except ValueError:
+                st.write(f"**Run Started:** {start_time}")
+        if end_time:
+            try:
+                st.write(f"**Run Ended:** {datetime.fromisoformat(end_time).strftime('%Y-%m-%d %H:%M:%S')}")
+            except ValueError:
+                st.write(f"**Run Ended:** {end_time}")
+        duration = pipeline_results.get("duration_seconds")
+        if duration is not None:
+            st.write(f"**Duration:** {duration:.1f}s")
+    with detail_cols[1]:
+        if row_count is not None:
+            st.write(f"**Rows Ingested:** {row_count:,}")
+        if col_count is not None:
+            st.write(f"**Columns:** {col_count}")
+        if data_as_of_col:
+            st.write(f"**As-Of Column:** `{data_as_of_col}`")
+        run_id = pipeline_results.get("run_id")
+        if run_id:
+            st.write(f"**Run ID:** `{run_id}`")
+
+    status = pipeline_results.get("status", "unknown")
+    if status == "success":
+        st.success(f"✅ Pipeline status: **{status}**")
+    elif status in ("partial",):
+        st.warning(f"⚠️ Pipeline status: **{status}**")
+    else:
+        st.error(f"❌ Pipeline status: **{status}**")
+
+
+
     st.title("💰 Capital & Economics")
     st.markdown(
         "Unit economics, financial indicators, profitability analysis, "
@@ -277,6 +377,7 @@ def main() -> None:
         st.sidebar.warning("No pipeline runs found")
 
     tabs = st.tabs([
+        "🗓️ Data Freshness",
         "📊 Unit Economics",
         "🏛️ Financial Guardrails",
         "🎯 2026 Targets",
@@ -284,24 +385,27 @@ def main() -> None:
     ])
 
     with tabs[0]:
+        _render_data_freshness(run_dir)
+
+    with tabs[1]:
         if kpi_data:
             _render_unit_economics(kpi_data, el_data)
         else:
             st.info("Run the pipeline to generate unit economics data")
 
-    with tabs[1]:
+    with tabs[2]:
         if params:
             _render_financial_indicators(params)
         else:
             st.info("No business parameters found at config/business_parameters.yml")
 
-    with tabs[2]:
+    with tabs[3]:
         if params:
             _render_portfolio_targets(params)
         else:
             st.info("No 2026 targets configured")
 
-    with tabs[3]:
+    with tabs[4]:
         _render_kpi_deep_dive(kpi_data)
 
 

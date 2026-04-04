@@ -19,17 +19,24 @@ class IngestionPhase:
 
     def execute(self, input_path: Optional[Path]=None, run_dir: Optional[Path]=None) -> Dict[str, Any]:
         logger.info('Starting Phase 1: Ingestion')
+        ingestion_timestamp = datetime.now().isoformat()
         if self._should_use_google_sheets(input_path):
+            ingestion_source = 'google_sheets'
             df = self._load_from_google_sheets(input_path)
         elif input_path and input_path.exists():
+            ingestion_source = 'file'
             df = self._load_from_file(input_path)
         elif input_path and (not input_path.exists()):
             raise FileNotFoundError(f'Input file not found: {input_path}')
         else:
             logger.info('No input file provided; API ingestion is disabled')
+            ingestion_source = 'api'
             df = self._load_from_api()
         validation_results = self._validate_schema(df)
         duplicate_check = self._check_duplicates(df)
+        data_as_of_date, data_as_of_column = self._detect_data_as_of_date(df)
+        if data_as_of_date:
+            logger.info('Detected data as-of date: %s (from column: %s)', data_as_of_date, data_as_of_column)
         if run_dir:
             output_path = run_dir / 'raw_data.parquet'
             try:
@@ -42,7 +49,19 @@ class IngestionPhase:
         else:
             output_path = None
         data_hash = self._calculate_hash(df)
-        results = {'status': 'success', 'row_count': len(df), 'column_count': len(df.columns), 'data_hash': data_hash, 'validation': validation_results, 'duplicates': duplicate_check, 'output_path': str(output_path) if output_path else None, 'timestamp': datetime.now().isoformat()}
+        results = {
+            'status': 'success',
+            'row_count': len(df),
+            'column_count': len(df.columns),
+            'data_hash': data_hash,
+            'validation': validation_results,
+            'duplicates': duplicate_check,
+            'output_path': str(output_path) if output_path else None,
+            'timestamp': ingestion_timestamp,
+            'ingestion_source': ingestion_source,
+            'data_as_of_date': data_as_of_date,
+            'data_as_of_column': data_as_of_column,
+        }
         logger.info('Ingestion completed: %d rows, %d columns', results['row_count'], results['column_count'])
         return results
 
@@ -223,6 +242,34 @@ class IngestionPhase:
     def _check_duplicates(self, df: pd.DataFrame) -> Dict[str, Any]:
         duplicates = df.duplicated().sum()
         return {'duplicate_count': int(duplicates), 'has_duplicates': duplicates > 0}
+
+    def _detect_data_as_of_date(self, df: pd.DataFrame) -> tuple[Optional[str], Optional[str]]:
+        """Return (max_date_str, source_column) representing the data as-of date.
+
+        Inspects candidate date columns in order of preference and returns the
+        maximum (most recent) date found, together with the column it came from.
+        Returns (None, None) when no suitable date column is present.
+        """
+        primary_candidates = [
+            'as_of_date', 'snapshot_date', 'measurement_date', 'reporting_date',
+            'fecha_corte', 'fecha_de_corte', 'cutoff_date', 'data_ingest_ts',
+            'FechaDesembolso', 'fechadesembolso',
+        ]
+        fallback_candidates = [
+            'last_payment_date', 'origination_date', 'application_date',
+            'FechaPago', 'fechapago',
+        ]
+        for col in [*primary_candidates, *fallback_candidates]:
+            if col not in df.columns:
+                continue
+            try:
+                parsed = pd.to_datetime(df[col], errors='coerce', format='mixed')
+            except TypeError:
+                parsed = pd.to_datetime(df[col], errors='coerce')
+            max_dt = parsed.max()
+            if pd.notna(max_dt):
+                return (str(max_dt.date()), col)
+        return (None, None)
 
     def _calculate_hash(self, df: pd.DataFrame) -> str:
         canonical_df = df.reindex(sorted(df.columns), axis=1)
