@@ -12,6 +12,9 @@ import pytest
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+BACKEND_ROOT = ROOT / "backend"
+if BACKEND_ROOT.exists() and str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
 
 # Load .env so integration tests (RUN_REAL_SUPABASE_TESTS, etc.) are not skipped locally
 if importlib.util.find_spec("dotenv") is not None:
@@ -88,7 +91,7 @@ def realistic_portfolio_df() -> pd.DataFrame:
 @pytest.fixture(scope="session")
 def realistic_loan_records() -> list:
     """Session-scoped list of 25 LoanRecord-compatible dicts for analytics endpoints."""
-    from backend.loans_analytics.apps.analytics.api.models import LoanRecord
+    from loans_analytics.apps.analytics.api.models import LoanRecord
 
     rng = random.Random(99)
     today = date(2026, 3, 26)
