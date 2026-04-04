@@ -67,11 +67,12 @@ def get_threshold_status(
         if critical_thresh > warning_thresh:
             return _eval_high_is_good(value, critical_thresh, warning_thresh)
         return _eval_low_is_good(value, critical_thresh, warning_thresh)
-    if critical_val is not None:
+    elif critical_val is not None:
         return _eval_only_critical(value, float(critical_val))
-    if warning_val is not None:
+    elif warning_val is not None:
         return _eval_only_warning(value, float(warning_val))
-    return "not_configured"
+    else:
+        return "not_configured"
 
 
 def enrich_kpis_with_thresholds(
