@@ -20,10 +20,10 @@ import pandas as pd
 
 # Ensure the ROUND_HALF_UP context is active before any SSOT import in this
 # module's transitive dependency chain (ssot_asset_quality.py asserts it).
-# This mirrors the conftest.py global setup and is intentional defensive
+# This mirrors the conftest.py module-level setup and is intentional defensive
 # duplication: if this test file is ever run in a fresh interpreter without
-# the conftest session fixture (e.g. via `python -m unittest`), the assertion
-# will not fire unexpectedly.
+# the conftest module-level initialization (e.g. via `python -m unittest`),
+# the assertion will not fire unexpectedly.
 getcontext().rounding = ROUND_HALF_UP
 
 from backend.loans_analytics.kpis.engine import KPIEngineV2  # noqa: E402

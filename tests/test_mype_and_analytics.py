@@ -212,8 +212,8 @@ class TestCalculateQualityScore:
         assert calculate_quality_score(pd.DataFrame(columns=sample_df.columns)) == 0.0
 
     def test_all_null_returns_zero(self, sample_df):
-        # pandas >=2.0 raises TypeError when assigning None to integer columns;
-        # use per-column np.nan assignment which coerces int64 → float64 safely.
+        # pandas 2.x raises TypeError when assigning None to integer columns via
+        # df[:] = None; use per-column np.nan assignment to safely coerce int64 → float64.
         df = sample_df.copy()
         for col in df.columns:
             df[col] = np.nan

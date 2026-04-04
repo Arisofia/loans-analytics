@@ -13,12 +13,12 @@ from backend.src.kpi_engine.risk import compute_default_rate_by_count
 try:
     import httpx
 except ImportError:
-    httpx = None
+    httpx = None  # type: ignore[assignment]
 try:
     from supabase import Client, create_client
 except ImportError:
-    Client = None
-    create_client = None
+    Client = None  # type: ignore[assignment,misc]
+    create_client = None  # type: ignore[assignment]
 if TYPE_CHECKING:
     from backend.loans_analytics.kpis.engine import KPIEngineV2
 logger = get_logger(__name__)

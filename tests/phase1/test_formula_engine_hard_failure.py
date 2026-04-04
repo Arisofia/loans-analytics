@@ -89,12 +89,9 @@ class TestDependencyVersions:
     """F1.1 & F1.4 Remediation: Verify dependency versions are resolvable and compatible."""
 
     def test_pip_can_resolve_openai_version(self):
-        """Guard that openai is >=1.x (F1.1).
+        """Verify that openai is installed at major version 1 or higher.
 
-        The original guard excluded version 2.30.0 as "non-existent", but that
-        release is available on PyPI (released after the original guard was
-        written).  The meaningful invariant is that the installed major version
-        is >=1 (the v0.x legacy API is not supported).
+        The v0.x legacy API is not supported.
         """
         import openai
         major = int(openai.__version__.split(".")[0])
