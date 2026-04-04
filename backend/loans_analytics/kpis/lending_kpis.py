@@ -740,7 +740,7 @@ def irr_portfolio_proxy(
     weighted APR when cash-flow data is insufficient (< 2 periods).
     """
     try:
-        from scipy.optimize import brentq  # type: ignore[import-untyped]
+        from scipy.optimize import brentq
     except ImportError:
         return {
             'status': 'missing_dependency',
