@@ -168,8 +168,6 @@ def collection_efficiency_by_segment(loans_df: pd.DataFrame, payments_df: pd.Dat
     agent_col = _col(loans_df, ['sales_agent', 'kam']) or (_col(customer_df, ['sales_agent']) if customer_df is not None else None)
     if not all([loan_id, sched_amt, real_amt]):
         return {'status': 'missing_columns'}
-    if loan_id is None or sched_amt is None or real_amt is None:
-        raise ValueError('Loan, schedule, and payment columns must be present for collection efficiency analysis')
     sched_agg = _aggregate_numeric_sum(schedule_df, loan_id, sched_amt, 'sched')
     real_agg = _aggregate_numeric_sum(payments_df, loan_id, real_amt, 'real')
     ce = sched_agg.to_frame().join(real_agg, how='outer').fillna(0)
