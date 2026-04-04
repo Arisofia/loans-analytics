@@ -1,0 +1,54 @@
+# OpenTelemetry Collector Configuration
+# Receives traces/metrics from the application, exports to Prometheus and OTLP backends.
+# This file is mounted by the otel-collector service in docker-compose.yml.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: loans_analytics
+    const_labels:
+      service: loans_analytics_api
+
+  otlp/grpc:
+    endpoint: "localhost:4317"
+    tls:
+      insecure: true
+
+  # Debug exporter for local development — logs all telemetry at DEBUG level.
+  # Disable in production by removing this exporter from service pipelines below.
+  debug:
+    verbosity: normal
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus, debug]
+
+  telemetry:
+    logs:
+      level: info
