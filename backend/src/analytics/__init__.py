@@ -98,10 +98,10 @@ def _enrich_portfolio_data(df: pd.DataFrame) -> pd.DataFrame:
 def _compute_manual_aggregations(df: pd.DataFrame, enriched: pd.DataFrame) -> dict[str, Any]:
     _D_ZERO = Decimal('0')
     _D_12 = Decimal('12')
-    res = {
-        'ltv_sum': _D_ZERO, 'ltv_count': 0,
-        'dti_sum': _D_ZERO, 'dti_count': 0
-    }
+    ltv_sum: Decimal = _D_ZERO
+    ltv_count = 0
+    dti_sum: Decimal = _D_ZERO
+    dti_count = 0
 
     income_positive_list = (enriched['borrower_income'] > 0).tolist()
 
@@ -112,16 +112,21 @@ def _compute_manual_aggregations(df: pd.DataFrame, enriched: pd.DataFrame) -> di
         # LTV aggregation
         d_la, d_av = _to_decimal(la), _to_decimal(av)
         if d_la is not None and d_av is not None and d_av != _D_ZERO:
-            res['ltv_sum'] += d_la / d_av
-            res['ltv_count'] += 1
+            ltv_sum += d_la / d_av
+            ltv_count += 1
 
         # DTI aggregation
         if income_positive_list[i]:
             d_md, d_bi = _to_decimal(md), _to_decimal(bi)
             if d_md is not None and d_bi is not None:
-                res['dti_sum'] += d_md / (d_bi / _D_12)
-                res['dti_count'] += 1
-    return res
+                dti_sum += d_md / (d_bi / _D_12)
+                dti_count += 1
+    return {
+        'ltv_sum': ltv_sum,
+        'ltv_count': ltv_count,
+        'dti_sum': dti_sum,
+        'dti_count': dti_count,
+    }
 
 
 def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:

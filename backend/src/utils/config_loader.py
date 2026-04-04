@@ -5,6 +5,20 @@ import yaml
 logger = logging.getLogger(__name__)
 _UNSAFE_DEFAULTS = {'', 'password', 'postgres', 'admin', 'changeme'}  # nosec B105
 
+
+def _apply_supabase_env_overrides(config: Dict[str, Any]) -> None:
+    if 'supabase' not in config:
+        return
+    sb_section = config['supabase']
+    env_url = os.getenv('SUPABASE_URL')
+    env_key = os.getenv('SUPABASE_ANON_KEY')
+    if env_url:
+        sb_section['url'] = env_url
+    if env_key:
+        sb_section['key'] = env_key
+    if not sb_section.get('url') or not sb_section.get('key'):
+        raise ValueError('Supabase URL/Key must be set in config/pipeline.yml or environment variables.')
+
 def load_config(config_path: str) -> Dict[str, Any]:
     if not os.path.exists(config_path):
         raise FileNotFoundError(f'Configuration file not found: {config_path}')
@@ -19,16 +33,7 @@ def load_config(config_path: str) -> Dict[str, Any]:
         raise ValueError(f'Configuration YAML must be a mapping: {config_path}')
     if not config:
         raise ValueError(f'Configuration YAML contains no keys: {config_path}')
-    if 'supabase' in config:
-        sb_section = config['supabase']
-        env_url = os.getenv('SUPABASE_URL')
-        env_key = os.getenv('SUPABASE_ANON_KEY')
-        if env_url:
-            sb_section['url'] = env_url
-        if env_key:
-            sb_section['key'] = env_key
-        if not sb_section.get('url') or not sb_section.get('key'):
-            raise ValueError('Supabase URL/Key must be set in config/pipeline.yml or environment variables.')
+    _apply_supabase_env_overrides(config)
     if 'database' in config:
         db_section = config['database']
         env_password = os.getenv('DB_PASSWORD')
@@ -36,10 +41,7 @@ def load_config(config_path: str) -> Dict[str, Any]:
             db_password = env_password
         else:
             raw_password = db_section.get('password')
-            if raw_password is None:
-                db_password = ''
-            else:
-                db_password = str(raw_password)
+            db_password = '' if raw_password is None else str(raw_password)
         if db_password.lower() in _UNSAFE_DEFAULTS:
             raise ValueError('DB_PASSWORD environment variable not set or contains an unsafe default value.')
         db_section['password'] = db_password

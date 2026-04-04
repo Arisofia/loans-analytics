@@ -412,9 +412,7 @@ class ScorecardModel:
                 return "A"
             if s >= 600:
                 return "B"
-            if s >= 500:
-                return "C"
-            return "D"
+            return "C" if s >= 500 else "D"
 
         results: list[dict[str, Any]] = []
         for i, (pd_val, score) in enumerate(zip(pd_clipped.tolist(), scores.tolist())):
@@ -434,8 +432,9 @@ class ScorecardModel:
     def save(self, model_dir: str = 'models/scorecard') -> str:
         path = Path(model_dir)
         path.mkdir(parents=True, exist_ok=True)
-        joblib.dump(self.lr_model, path / 'lr_model.joblib')
-        joblib.dump(self.binning_map, path / 'binning_map.joblib')
+        # Keep legacy .pkl filenames for compatibility with existing tests and tooling.
+        joblib.dump(self.lr_model, path / 'lr_model.pkl')
+        joblib.dump(self.binning_map, path / 'binning_map.pkl')
         self.iv_table.to_csv(path / 'iv_table.csv', index=False)
         self.scorecard_table.to_csv(path / 'scorecard_table.csv', index=False)
         with open(path / 'metadata.json', 'w') as f:
@@ -449,12 +448,12 @@ class ScorecardModel:
         if not path.exists():
             raise FileNotFoundError(f'Model directory not found: {path}')
         instance = cls()
-        lr_model_path = path / 'lr_model.joblib'
-        binning_map_path = path / 'binning_map.joblib'
+        lr_model_path = path / 'lr_model.pkl'
+        binning_map_path = path / 'binning_map.pkl'
         if not lr_model_path.exists():
-            lr_model_path = path / 'lr_model.pkl'
+            lr_model_path = path / 'lr_model.joblib'
         if not binning_map_path.exists():
-            binning_map_path = path / 'binning_map.pkl'
+            binning_map_path = path / 'binning_map.joblib'
         instance.lr_model = joblib.load(lr_model_path)
         instance.binning_map = joblib.load(binning_map_path)
         instance.iv_table = pd.read_csv(path / 'iv_table.csv')

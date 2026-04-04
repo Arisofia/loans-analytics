@@ -5,7 +5,7 @@ from typing import Any, cast
 import numpy as np
 import pandas as pd
 from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics
-from backend.loans_analytics.kpis._column_utils import _col
+from backend.loans_analytics.kpis._column_utils import first_matching_column as _col
 logger = logging.getLogger(__name__)
 
 def _num(df: pd.DataFrame, col: str) -> pd.Series:
