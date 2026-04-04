@@ -117,5 +117,8 @@ test_results*.txt
 # Zencoder
 .zencoder/
 
+# Zenflow local workflows
+.zenflow/
+
 # MkDocs build output
 _site/
