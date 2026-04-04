@@ -1,4 +1,5 @@
 import pathlib
+from datetime import datetime
 import pandas as pd
 import pytest
 from backend.src.pipeline.ingestion import IngestionPhase
@@ -148,7 +149,6 @@ class TestExecuteProvenanceKeys:
         result = phase.execute(input_path=csv_file, run_dir=None)
         ts = result.get('timestamp')
         assert ts is not None
-        from datetime import datetime
         parsed = datetime.fromisoformat(ts)
         assert parsed.tzinfo is not None, "timestamp must be timezone-aware"
         # Should be equivalent to UTC
