@@ -233,6 +233,16 @@ jobs:
   container-scan:
     name: Container Image Vulnerability Scan (Trivy)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: loans-analytics-api:scan
+            dockerfile: Dockerfile
+          - name: loans-analytics-pipeline:scan
+            dockerfile: Dockerfile.pipeline
+          - name: loans-analytics-dashboard:scan
+            dockerfile: Dockerfile.dashboard
     permissions:
       contents: read
       security-events: write
@@ -240,29 +250,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Build pipeline image for scanning
+      - name: Build image for scanning
         shell: bash
         run: |
           set -euo pipefail
-          if [ -f Dockerfile.pipeline ]; then
-            docker build --pull -f Dockerfile.pipeline -t loans-analytics-pipeline:scan .
-          else
-            docker build --pull -f Dockerfile -t loans-analytics-pipeline:scan .
-          fi
+          docker build --pull -f "${{ matrix.image.dockerfile }}" -t "${{ matrix.image.name }}" .
 
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
-          image-ref: loans-analytics-pipeline:scan
+          image-ref: ${{ matrix.image.name }}
           format: sarif
-          output: trivy-results.sarif
+          output: trivy-results-${{ replace(matrix.image.name, ':', '-') }}.sarif
           severity: CRITICAL,HIGH
           ignore-unfixed: true
-          exit-code: "0"
+          exit-code: "1"
 
       - name: Upload Trivy scan results to Security tab
-        if: ${{ always() && hashFiles('trivy-results.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        if: ${{ always() && hashFiles(format('trivy-results-{0}.sarif', replace(matrix.image.name, ':', '-'))) != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: trivy-results.sarif
-          category: trivy
+          sarif_file: trivy-results-${{ replace(matrix.image.name, ':', '-') }}.sarif
+          category: trivy-${{ replace(matrix.image.name, ':', '-') }}
