@@ -646,6 +646,16 @@ if app is not None:
         return {'status': 'ok', 'path': str(resolved)}
     _risk_model_cache: dict = {}
 
+    def _cache_loaded_risk_model(model_cls: Any, model_path: Path, model_version: str, log_message: str) -> None:
+        _risk_model_cache['model'] = model_cls.load(str(model_path))
+        _risk_model_cache['model_version'] = model_version
+        logger.info(log_message, model_path)
+
+    def _cache_missing_risk_model(log_message: str, model_path: Path, model_version: str) -> None:
+        logger.warning(log_message, model_path)
+        _risk_model_cache['model'] = None
+        _risk_model_cache['model_version'] = model_version
+
     def _get_risk_model():
         backend = os.getenv('DEFAULT_RISK_MODEL_BACKEND', 'xgb').strip().lower()
         if _risk_model_cache.get('backend') != backend:
@@ -659,24 +669,16 @@ if app is not None:
                     from backend.loans_analytics.models.default_risk_torch_model import TorchDefaultRiskModel
                     model_path = base_path / 'models' / 'risk' / 'default_risk_torch.pt'
                     if model_path.exists():
-                        _risk_model_cache['model'] = TorchDefaultRiskModel.load(str(model_path))
-                        _risk_model_cache['model_version'] = 'torch_mlp_v1'
-                        logger.info('Loaded torch default risk model from %s', model_path)
+                        _cache_loaded_risk_model(TorchDefaultRiskModel, model_path, 'torch_mlp_v1', 'Loaded torch default risk model from %s')
                     else:
-                        logger.warning('Torch risk model not found at %s', model_path)
-                        _risk_model_cache['model'] = None
-                        _risk_model_cache['model_version'] = 'torch_mlp_v1'
+                        _cache_missing_risk_model('Torch risk model not found at %s', model_path, 'torch_mlp_v1')
                 else:
                     from backend.loans_analytics.models.default_risk_model import DefaultRiskModel
                     model_path = base_path / 'models' / 'risk' / 'default_risk_xgb.ubj'
                     if model_path.exists():
-                        _risk_model_cache['model'] = DefaultRiskModel.load(str(model_path))
-                        _risk_model_cache['model_version'] = 'xgb_v1'
-                        logger.info('Loaded XGBoost default risk model from %s', model_path)
+                        _cache_loaded_risk_model(DefaultRiskModel, model_path, 'xgb_v1', 'Loaded XGBoost default risk model from %s')
                     else:
-                        logger.warning('XGBoost risk model not found at %s', model_path)
-                        _risk_model_cache['model'] = None
-                        _risk_model_cache['model_version'] = 'xgb_v1'
+                        _cache_missing_risk_model('XGBoost risk model not found at %s', model_path, 'xgb_v1')
             except Exception as e:
                 logger.error('Failed to load risk model: %s', e)
                 _risk_model_cache['model'] = None
