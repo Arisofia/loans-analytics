@@ -134,8 +134,13 @@ def _build_loans_meta(loans_df: pd.DataFrame, customer_df: pd.DataFrame | None, 
     if agent_col and agent_col in loans_df.columns:
         meta_cols.append(agent_col)
     loans_meta = loans_df[meta_cols].copy()
-    has_customer_agent = customer_df is not None and agent_col and (loan_id in customer_df.columns) and (agent_col in customer_df.columns)
-    if has_customer_agent and agent_col not in loans_meta.columns:
+    if (
+        customer_df is not None
+        and agent_col is not None
+        and loan_id in customer_df.columns
+        and agent_col in customer_df.columns
+        and agent_col not in loans_meta.columns
+    ):
         agent_lookup = customer_df[[loan_id, agent_col]].drop_duplicates(loan_id)
         loans_meta = loans_meta.merge(agent_lookup, on=loan_id, how='left')
     return loans_meta
