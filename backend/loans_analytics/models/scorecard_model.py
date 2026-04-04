@@ -7,6 +7,7 @@ import logging
 import warnings
 from pathlib import Path
 from typing import Any
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -431,13 +432,10 @@ class ScorecardModel:
         return results
 
     def save(self, model_dir: str = 'models/scorecard') -> str:
-        import pickle
         path = Path(model_dir)
         path.mkdir(parents=True, exist_ok=True)
-        with open(path / 'lr_model.pkl', 'wb') as f:
-            pickle.dump(self.lr_model, f)
-        with open(path / 'binning_map.pkl', 'wb') as f:
-            pickle.dump(self.binning_map, f)
+        joblib.dump(self.lr_model, path / 'lr_model.joblib')
+        joblib.dump(self.binning_map, path / 'binning_map.joblib')
         self.iv_table.to_csv(path / 'iv_table.csv', index=False)
         self.scorecard_table.to_csv(path / 'scorecard_table.csv', index=False)
         with open(path / 'metadata.json', 'w') as f:
@@ -447,15 +445,18 @@ class ScorecardModel:
 
     @classmethod
     def load(cls, model_dir: str = 'models/scorecard') -> ScorecardModel:
-        import pickle
         path = Path(model_dir)
         if not path.exists():
             raise FileNotFoundError(f'Model directory not found: {path}')
         instance = cls()
-        with open(path / 'lr_model.pkl', 'rb') as f:
-            instance.lr_model = pickle.load(f)
-        with open(path / 'binning_map.pkl', 'rb') as f:
-            instance.binning_map = pickle.load(f)
+        lr_model_path = path / 'lr_model.joblib'
+        binning_map_path = path / 'binning_map.joblib'
+        if not lr_model_path.exists():
+            lr_model_path = path / 'lr_model.pkl'
+        if not binning_map_path.exists():
+            binning_map_path = path / 'binning_map.pkl'
+        instance.lr_model = joblib.load(lr_model_path)
+        instance.binning_map = joblib.load(binning_map_path)
         instance.iv_table = pd.read_csv(path / 'iv_table.csv')
         instance.scorecard_table = pd.read_csv(path / 'scorecard_table.csv')
         with open(path / 'metadata.json') as fj:

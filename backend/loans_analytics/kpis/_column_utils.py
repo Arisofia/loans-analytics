@@ -4,9 +4,6 @@ import pandas as pd
 def first_matching_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
     return next((col for col in candidates if col in df.columns), None)
 
-# Canonical short alias used throughout the kpis package.
-_col = first_matching_column
-
 def to_numeric_safe(series: pd.Series) -> pd.Series:
     return pd.to_numeric(series, errors='coerce').fillna(0.0)
 

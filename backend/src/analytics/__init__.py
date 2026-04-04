@@ -103,8 +103,6 @@ def _compute_manual_aggregations(df: pd.DataFrame, enriched: pd.DataFrame) -> di
         'dti_sum': _D_ZERO, 'dti_count': 0
     }
 
-    delinquent_mask = enriched['loan_status'].astype(str).str.lower().eq('delinquent')
-    delinquent_list = delinquent_mask.tolist()
     income_positive_list = (enriched['borrower_income'] > 0).tolist()
 
     for i, (la, av, bi, md, pb, ir) in enumerate(zip(

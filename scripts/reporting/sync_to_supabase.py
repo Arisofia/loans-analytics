@@ -82,7 +82,7 @@ def _push_file(file_path: Path, section: str, base_url: str, headers: Dict[str, 
         if not _validate_allowed_url(req.full_url):
             print(f"Error: Unsupported URL scheme in request URL {req.full_url}")
             return
-        with urllib.request.urlopen(req, timeout=30) as response:
+        with urllib.request.urlopen(req, timeout=30) as response:  # nosec B310
             # We just need to ensure it completed without exception
             _ = response.read()
             print(f"Successfully synced {section}")

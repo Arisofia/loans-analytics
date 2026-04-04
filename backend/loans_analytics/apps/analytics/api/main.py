@@ -9,7 +9,7 @@ from decimal import ROUND_HALF_UP, getcontext
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, NoReturn, Optional
 
 logger = logging.getLogger('apps.analytics.api')
 
@@ -488,7 +488,7 @@ if app is not None:
             with suppress(Exception):
                 await websocket.send_json({'event': 'error', 'detail': INTERNAL_SERVER_ERROR})
 
-    def _raise_internal_http_error(endpoint_name: str, exc: Exception) -> None:
+    def _raise_internal_http_error(endpoint_name: str, exc: Exception) -> NoReturn:
         logger.error('Error in %s: %s', endpoint_name, exc)
         raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from exc
 

@@ -125,33 +125,61 @@ class MonitoringService:
         limit = _bounded_int(limit, 1, MAX_QUERY_LIMIT)
         offset = max(0, offset)
 
-        conditions: list[str] = []
-        params: list[Any] = []
-        idx = 1
-
-        if severity is not None:
-            conditions.append(f"severity = ${idx}")
-            params.append(severity.value)
-            idx += 1
-
-        if source is not None:
-            conditions.append(f"source = ${idx}")
-            params.append(source)
-            idx += 1
-
-        where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-        params.extend([limit, offset])
-
-        query = (
-            f"SELECT id, event_type, severity, source, correlation_id,"
-            f" payload, created_at, acknowledged_at"
-            f" FROM monitoring.operational_events"
-            f" {where}"
-            f" ORDER BY created_at DESC"
-            f" LIMIT ${idx} OFFSET ${idx + 1}"
-        )
-
-        rows = await pool.fetch(query, *params)
+        if severity is not None and source is not None:
+            rows = await pool.fetch(
+                """
+                SELECT id, event_type, severity, source, correlation_id,
+                       payload, created_at, acknowledged_at
+                FROM monitoring.operational_events
+                WHERE severity = $1 AND source = $2
+                ORDER BY created_at DESC
+                LIMIT $3 OFFSET $4
+                """,
+                severity.value,
+                source,
+                limit,
+                offset,
+            )
+        elif severity is not None:
+            rows = await pool.fetch(
+                """
+                SELECT id, event_type, severity, source, correlation_id,
+                       payload, created_at, acknowledged_at
+                FROM monitoring.operational_events
+                WHERE severity = $1
+                ORDER BY created_at DESC
+                LIMIT $2 OFFSET $3
+                """,
+                severity.value,
+                limit,
+                offset,
+            )
+        elif source is not None:
+            rows = await pool.fetch(
+                """
+                SELECT id, event_type, severity, source, correlation_id,
+                       payload, created_at, acknowledged_at
+                FROM monitoring.operational_events
+                WHERE source = $1
+                ORDER BY created_at DESC
+                LIMIT $2 OFFSET $3
+                """,
+                source,
+                limit,
+                offset,
+            )
+        else:
+            rows = await pool.fetch(
+                """
+                SELECT id, event_type, severity, source, correlation_id,
+                       payload, created_at, acknowledged_at
+                FROM monitoring.operational_events
+                ORDER BY created_at DESC
+                LIMIT $1 OFFSET $2
+                """,
+                limit,
+                offset,
+            )
         return [self._row_to_event(row) for row in rows]
 
     async def acknowledge_event(
@@ -213,27 +241,30 @@ class MonitoringService:
 
         limit = _bounded_int(limit, 1, MAX_QUERY_LIMIT)
 
-        params: list[Any] = []
-        idx = 1
-        where = ""
-
         if status is not None:
-            where = f"WHERE status = ${idx}"
-            params.append(status.value)
-            idx += 1
-
-        params.append(limit)
-
-        query = (
-            f"SELECT id, command_type, status, requested_by, event_id,"
-            f" parameters, result, created_at, started_at, completed_at"
-            f" FROM monitoring.commands"
-            f" {where}"
-            f" ORDER BY created_at DESC"
-            f" LIMIT ${idx}"
-        )
-
-        rows = await pool.fetch(query, *params)
+            rows = await pool.fetch(
+                """
+                SELECT id, command_type, status, requested_by, event_id,
+                       parameters, result, created_at, started_at, completed_at
+                FROM monitoring.commands
+                WHERE status = $1
+                ORDER BY created_at DESC
+                LIMIT $2
+                """,
+                status.value,
+                limit,
+            )
+        else:
+            rows = await pool.fetch(
+                """
+                SELECT id, command_type, status, requested_by, event_id,
+                       parameters, result, created_at, started_at, completed_at
+                FROM monitoring.commands
+                ORDER BY created_at DESC
+                LIMIT $1
+                """,
+                limit,
+            )
         return [self._row_to_command(row) for row in rows]
 
     async def update_command_status(

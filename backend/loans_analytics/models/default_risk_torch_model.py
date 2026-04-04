@@ -32,7 +32,9 @@ class TorchDefaultRiskModel:
         try:
             payload = torch.load(path, map_location='cpu', weights_only=True)
         except TypeError:
-            payload = torch.load(path, map_location='cpu')
+            raise RuntimeError(
+                'This runtime requires a PyTorch version supporting weights_only=True for safe model loading.'
+            )
         if 'state_dict' not in payload:
             raise ValueError('Invalid checkpoint: missing state_dict')
         input_dim = int(payload.get('input_dim', len(FEATURE_ORDER)))

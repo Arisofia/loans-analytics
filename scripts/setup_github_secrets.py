@@ -7,6 +7,7 @@ import secrets
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections.abc import Iterable
 from pathlib import Path
@@ -14,6 +15,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ENV_LOCAL_PATH = PROJECT_ROOT / '.env.local'
 REPO = 'Arisofia/loans-analytics'
 API_BASE = 'https://api.github.com'
+ALLOWED_URL_SCHEMES = {'https'}
 PLACEHOLDER_MARKERS = ('<<PASTE', 'xxxxxxxx', 'CHANGE_ME', 'your-')
 LOCAL_ENV_TEMPLATE: list[tuple[str, list[tuple[str, str, str]]]] = [('Supabase', [('NEXT_PUBLIC_SUPABASE_URL', 'https://your-project.supabase.co', 'Public project URL for frontend'), ('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY', '<<PASTE_SUPABASE_PUBLISHABLE_KEY>>', 'Supabase publishable key'), ('SUPABASE_URL', 'https://your-project.supabase.co', 'Supabase project URL'), ('SUPABASE_ANON_KEY', '<<PASTE_SUPABASE_ANON_KEY>>', 'Supabase anon key'), ('SUPABASE_SERVICE_ROLE_KEY', '<<PASTE_SUPABASE_SERVICE_ROLE_KEY>>', 'Supabase service role key'), ('SUPABASE_PROJECT_REF', 'your-project-ref', 'Supabase project ref'), ('SUPABASE_JWT_SECRET', '<<PASTE_SUPABASE_JWT_SECRET>>', 'Supabase JWT secret'), ('SUPABASE_DATABASE_URL', 'SET_FROM_SUPABASE_DATABASE_SETTINGS', 'Direct PostgreSQL connection string')]), ('LLM Providers', [('OPENAI_API_KEY', '<<PASTE_OPENAI_API_KEY>>', 'Required by CI and multi-agent flows'), ('ANTHROPIC_API_KEY', '', 'Optional Anthropic API key'), ('GEMINI_API_KEY', '', 'Optional Gemini API key'), ('XAI_API_KEY', '', 'Optional xAI API key')]), ('GitHub and security tooling', [('GITHUB_PAT', '<<PASTE_GITHUB_PAT>>', 'PAT with repo scope for uploading Actions secrets'), ('SNYK_TOKEN', '', 'Optional Snyk token for security-scan workflow'), ('SENTRY_DSN', '', 'Optional Sentry DSN')]), ('Google Sheets', [('GOOGLE_SHEETS_CREDENTIALS_PATH', 'credentials/google-service-account.json', 'Path to Google service account JSON'), ('GOOGLE_SHEETS_SPREADSHEET_ID', '', 'Spreadsheet ID'), ('GOOGLE_SHEETS_ENABLED', 'false', 'Feature toggle for Sheets ingestion')]), ('Monitoring and SMTP', [('SMTP_HOST', 'smtp.gmail.com:587', 'SMTP endpoint'), ('SMTP_USER', '', 'SMTP username'), ('SMTP_PASSWORD', '', 'SMTP password or app password'), ('ALERT_EMAIL_FROM', '', 'Alert sender'), ('CRITICAL_EMAIL_TO', '', 'Critical alert recipient'), ('GRAFANA_ADMIN_PASSWORD', '', 'Grafana admin password'), ('LOG_LEVEL', 'INFO', 'Default log level')]), ('Internal app secrets', [('LOANS_API_KEY', '__GENERATE_TOKEN_32__', 'Internal API key'), ('API_JWT_SECRET', '__GENERATE_TOKEN_48__', 'JWT signing secret')])]
 GITHUB_ACTIONS_SECRETS: dict[str, str] = {'SUPABASE_URL': 'SUPABASE_URL', 'SUPABASE_ANON_KEY': 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY': 'SUPABASE_SERVICE_ROLE_KEY', 'OPENAI_API_KEY': 'OPENAI_API_KEY', 'SNYK_TOKEN': 'SNYK_TOKEN', 'API_JWT_SECRET': 'API_JWT_SECRET', 'API_KEY': 'API_KEY', 'SMTP_HOST': 'SMTP_HOST', 'SMTP_USER': 'SMTP_USER', 'SMTP_PASSWORD': 'SMTP_PASSWORD', 'ALERT_EMAIL_FROM': 'ALERT_EMAIL_FROM', 'CRITICAL_EMAIL_TO': 'CRITICAL_EMAIL_TO', 'GOOGLE_SHEETS_CREDENTIALS_PATH': 'GOOGLE_SHEETS_CREDENTIALS_PATH', 'GOOGLE_SHEETS_CREDENTIALS_JSON': 'GOOGLE_SHEETS_CREDENTIALS_JSON', 'GOOGLE_SHEETS_SPREADSHEET_ID': 'GOOGLE_SHEETS_SPREADSHEET_ID', 'SUPABASE_DATABASE_URL': 'SUPABASE_DATABASE_URL', 'SUPABASE_JWT_SECRET': 'SUPABASE_JWT_SECRET', 'ANTHROPIC_API_KEY': 'ANTHROPIC_API_KEY', 'GEMINI_API_KEY': 'GEMINI_API_KEY', 'XAI_API_KEY': 'XAI_API_KEY', 'SENTRY_DSN': 'SENTRY_DSN'}
@@ -85,12 +87,18 @@ def bootstrap_google_sheets_json_secret() -> None:
     except OSError:
         return
 
+def _is_allowed_url(url: str) -> bool:
+    parsed = urllib.parse.urlparse(url)
+    return parsed.scheme in ALLOWED_URL_SCHEMES
+
 def api_request(url: str, *, method: str='GET', data: dict | None=None, token: str) -> dict:
+    if not _is_allowed_url(url):
+        raise RuntimeError('Unsupported URL scheme for API request')
     headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json'}
     payload = json.dumps(data).encode('utf-8') if data else None
     request = urllib.request.Request(url, data=payload, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(request) as response:
+        with urllib.request.urlopen(request) as response:  # nosec B310
             content = response.read()
     except urllib.error.HTTPError as error:
         raise RuntimeError(f'HTTP {error.code}') from error
