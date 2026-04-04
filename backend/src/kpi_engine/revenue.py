@@ -38,11 +38,18 @@ def compute_eir(portfolio_mart: pd.DataFrame) -> Decimal:
     """
     if portfolio_mart.empty:
         return Decimal("0.0")
-    
-    avg_apr = Decimal(str(portfolio_mart["apr"].fillna(0).mean()))
+
+    if "apr" not in portfolio_mart.columns:
+        return Decimal("0.0")
+
+    valid_apr_values = pd.to_numeric(portfolio_mart["apr"], errors="coerce").dropna()
+    if valid_apr_values.empty:
+        return Decimal("0.0")
+
+    avg_apr = Decimal(str(valid_apr_values.mean()))
     if avg_apr == 0:
         return Decimal("0.0")
-        
+
     eir = (Decimal("1") + avg_apr / Decimal("365")) ** 365 - Decimal("1")
     return eir.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 

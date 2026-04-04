@@ -117,6 +117,19 @@ scrape_configs:
           env: "staging"
 
   # ============================================
+  # OTEL COLLECTOR METRICS
+  # ============================================
+  - job_name: "otel-collector"
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    static_configs:
+      - targets:
+          - "otel-collector:8889"
+        labels:
+          app: "otel-collector"
+          env: "production"
+
+  # ============================================
   # PROMETHEUS SELF-MONITORING
   # ============================================
   - job_name: "prometheus"

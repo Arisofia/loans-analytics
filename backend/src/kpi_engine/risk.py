@@ -317,6 +317,12 @@ def compute_expected_loss(
 
     if business_params is None and scorecard_df is None:
         ead = pd.to_numeric(df.get("outstanding_principal"), errors="coerce").fillna(0).sum()
+        logger.warning(
+            "compute_expected_loss: no business_params and no scorecard_df provided. "
+            "Falling back to hardcoded PD=0.03, LGD=0.45. "
+            "Pass business_params from config/business_parameters.yml or a scorecard_df "
+            "to obtain an auditable expected-loss estimate. Run ID unknown at this call site."
+        )
         return float(Decimal(str(ead)) * Decimal("0.03") * Decimal("0.45"))
 
     if scorecard_df is not None and {"loan_id", "pd", "lgd"}.issubset(scorecard_df.columns) and "loan_id" in df.columns:
@@ -331,7 +337,14 @@ def compute_expected_loss(
         try:
             from backend.src.pipeline.config import load_business_parameters
             business_params = load_business_parameters()
-        except Exception:
+        except Exception as _bp_exc:
+            logger.warning(
+                "compute_expected_loss: failed to load business_parameters.yml (%s). "
+                "PD bucket defaults will be used (current=0.5%%, dpd_30=5%%, dpd_60=15%%, "
+                "dpd_90=35%%, dpd_180=70%%, defaulted=100%%) — EL output is NOT auditable "
+                "against production configuration. Investigate config availability.",
+                _bp_exc,
+            )
             business_params = {}
 
     fin_params = business_params.get("financial_assumptions", {})

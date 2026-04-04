@@ -24,6 +24,13 @@ financial_guardrails:
 risk_parameters:
   dilution_threshold: 0.05
   recourse_cap: 100000
+  # loss_given_default here is a COVENANT / REPLINE GUARDRAIL parameter used for
+  # capital-adequacy covenant checks (e.g., advance rate / repline compliance).
+  # It is NOT the ECL LGD for IFRS 9 / Basel provisioning.
+  # For ECL / EL calculations, use financial_assumptions.lgd_fixed_rate below.
+  # These two values intentionally differ: this represents expected net credit losses
+  # under the facility covenant structure (strong security/recourse), while
+  # lgd_fixed_rate represents the conservative provisioning LGD.
   loss_given_default: 0.10
 
 sla_settings:
@@ -56,7 +63,10 @@ financial_assumptions:
                                     # MUST be reviewed quarterly. Drives NIM proxy.
   lgd_method: "empirical"          # "empirical" = compute from recovery_amount/disbursed
                                     # "fixed" = use lgd_fixed_rate below
-  lgd_fixed_rate: 0.90             # Used only when lgd_method = "fixed"
+  lgd_fixed_rate: 0.90             # ECL / PROVISIONING LGD used when lgd_method = "fixed".
+                                    # Also used by catalog_processor (lending_kpis/graph_analytics)
+                                    # as the canonical ECL LGD. Distinct from
+                                    # risk_parameters.loss_given_default (covenant guardrail).
   lgd_floor: 0.40                  # Minimum LGD even when empirical recovery is high
   lgd_ceil: 0.95                   # Maximum LGD cap
 
