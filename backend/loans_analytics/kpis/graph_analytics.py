@@ -383,40 +383,10 @@ def npl_benchmarks(intermedia_df: pd.DataFrame) -> dict[str, Any]:
         npl_90 = float(active[active['_dpd'] >= 90]['_bal'].sum() / total * 100)
         npl_180 = float(active[active['_dpd'] >= 180]['_bal'].sum() / total * 100)
     try:
-        from backend.src.pipeline.config import load_business_parameters
-
-        _params = load_business_parameters()
-        _fin = _params.get("financial_assumptions", {})
-        if "lgd_fixed_rate" in _fin:
-            lgd = float(_fin["lgd_fixed_rate"])
-        else:
-            raise KeyError(
-                "financial_assumptions.lgd_fixed_rate key is missing from "
-                "business_parameters.yml. Set lgd_fixed_rate under financial_assumptions "
-                "to define the canonical ECL LGD for provisioning calculations."
-            )
-    except Exception as _lgd_exc:
-        logger.warning(
-            "npl_benchmarks: could not load financial_assumptions.lgd_fixed_rate (%s). "
-            "Falling back to risk_parameters.loss_given_default.",
-            _lgd_exc,
-        )
-        try:
-            from backend.loans_analytics.config import settings
-
-            lgd = settings.risk.loss_given_default
-            logger.warning(
-                "npl_benchmarks: using risk_parameters.loss_given_default=%.4f as LGD. "
-                "This is a covenant guardrail, not a calibrated ECL parameter.",
-                lgd,
-            )
-        except Exception:
-            logger.warning(
-                "npl_benchmarks: all LGD configuration paths failed. "
-                "Falling back to hardcoded LGD=0.1. "
-                "Check that business_parameters.yml exists and is readable."
-            )
-            lgd = 0.1
+        from backend.loans_analytics.config import settings
+        lgd = settings.risk.loss_given_default
+    except Exception:
+        lgd = 0.1
     loss_rate = npl_180 * lgd
     return {'status': 'ok', 'npl_180_pct': round(npl_180, 2), 'npl_90_pct': round(npl_90, 2), 'loss_rate_est_pct': round(loss_rate, 2), 'lgd_assumption': lgd, 'benchmarks': {'npl_latam_pct': _BENCHMARKS['npl_latam_pct'], 'npl_oecd_pct': _BENCHMARKS['npl_oecd_pct'], 'npl_target_pct': _BENCHMARKS['npl_target_pct'], 'loss_rate_abs_kbra_pct': _BENCHMARKS['loss_rate_abs_pct']}, 'vs_benchmark': {'vs_latam': 'better' if npl_180 < _BENCHMARKS['npl_latam_pct'] else 'worse', 'vs_oecd': 'better' if npl_180 < _BENCHMARKS['npl_oecd_pct'] else 'worse', 'vs_target': 'ok' if npl_180 < _BENCHMARKS['npl_target_pct'] else 'breach'}}
 

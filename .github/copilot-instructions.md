@@ -194,7 +194,9 @@ Pytest markers (from `pyproject.toml`):
 - `@pytest.mark.e2e` — tests requiring a live backend/frontend
 - `@pytest.mark.integration_supabase` — Supabase-backed KPI integration tests
 
-Default `make test` runs only unit and integration-safe tests. To run agent tests: `pytest --collect-only -m integration tests/`.
+Default `make test` runs only unit and integration-safe tests. To run multi-agent tests, invoke the agent test suite directly: `HISTORICAL_CONTEXT_MODE=MOCK pytest tests/agents/`.
+
+Note: default marker filtering (`pytest tests/ -m "not integration and not e2e"`) does not exclude `tests/agents/` by path; agent tests are excluded from default CI runs only if they are explicitly marked or excluded by CI configuration.
 
 Test paths configured in `pyproject.toml`: `backend/loans_analytics/tests` and `tests/`.
 
