@@ -92,8 +92,9 @@ class TestDependencyVersions:
         """Guard that openai is >=1.x (F1.1).
 
         The original guard excluded version 2.30.0 as "non-existent", but that
-        release became available in PyPI.  The meaningful invariant is that the
-        installed major version is >=1 (the v0.x legacy API is not supported).
+        release is available on PyPI (released after the original guard was
+        written).  The meaningful invariant is that the installed major version
+        is >=1 (the v0.x legacy API is not supported).
         """
         import openai
         major = int(openai.__version__.split(".")[0])
