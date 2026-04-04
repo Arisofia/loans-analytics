@@ -9,6 +9,7 @@ of a failed formula must fail loud, never silently compute as zero.
 Regulatory-grade scrutiny applied. Do not disable these tests.
 """
 
+import contextlib
 import pytest
 from decimal import Decimal
 from backend.loans_analytics.kpis.formula_engine import (
@@ -20,11 +21,28 @@ from backend.loans_analytics.kpis.formula_engine import (
 class TestFormulaExecutionErrorRaises:
     """F1.3 Remediation: Silent Decimal('0.0') return must be replaced with exception."""
 
+    @staticmethod
+    def _build_engine_with_two_columns(
+        first_col: str,
+        second_col: str,
+        first_val,
+        second_val,
+    ) -> KPIFormulaEngine:
+        import pandas as pd
+
+        df = pd.DataFrame({first_col: [first_val], second_col: [second_val]})
+        return KPIFormulaEngine(df)
+
+    @staticmethod
+    def _build_engine_with_one_column(col: str, val) -> KPIFormulaEngine:
+        import pandas as pd
+
+        df = pd.DataFrame({col: [val]})
+        return KPIFormulaEngine(df)
+
     def test_division_by_zero_raises_not_returns_zero(self):
         """CRITICAL: formula failure must never silently return Decimal('0.0')."""
-        import pandas as pd
-        df = pd.DataFrame({"a": [100], "b": [0]})
-        engine = KPIFormulaEngine(df)
+        engine = self._build_engine_with_two_columns("a", "b", 100, 0)
         
         with pytest.raises(FormulaExecutionError) as exc_info:
             engine.calculate("a / b")
@@ -35,18 +53,14 @@ class TestFormulaExecutionErrorRaises:
 
     def test_missing_variable_raises_not_returns_zero(self):
         """Missing variable in formula must raise, never silently return zero."""
-        import pandas as pd
-        df = pd.DataFrame({"total_balance": [1000000]})
-        engine = KPIFormulaEngine(df)
+        engine = self._build_engine_with_one_column("total_balance", 1000000)
         
         with pytest.raises((FormulaExecutionError, KPIFormulaError)):
             engine.calculate("npl_balance / total_balance")
 
     def test_none_result_raises(self):
         """Expression evaluating to None must raise, never silently return zero."""
-        import pandas as pd
-        df = pd.DataFrame({"x": [1]})
-        engine = KPIFormulaEngine(df)
+        engine = self._build_engine_with_one_column("x", 1)
         
         # This should raise when attempting to evaluate None in arithmetic context
         with pytest.raises(Exception):
@@ -54,24 +68,18 @@ class TestFormulaExecutionErrorRaises:
 
     def test_valid_formula_returns_correct_decimal(self):
         """Valid formulas must return correct Decimal result without exception."""
-        import pandas as pd
-        df = pd.DataFrame({
-            "par30_balance": [570000],
-            "total_balance": [10000000],
-        })
-        engine = KPIFormulaEngine(df)
+        engine = self._build_engine_with_two_columns(
+            "par30_balance", "total_balance", 570000, 10000000
+        )
         result = engine.calculate("par30_balance / total_balance * 100")
         # Should be 5.7
         assert result > Decimal("5") and result < Decimal("6")
 
     def test_arithmetic_formula_with_aggregation_division_by_zero_raises(self):
         """Arithmetic formula with SUM/AVG that divides by zero must raise."""
-        import pandas as pd
-        df = pd.DataFrame({
-            "good_balance": [100],
-            "bad_balance": [0],
-        })
-        engine = KPIFormulaEngine(df)
+        engine = self._build_engine_with_two_columns(
+            "good_balance", "bad_balance", 100, 0
+        )
         
         with pytest.raises(FormulaExecutionError):
             engine.calculate("SUM(good_balance) / SUM(bad_balance)")
@@ -92,7 +100,10 @@ class TestDependencyVersions:
         """Guard against protobuf 6.x which never existed (F1.4)."""
         import google.protobuf as protobuf
         major = int(protobuf.__version__.split(".")[0])
-        assert major in (4, 5), f"protobuf must be 4.x or 5.x, got {protobuf.__version__}"
+        assert major in {
+            4,
+            5,
+        }, f"protobuf must be 4.x or 5.x, got {protobuf.__version__}"
         # Should not be 6.x
         assert major < 6, f"protobuf major version {major} is outside supported range [4,5]"
 
@@ -104,8 +115,6 @@ class TestDependencyVersions:
             # This will fail at runtime if incompatible
             from google.rpc import code_pb2
             _ = code_pb2.OK
-            # If we got here without serialization error, versions are compatible
-            assert True
         except (ImportError, RuntimeError) as e:
             # If there's a serialization error, protobuf version is incompatible
             pytest.skip(f"grpcio/protobuf compatibility check inconclusive: {e}")
@@ -113,6 +122,24 @@ class TestDependencyVersions:
 
 class TestMakefileKPIsTarget:
     """F1.2 Remediation: Verify kpis target requires explicit INPUT parameter."""
+
+    @staticmethod
+    def _extract_target_block(makefile_text: str, target: str) -> str:
+        lines = makefile_text.splitlines()
+        start = next((idx for idx, line in enumerate(lines) if line.startswith(f"{target}:")), None)
+        if start is None:
+            return ""
+
+        remainder = lines[start + 1 :]
+        end_offset = next(
+            (
+                idx
+                for idx, line in enumerate(remainder)
+                if line and (not line[0].isspace())
+            ),
+            len(remainder),
+        )
+        return "\n".join(remainder[:end_offset])
 
     def test_makefile_kpis_requires_input(self):
         """
@@ -134,22 +161,13 @@ class TestMakefileKPIsTarget:
         assert "$(error INPUT is required" in makefile, (
             "Makefile kpis target must raise error when INPUT is missing."
         )
-        
+
         # Verify sample data is NOT hardcoded in default kpis target
-        lines = makefile.split('\n')
-        in_kpis_target = False
-        for i, line in enumerate(lines):
-            if line.startswith('kpis:'):
-                in_kpis_target = True
-            elif in_kpis_target and line and not line[0].isspace():
-                # Next non-indented line means we've left the target
-                in_kpis_target = False
-            
-            if in_kpis_target and 'loans_sample_data' in line:
-                pytest.fail(
-                    f"Line {i+1}: Sample data hardcoded in kpis target. "
-                    "See F1.2 remediation: make kpis must require explicit INPUT."
-                )
+        kpis_block = self._extract_target_block(makefile, "kpis")
+        assert "loans_sample_data" not in kpis_block, (
+            "Sample data hardcoded in kpis target. "
+            "See F1.2 remediation: make kpis must require explicit INPUT."
+        )
 
 
 class TestPackageNamespaceShadowing:
@@ -166,31 +184,32 @@ class TestPackageNamespaceShadowing:
         os_attrs = dir(importlib.import_module('os'))
         
         # Check that these modules have the expected attributes (not empty)
-        assert len(sys_attrs) > 0, "sys module should have attributes"
-        assert len(os_attrs) > 0, "os module should have attributes"
+        assert sys_attrs, "sys module should have attributes"
+        assert os_attrs, "os module should have attributes"
         
         # backend.loans_analytics package exists and does not collide with stdlib names
-        try:
+        with contextlib.suppress(ImportError):
             from backend.loans_analytics import __name__ as backend_package_name
             # If backend package imports, verify it's from project namespace.
             assert "backend" in backend_package_name or "loans_analytics" in backend_package_name
-        except ImportError:
-            # If it doesn't import, that's actually fine for this test
-            pass
 
 
 class TestPytestConfigurationGuards:
     """F1.6 Remediation: Verify pytest configuration prevents uncontrolled agent test execution."""
 
-    def test_pytest_config_excludes_multi_agent_by_default(self):
-        """Verify pyproject.toml testpaths does NOT include backend/loans_analytics/multi_agent."""
+    @staticmethod
+    def _load_pytest_ini_options() -> dict:
         from pathlib import Path
         import toml
-        
+
         pyproject = Path("pyproject.toml").read_text()
         config = toml.loads(pyproject)
-        
-        testpaths = config.get("tool", {}).get("pytest", {}).get("ini_options", {}).get("testpaths", [])
+        return config.get("tool", {}).get("pytest", {}).get("ini_options", {})
+
+    def test_pytest_config_excludes_multi_agent_by_default(self):
+        """Verify pyproject.toml testpaths does NOT include backend/loans_analytics/multi_agent."""
+        ini_options = self._load_pytest_ini_options()
+        testpaths = ini_options.get("testpaths", [])
         assert "backend/loans_analytics/multi_agent" not in testpaths, (
             "backend/loans_analytics/multi_agent must NOT be in testpaths. "
             "Agent tests require explicit @pytest.mark.integration to prevent silent LLM API calls."
@@ -198,13 +217,8 @@ class TestPytestConfigurationGuards:
 
     def test_pytest_config_has_strict_markers(self):
         """Verify --strict-markers is in addopts to catch unannotated agent tests."""
-        from pathlib import Path
-        import toml
-        
-        pyproject = Path("pyproject.toml").read_text()
-        config = toml.loads(pyproject)
-        
-        addopts = config.get("tool", {}).get("pytest", {}).get("ini_options", {}).get("addopts", "")
+        ini_options = self._load_pytest_ini_options()
+        addopts = ini_options.get("addopts", "")
         assert "--strict-markers" in addopts, (
             "addopts must include --strict-markers to enforce marker registration. "
             "This prevents unannotated tests from running silently."

@@ -43,12 +43,39 @@ class ControlMoraAdapter:
     def _rename_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         mapping = {}
         for col in df.columns:
-            canonical = _ALIASES.get(_slugify(col))
-            if canonical:
+            if canonical := _ALIASES.get(_slugify(col)):
                 mapping[col] = canonical
         if mapping:
             logger.debug('Renaming columns: %s', mapping)
         return df.rename(columns=mapping)
+
+    @staticmethod
+    def _parse_snapshot_token(token: str) -> pd.Timestamp | pd.NaT:
+        if re.fullmatch('\\d{4}[-_]\\d{2}', token):
+            normalized = token.replace('_', '-')
+            return pd.to_datetime(normalized, format='%Y-%m', errors='coerce')
+        if re.fullmatch('\\d{6}', token):
+            return pd.to_datetime(token, format='%Y%m', errors='coerce')
+
+        month_token = token[:3].lower()
+        year_part = token[3:]
+        es_to_en = {
+            'ene': 'jan',
+            'feb': 'feb',
+            'mar': 'mar',
+            'abr': 'apr',
+            'may': 'may',
+            'jun': 'jun',
+            'jul': 'jul',
+            'ago': 'aug',
+            'sep': 'sep',
+            'oct': 'oct',
+            'nov': 'nov',
+            'dic': 'dec',
+        }
+        normalized_month = es_to_en.get(month_token, month_token)
+        normalized = f'{normalized_month}{year_part}'
+        return pd.to_datetime(normalized, format='%b%Y', errors='coerce')
 
     def _coerce_types(self, df: pd.DataFrame) -> pd.DataFrame:
         for col in _DECIMAL_COLS:
@@ -69,21 +96,9 @@ class ControlMoraAdapter:
         elif 'snapshot_month' in df.columns:
             df['snapshot_month'] = pd.to_datetime(df['snapshot_month'], errors='coerce', format='mixed') + pd.offsets.MonthEnd(0)
         else:
-            match = re.search('(\\d{4}[-_]\\d{2}|\\d{6}|\\w{3}\\d{4})', path.stem)
-            if match:
-                token = match.group(1)
-                if re.fullmatch('\\d{4}[-_]\\d{2}', token):
-                    normalized = token.replace('_', '-')
-                    df['snapshot_month'] = pd.to_datetime(normalized, format='%Y-%m', errors='coerce')
-                elif re.fullmatch('\\d{6}', token):
-                    df['snapshot_month'] = pd.to_datetime(token, format='%Y%m', errors='coerce')
-                else:
-                    month_token = token[:3].lower()
-                    year_part = token[3:]
-                    es_to_en = {'ene': 'jan', 'feb': 'feb', 'mar': 'mar', 'abr': 'apr', 'may': 'may', 'jun': 'jun', 'jul': 'jul', 'ago': 'aug', 'sep': 'sep', 'oct': 'oct', 'nov': 'nov', 'dic': 'dec'}
-                    normalized_month = es_to_en.get(month_token, month_token)
-                    normalized = f'{normalized_month}{year_part}'
-                    df['snapshot_month'] = pd.to_datetime(normalized, format='%b%Y', errors='coerce')
+            if match := re.search('(\\d{4}[-_]\\d{2}|\\d{6}|\\w{3}\\d{4})', path.stem):
+                token = match[1]
+                df['snapshot_month'] = self._parse_snapshot_token(token)
                 if 'snapshot_month' in df.columns:
                     df['snapshot_month'] = df['snapshot_month'].dt.to_period('M').dt.to_timestamp('M')
             else:
@@ -111,7 +126,6 @@ class ControlMoraAdapter:
         if not dfs:
             return pd.DataFrame(columns=_CANONICAL_COLUMNS)
         combined = pd.concat(dfs, ignore_index=True)
-        key_cols = [c for c in ['lend_id', 'numero_desembolso', 'snapshot_month'] if c in combined.columns]
-        if key_cols:
+        if key_cols := [c for c in ['lend_id', 'numero_desembolso', 'snapshot_month'] if c in combined.columns]:
             combined = combined.drop_duplicates(subset=key_cols)
         return combined.reset_index(drop=True)

@@ -35,7 +35,7 @@ class SupabaseConnectionPool:
         pooler_pattern = 'postgresql://postgres\\.([^:]+):([^@]+)@(.+)'  # gitleaks:allow
         match = re.match(pooler_pattern, url)
         if match:
-            project_ref = match.group(1)
+            project_ref = match[1]
             logger.info('Detected Supabase pooler URL (project: %s)', project_ref)
         return url
 

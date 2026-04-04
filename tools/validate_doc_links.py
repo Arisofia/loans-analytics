@@ -20,7 +20,7 @@ def extract_markdown_links(content: str) -> List[Tuple[str, int]]:
     pattern = "\\[.+?\\]\\((.+?)\\)"
     for line_num, line in enumerate(content.split("\n"), 1):
         for match in re.finditer(pattern, line):
-            link = match.group(1)
+            link = match[1]
             if not link.startswith(("http://", "https://", "mailto:", "#")):
                 links.append((link, line_num))
     return links

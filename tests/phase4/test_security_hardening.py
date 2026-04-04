@@ -11,7 +11,7 @@ def test_env_example_contains_no_real_spreadsheet_id():
     pattern = re.compile(r"GOOGLE_SHEETS_SPREADSHEET_ID=([A-Za-z0-9_\-]{44})")
     match = pattern.search(env_text)
     assert match is None, (
-        f"Real spreadsheet ID found in .env.example: {match.group(1) if match else ''}. "
+        f"Real spreadsheet ID found in .env.example: {match[1] if match else ''}. "
         "Replace with placeholder."
     )
 
@@ -31,25 +31,29 @@ def test_env_example_no_supabase_secret_api_key():
 
 def test_pipeline_schedule_no_inline_comment():
     env_text = Path(".env.example").read_text()
-    for line in env_text.splitlines():
-        if line.startswith("PIPELINE_RUN_SCHEDULE="):
-            value = line.split("=", 1)[1]
-            assert "#" not in value, (
-                f"Inline comment in PIPELINE_RUN_SCHEDULE will corrupt cron expression: '{value}'"
-            )
+    problem_lines = [
+        line for line in env_text.splitlines() 
+        if line.startswith("PIPELINE_RUN_SCHEDULE=") and "#" in line.split("=", 1)[1]
+    ]
+    assert not problem_lines, (
+        f"Inline comment in PIPELINE_RUN_SCHEDULE will corrupt cron expression: {problem_lines}"
+    )
 
 
 def test_formula_engine_uses_asteval_not_eval():
     """Assert the formula engine source does not contain bare eval() calls."""
     source = Path("backend/loans_analytics/kpis/formula_engine.py").read_text()
     tree = ast.parse(source)
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name) and node.func.id == "eval":
-                pytest.fail(
-                    f"Bare eval() found at line {node.lineno} in formula_engine.py. "
-                    "Use asteval.Interpreter or ast-based evaluation instead."
-                )
+    eval_calls = [
+        node for node in ast.walk(tree) 
+        if isinstance(node, ast.Call) 
+        and isinstance(node.func, ast.Name) 
+        and node.func.id == "eval"
+    ]
+    assert not eval_calls, (
+        f"Bare eval() found at lines {[n.lineno for n in eval_calls]} in formula_engine.py. "
+        "Use asteval.Interpreter or ast-based evaluation instead."
+    )
 
 
 def test_grafana_default_password_is_placeholder():

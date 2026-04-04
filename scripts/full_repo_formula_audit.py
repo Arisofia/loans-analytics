@@ -80,130 +80,148 @@ def bool_str(v: bool) -> str:
     return "yes" if v else "no"
 
 
-def main() -> None:
-    files = git_files()
-    manifest: List[Row] = []
-    formula_rows = []
-    critical_rows = []
-    metric_map = {}
-
-    for rel in files:
-        fp = ROOT / rel
-        lines = read_lines(fp)
-        text = "\n".join(lines)
-
-        contains_formula = any(p.search(text) for p in FORMULA_PATTERNS) and Path(rel).suffix.lower() in {".py", ".ts", ".tsx", ".js", ".sql", ".ipynb"}
-        contains_kpi = any(p.search(text) for p in KPI_PATTERNS)
-        contains_risk = any(p.search(text) for p in RISK_PATTERNS)
-        dup_hits = [m.group(1).lower() for p in DUP_PATTERNS for m in p.finditer(text)]
-        contains_dup = len(set(dup_hits)) > 1 or (len(dup_hits) >= 1 and contains_formula)
-
-        evidence = []
-        notes = []
-        status = "NOT APPLICABLE"
-
-        if lines:
-            status = "PASS"
-
-        if contains_formula:
-            for i, line in enumerate(lines, start=1):
-                l = line.strip()
-                if not l:
-                    continue
-                if any(p.search(line) for p in FORMULA_PATTERNS):
-                    formula_name = "generic_formula"
-                    m = re.search(r"(par30|par60|par90|npl|default_rate|collection_rate|recovery_rate|ltv|lgd|yield|margin|kpi)", line, re.I)
-                    if m:
-                        formula_name = m.group(1).lower()
-                    formula_rows.append({
-                        "metric_formula_name": formula_name,
-                        "business_meaning": "Detected formula/metric-related computation in code",
-                        "implementation_path": rel,
-                        "line": i,
-                        "code_snippet": l[:300],
-                        "inputs": "inferred from local expression",
-                        "outputs": "inferred from assignment/return usage",
-                        "edge_case_behavior": "requires manual validation",
-                        "fallback_behavior": "see code snippet",
-                        "precision_behavior": "check rounding/casting in expression",
-                        "duplicate_implementations": "see duplicate map",
-                        "status": "PARTIAL",
-                    })
-                    evidence.append(f"L{i}:{l[:80]}")
-                if any(p.search(line) for p in SILENT_DEFAULT_PATTERNS):
-                    critical_rows.append({
-                        "id": f"CF-{len(critical_rows)+1:04d}",
-                        "severity": "HIGH",
-                        "file": rel,
-                        "line": i,
-                        "logic": l[:500],
-                        "why_dangerous": "Silent default may mask missing/undefined financial values.",
-                        "correct_behavior": "Use explicit NA/error path with business-approved fallback policy.",
-                    })
-                if DIVISION_PATTERN.search(line) and not ZERO_GUARD_PATTERN.search(line):
-                    if not any(tok in line for tok in ["http://", "https://", "Path(", "//"]):
-                        critical_rows.append({
-                            "id": f"CF-{len(critical_rows)+1:04d}",
-                            "severity": "MEDIUM",
-                            "file": rel,
-                            "line": i,
-                            "logic": l[:500],
-                            "why_dangerous": "Potential denominator safety issue (heuristic detection).",
-                            "correct_behavior": "Guard denominator explicitly and define undefined-case semantics.",
-                        })
-
-        for metric in set(dup_hits):
-            metric_map.setdefault(metric, []).append(rel)
-
-        if contains_formula:
-            notes.append("Contains metric/formula-related logic; reviewed line-by-line via scripted pass.")
-        if contains_kpi:
-            notes.append("Contains KPI/metric vocabulary.")
-        if contains_risk:
-            notes.append("Contains risk-related vocabulary.")
-
-        manifest.append(Row(
-            path=rel,
-            classification=classify(rel),
-            reviewed="yes" if lines or fp.exists() else "no",
-            contains_formula=bool_str(contains_formula),
-            contains_kpi_logic=bool_str(contains_kpi),
-            contains_risk_logic=bool_str(contains_risk),
-            contains_duplicate_logic=bool_str(contains_dup),
-            status=status,
-            evidence=" | ".join(evidence[:3]),
-            notes=" ".join(notes),
-        ))
-
-    manifest_path = OUT_DIR / "reviewed_file_manifest.csv"
-    with manifest_path.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=[
-            "path", "classification", "reviewed", "contains_formula", "contains_kpi_logic",
-            "contains_risk_logic", "contains_duplicate_logic", "status", "evidence", "notes"
-        ])
-        w.writeheader()
-        for r in manifest:
-            w.writerow(r.__dict__)
-
-    formula_path = OUT_DIR / "formula_inventory.csv"
-    with formula_path.open("w", newline="", encoding="utf-8") as f:
-        if formula_rows:
-            w = csv.DictWriter(f, fieldnames=list(formula_rows[0].keys()))
-            w.writeheader()
-            w.writerows(formula_rows)
+def write_dict_rows(path: Path, rows: list[dict], empty_header: str) -> None:
+    with path.open("w", newline="", encoding="utf-8") as f:
+        if rows:
+            writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+            writer.writeheader()
+            writer.writerows(rows)
         else:
-            f.write("metric_formula_name,business_meaning,implementation_path,line,code_snippet,inputs,outputs,edge_case_behavior,fallback_behavior,precision_behavior,duplicate_implementations,status\n")
+            f.write(empty_header)
 
-    critical_path = OUT_DIR / "critical_findings.csv"
-    with critical_path.open("w", newline="", encoding="utf-8") as f:
-        if critical_rows:
-            w = csv.DictWriter(f, fieldnames=list(critical_rows[0].keys()))
-            w.writeheader()
-            w.writerows(critical_rows)
-        else:
-            f.write("id,severity,file,line,logic,why_dangerous,correct_behavior\n")
 
-    dup_path = OUT_DIR / "duplicate_shadow_map.csv"
+def append_critical_row(
+    critical_rows: list[dict],
+    severity: str,
+    rel: str,
+    line_num: int,
+    logic: str,
+    why_dangerous: str,
+    correct_behavior: str,
+) -> None:
+    critical_rows.append({
+        "id": f"CF-{len(critical_rows)+1:04d}",
+        "severity": severity,
+        "file": rel,
+        "line": line_num,
+        "logic": logic[:500],
+        "why_dangerous": why_dangerous,
+        "correct_behavior": correct_behavior,
+    })
+
+
+def detect_file_flags(rel: str, text: str) -> tuple[bool, bool, bool, list[str], bool]:
+    contains_formula = any(p.search(text) for p in FORMULA_PATTERNS) and Path(rel).suffix.lower() in {".py", ".ts", ".tsx", ".js", ".sql", ".ipynb"}
+    contains_kpi = any(p.search(text) for p in KPI_PATTERNS)
+    contains_risk = any(p.search(text) for p in RISK_PATTERNS)
+    dup_hits = [m[1].lower() for p in DUP_PATTERNS for m in p.finditer(text)]
+    contains_dup = len(set(dup_hits)) > 1 or (len(dup_hits) >= 1 and contains_formula)
+    return contains_formula, contains_kpi, contains_risk, dup_hits, contains_dup
+
+
+def build_formula_row(rel: str, line_num: int, stripped_line: str, formula_name: str) -> dict:
+    return {
+        "metric_formula_name": formula_name,
+        "business_meaning": "Detected formula/metric-related computation in code",
+        "implementation_path": rel,
+        "line": line_num,
+        "code_snippet": stripped_line[:300],
+        "inputs": "inferred from local expression",
+        "outputs": "inferred from assignment/return usage",
+        "edge_case_behavior": "requires manual validation",
+        "fallback_behavior": "see code snippet",
+        "precision_behavior": "check rounding/casting in expression",
+        "duplicate_implementations": "see duplicate map",
+        "status": "PARTIAL",
+    }
+
+
+def detect_formula_name(line: str) -> str:
+    m = re.search(r"(par30|par60|par90|npl|default_rate|collection_rate|recovery_rate|ltv|lgd|yield|margin|kpi)", line, re.I)
+    return m[1].lower() if m else "generic_formula"
+
+
+def scan_formula_lines(rel: str, lines: list[str]) -> tuple[list[dict], list[dict], list[str]]:
+    formula_rows: list[dict] = []
+    critical_rows: list[dict] = []
+    evidence: list[str] = []
+
+    for line_num, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        if any(p.search(line) for p in FORMULA_PATTERNS):
+            formula_name = detect_formula_name(line)
+            formula_rows.append(build_formula_row(rel, line_num, stripped, formula_name))
+            evidence.append(f"L{line_num}:{stripped[:80]}")
+
+        if any(p.search(line) for p in SILENT_DEFAULT_PATTERNS):
+            append_critical_row(
+                critical_rows,
+                "HIGH",
+                rel,
+                line_num,
+                stripped,
+                "Silent default may mask missing/undefined financial values.",
+                "Use explicit NA/error path with business-approved fallback policy.",
+            )
+
+        if (
+            DIVISION_PATTERN.search(line)
+            and not ZERO_GUARD_PATTERN.search(line)
+            and all(tok not in line for tok in ["http://", "https://", "Path(", "//"])
+        ):
+            append_critical_row(
+                critical_rows,
+                "MEDIUM",
+                rel,
+                line_num,
+                stripped,
+                "Potential denominator safety issue (heuristic detection).",
+                "Guard denominator explicitly and define undefined-case semantics.",
+            )
+
+    return formula_rows, critical_rows, evidence
+
+
+def build_notes(contains_formula: bool, contains_kpi: bool, contains_risk: bool) -> list[str]:
+    notes: list[str] = []
+    if contains_formula:
+        notes.append("Contains metric/formula-related logic; reviewed line-by-line via scripted pass.")
+    if contains_kpi:
+        notes.append("Contains KPI/metric vocabulary.")
+    if contains_risk:
+        notes.append("Contains risk-related vocabulary.")
+    return notes
+
+
+def analyze_file(rel: str) -> tuple[Row, list[dict], list[dict], set[str]]:
+    fp = ROOT / rel
+    lines = read_lines(fp)
+    text = "\n".join(lines)
+
+    contains_formula, contains_kpi, contains_risk, dup_hits, contains_dup = detect_file_flags(rel, text)
+    status = "PASS" if lines else "NOT APPLICABLE"
+    formula_rows, critical_rows, evidence = scan_formula_lines(rel, lines) if contains_formula else ([], [], [])
+    notes = build_notes(contains_formula, contains_kpi, contains_risk)
+
+    row = Row(
+        path=rel,
+        classification=classify(rel),
+        reviewed="yes" if lines or fp.exists() else "no",
+        contains_formula=bool_str(contains_formula),
+        contains_kpi_logic=bool_str(contains_kpi),
+        contains_risk_logic=bool_str(contains_risk),
+        contains_duplicate_logic=bool_str(contains_dup),
+        status=status,
+        evidence=" | ".join(evidence[:3]),
+        notes=" ".join(notes),
+    )
+    return row, formula_rows, critical_rows, set(dup_hits)
+
+
+def write_duplicate_shadow_map(dup_path: Path, metric_map: dict[str, list[str]]) -> None:
     with dup_path.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["metric_name", "canonical_owner", "duplicate_locations", "divergence_risk", "required_action"])
@@ -211,13 +229,67 @@ def main() -> None:
             if len(locs) > 1:
                 w.writerow([metric, locs[0], "; ".join(locs[1:]), "Potential semantic drift", "Define SSOT formula owner and remove/re-route duplicates"])
 
+
+def build_report(
+    total: int,
+    reviewed: int,
+    unreviewed: int,
+    manifest_path: Path,
+    formula_path: Path,
+    dup_path: Path,
+    critical_path: Path,
+) -> str:
+    return f"""# Forensic Formula Audit Report\n\n## SECTION 1 — SCOPE PROOF\n- total tracked files: {total}\n- total reviewed files: {reviewed}\n- total unreviewed files: {unreviewed}\n- manifest path: `{manifest_path.relative_to(ROOT)}`\n- coverage is 100%: {'YES' if unreviewed == 0 else 'NO'}\n\n## SECTION 2 — REVIEWED-FILE MANIFEST\nSee `{manifest_path.relative_to(ROOT)}`.\n\n## SECTION 3 — FORMULA INVENTORY\nSee `{formula_path.relative_to(ROOT)}`.\n\n## SECTION 4 — FILE-BY-FILE AUDIT\nSee `{manifest_path.relative_to(ROOT)}` (one row per file).\n\n## SECTION 5 — DUPLICATE / SHADOW FORMULA MAP\nSee `{dup_path.relative_to(ROOT)}`.\n\n## SECTION 6 — CRITICAL FINDINGS\nSee `{critical_path.relative_to(ROOT)}`.\n\n## SECTION 7 — REPOSITORY PURITY\nHeuristic candidates are listed in findings/duplicate map artifacts.\n\n## SECTION 8 — EXECUTIVE VERDICT\nNOT PRODUCTION READY\n\n## SECTION 9 — FINAL DECLARATION\n100% of tracked files were reviewed in this scripted pass (line iteration over each tracked file).\n"""
+
+
+def main() -> None:
+    files = git_files()
+    manifest: List[Row] = []
+    formula_rows: list[dict] = []
+    critical_rows: list[dict] = []
+    metric_map: dict[str, list[str]] = {}
+
+    for rel in files:
+        row, file_formula_rows, file_critical_rows, file_metrics = analyze_file(rel)
+        manifest.append(row)
+        formula_rows.extend(file_formula_rows)
+        critical_rows.extend(file_critical_rows)
+        for metric in file_metrics:
+            metric_map.setdefault(metric, []).append(rel)
+
+    manifest_path = OUT_DIR / "reviewed_file_manifest.csv"
+    write_dict_rows(
+        manifest_path,
+        [r.__dict__ for r in manifest],
+        "path,classification,reviewed,contains_formula,contains_kpi_logic,contains_risk_logic,contains_duplicate_logic,status,evidence,notes\n",
+    )
+
+    formula_path = OUT_DIR / "formula_inventory.csv"
+    write_dict_rows(
+        formula_path,
+        formula_rows,
+        "metric_formula_name,business_meaning,implementation_path,line,code_snippet,inputs,outputs,edge_case_behavior,fallback_behavior,precision_behavior,duplicate_implementations,status\n",
+    )
+
+    critical_path = OUT_DIR / "critical_findings.csv"
+    write_dict_rows(
+        critical_path,
+        critical_rows,
+        "id,severity,file,line,logic,why_dangerous,correct_behavior\n",
+    )
+
+    dup_path = OUT_DIR / "duplicate_shadow_map.csv"
+    write_duplicate_shadow_map(dup_path, metric_map)
+
     total = len(files)
-    reviewed = sum(1 for r in manifest if r.reviewed == "yes")
-    unreviewed = total - reviewed
+    unreviewed = len([r for r in manifest if r.reviewed != "yes"])
+    reviewed = total - unreviewed
 
     report_path = OUT_DIR / "forensic_audit_report.md"
-    report = f"""# Forensic Formula Audit Report\n\n## SECTION 1 — SCOPE PROOF\n- total tracked files: {total}\n- total reviewed files: {reviewed}\n- total unreviewed files: {unreviewed}\n- manifest path: `{manifest_path.relative_to(ROOT)}`\n- coverage is 100%: {'YES' if unreviewed == 0 else 'NO'}\n\n## SECTION 2 — REVIEWED-FILE MANIFEST\nSee `{manifest_path.relative_to(ROOT)}`.\n\n## SECTION 3 — FORMULA INVENTORY\nSee `{formula_path.relative_to(ROOT)}`.\n\n## SECTION 4 — FILE-BY-FILE AUDIT\nSee `{manifest_path.relative_to(ROOT)}` (one row per file).\n\n## SECTION 5 — DUPLICATE / SHADOW FORMULA MAP\nSee `{dup_path.relative_to(ROOT)}`.\n\n## SECTION 6 — CRITICAL FINDINGS\nSee `{critical_path.relative_to(ROOT)}`.\n\n## SECTION 7 — REPOSITORY PURITY\nHeuristic candidates are listed in findings/duplicate map artifacts.\n\n## SECTION 8 — EXECUTIVE VERDICT\nNOT PRODUCTION READY\n\n## SECTION 9 — FINAL DECLARATION\n100% of tracked files were reviewed in this scripted pass (line iteration over each tracked file).\n"""
-    report_path.write_text(report, encoding="utf-8")
+    report_path.write_text(
+        build_report(total, reviewed, unreviewed, manifest_path, formula_path, dup_path, critical_path),
+        encoding="utf-8",
+    )
 
     print(f"Wrote: {manifest_path}")
     print(f"Wrote: {formula_path}")

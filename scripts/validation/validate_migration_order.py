@@ -12,7 +12,7 @@ def extract_sort_key(migration_name: str) -> Tuple[int, str]:
     match = MIGRATION_PATTERN.match(migration_name)
     if not match:
         raise ValueError(f'Invalid migration name format: {migration_name}')
-    numeric_part = match.group(1)
+    numeric_part = match[1]
     return (int(numeric_part), migration_name)
 
 def validate_migration_format(migrations: List[str]) -> Tuple[bool, List[str]]:

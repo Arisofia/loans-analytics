@@ -15,9 +15,8 @@ def test_mexican_rfc_generation_uses_secrets():
     generate_mexican_rfc = generate_sample_data.generate_mexican_rfc
     rfcs = [generate_mexican_rfc() for _ in range(10)]
     pattern = '^[A-Z]{4}\\d{6}[A-Z0-9]{3}$'
-    for rfc in rfcs:
-        assert re.match(pattern, rfc), f"RFC {rfc} doesn't match expected format"
-        assert len(rfc) == 13, f'RFC {rfc} has incorrect length'
+    assert all(re.match(pattern, rfc) for rfc in rfcs), "At least one RFC doesn't match expected format"
+    assert all(len(rfc) == 13 for rfc in rfcs), 'At least one RFC has incorrect length'
     assert len(set(rfcs)) == len(rfcs), 'RFCs should be unique'
 
 def test_spanish_dni_generation_uses_secrets():
@@ -25,13 +24,10 @@ def test_spanish_dni_generation_uses_secrets():
     generate_dni = seed_spanish_loans.generate_dni
     dnis = [generate_dni() for _ in range(10)]
     pattern = '^\\d{8}[A-Z]$'
-    for dni in dnis:
-        assert re.match(pattern, dni), f"DNI {dni} doesn't match expected format"
-        assert len(dni) == 9, f'DNI {dni} has incorrect length'
-        number = int(dni[:8])
-        letters = 'TRWAGMYFPDXBNJZSQVHLCKE'
-        expected_letter = letters[number % 23]
-        assert dni[8] == expected_letter, f'DNI {dni} has invalid check letter'
+    letters = 'TRWAGMYFPDXBNJZSQVHLCKE'
+    assert all(re.match(pattern, dni) for dni in dnis), "At least one DNI doesn't match expected format"
+    assert all(len(dni) == 9 for dni in dnis), 'At least one DNI has incorrect length'
+    assert all(dni[8] == letters[int(dni[:8]) % 23] for dni in dnis), 'At least one DNI has invalid check letter'
     assert len(set(dnis)) == len(dnis), 'DNIs should be unique'
 
 def test_spanish_nie_generation_uses_secrets():
@@ -39,9 +35,8 @@ def test_spanish_nie_generation_uses_secrets():
     generate_nie = seed_spanish_loans.generate_nie
     nies = [generate_nie() for _ in range(10)]
     pattern = '^[XYZ]\\d{7}[A-Z]$'
-    for nie in nies:
-        assert re.match(pattern, nie), f"NIE {nie} doesn't match expected format"
-        assert len(nie) == 9, f'NIE {nie} has incorrect length'
+    assert all(re.match(pattern, nie) for nie in nies), "At least one NIE doesn't match expected format"
+    assert all(len(nie) == 9 for nie in nies), 'At least one NIE has incorrect length'
     assert len(set(nies)) == len(nies), 'NIEs should be unique'
 
 def test_reproducible_test_data_uses_random_with_seed():
@@ -66,5 +61,4 @@ def test_kpi_data_generation_reproducibility():
     loader2 = KpiDataLoader(seed=42)
     series2 = loader2.generate_kpi_series('test_kpi', date(2024, 1, 1), days=5, base_value=100.0, trend=0.001, noise=0.05)
     assert len(series1) == len(series2) == 5
-    for i in range(5):
-        assert series1[i].value == series2[i].value, 'KPI values should be reproducible with same seed'
+    assert [point.value for point in series1] == [point.value for point in series2], 'KPI values should be reproducible with same seed'
