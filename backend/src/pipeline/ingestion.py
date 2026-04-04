@@ -263,9 +263,9 @@ class IngestionPhase:
             if col not in df.columns:
                 continue
             try:
-                parsed = pd.to_datetime(df[col], errors='coerce', format='mixed')
+                parsed = pd.to_datetime(df[col], errors='coerce', format='mixed', dayfirst=True)
             except TypeError:
-                parsed = pd.to_datetime(df[col], errors='coerce')
+                parsed = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
             max_dt = parsed.max()
             if pd.notna(max_dt):
                 return (str(max_dt.date()), col)
