@@ -333,6 +333,13 @@ scripts/
 └── maintenance/   # Database maintenance
 ```
 
+## Module Lifecycle Classification
+
+- `backend/src/zero_cost/`: **Transitional but supported** module.
+- Current role: migration and reconciliation bridge for loan tape ETL, crosswalk, and XIRR workflows.
+- Policy: keep for runtime compatibility and audited historical flows; allow bug fixes/hardening only, avoid feature expansion.
+- Exit criterion for retirement: equivalent `backend/src/pipeline/*` coverage with parity tests in `tests/zero_cost/` and no production callers.
+
 ## Output Artifacts
 
 Pipeline runs → `logs/runs/<run_id>/`:

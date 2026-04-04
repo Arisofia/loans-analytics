@@ -25,7 +25,6 @@ This index contains only active documentation paths for the Loans Analytics plat
 
 - [operations/UNIFIED_WORKFLOW.md](operations/UNIFIED_WORKFLOW.md)
 - [operations/SCRIPT_CANONICAL_MAP.md](operations/SCRIPT_CANONICAL_MAP.md)
-- [operations/EMERGENCY_RESPONSE_PLAN.md](operations/EMERGENCY_RESPONSE_PLAN.md)
 
 ## Security
 
