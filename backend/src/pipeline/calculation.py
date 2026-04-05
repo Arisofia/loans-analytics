@@ -680,6 +680,7 @@ class CalculationPhase:
             logger.warning(
                 'Advanced clustering skipped: %s. Core KPIs are unaffected.',
                 exc,
+                exc_info=True,
             )
             metrics['skipped'] = True
             metrics['skip_reason'] = str(exc)
