@@ -680,6 +680,11 @@ class OutputPhase:
         try:
             return query.select("id, name, kpi_key, display_name").execute()
         except Exception as exc:
+            # Re-raise on network/connection errors — the fallback minimal query
+            # would also fail, and swallowing these would mask connectivity or
+            # authentication problems that require operator attention.
+            if isinstance(exc, (OSError, ConnectionError, TimeoutError)):
+                raise
             logger.warning(
                 "_select_kpi_definitions_response: full column select failed (%s); "
                 "falling back to minimal (name, kpi_key) select.",

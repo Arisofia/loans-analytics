@@ -361,7 +361,7 @@ class IngestionPhase:
                 # Use dtype-level check for any column that expects a numeric type.
                 # isinstance() per-value fails for numpy 2.x scalars (int64/float64 no
                 # longer subclass Python int/float in NumPy 2.0+).
-                _is_numeric = expected_type == (int, float) or expected_type in (int, float)
+                _is_numeric = isinstance(expected_type, tuple) or expected_type in (int, float)
                 if _is_numeric:
                     if not pd.api.types.is_numeric_dtype(df[col]):
                         type_errors.append(col)
