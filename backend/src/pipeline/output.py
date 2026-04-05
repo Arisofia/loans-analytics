@@ -53,7 +53,8 @@ _NON_NEGATIVE_KPI_KEYS = frozenset(
 
 
 class KPIAuditProvider(Protocol):
-    def get_audit_trail(self) -> pd.DataFrame: ...
+    def get_audit_trail(self) -> pd.DataFrame:
+        pass
 
 
 def _parse_bool_env(var_name: str, default: bool = True) -> bool:
