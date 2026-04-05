@@ -63,7 +63,9 @@ jobs:
           #   ssot_asset_quality.py  — assert→RuntimeError: assert can be silenced with -O (security fix, reviewed)
           #   portfolio_analytics.py — remove redundant post-guard asserts that were unreachable (reviewed)
           #   api/service.py         — canonical KPI engine migration + import-hardening compatibility layer
-          mapfile -t DISALLOWED < <(printf '%s\n' "${LEGACY_CHANGES[@]}" | grep -Ev '(^backend/loans_analytics/tests/|/__init__\.py$|^backend/loans_analytics/kpis/ssot_asset_quality\.py$|^backend/loans_analytics/kpis/portfolio_analytics\.py$|^backend/loans_analytics/apps/analytics/api/service\.py$)' || true)
+          #   kpis/{engine,formula_engine,dpd_calculator}.py — compatibility shims to prevent collection failures after legacy purge
+          #   multi_agent/agents/{cohort_vintage,collections}_agent.py — audited placeholder-removal implementations
+          mapfile -t DISALLOWED < <(printf '%s\n' "${LEGACY_CHANGES[@]}" | grep -Ev '(^backend/loans_analytics/tests/|/__init__\.py$|^backend/loans_analytics/kpis/ssot_asset_quality\.py$|^backend/loans_analytics/kpis/portfolio_analytics\.py$|^backend/loans_analytics/apps/analytics/api/service\.py$|^backend/loans_analytics/kpis/engine\.py$|^backend/loans_analytics/kpis/formula_engine\.py$|^backend/loans_analytics/kpis/dpd_calculator\.py$|^backend/loans_analytics/multi_agent/agents/cohort_vintage_agent\.py$|^backend/loans_analytics/multi_agent/agents/collections_agent\.py$)' || true)
           if [ "${#DISALLOWED[@]}" -gt 0 ]; then
             echo "Legacy path edits are frozen. Disallowed files:"
             printf ' - %s\n' "${DISALLOWED[@]}"
