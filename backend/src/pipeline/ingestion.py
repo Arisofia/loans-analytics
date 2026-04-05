@@ -146,7 +146,7 @@ class IngestionPhase:
         text = series.astype('string').str.strip()
         text = text.mask(text.isin({'', 'nan', 'none', 'null', 'missing'}), pd.NA)
         cleaned = text.str.replace(r'[^0-9,.-]', '', regex=True)
-        comma_only_mask = cleaned.str.contains(',', na=False) & ~cleaned.str.contains(r'\.', na=False)
+        comma_only_mask = cleaned.str.contains(',', na=False) & ~cleaned.str.contains('.', regex=False, na=False)
         thousands_mask = comma_only_mask & cleaned.str.contains(r',\d{3}$', regex=True, na=False)
         decimal_comma_mask = comma_only_mask & ~thousands_mask
         if thousands_mask.any():
