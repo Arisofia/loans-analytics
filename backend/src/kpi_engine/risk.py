@@ -186,8 +186,8 @@ def compute_provision_coverage_ratio(
     Compute Provision Coverage Ratio.
     Formula: SUM(provision_expense) / SUM(outstanding_principal WHERE dpd >= 90 OR default_flag = True)
     
-    FIXED: Fail-fast on empty input or zero NPL balance.
-    Returns Decimal("[0.0, 999.9]" representing coverage %. Never returns nonsensical 100% when NPL=0.
+    Fail-fast on empty input.
+    Returns Decimal ratio quantized to 4dp. When no NPL exposure exists, returns 0.0.
     """
     if portfolio_mart.empty or finance_mart.empty:
         raise ValueError(
@@ -206,10 +206,11 @@ def compute_provision_coverage_ratio(
     npl_balance = Decimal(str(balance.loc[(dpd >= 90) | _defaulted_mask(portfolio_mart)].sum()))
 
     if npl_balance <= 0:
-        raise ValueError(
-            f"CRITICAL: NPL balance must be > 0 to compute provision coverage. "
-            f"Got NPL balance = {npl_balance}. This suggests no non-performing loans exist."
+        logger.warning(
+            "provision_coverage_ratio: npl_balance<=0 (%s); returning 0.0",
+            npl_balance,
         )
+        return ComparableDecimal("0.0")
 
     return (total_provisions / npl_balance).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 

@@ -11,7 +11,10 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 def build_historical_context_provider(cache_ttl_seconds: int=60, mode: Optional[str]=None) -> HistoricalContextProvider:
-    effective_mode = str(mode or os.getenv('HISTORICAL_CONTEXT_MODE', 'MOCK')).upper()
+    configured_mode = mode or os.getenv('HISTORICAL_CONTEXT_MODE')
+    if configured_mode is None:
+        raise ValueError("HISTORICAL_CONTEXT_MODE is required. Set to 'REAL' for production or 'MOCK' only in tests.")
+    effective_mode = str(configured_mode).upper()
     if effective_mode not in ('MOCK', 'REAL'):
         raise ValueError(f"Invalid mode: {effective_mode}. Must be 'MOCK' or 'REAL'.")
     if effective_mode == 'REAL':

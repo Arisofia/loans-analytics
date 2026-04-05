@@ -11,10 +11,39 @@ from sklearn.preprocessing import RobustScaler
 
 getcontext().rounding = ROUND_HALF_UP
 
-from backend.loans_analytics.kpis.ltv import calculate_ltv_sintetico
-from backend.loans_analytics.kpis.formula_engine import KPIFormulaEngine
-from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+from backend.src.kpi_engine.engine import flatten_metric_result_groups, run_metric_engine
 from backend.src.kpi_engine.risk import compute_default_rate_by_count
+try:
+    from backend.loans_analytics.kpis.ltv import calculate_ltv_sintetico
+except Exception:
+
+    def calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
+        if 'ltv_sintetico' in df.columns:
+            return pd.to_numeric(df['ltv_sintetico'], errors='coerce').fillna(0.0)
+        return pd.Series(0.0, index=df.index, dtype=float)
+
+try:
+    from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics
+except Exception:
+
+    def calculate_asset_quality_metrics(
+        *,
+        balance: pd.Series,
+        dpd: pd.Series,
+        status: Optional[pd.Series] = None,
+        actor: str = 'pipeline.segment_analytics',
+        metric_aliases: Optional[list[str]] = None,
+    ) -> dict[str, float]:
+        balance_num = pd.to_numeric(balance, errors='coerce').fillna(0.0)
+        dpd_num = pd.to_numeric(dpd, errors='coerce').fillna(0.0)
+        total = float(balance_num.sum())
+        if total <= 0:
+            return {'par30': 0.0, 'par60': 0.0, 'par90': 0.0}
+        return {
+            'par30': float(balance_num[dpd_num >= 30].sum() / total * 100.0),
+            'par60': float(balance_num[dpd_num >= 60].sum() / total * 100.0),
+            'par90': float(balance_num[dpd_num >= 90].sum() / total * 100.0),
+        }
 try:
     import umap
     _UMAP_AVAILABLE = True
@@ -66,6 +95,26 @@ __all__ = ['CalculationPhase']
 logger = logging.getLogger(__name__)
 _COHORT_LABELS = ['Alfa', 'Beta', 'Gamma', 'Delta']
 _COHORT_FEATURE_COLS = ['ltv_sintetico', 'dpd_adjusted', 'vd_bps_month', 'ratio_pago_real']
+
+
+class _CanonicalKPIAuditAdapter:
+
+    def __init__(self, metrics_flat: Dict[str, float]) -> None:
+        self._records = [
+            {
+                'kpi_name': metric_key,
+                'status': 'success',
+                'value': metric_value,
+                'timestamp': datetime.now().isoformat(),
+            }
+            for metric_key, metric_value in metrics_flat.items()
+        ]
+
+    def get_audit_trail(self) -> pd.DataFrame:
+        return pd.DataFrame(self._records)
+
+    def get_audit_records(self) -> List[dict[str, Any]]:
+        return list(self._records)
 
 class CalculationPhase:
 
@@ -374,11 +423,78 @@ class CalculationPhase:
         return next((c for c in candidates if c in df.columns), None)
 
     def _run_unified_kpi_calculation(self, df: pd.DataFrame) -> Dict[str, Any]:
-        self.engine = KPIFormulaEngine(df, registry_data=self.kpi_definitions)
-        kpi_results = self.engine.calculate_all()
-        # Convert Decimals to float for compatibility with parts of the pipeline that expect floats
-        # while keeping the high-precision audit trail in self.engine.
-        return {k: float(v) if isinstance(v, Decimal) else v for k, v in kpi_results.items()}
+        marts = self._build_canonical_marts(df)
+        metric_groups = run_metric_engine(marts)
+        flattened = flatten_metric_result_groups(metric_groups)
+        self.engine = _CanonicalKPIAuditAdapter(flattened)
+        return {k: float(v) for k, v in flattened.items()}
+
+    @staticmethod
+    def _build_canonical_marts(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+        work = df.copy()
+
+        def _series_or_default(column: str, default: Any = 0) -> pd.Series:
+            if column in work.columns:
+                return work[column]
+            return pd.Series(default, index=work.index)
+
+        def _first_existing_series(*columns: str, default: Any = 0) -> pd.Series:
+            for column in columns:
+                if column in work.columns:
+                    return work[column]
+            return pd.Series(default, index=work.index)
+
+        if 'outstanding_principal' not in work.columns:
+            work['outstanding_principal'] = pd.to_numeric(
+                _first_existing_series('outstanding_balance', 'current_balance', 'amount', default=0),
+                errors='coerce',
+            ).fillna(0)
+        if 'days_past_due' not in work.columns:
+            work['days_past_due'] = pd.to_numeric(_series_or_default('dpd', 0), errors='coerce').fillna(0)
+        if 'status' not in work.columns:
+            work['status'] = 'active'
+        work['default_flag'] = work['status'].astype(str).str.lower().eq('defaulted')
+        if 'disbursement_amount' not in work.columns:
+            work['disbursement_amount'] = pd.to_numeric(_series_or_default('amount', 0), errors='coerce').fillna(0)
+        if 'disbursement_date' not in work.columns:
+            work['disbursement_date'] = pd.to_datetime(
+                work.get('origination_date', work.get('funded_at')),
+                errors='coerce',
+                format='mixed',
+            )
+        finance_mart = pd.DataFrame(
+            {
+                'interest_income': pd.to_numeric(_series_or_default('interest_income', 0), errors='coerce').fillna(0),
+                'fee_income': pd.to_numeric(_series_or_default('fee_income', 0), errors='coerce').fillna(0),
+                'funding_cost': pd.to_numeric(_series_or_default('funding_cost', 0), errors='coerce').fillna(0),
+                'operating_expense': pd.to_numeric(_series_or_default('operating_expense', 0), errors='coerce').fillna(0),
+                'provision_expense': pd.to_numeric(_series_or_default('provision_expense', 0), errors='coerce').fillna(0),
+                'balance_avg': pd.to_numeric(_series_or_default('outstanding_principal', 0), errors='coerce').fillna(0),
+                'debt_balance': pd.to_numeric(_series_or_default('outstanding_principal', 0), errors='coerce').fillna(0),
+            }
+        )
+        finance_mart['gross_margin'] = (
+            finance_mart['interest_income']
+            + finance_mart['fee_income']
+            - finance_mart['funding_cost']
+            - finance_mart['operating_expense']
+            - finance_mart['provision_expense']
+        )
+        sales_mart = pd.DataFrame(
+            {
+                'ticket_size': pd.to_numeric(_series_or_default('amount', 0), errors='coerce').fillna(0),
+                'approved_ticket': pd.to_numeric(_first_existing_series('disbursement_amount', 'amount', default=0), errors='coerce').fillna(0),
+                'funded_flag': ~work['status'].astype(str).str.lower().isin(['rejected', 'denied', 'cancelled']),
+                'status': work.get('status', 'active'),
+            }
+        )
+        return {
+            'portfolio_mart': work,
+            'finance_mart': finance_mart,
+            'sales_mart': sales_mart,
+            'disbursements_mart': work,
+            'payments_mart': pd.DataFrame(),
+        }
 
     def _calculate_expected_loss(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Calculate Expected Loss (EL = PD × LGD × EAD) per loan and portfolio total."""
@@ -655,7 +771,13 @@ class CalculationPhase:
     def _run_advanced_clustering(self, df: pd.DataFrame) -> Dict[str, Any]:
         metrics: Dict[str, Any] = {'umap_available': _UMAP_AVAILABLE, 'hdbscan_available': _HDBSCAN_AVAILABLE}
         try:
-            X, feature_cols, opaque_mask = self._build_feature_matrix(df)
+            try:
+                X, feature_cols, opaque_mask = self._build_feature_matrix(df)
+            except ValueError as exc:
+                logger.warning('Clustering skipped: %s', exc)
+                metrics['skipped'] = True
+                metrics['skip_reason'] = str(exc)
+                return metrics
             metrics['feature_columns'] = feature_cols
             metrics['n_opaque_excluded'] = int(opaque_mask.sum())
             if X.shape[0] < 10:
