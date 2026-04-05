@@ -166,8 +166,13 @@ def compute_health_from_portfolio(portfolio_mart: pd.DataFrame) -> Dict[str, Any
     if portfolio_mart.empty:
         return compute_portfolio_health_score(0.0, 0.0, 0.0, 0.0, 0.0)
 
-    from backend.src.kpi_engine.risk import compute_npl_ratio, compute_par30, compute_default_rate_by_count
+    from backend.src.kpi_engine.risk import (
+        compute_npl_ratio,
+        compute_par30,
+        compute_default_rate_by_count,
+    )
     from backend.src.kpi_engine.revenue import compute_collections_coverage
+
     # In practice cost_of_risk calculation would be here or in unit_economics
 
     par30 = float(compute_par30(portfolio_mart)) * 100.0

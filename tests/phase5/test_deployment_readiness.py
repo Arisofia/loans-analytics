@@ -78,6 +78,6 @@ def test_changelog_exists_with_current_version():
     changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
     pyproject = toml.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
     version = pyproject["project"]["version"]
-    assert f"[{version}]" in changelog, (
-        f"CHANGELOG.md does not contain entry for current version [{version}]"
-    )
+    assert (
+        f"[{version}]" in changelog
+    ), f"CHANGELOG.md does not contain entry for current version [{version}]"
