@@ -61,22 +61,22 @@ class TestMetricEngine:
     def test_run_metric_engine_with_dataframes(self):
         portfolio = pd.DataFrame(
             {
-                "loan_id": ["L1", "L2"],
-                "days_past_due": [0, 45],
-                "outstanding_principal": [100000, 200000],
-                "default_flag": [0, 0],
-                "origination_date": ["2024-01-01", "2024-02-01"],
-                "funded_amount": [100000, 200000],
-                "sector": ["gov", "gov"],
-                "country": ["SV", "SV"],
-                "customer_id": ["C1", "C2"],
-                "apr": [0.12, 0.15],
-                "term_days": [360, 720],
-                "dpd_bucket": ["current", "31_60"],
-                "source_channel": ["web", "web"],
-                "originator": ["O1", "O1"],
-                "cohort": ["2024-01", "2024-02"],
-                "vintage": ["2024-01", "2024-02"],
+                "loan_id": ["L1", "L2", "L3"],
+                "days_past_due": [0, 45, 100],  # L3 has NPL (dpd >= 90)
+                "outstanding_principal": [100000, 200000, 150000],
+                "default_flag": [0, 0, 0],
+                "origination_date": ["2024-01-01", "2024-02-01", "2023-12-01"],
+                "funded_amount": [100000, 200000, 150000],
+                "sector": ["gov", "gov", "gov"],
+                "country": ["SV", "SV", "SV"],
+                "customer_id": ["C1", "C2", "C3"],
+                "apr": [0.12, 0.15, 0.18],
+                "term_days": [360, 720, 360],
+                "dpd_bucket": ["current", "31_60", "90_plus"],
+                "source_channel": ["web", "web", "web"],
+                "originator": ["O1", "O1", "O1"],
+                "cohort": ["2024-01", "2024-02", "2023-12"],
+                "vintage": ["2024-01", "2024-02", "2023-12"],
             }
         )
         marts = {
@@ -88,6 +88,7 @@ class TestMetricEngine:
                     "funding_cost": [200],
                     "debt_balance": [50000],
                     "gross_margin": [900],
+                    "provision_expense": [75000],  # Provision for NPL
                 }
             ),
             "sales_mart": pd.DataFrame(
