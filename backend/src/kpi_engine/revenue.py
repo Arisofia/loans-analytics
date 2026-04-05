@@ -270,3 +270,66 @@ def compute_nim_proxy(
     )
     nim = (avg_interest_rate - funding_cost_rate) * Decimal("100")
     return nim.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def compute_fee_yield(portfolio_mart: pd.DataFrame) -> Decimal:
+    """Compute fee yield as a percentage of funded amount.
+
+    Formula: SUM(fees) / SUM(funded_amount) * 100
+    """
+    if portfolio_mart.empty:
+        return Decimal("0.0")
+
+    fee_col = _first_existing_column(portfolio_mart, ("origination_fee", "fee_amount", "fees"))
+    funded_col = _first_existing_column(
+        portfolio_mart, ("funded_amount", "loan_amount", "principal_amount", "amount")
+    )
+
+    if not fee_col or not funded_col:
+        return Decimal("0.0")
+
+    fees = pd.to_numeric(portfolio_mart[fee_col], errors="coerce").fillna(0)
+    funded = pd.to_numeric(portfolio_mart[funded_col], errors="coerce").fillna(0)
+
+    total_fees = Decimal(str(fees.sum()))
+    total_funded = Decimal(str(funded.sum()))
+
+    if total_funded <= 0:
+        return Decimal("0.0")
+
+    return ((total_fees / total_funded) * Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+
+
+def compute_collections_coverage(portfolio_mart: pd.DataFrame) -> Decimal:
+    """Compute collections coverage ratio.
+
+    Formula: SUM(actual_payment) / SUM(scheduled_payment) * 100
+    """
+    if portfolio_mart.empty:
+        return Decimal("0.0")
+
+    actual_col = _first_existing_column(
+        portfolio_mart,
+        ("actual_payment_amount", "payment_amount", "last_payment_amount", "payments_collected"),
+    )
+    scheduled_col = _first_existing_column(
+        portfolio_mart, ("scheduled_amount", "scheduled_payment", "total_scheduled", "payments_due")
+    )
+
+    if not actual_col or not scheduled_col:
+        return Decimal("0.0")
+
+    actual = pd.to_numeric(portfolio_mart[actual_col], errors="coerce").fillna(0)
+    scheduled = pd.to_numeric(portfolio_mart[scheduled_col], errors="coerce").fillna(0)
+
+    total_actual = Decimal(str(actual.sum()))
+    total_scheduled = Decimal(str(scheduled.sum()))
+
+    if total_scheduled <= 0:
+        return Decimal("0.0")
+
+    return ((total_actual / total_scheduled) * Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )

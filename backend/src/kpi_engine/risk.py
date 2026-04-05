@@ -436,6 +436,74 @@ def compute_expected_loss(
     return (df["pd_final"] * df["lgd_final"] * df["ead"]).sum()
 
 
+def compute_dpd_risk_summary(portfolio_mart: pd.DataFrame) -> List[Dict[str, Any]]:
+    """Generate DPD bucket risk summary with recommended actions.
+
+    Legacy: calculate_dpd_migration_risk
+    """
+    if portfolio_mart.empty:
+        return []
+
+    balance = _numeric_series(
+        portfolio_mart,
+        ("outstanding_principal", "outstanding_balance", "principal_balance", "current_balance", "amount"),
+    )
+    dpd = _numeric_series(portfolio_mart, ("days_past_due", "dpd", "dpd_adjusted"))
+    total_balance = Decimal(str(balance.sum()))
+
+    # Bucket definitions with risk levels and actions
+    buckets_def = [
+        ("current", dpd <= 0, "low", "Monitor – no immediate action"),
+        (
+            "dpd_1_30",
+            (dpd > 0) & (dpd <= 30),
+            "medium",
+            "Trigger early collection contact (SMS / call)",
+        ),
+        (
+            "dpd_31_60",
+            (dpd > 30) & (dpd <= 60),
+            "high",
+            "Escalate collection intensity – send formal notice",
+        ),
+        (
+            "dpd_61_90",
+            (dpd > 60) & (dpd <= 90),
+            "critical",
+            "Activate legal / field team and restructure review",
+        ),
+        (
+            "dpd_90_plus",
+            dpd > 90,
+            "critical",
+            "Full provision write-off candidate – activate recovery workflow",
+        ),
+    ]
+
+    rows: List[Dict[str, Any]] = []
+    for bucket_name, mask, risk_level, recommended_action in buckets_def:
+        bucket_balance = Decimal(str(balance[mask].sum()))
+        share = (
+            (bucket_balance / total_balance * Decimal("100")).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+            if total_balance > 0
+            else Decimal("0.00")
+        )
+
+        rows.append(
+            {
+                "bucket": bucket_name,
+                "loan_count": int(mask.sum()),
+                "balance": float(bucket_balance.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+                "balance_share_pct": float(share),
+                "risk_level": risk_level,
+                "recommended_action": recommended_action,
+            }
+        )
+    return rows
+
+
 def classify_dpd_buckets(
     df: pd.DataFrame,
     dpd_col: str = "days_past_due",
@@ -638,3 +706,30 @@ def build_feature_engineering_pipeline(
                 logger.info("Calculado Z-score para %s", metric)
 
     return result
+
+
+def compute_credit_quality_index(portfolio_mart: pd.DataFrame) -> Decimal:
+    """Compute normalized credit quality index based on scores.
+
+    Formula: (avg_score - 300) / 550 * 100
+    Range: [0, 100]
+    """
+    if portfolio_mart.empty:
+        return Decimal("0.0")
+
+    score_col = _first_existing_column(portfolio_mart, ("credit_score", "equifax_score", "score"))
+    if not score_col:
+        return Decimal("0.0")
+
+    scores = pd.to_numeric(portfolio_mart[score_col], errors="coerce").dropna()
+    scores = scores[scores > 0]
+
+    if scores.empty:
+        return Decimal("0.0")
+
+    avg_score = Decimal(str(scores.mean()))
+    quality = (avg_score - Decimal("300")) / Decimal("550") * Decimal("100")
+
+    return max(Decimal("0"), min(Decimal("100"), quality)).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )

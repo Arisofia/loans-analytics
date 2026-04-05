@@ -380,3 +380,99 @@ def calculate_line_utilization(
 
     return df
 
+
+def compute_payback_period(cac: Decimal, monthly_arpu: Decimal) -> Dict[str, Any]:
+    """Calculate payback period in months.
+
+    Formula: CAC / monthly_ARPU
+    """
+    if monthly_arpu <= 0 or cac <= 0:
+        return {"payback_months": None, "cac": float(cac), "monthly_arpu": float(monthly_arpu)}
+
+    payback = (cac / monthly_arpu).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return {
+        "payback_months": float(payback),
+        "cac": float(cac),
+        "monthly_arpu": float(monthly_arpu),
+    }
+
+
+def compute_cure_rate(portfolio_mart: pd.DataFrame) -> Dict[str, Any]:
+    """Compute cure rate for delinquent loans.
+
+    A loan is 'cured' if it was delinquent but has a recent payment.
+    This is a proxy metric.
+    """
+    if portfolio_mart.empty:
+        return {"cure_rate_pct": 0.0, "delinquent_count": 0, "curing_count": 0}
+
+    # Use dpd column candidates
+    dpd_col = next(
+        (c for c in ("days_past_due", "dpd", "dpd_adjusted") if c in portfolio_mart.columns), None
+    )
+    if not dpd_col:
+        return {"cure_rate_pct": 0.0, "delinquent_count": 0, "curing_count": 0}
+
+    dpd = pd.to_numeric(portfolio_mart[dpd_col], errors="coerce").fillna(0)
+    delinquent_mask = dpd > 0
+    delinquent_count = int(delinquent_mask.sum())
+
+    if delinquent_count == 0:
+        return {"cure_rate_pct": 0.0, "delinquent_count": 0, "curing_count": 0}
+
+    # Payment column candidates
+    pay_col = next(
+        (
+            c
+            for c in ("last_payment_amount", "payment_amount", "actual_payment_amount")
+            if c in portfolio_mart.columns
+        ),
+        None,
+    )
+    if pay_col:
+        payments = pd.to_numeric(portfolio_mart[pay_col], errors="coerce").fillna(0)
+        curing_mask = delinquent_mask & (payments > 0)
+    else:
+        curing_mask = pd.Series(False, index=portfolio_mart.index)
+
+    curing_count = int(curing_mask.sum())
+    cure_rate = (
+        (Decimal(curing_count) / Decimal(delinquent_count) * Decimal("100")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        if delinquent_count > 0
+        else Decimal("0.00")
+    )
+
+    return {
+        "cure_rate_pct": float(cure_rate),
+        "delinquent_count": delinquent_count,
+        "curing_count": curing_count,
+    }
+
+
+def compute_repeat_borrower_rate(portfolio_mart: pd.DataFrame) -> Decimal:
+    """Compute repeat borrower rate.
+
+    Formula: COUNT(borrowers with > 1 loan) / COUNT(total unique borrowers) * 100
+    """
+    if portfolio_mart.empty:
+        return Decimal("0.0")
+
+    customer_col = next(
+        (c for c in ("customer_id", "borrower_id") if c in portfolio_mart.columns), None
+    )
+    if not customer_col:
+        return Decimal("0.0")
+
+    loan_counts = portfolio_mart[customer_col].value_counts()
+    total_customers = len(loan_counts)
+    if total_customers == 0:
+        return Decimal("0.0")
+
+    repeat_customers = (loan_counts > 1).sum()
+
+    return (Decimal(int(repeat_customers)) / Decimal(total_customers) * Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+
