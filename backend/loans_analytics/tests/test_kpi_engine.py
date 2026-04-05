@@ -252,7 +252,13 @@ class TestDerivedRiskKPIAudit(unittest.TestCase):
 
     def test_calculate_all_with_empty_df_does_not_raise(self) -> None:
         """calculate_all must return a dict for an empty portfolio, not raise."""
-        results = self._make_engine({"outstanding_principal": [], "days_past_due": [], "loan_status": []}).calculate_all()
+        results = self._make_engine(
+            {
+                "outstanding_principal": [],
+                "days_past_due": [],
+                "loan_status": [],
+            }
+        ).calculate_all()
         self.assertIsInstance(results, dict)
 
 
