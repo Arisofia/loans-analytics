@@ -138,7 +138,7 @@ class CalculationPhase:
     def __init__(self, config: Dict[str, Any], kpi_definitions: Dict[str, Any]):
         self.config = config
         self.kpi_definitions = kpi_definitions
-        self.engine = None
+        self.engine: Any | None = None
 
     @staticmethod
     def _log_and_raise_critical_error(error_msg: str) -> None:
