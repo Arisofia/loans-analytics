@@ -1,3 +1,4 @@
+import decimal
 import random
 import inspect
 import asyncio
@@ -8,6 +9,12 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+
+# Set the decimal rounding context to ROUND_HALF_UP before any module is
+# imported during test collection.  backend/loans_analytics/kpis/ssot_asset_quality.py
+# asserts this context at import time; failing to set it here causes collection
+# errors for every test file that (transitively) imports that module.
+decimal.getcontext().rounding = decimal.ROUND_HALF_UP
 
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:

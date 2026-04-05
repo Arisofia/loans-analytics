@@ -1,7 +1,6 @@
 from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
-from backend.loans_analytics.apps.analytics.api.main import app
 
 def _make_mock_kpi():
     kpi = MagicMock()
@@ -14,8 +13,12 @@ def _make_mock_kpi_service():
     return svc
 
 def test_kpi_stream_websocket_once_returns_snapshot_event():
+    # Import both inside the test to avoid holding a stale module reference
+    # after sys.modules.pop in test_deployment_readiness.py's
+    # _clear_api_main_module fixture, which would cause the dependency
+    # override key to mismatch and invoke the real (unmocked) KPI service.
+    from backend.loans_analytics.apps.analytics.api.main import app, get_kpi_service  # noqa: PLC0415
     client = TestClient(app)
-    from backend.loans_analytics.apps.analytics.api.main import get_kpi_service
     app.dependency_overrides[get_kpi_service] = _make_mock_kpi_service
     try:
         with client.websocket_connect('/analytics/kpis/stream?once=true') as websocket:
@@ -28,8 +31,10 @@ def test_kpi_stream_websocket_once_returns_snapshot_event():
     assert isinstance(payload['kpis'], list)
 
 def test_kpi_stream_websocket_supports_kpi_key_filter_param():
+    # Same rationale: import inside the test to survive sys.modules eviction
+    # by test_deployment_readiness.py's _clear_api_main_module fixture.
+    from backend.loans_analytics.apps.analytics.api.main import app, get_kpi_service  # noqa: PLC0415
     client = TestClient(app)
-    from backend.loans_analytics.apps.analytics.api.main import get_kpi_service
     app.dependency_overrides[get_kpi_service] = _make_mock_kpi_service
     try:
         with client.websocket_connect('/analytics/kpis/stream?once=true&kpi_keys=PAR30') as websocket:
@@ -42,3 +47,4 @@ def test_kpi_stream_websocket_supports_kpi_key_filter_param():
         first = payload['kpis'][0]
         assert 'id' in first
         assert 'value' in first
+
