@@ -356,8 +356,20 @@ class IngestionPhase:
             type_validation: Dict[str, Any] = {'loan_id': str, 'amount': (int, float), 'status': str}
             type_errors = []
             for col, expected_type in type_validation.items():
-                if col in df.columns and (not all((isinstance(val, expected_type) for val in df[col].dropna()))):
-                    type_errors.append(col)
+                if col not in df.columns:
+                    continue
+                # Use dtype-level check for any column that expects a numeric type.
+                # isinstance() per-value fails for numpy 2.x scalars (int64/float64 no
+                # longer subclass Python int/float in NumPy 2.0+).
+                _is_numeric = isinstance(expected_type, tuple) or expected_type in (int, float)
+                if _is_numeric:
+                    # Explicitly reject boolean dtypes: pandas treats bool as numeric,
+                    # but schema fields such as `amount` must be int/float-like values.
+                    if pd.api.types.is_bool_dtype(df[col]) or not pd.api.types.is_numeric_dtype(df[col]):
+                        type_errors.append(col)
+                else:
+                    if not all((isinstance(val, expected_type) for val in df[col].dropna())):
+                        type_errors.append(col)
             if type_errors:
                 error_msg = f'CRITICAL: SCHEMA VALIDATION FAILED: Type validation failed for columns: {type_errors}'
                 logger.error(error_msg)

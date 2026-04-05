@@ -625,7 +625,9 @@ class TestSilentHandlerHardening:
         with pytest.raises(ValueError, match="CRITICAL:.*HDBSCAN"):
             CalculationPhase._apply_hdbscan(X_embed, X_fallback, metrics)
 
-    def test_run_advanced_clustering_propagates_critical_on_inner_failure(self, monkeypatch):
+    def test_run_advanced_clustering_gracefully_degrades_on_inner_failure(self, monkeypatch):
+        """_run_advanced_clustering must not propagate exceptions — it logs and returns
+        a skipped metrics dict so the rest of the pipeline output is preserved."""
         phase = object.__new__(CalculationPhase)
 
         def _bad_build(df):
@@ -633,8 +635,24 @@ class TestSilentHandlerHardening:
 
         monkeypatch.setattr(phase, "_build_feature_matrix", _bad_build)
         df = pd.DataFrame({"ltv_sintetico": [1.0, 2.0, 3.0] * 5})
-        with pytest.raises(ValueError, match="CRITICAL:"):
-            phase._run_advanced_clustering(df)
+        result = phase._run_advanced_clustering(df)
+        assert result.get("skipped") is True
+        assert "simulated feature-matrix failure" in result.get("skip_reason", "")
+
+    def test_run_advanced_clustering_skips_when_no_feature_columns(self):
+        """Pipeline must not crash when real data lacks clustering feature columns.
+
+        This is the exact production scenario: a raw loan tape that has not been
+        through the full transformation pipeline will have none of the columns in
+        _COHORT_FEATURE_COLS, so _build_feature_matrix raises ValueError.  The
+        pipeline must continue and return core KPIs — only clustering is skipped.
+        """
+        phase = object.__new__(CalculationPhase)
+        # DataFrame with no clustering feature columns at all
+        df = pd.DataFrame({"loan_id": ["L1", "L2"], "status": ["active", "active"]})
+        result = phase._run_advanced_clustering(df)
+        assert result.get("skipped") is True
+        assert result.get("skip_reason") is not None
 
 
 def test_calculate_ltv_uses_decimal_arithmetic():

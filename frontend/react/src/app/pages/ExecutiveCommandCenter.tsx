@@ -1,5 +1,5 @@
 import { useSection } from "@/hooks/useData";
-import { MetricCard, ConfidenceBadge, AlertCard } from "../components/MetricComponents";
+import { MetricCard, ConfidenceBadge } from "../components/MetricComponents";
 import { LoadingState, ErrorState } from "../components/LoadingState";
 import { Button } from "@/components/ui/button";
 import {

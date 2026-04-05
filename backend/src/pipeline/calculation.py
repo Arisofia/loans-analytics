@@ -10,10 +10,10 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
 
-getcontext().rounding = ROUND_HALF_UP
-
 from backend.src.kpi_engine.engine import flatten_metric_result_groups, run_metric_engine
 from backend.src.kpi_engine.risk import compute_default_rate_by_count
+
+getcontext().rounding = ROUND_HALF_UP
 
 
 def _load_optional_callable(module_path: str, attr_name: str) -> Any | None:
@@ -810,7 +810,20 @@ class CalculationPhase:
             metrics['cohort_distribution'] = cohort_series.value_counts().to_dict() if cohort_series is not None else {}
             metrics['cluster_centroids'] = centroids
         except Exception as exc:
-            raise ValueError(f'CRITICAL: Advanced clustering pipeline failed: {exc}') from exc
+            # Clustering is an optional enrichment step. When feature columns are
+            # absent (e.g. raw data that has not been through the full transformation
+            # pipeline) or any other runtime issue occurs, we degrade gracefully so
+            # that the core KPIs computed earlier in process() are still returned.
+            # Unexpected errors are logged at WARNING level and exposed in the
+            # returned metrics dict so they remain observable.
+            logger.warning(
+                'Advanced clustering skipped: %s. Core KPIs are unaffected.',
+                exc,
+                exc_info=True,
+            )
+            metrics['skipped'] = True
+            metrics['skip_reason'] = str(exc)
+            return metrics
         return metrics
 
     def _build_feature_matrix(self, df: pd.DataFrame) -> tuple[np.ndarray, List[str], pd.Series]:

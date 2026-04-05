@@ -53,7 +53,8 @@ _NON_NEGATIVE_KPI_KEYS = frozenset(
 
 
 class KPIAuditProvider(Protocol):
-    def get_audit_trail(self) -> pd.DataFrame: ...
+    def get_audit_trail(self) -> pd.DataFrame:
+        raise NotImplementedError("KPIAuditProvider.get_audit_trail must be implemented")
 
 
 def _parse_bool_env(var_name: str, default: bool = True) -> bool:
@@ -678,7 +679,22 @@ class OutputPhase:
     def _select_kpi_definitions_response(query: Any) -> Any:
         try:
             return query.select("id, name, kpi_key, display_name").execute()
-        except Exception:
+        except Exception as exc:
+            # Re-raise on network/connection errors — the fallback minimal query
+            # would also fail, and swallowing these would mask connectivity or
+            # authentication problems that require operator attention.
+            # Include httpx.HTTPError when available (Supabase/postgrest transport).
+            transport_error_types: tuple[type[BaseException], ...] = (
+                OSError, ConnectionError, TimeoutError
+            ) + ((httpx.HTTPError,) if httpx is not None else ())
+            if isinstance(exc, transport_error_types):
+                raise
+            logger.warning(
+                "_select_kpi_definitions_response: full column select failed (%s); "
+                "falling back to minimal (name, kpi_key) select.",
+                exc,
+                exc_info=True,
+            )
             return query.select("name, kpi_key").execute()
 
     @staticmethod

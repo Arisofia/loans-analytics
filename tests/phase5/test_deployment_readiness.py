@@ -59,6 +59,8 @@ def test_production_api_docs_disabled(monkeypatch, _clear_api_main_module):
     monkeypatch.setenv("MOCK", "false")
     monkeypatch.setenv("HISTORICAL_CONTEXT_MODE", "REAL")
     monkeypatch.setenv("API_RELOAD", "false")
+    monkeypatch.setenv("API_JWT_ENABLED", "1")
+    monkeypatch.setenv("API_JWT_SECRET", "test-secret-32-chars-long-padding!")
 
     m = _import_api_main()
     assert m.app.docs_url is None
