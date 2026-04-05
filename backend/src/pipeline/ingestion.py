@@ -365,8 +365,7 @@ class IngestionPhase:
                 if _is_numeric:
                     # Explicitly reject boolean dtypes: pandas treats bool as numeric,
                     # but schema fields such as `amount` must be int/float-like values.
-                    if (not pd.api.types.is_numeric_dtype(df[col]) or
-                            pd.api.types.is_bool_dtype(df[col])):
+                    if pd.api.types.is_bool_dtype(df[col]) or not pd.api.types.is_numeric_dtype(df[col]):
                         type_errors.append(col)
                 else:
                     if not all((isinstance(val, expected_type) for val in df[col].dropna())):

@@ -685,12 +685,8 @@ class OutputPhase:
             # authentication problems that require operator attention.
             # Include httpx.HTTPError when available (Supabase/postgrest transport).
             transport_error_types: tuple[type[BaseException], ...] = (
-                OSError,
-                ConnectionError,
-                TimeoutError,
-            )
-            if httpx is not None:
-                transport_error_types = transport_error_types + (httpx.HTTPError,)
+                OSError, ConnectionError, TimeoutError
+            ) + ((httpx.HTTPError,) if httpx is not None else ())
             if isinstance(exc, transport_error_types):
                 raise
             logger.warning(
