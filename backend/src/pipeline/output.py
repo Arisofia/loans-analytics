@@ -689,6 +689,7 @@ class OutputPhase:
                 "_select_kpi_definitions_response: full column select failed (%s); "
                 "falling back to minimal (name, kpi_key) select.",
                 exc,
+                exc_info=True,
             )
             return query.select("name, kpi_key").execute()
 
