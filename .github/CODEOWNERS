@@ -4,6 +4,9 @@ REPO_MAP.md @Arisofia
 # CI/CD & Workflows
 .github/workflows/* @Arisofia
 
+# Agent Definitions
+.github/agents/* @Arisofia
+
 # KPI Governance & Operations
 /docs/KPI.md @Arisofia
 /docs/kpi_lineage.md @Arisofia
