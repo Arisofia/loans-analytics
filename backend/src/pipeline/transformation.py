@@ -421,6 +421,21 @@ class TransformationPhase:
                 df["funded_amount"] = principal
                 derived.append("funded_amount")
 
+        alias_specs = {
+            "principal_amount": ["principal_amount", "funded_amount", "approved_value", "amount"],
+            "outstanding_balance": ["outstanding_balance", "outstanding_principal", "current_balance", "totalsaldovigente", "amount"],
+            "current_balance": ["current_balance", "outstanding_balance", "outstanding_principal", "amount"],
+            "disbursement_amount": ["disbursement_amount", "funded_amount", "principal_amount", "amount"],
+            "debt_balance": ["debt_balance", "outstanding_balance", "outstanding_principal", "current_balance"],
+        }
+        for target, candidates in alias_specs.items():
+            if target in df.columns and df[target].notna().any():
+                continue
+            alias_series = self._coalesce_numeric_columns(df, candidates)
+            if alias_series.notna().any():
+                df[target] = alias_series
+                derived.append(target)
+
         # --- interest_rate from tasainteres ("1.50%" → 0.015) ---
         if "interest_rate" not in df.columns or df["interest_rate"].isna().all():
             for rate_col in ("tasainteres", "tasa_interes", "tasa_de_interes", "tasa_de_interés"):
