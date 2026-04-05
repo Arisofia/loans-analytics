@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 try:
-    from backend.loans_analytics.kpis.ssot_asset_quality import (
+    from backend.loans_analytics.kpis.ssot_asset_quality import (  # type: ignore[import]
         calculate_par as _ssot_calculate_par,
     )
 except ModuleNotFoundError:

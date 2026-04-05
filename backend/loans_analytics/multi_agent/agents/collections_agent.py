@@ -15,6 +15,64 @@ from backend.src.kpi_engine.risk import compute_par30
 from backend.src.kpi_engine.cohorts import compute_roll_rates
 
 
+def _compute_collection_rate(collections: pd.DataFrame, portfolio: pd.DataFrame) -> Dict[str, Any]:
+    """Compute collection rate from available data.
+
+    Uses collections mart if present; falls back to portfolio payment columns.
+    Returns dict with ``collection_rate`` (ratio, 0-1) and supporting numerics.
+    """
+    # --- collections mart path ---
+    if not collections.empty:
+        sched_col = next((c for c in ("total_scheduled", "scheduled_amount", "monto_programado") if c in collections.columns), None)
+        recv_col = next((c for c in ("last_payment_amount", "payment_amount", "monto_pagado") if c in collections.columns), None)
+        if sched_col and recv_col:
+            scheduled = float(pd.to_numeric(collections[sched_col], errors="coerce").fillna(0).sum())
+            received = float(pd.to_numeric(collections[recv_col], errors="coerce").fillna(0).sum())
+            rate = received / scheduled if scheduled > 0 else 0.0
+            return {"collection_rate": rate, "collections_received": received, "collections_scheduled": scheduled}
+
+    # --- portfolio mart fallback ---
+    if not portfolio.empty:
+        sched_col = next((c for c in ("total_scheduled", "scheduled_amount") if c in portfolio.columns), None)
+        recv_col = next((c for c in ("last_payment_amount", "payment_amount") if c in portfolio.columns), None)
+        if sched_col and recv_col:
+            scheduled = float(pd.to_numeric(portfolio[sched_col], errors="coerce").fillna(0).sum())
+            received = float(pd.to_numeric(portfolio[recv_col], errors="coerce").fillna(0).sum())
+            rate = received / scheduled if scheduled > 0 else 0.0
+            return {"collection_rate": rate, "collections_received": received, "collections_scheduled": scheduled}
+
+    return {}
+
+
+def _compute_cure_rate(portfolio: pd.DataFrame) -> Dict[str, Any]:
+    """Compute cure rate: proportion of previously delinquent loans now current.
+
+    Approximated from the portfolio snapshot: loans with status 'active'/'current'
+    that still have a non-zero DPD history (dpd > 0 but status re-normalized).
+    Falls back to 0 when no delinquency data is available.
+    """
+    if portfolio.empty:
+        return {}
+
+    status_col = next((c for c in ("status", "loan_status", "current_status", "estado") if c in portfolio.columns), None)
+    dpd_col = next((c for c in ("days_past_due", "dpd") if c in portfolio.columns), None)
+
+    if status_col is None or dpd_col is None:
+        return {}
+
+    status = portfolio[status_col].astype(str).str.lower()
+    dpd = pd.to_numeric(portfolio[dpd_col], errors="coerce").fillna(0)
+
+    delinquent_ever = (dpd > 0) | status.isin({"delinquent", "late", "past_due", "mora"})
+    cured = delinquent_ever & status.isin({"active", "current", "vigente", "open"})
+
+    total_delinquent = int(delinquent_ever.sum())
+    cured_count = int(cured.sum())
+    cure_rate = cured_count / total_delinquent if total_delinquent > 0 else 0.0
+
+    return {"cure_rate": cure_rate, "cured_count": cured_count, "total_delinquent": total_delinquent}
+
+
 class CollectionsAgent(DecisionAgent):
     @property
     def agent_id(self) -> str:
@@ -36,8 +94,8 @@ class CollectionsAgent(DecisionAgent):
             return self._build_output(summary="No data for collections analysis.", confidence=0.0)
 
         # ── Compute ─────────────────────────────────────────────────────
-        col_rate: Dict[str, Any] = {}  # Placeholder, implement or remove if not needed
-        cure: Dict[str, Any] = {}  # Placeholder, implement or remove if not needed
+        col_rate = _compute_collection_rate(collections, portfolio)
+        cure = _compute_cure_rate(portfolio)
         par = {"par30": compute_par30(portfolio)} if not portfolio.empty else {}
         rolls = compute_roll_rates(portfolio) if not portfolio.empty else {}
 

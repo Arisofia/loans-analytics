@@ -13,6 +13,58 @@ import pandas as pd
 from backend.loans_analytics.multi_agent.agents.decision_agent_base import AgentContext, AgentOutput, DecisionAgent
 
 
+def _compute_vintages(portfolio: pd.DataFrame) -> Dict[str, Any]:
+    """Compute per-origination-month vintage metrics from portfolio mart.
+
+    Returns a dict with keys:
+    - ``vintages``: {YYYY-MM: {loan_count, default_rate, avg_dpd, total_balance}}
+    - ``worst_vintage``: the entry with the highest default_rate
+    """
+    date_col = next(
+        (c for c in ("origination_date", "disbursement_date", "fecha_desembolso") if c in portfolio.columns),
+        None,
+    )
+    if date_col is None:
+        return {"vintages": {}, "worst_vintage": {}}
+
+    df = portfolio.copy()
+    df["_orig_dt"] = pd.to_datetime(df[date_col], errors="coerce")
+    df = df.dropna(subset=["_orig_dt"])
+    if df.empty:
+        return {"vintages": {}, "worst_vintage": {}}
+
+    df["_vintage"] = df["_orig_dt"].dt.to_period("M").astype(str)
+
+    dpd_col = next((c for c in ("days_past_due", "dpd") if c in df.columns), None)
+    bal_col = next(
+        (c for c in ("outstanding_principal", "outstanding_balance", "amount") if c in df.columns),
+        None,
+    )
+    status_col = next((c for c in ("status", "loan_status", "current_status", "estado") if c in df.columns), None)
+
+    vintages: Dict[str, Any] = {}
+    for vintage, grp in df.groupby("_vintage"):
+        count = len(grp)
+        avg_dpd = float(pd.to_numeric(grp[dpd_col], errors="coerce").fillna(0).mean()) if dpd_col else 0.0
+        total_bal = float(pd.to_numeric(grp[bal_col], errors="coerce").fillna(0).sum()) if bal_col else 0.0
+        if status_col:
+            default_rate = float((grp[status_col].astype(str).str.lower().isin({"defaulted", "default", "charged_off"})).sum()) / max(count, 1)
+        elif dpd_col:
+            default_rate = float((pd.to_numeric(grp[dpd_col], errors="coerce").fillna(0) >= 90).sum()) / max(count, 1)
+        else:
+            default_rate = 0.0
+        vintages[str(vintage)] = {
+            "vintage": str(vintage),
+            "loan_count": count,
+            "default_rate": default_rate,
+            "avg_dpd": avg_dpd,
+            "total_balance": total_bal,
+        }
+
+    worst: Dict[str, Any] = max(vintages.values(), key=lambda v: v["default_rate"]) if vintages else {}
+    return {"vintages": vintages, "worst_vintage": worst}
+
+
 class CohortVintageAgent(DecisionAgent):
     @property
     def agent_id(self) -> str:
@@ -31,7 +83,8 @@ class CohortVintageAgent(DecisionAgent):
         if portfolio.empty:
             return self._build_output(summary="No portfolio data for cohort analysis.", confidence=0.0)
 
-        cohorts: Dict[str, Any] = {}  # Placeholder, implement or remove if not needed
+        # ── Vintage analysis ──────────────────────────────────────────────
+        cohorts = _compute_vintages(portfolio)
         metrics.update(cohorts)
 
         # ── Worst vintage analysis ──────────────────────────────────────
