@@ -1,5 +1,6 @@
 import hashlib
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -73,8 +74,138 @@ class IngestionPhase:
             df = pd.read_parquet(file_path)
         else:
             raise ValueError(f'Unsupported file format: {file_path.suffix}')
+        df = self._normalize_real_file_schema(df, file_path)
         logger.info('Loaded %d rows from %s', len(df), file_path.name)
         return df
+
+    def _normalize_real_file_schema(self, df: pd.DataFrame, file_path: Path) -> pd.DataFrame:
+        required_columns = self.config.get('required_columns', ['loan_id', 'amount', 'status', 'borrower_id'])
+        if all((column in df.columns for column in required_columns)):
+            return df
+        normalized_df = self._normalize_control_mora_like_file(df)
+        if normalized_df is not df:
+            logger.info('Normalized control-mora-like input schema for %s', file_path.name)
+        return normalized_df
+
+    def _normalize_control_mora_like_file(self, df: pd.DataFrame) -> pd.DataFrame:
+        slug_to_column = {self._slugify(column): column for column in df.columns}
+        evidence_columns = {'numerodesembolso', 'numerointerno', 'fechadesembolso', 'valororiginal', 'clinumero', 'diadepago', 'mesdepago'}
+        if not evidence_columns.intersection(slug_to_column):
+            return df
+        normalized = df.copy()
+        loan_id_col = self._first_existing_column(slug_to_column, ['loan_id', 'numerointerno', 'numerodesembolso', 'mfanumdoc'])
+        borrower_id_col = self._first_existing_column(slug_to_column, ['borrower_id', 'clinumero', 'codcliente', 'client_id'])
+        amount_col = self._first_existing_column(slug_to_column, ['amount', 'valororiginal', 'valoraprobado', 'montodesembolsado', 'totallinea', 'sumoftotallinea', 'totalconiva', 'sumoftotalconiva'])
+        as_of_col = self._first_existing_column(slug_to_column, ['as_of_date', 'fechaactual', 'fechacorte', 'mfafecha'])
+        origination_col = self._first_existing_column(slug_to_column, ['origination_date', 'fechadesembolso', 'disbursement_date'])
+        existing_due_col = self._first_existing_column(slug_to_column, ['due_date', 'fechapagoprogramado', 'fechadevencimiento', 'fechavencimiento'])
+        dpd_col = self._first_existing_column(slug_to_column, ['dpd', 'dayspastdue', 'diasmora', 'diasvencidos', 'diasvencido'])
+        status_col = self._first_existing_column(slug_to_column, ['status', 'currentstatus', 'loanstatus', 'mdscposteado', 'infoclientefinal'])
+
+        if loan_id_col and 'loan_id' not in normalized.columns:
+            normalized['loan_id'] = normalized[loan_id_col].astype('string').str.strip()
+        if borrower_id_col and 'borrower_id' not in normalized.columns:
+            normalized['borrower_id'] = normalized[borrower_id_col].astype('string').str.strip()
+        if amount_col and 'amount' not in normalized.columns:
+            normalized['amount'] = self._coerce_numeric_loose(normalized[amount_col])
+        if origination_col and 'origination_date' not in normalized.columns:
+            normalized['origination_date'] = self._coerce_datetime_loose(normalized[origination_col])
+        if as_of_col and 'as_of_date' not in normalized.columns:
+            normalized['as_of_date'] = self._coerce_datetime_loose(normalized[as_of_col])
+        due_date = self._build_due_date(normalized, slug_to_column, existing_due_col)
+        if due_date is not None and 'due_date' not in normalized.columns:
+            normalized['due_date'] = due_date
+
+        existing_dpd = self._coerce_numeric_loose(normalized[dpd_col]) if dpd_col else pd.Series(pd.NA, index=normalized.index, dtype='Float64')
+        derived_dpd = self._derive_dpd_from_dates(normalized)
+        if existing_dpd.notna().any() or derived_dpd.notna().any():
+            normalized['dpd'] = existing_dpd.where(existing_dpd.notna(), derived_dpd)
+
+        if status_col and 'status' not in normalized.columns:
+            normalized['status'] = self._normalize_status_values(normalized[status_col])
+        if 'status' not in normalized.columns or normalized['status'].isna().all() or (normalized['status'].astype('string').str.strip() == '').all():
+            if 'dpd' in normalized.columns:
+                normalized['status'] = self._derive_status_from_dpd(normalized['dpd'])
+
+        return normalized
+
+    @staticmethod
+    def _slugify(value: str) -> str:
+        normalized = value.replace('ñ', 'n').replace('Ñ', 'N')
+        return re.sub(r'[^a-z0-9]+', '', normalized.lower())
+
+    @staticmethod
+    def _first_existing_column(slug_to_column: Dict[str, str], candidates: list[str]) -> Optional[str]:
+        for candidate in candidates:
+            if candidate in slug_to_column:
+                return slug_to_column[candidate]
+        return None
+
+    @staticmethod
+    def _coerce_numeric_loose(series: pd.Series) -> pd.Series:
+        text = series.astype('string').str.strip()
+        text = text.mask(text.isin({'', 'nan', 'none', 'null', 'missing'}), pd.NA)
+        cleaned = text.str.replace(r'[^0-9,.-]', '', regex=True)
+        comma_only_mask = cleaned.str.contains(',', na=False) & ~cleaned.str.contains('\.', na=False)
+        thousands_mask = comma_only_mask & cleaned.str.contains(',\d{3}$', regex=True, na=False)
+        decimal_comma_mask = comma_only_mask & ~thousands_mask
+        if thousands_mask.any():
+            cleaned.loc[thousands_mask] = cleaned.loc[thousands_mask].str.replace(',', '', regex=False)
+        if decimal_comma_mask.any():
+            cleaned.loc[decimal_comma_mask] = cleaned.loc[decimal_comma_mask].str.replace(',', '.', regex=False)
+        other_mask = ~comma_only_mask
+        if other_mask.any():
+            cleaned.loc[other_mask] = cleaned.loc[other_mask].str.replace(',', '', regex=False)
+        return pd.to_numeric(cleaned, errors='coerce')
+
+    @staticmethod
+    def _coerce_datetime_loose(series: pd.Series) -> pd.Series:
+        try:
+            return pd.to_datetime(series, errors='coerce', format='mixed', dayfirst=True)
+        except TypeError:
+            return pd.to_datetime(series, errors='coerce', dayfirst=True)
+
+    def _build_due_date(self, df: pd.DataFrame, slug_to_column: Dict[str, str], existing_due_col: Optional[str]) -> Optional[pd.Series]:
+        if existing_due_col:
+            due_date = self._coerce_datetime_loose(df[existing_due_col])
+            if due_date.notna().any():
+                return due_date
+        day_col = self._first_existing_column(slug_to_column, ['diadepago'])
+        month_col = self._first_existing_column(slug_to_column, ['mesdepago'])
+        year_col = self._first_existing_column(slug_to_column, ['anodelpago', 'aodelpago'])
+        if not day_col or not month_col or not year_col:
+            return None
+        day = pd.to_numeric(df[day_col], errors='coerce')
+        month = pd.to_numeric(df[month_col], errors='coerce')
+        year = pd.to_numeric(df[year_col], errors='coerce')
+        valid_mask = day.notna() & month.notna() & year.notna()
+        if not valid_mask.any():
+            return None
+        due_date = pd.Series(pd.NaT, index=df.index, dtype='datetime64[ns]')
+        due_date.loc[valid_mask] = pd.to_datetime({'year': year.loc[valid_mask].astype(int), 'month': month.loc[valid_mask].astype(int), 'day': day.loc[valid_mask].astype(int)}, errors='coerce')
+        return due_date
+
+    def _derive_dpd_from_dates(self, df: pd.DataFrame) -> pd.Series:
+        if 'as_of_date' not in df.columns or 'due_date' not in df.columns:
+            return pd.Series(pd.NA, index=df.index, dtype='Float64')
+        as_of_date = self._coerce_datetime_loose(df['as_of_date'])
+        due_date = self._coerce_datetime_loose(df['due_date'])
+        dpd = (as_of_date - due_date).dt.days.clip(lower=0)
+        return dpd.astype('Float64')
+
+    @staticmethod
+    def _normalize_status_values(series: pd.Series) -> pd.Series:
+        normalized = series.astype('string').str.strip().str.lower()
+        return normalized.replace({'vigente': 'active', 'al_dia': 'active', 'al dia': 'active', 'posted': 'active', 'mora': 'delinquent', 'moroso': 'delinquent', 'vencido': 'defaulted', 'castigado': 'defaulted', 'default': 'defaulted'})
+
+    @staticmethod
+    def _derive_status_from_dpd(dpd_series: pd.Series) -> pd.Series:
+        dpd_values = pd.to_numeric(dpd_series, errors='coerce')
+        status_series = pd.Series('unknown', index=dpd_series.index, dtype='object')
+        status_series.loc[dpd_values.notna() & (dpd_values <= 0)] = 'active'
+        status_series.loc[dpd_values > 0] = 'delinquent'
+        status_series.loc[dpd_values > 90] = 'defaulted'
+        return status_series
 
     def _make_arrow_safe(self, df: pd.DataFrame) -> pd.DataFrame:
         safe = df.copy()

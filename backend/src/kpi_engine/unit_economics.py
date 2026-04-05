@@ -476,3 +476,35 @@ def compute_repeat_borrower_rate(portfolio_mart: pd.DataFrame) -> Decimal:
         Decimal("0.01"), rounding=ROUND_HALF_UP
     )
 
+
+def compute_synthetic_ltv(df: pd.DataFrame) -> pd.Series:
+    """Calculate synthetic LTV (Loan-to-Value) for factoring/asset-backed loans.
+
+    Formula: disbursed_principal / (nominal_value * (1 - dilution_rate))
+    """
+    required = ("funded_amount", "nominal_value", "dilution_rate")
+    # Map from Spanish legacy if needed
+    mapping = {
+        "capital_desembolsado": "funded_amount",
+        "valor_nominal_factura": "nominal_value",
+        "tasa_dilucion": "dilution_rate",
+    }
+    for src, target in mapping.items():
+        if src in df.columns and target not in df.columns:
+            df[target] = df[src]
+
+    if not all(col in df.columns for col in required):
+        return pd.Series(dtype=float, index=df.index)
+
+    nominal = pd.to_numeric(df["nominal_value"], errors="coerce")
+    dilution = pd.to_numeric(df["dilution_rate"], errors="coerce").fillna(0)
+    capital = pd.to_numeric(df["funded_amount"], errors="coerce")
+
+    adjusted_value = nominal * (1 - dilution)
+    is_opaque = adjusted_value.isna() | (adjusted_value <= 0)
+
+    ltv = np.where(is_opaque, np.nan, capital / adjusted_value)
+
+    # Return series but also allow enrichment if part of a pipeline
+    return pd.Series(ltv, index=df.index, dtype=float)
+

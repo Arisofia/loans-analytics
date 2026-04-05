@@ -154,3 +154,36 @@ class TestExecuteProvenanceKeys:
         # Should be equivalent to UTC
         assert parsed.utcoffset().total_seconds() == 0
 
+
+def test_control_mora_like_file_is_normalized_before_schema_validation(
+    tmp_path: pathlib.Path,
+) -> None:
+    csv_file = tmp_path / 'control_mora.csv'
+    csv_file.write_text(
+        'NumeroDesembolso,cliNumero,ValorOriginal,mfaFecha,Dia de pago,Mes de pago,A;o del pago,FechaDesembolso\n'
+        'DES-1,CLI-1,"$10,890",2026-03-17 11:26:26,17,3,2026,3/18/2025\n'
+    )
+    phase = IngestionPhase(config={'required_columns': ['loan_id', 'amount', 'status', 'borrower_id']})
+    result = phase.execute(input_path=csv_file, run_dir=None)
+    assert result['status'] == 'success'
+    assert result['row_count'] == 1
+    assert result['data_as_of_date'] == '2026-03-17'
+    assert result['data_as_of_column'] == 'as_of_date'
+
+
+def test_control_mora_like_normalization_derives_required_columns(
+    tmp_path: pathlib.Path,
+) -> None:
+    csv_file = tmp_path / 'control_mora.csv'
+    csv_file.write_text(
+        'NumeroDesembolso,cliNumero,ValorOriginal,mfaFecha,Dia de pago,Mes de pago,A;o del pago\n'
+        'DES-1,CLI-1,"$10,890",2026-03-17 11:26:26,17,3,2026\n'
+    )
+    phase = IngestionPhase(config={'required_columns': ['loan_id', 'amount', 'status', 'borrower_id']})
+    df = phase._load_from_file(csv_file)
+    assert df.loc[0, 'loan_id'] == 'DES-1'
+    assert df.loc[0, 'borrower_id'] == 'CLI-1'
+    assert float(df.loc[0, 'amount']) == 10890.0
+    assert df.loc[0, 'status'] == 'active'
+    assert float(df.loc[0, 'dpd']) == 0.0
+

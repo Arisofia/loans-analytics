@@ -131,21 +131,28 @@ class TransformationPhase:
         self,
         raw_data_path: Optional[Path] = None,
         df: Optional[pd.DataFrame] = None,
+        payments_df: Optional[pd.DataFrame] = None,
         run_dir: Optional[Path] = None,
     ) -> Dict[str, Any]:
         logger.info("Starting Phase 2: Transformation")
         try:
-            return self._execute_transformation(raw_data_path=raw_data_path, df=df, run_dir=run_dir)
+            return self._execute_transformation(
+                raw_data_path=raw_data_path, df=df, payments_df=payments_df, run_dir=run_dir
+            )
         except Exception as e:
             logger.error("Transformation failed: %s", str(e), exc_info=True)
             raise ValueError(f"CRITICAL: Transformation phase failed: {e}") from e
 
     def _execute_transformation(
-        self, raw_data_path: Optional[Path], df: Optional[pd.DataFrame], run_dir: Optional[Path]
+        self,
+        raw_data_path: Optional[Path],
+        df: Optional[pd.DataFrame],
+        payments_df: Optional[pd.DataFrame],
+        run_dir: Optional[Path],
     ) -> Dict[str, Any]:
         df = self._resolve_input_dataframe(raw_data_path=raw_data_path, df=df)
         initial_rows = len(df)
-        df, transformation_metrics = self._run_transformation_pipeline(df)
+        df, transformation_metrics = self._run_transformation_pipeline(df, payments_df=payments_df)
         output_path = None
         if run_dir:
             output_path = run_dir / "clean_data.parquet"
@@ -175,7 +182,9 @@ class TransformationPhase:
             raise ValueError("No data provided for transformation")
         return pd.read_parquet(raw_data_path)
 
-    def _run_transformation_pipeline(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def _run_transformation_pipeline(
+        self, df: pd.DataFrame, payments_df: Optional[pd.DataFrame] = None
+    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         transformation_metrics: Dict[str, Any] = {}
         df = self._normalize_column_names(df)
         df = self._collapse_duplicate_columns(df)
@@ -195,7 +204,7 @@ class TransformationPhase:
         transformation_metrics["canonical_risk_state"] = risk_state_metrics
         df, outlier_metrics = self._detect_outliers(df)
         transformation_metrics["outlier_detection"] = outlier_metrics
-        df, integrity_metrics = self._check_referential_integrity(df)
+        df, integrity_metrics = self._check_referential_integrity(df, payments_df=payments_df)
         transformation_metrics["referential_integrity"] = integrity_metrics
         return (df, transformation_metrics)
 
@@ -1674,15 +1683,20 @@ class TransformationPhase:
         outliers.loc[non_null.index] = outliers_non_null.fillna(False)
         return outliers
 
-    def _check_referential_integrity(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def _check_referential_integrity(
+        self, df: pd.DataFrame, payments_df: Optional[pd.DataFrame] = None
+    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         logger.info("Checking referential integrity")
         integrity_issues: List[Dict[str, Any]] = []
         self._check_primary_key_integrity(df, integrity_issues)
         self._check_foreign_key_integrity(df, integrity_issues)
         self._check_date_consistency(df, integrity_issues)
         self._check_positive_amounts(df, integrity_issues)
+        if payments_df is not None:
+            self._check_loan_payment_linkage(df, payments_df, integrity_issues)
+
         metrics = {
-            "checks_performed": 4,
+            "checks_performed": 5 if payments_df is not None else 4,
             "issues_found": len(integrity_issues),
             "issues": integrity_issues,
             "integrity_status": "warning" if integrity_issues else "pass",
@@ -1755,6 +1769,45 @@ class TransformationPhase:
                 integrity_issues.append(
                     {"type": "negative_value", "column": col, "count": int(negative_count)}
                 )
+
+    def _check_loan_payment_linkage(
+        self,
+        loans_df: pd.DataFrame,
+        payments_df: pd.DataFrame,
+        integrity_issues: List[Dict[str, Any]],
+    ) -> None:
+        if "loan_id" not in loans_df.columns or "loan_id" not in payments_df.columns:
+            return
+
+        loan_ids = set(loans_df["loan_id"].dropna().unique())
+        orphaned_payments = payments_df[~payments_df["loan_id"].isin(loan_ids)]
+
+        if not orphaned_payments.empty:
+            count = len(orphaned_payments)
+            # Try to get amount if possible
+            amt_col = next(
+                (c for c in ("amount", "payment_amount", "paid_principal") if c in payments_df.columns),
+                None,
+            )
+            total_amt = (
+                float(pd.to_numeric(orphaned_payments[amt_col], errors="coerce").sum())
+                if amt_col
+                else 0.0
+            )
+
+            integrity_issues.append(
+                {
+                    "type": "orphaned_payments",
+                    "description": "Payments with loan_id not found in loans dataset",
+                    "count": int(count),
+                    "total_amount": round(total_amt, 2),
+                }
+            )
+            logger.warning(
+                "Found %d orphaned payments (total amount: %.2f) with no matching loan_id",
+                count,
+                total_amt,
+            )
 
 
 # Module-level SSoT: canonical normalised loan-status values derived from
