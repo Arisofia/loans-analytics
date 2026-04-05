@@ -683,7 +683,15 @@ class OutputPhase:
             # Re-raise on network/connection errors — the fallback minimal query
             # would also fail, and swallowing these would mask connectivity or
             # authentication problems that require operator attention.
-            if isinstance(exc, (OSError, ConnectionError, TimeoutError)):
+            # Include httpx.HTTPError when available (Supabase/postgrest transport).
+            transport_error_types: tuple[type[BaseException], ...] = (
+                OSError,
+                ConnectionError,
+                TimeoutError,
+            )
+            if httpx is not None:
+                transport_error_types = transport_error_types + (httpx.HTTPError,)
+            if isinstance(exc, transport_error_types):
                 raise
             logger.warning(
                 "_select_kpi_definitions_response: full column select failed (%s); "

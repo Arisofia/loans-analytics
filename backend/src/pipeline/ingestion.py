@@ -363,7 +363,10 @@ class IngestionPhase:
                 # longer subclass Python int/float in NumPy 2.0+).
                 _is_numeric = isinstance(expected_type, tuple) or expected_type in (int, float)
                 if _is_numeric:
-                    if not pd.api.types.is_numeric_dtype(df[col]):
+                    # Explicitly reject boolean dtypes: pandas treats bool as numeric,
+                    # but schema fields such as `amount` must be int/float-like values.
+                    if (not pd.api.types.is_numeric_dtype(df[col]) or
+                            pd.api.types.is_bool_dtype(df[col])):
                         type_errors.append(col)
                 else:
                     if not all((isinstance(val, expected_type) for val in df[col].dropna())):
