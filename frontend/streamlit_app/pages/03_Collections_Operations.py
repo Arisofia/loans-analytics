@@ -1,15 +1,20 @@
 import json
 import logging
 import os
+from decimal import Decimal, ROUND_HALF_UP, getcontext
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
+# Set ROUND_HALF_UP before importing SSOT modules — the financial precision policy requires this
+# (docs/FINANCIAL_PRECISION_GOVERNANCE.md) and ssot_asset_quality enforces it at import time.
+getcontext().rounding = ROUND_HALF_UP
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
 import streamlit as st
+from backend.loans_analytics.kpis.ssot_asset_quality import calculate_par as _ssot_calculate_par
 from backend.loans_analytics.multi_agent.guardrails import Guardrails
 from backend.loans_analytics.multi_agent.orchestrator import MultiAgentOrchestrator
 from backend.loans_analytics.multi_agent.protocol import LLMProvider
@@ -262,7 +267,9 @@ def _normalize_payment_history(value: Any) -> str:
     return '[]'
 
 def _get_exposure_series(df: pd.DataFrame) -> pd.Series:
-    candidate_names = [col for col in ('outstanding_balance', 'current_balance', 'principal_amount') if col in df]
+    # CANONICAL: align column resolution with the KPI engine (risk.py / compute_par*).
+    # outstanding_principal is the canonical column; others are fallbacks in order of fidelity.
+    candidate_names = [col for col in ('outstanding_principal', 'outstanding_balance', 'current_balance', 'principal_amount') if col in df]
     if not candidate_names:
         return pd.Series(0.0, index=df.index, dtype=float)
     exposure = pd.to_numeric(df[candidate_names[0]], errors='coerce')
@@ -394,6 +401,11 @@ def _compute_dpd_and_par_metrics(portfolio_df: pd.DataFrame, total_loans: int, t
     dpd_90_plus = int((portfolio_df['days_past_due'] >= 90).sum())
     par_30_amount = float(portfolio_df[portfolio_df['days_past_due'] >= 30]['exposure_amount'].sum())
     par_90_amount = float(portfolio_df[portfolio_df['days_past_due'] >= 90]['exposure_amount'].sum())
+    # Delegate PAR rate computation to the canonical SSOT function to avoid shadow arithmetic.
+    # _ssot_calculate_par raises ValueError on zero total_portfolio (fail-fast; matches backend semantics).
+    total_portfolio_dec = Decimal(str(total_portfolio))
+    par_30_rate = float(_ssot_calculate_par(Decimal(str(par_30_amount)), total_portfolio_dec, dpd_threshold=30))
+    par_90_rate = float(_ssot_calculate_par(Decimal(str(par_90_amount)), total_portfolio_dec, dpd_threshold=90))
     return {
         'dpd_30_count': dpd_30_plus,
         'dpd_60_count': dpd_60_plus,
@@ -403,8 +415,8 @@ def _compute_dpd_and_par_metrics(portfolio_df: pd.DataFrame, total_loans: int, t
         'delinquency_rate_90': _safe_pct(float(dpd_90_plus), float(total_loans)),
         'par_30_amount': par_30_amount,
         'par_90_amount': par_90_amount,
-        'par_30_rate': _safe_pct(par_30_amount, total_portfolio),
-        'par_90_rate': _safe_pct(par_90_amount, total_portfolio),
+        'par_30_rate': par_30_rate,
+        'par_90_rate': par_90_rate,
     }
 
 def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
