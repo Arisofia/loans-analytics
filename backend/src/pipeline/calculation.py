@@ -10,10 +10,10 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
 
-getcontext().rounding = ROUND_HALF_UP
-
 from backend.src.kpi_engine.engine import flatten_metric_result_groups, run_metric_engine
 from backend.src.kpi_engine.risk import compute_default_rate_by_count
+
+getcontext().rounding = ROUND_HALF_UP
 
 
 def _load_optional_callable(module_path: str, attr_name: str) -> Any | None:
