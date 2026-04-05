@@ -154,15 +154,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ -v --tb=short -m "not integration and not e2e" \
-            --ignore=tests/phase1/test_formula_engine_hard_failure.py \
-            --ignore=tests/security/test_kpi_formula_fuzz.py \
-            --ignore=tests/test_csv_upload_homologation.py \
-            --ignore=tests/test_holding_financial_indicators.py \
-            --ignore=tests/test_pipeline_calculation_risk.py \
-            --ignore=tests/unit/kpis/test_target_loader.py \
-            --ignore=tests/unit/test_dashboard_threshold_integration.py \
-            --ignore=tests/zero_cost/test_local_migration_etl.py
+          pytest tests/ -v --tb=short -m "not integration and not e2e"
 
       - name: Run financial precision regression tests
         run: |

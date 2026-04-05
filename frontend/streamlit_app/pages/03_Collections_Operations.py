@@ -14,7 +14,24 @@ import plotly.express as px
 import plotly.graph_objects as go
 import requests
 import streamlit as st
-from backend.loans_analytics.kpis.ssot_asset_quality import calculate_par as _ssot_calculate_par
+try:
+    from backend.loans_analytics.kpis.ssot_asset_quality import (
+        calculate_par as _ssot_calculate_par,
+    )
+except ModuleNotFoundError:
+
+    def _ssot_calculate_par(  # type: ignore[misc]
+        par_amount: Decimal, total_portfolio: Decimal, dpd_threshold: int = 0
+    ) -> Decimal:
+        """PAR rate fallback: par_amount / total_portfolio (fail-fast on zero denominator)."""
+        if total_portfolio == 0:
+            raise ValueError(
+                f"CRITICAL: calculate_par(dpd_threshold={dpd_threshold}) received zero total "
+                "portfolio. Provide a non-zero portfolio balance."
+            )
+        return (par_amount / total_portfolio).quantize(
+            Decimal("0.0001"), rounding=ROUND_HALF_UP
+        )
 from backend.loans_analytics.multi_agent.guardrails import Guardrails
 from backend.loans_analytics.multi_agent.orchestrator import MultiAgentOrchestrator
 from backend.loans_analytics.multi_agent.protocol import LLMProvider
