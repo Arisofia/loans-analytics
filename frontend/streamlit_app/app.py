@@ -1,4 +1,5 @@
 import json
+import importlib
 import logging
 import os
 from datetime import datetime
@@ -26,9 +27,25 @@ init_tracing('streamlit-dashboard')
 enable_auto_instrumentation()
 usage_tracker = UsageTracker()
 
-try:
-    from backend.loans_analytics.kpis.strategic_reporting import build_strategic_summary, write_strategic_report
-except Exception:
+def _load_optional_callable(module_path: str, attr_name: str) -> Any | None:
+    try:
+        module = importlib.import_module(module_path)
+        value = getattr(module, attr_name, None)
+        return value if callable(value) else None
+    except Exception:
+        return None
+
+
+_build_strategic_summary_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.strategic_reporting", "build_strategic_summary"
+)
+_write_strategic_report_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.strategic_reporting", "write_strategic_report"
+)
+if _build_strategic_summary_fn is not None and _write_strategic_report_fn is not None:
+    build_strategic_summary = _build_strategic_summary_fn
+    write_strategic_report = _write_strategic_report_fn
+else:
 
     def build_strategic_summary(metrics: dict, facts: pd.DataFrame, targets: dict) -> dict:
         return {"summary": "Strategic reporting fallback active", "metrics_count": len(metrics)}
@@ -38,9 +55,12 @@ except Exception:
         export_path.write_text(json.dumps(summary, indent=2, default=str), encoding='utf-8')
         return export_path
 
-try:
-    from backend.loans_analytics.kpis.threshold_enrichment import enrich_kpis_with_thresholds
-except Exception:
+_threshold_enrichment_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.threshold_enrichment", "enrich_kpis_with_thresholds"
+)
+if _threshold_enrichment_fn is not None:
+    enrich_kpis_with_thresholds = _threshold_enrichment_fn
+else:
 
     def enrich_kpis_with_thresholds(kpis: dict[str, float]) -> dict[str, dict[str, float | str]]:
         return {

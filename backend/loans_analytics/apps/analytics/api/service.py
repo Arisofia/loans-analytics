@@ -1,4 +1,5 @@
 from __future__ import annotations
+import importlib
 import json
 from datetime import datetime
 from pathlib import Path
@@ -51,9 +52,21 @@ from backend.loans_analytics.logging_config import get_logger
 from backend.loans_analytics.supabase_pool import get_pool
 from backend.src.kpi_engine.engine import flatten_metric_result_groups, run_metric_engine
 
-try:
-    from backend.loans_analytics.kpis.advanced_risk import calculate_advanced_risk_metrics
-except Exception:
+def _load_optional_callable(module_path: str, attr_name: str) -> Any | None:
+    try:
+        module = importlib.import_module(module_path)
+        value = getattr(module, attr_name, None)
+        return value if callable(value) else None
+    except Exception:
+        return None
+
+
+_advanced_risk_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.advanced_risk", "calculate_advanced_risk_metrics"
+)
+if _advanced_risk_fn is not None:
+    calculate_advanced_risk_metrics = cast(Any, _advanced_risk_fn)
+else:
 
     def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
         return {
@@ -63,9 +76,12 @@ except Exception:
             "alerts": [],
         }
 
-try:
-    from backend.loans_analytics.kpis.health_score import calculate_portfolio_health_score
-except Exception:
+_health_score_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.health_score", "calculate_portfolio_health_score"
+)
+if _health_score_fn is not None:
+    calculate_portfolio_health_score = cast(Any, _health_score_fn)
+else:
 
     def calculate_portfolio_health_score(metrics: dict[str, float]) -> dict[str, Any]:
         score = max(0.0, 100.0 - float(metrics.get("par30", 0.0)) - float(metrics.get("npl", 0.0)))
@@ -77,9 +93,12 @@ except Exception:
             "interpretation": "Fallback health score computed from PAR30/NPL only.",
         }
 
-try:
-    from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics
-except Exception:
+_asset_quality_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.ssot_asset_quality", "calculate_asset_quality_metrics"
+)
+if _asset_quality_fn is not None:
+    calculate_asset_quality_metrics = cast(Any, _asset_quality_fn)
+else:
 
     def calculate_asset_quality_metrics(
         *,
@@ -100,14 +119,13 @@ except Exception:
             "par90": float(bal[dpd_num >= 90].sum() / total * 100.0),
         }
 
-try:
-    from backend.loans_analytics.kpis.unit_economics import (
-        calculate_all_unit_economics,
-        calculate_cost_of_risk,
-        calculate_lgd,
-        calculate_nim,
-    )
-except Exception:
+
+_calc_all_unit_econ_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.unit_economics", "calculate_all_unit_economics"
+)
+if _calc_all_unit_econ_fn is not None:
+    calculate_all_unit_economics = cast(Any, _calc_all_unit_econ_fn)
+else:
 
     def calculate_all_unit_economics(
         df: pd.DataFrame,
@@ -121,11 +139,35 @@ except Exception:
             "funding_cost_rate": float(funding_cost_rate),
         }
 
+
+_calc_cor_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.unit_economics", "calculate_cost_of_risk"
+)
+if _calc_cor_fn is not None:
+    calculate_cost_of_risk = cast(Any, _calc_cor_fn)
+else:
+
     def calculate_cost_of_risk(df: pd.DataFrame) -> dict[str, Any]:
         return {"cost_of_risk_pct": 0.0}
 
+
+_calc_lgd_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.unit_economics", "calculate_lgd"
+)
+if _calc_lgd_fn is not None:
+    calculate_lgd = cast(Any, _calc_lgd_fn)
+else:
+
     def calculate_lgd(df: pd.DataFrame) -> dict[str, Any]:
         return {"lgd_pct": 0.0}
+
+
+_calc_nim_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.unit_economics", "calculate_nim"
+)
+if _calc_nim_fn is not None:
+    calculate_nim = cast(Any, _calc_nim_fn)
+else:
 
     def calculate_nim(df: pd.DataFrame) -> dict[str, Any]:
         return {"nim_pct": 0.0}

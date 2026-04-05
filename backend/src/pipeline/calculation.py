@@ -1,4 +1,5 @@
 import logging
+import importlib
 import re
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP, getcontext
@@ -13,18 +14,34 @@ getcontext().rounding = ROUND_HALF_UP
 
 from backend.src.kpi_engine.engine import flatten_metric_result_groups, run_metric_engine
 from backend.src.kpi_engine.risk import compute_default_rate_by_count
-try:
-    from backend.loans_analytics.kpis.ltv import calculate_ltv_sintetico
-except Exception:
+
+
+def _load_optional_callable(module_path: str, attr_name: str) -> Any | None:
+    try:
+        module = importlib.import_module(module_path)
+        value = getattr(module, attr_name, None)
+        return value if callable(value) else None
+    except Exception:
+        return None
+
+
+_ltv_fn = _load_optional_callable("backend.loans_analytics.kpis.ltv", "calculate_ltv_sintetico")
+if _ltv_fn is not None:
+    calculate_ltv_sintetico = _ltv_fn
+else:
 
     def calculate_ltv_sintetico(df: pd.DataFrame) -> pd.Series:
         if 'ltv_sintetico' in df.columns:
             return pd.to_numeric(df['ltv_sintetico'], errors='coerce').fillna(0.0)
         return pd.Series(0.0, index=df.index, dtype=float)
 
-try:
-    from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics
-except Exception:
+_asset_quality_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.ssot_asset_quality",
+    "calculate_asset_quality_metrics",
+)
+if _asset_quality_fn is not None:
+    calculate_asset_quality_metrics = _asset_quality_fn
+else:
 
     def calculate_asset_quality_metrics(
         *,
