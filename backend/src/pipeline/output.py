@@ -54,7 +54,7 @@ _NON_NEGATIVE_KPI_KEYS = frozenset(
 
 class KPIAuditProvider(Protocol):
     def get_audit_trail(self) -> pd.DataFrame:
-        pass
+        raise NotImplementedError("KPIAuditProvider.get_audit_trail must be implemented")
 
 
 def _parse_bool_env(var_name: str, default: bool = True) -> bool:
