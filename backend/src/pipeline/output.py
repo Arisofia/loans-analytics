@@ -678,7 +678,12 @@ class OutputPhase:
     def _select_kpi_definitions_response(query: Any) -> Any:
         try:
             return query.select("id, name, kpi_key, display_name").execute()
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "_select_kpi_definitions_response: full column select failed (%s); "
+                "falling back to minimal (name, kpi_key) select.",
+                exc,
+            )
             return query.select("name, kpi_key").execute()
 
     @staticmethod

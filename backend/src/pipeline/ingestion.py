@@ -146,8 +146,8 @@ class IngestionPhase:
         text = series.astype('string').str.strip()
         text = text.mask(text.isin({'', 'nan', 'none', 'null', 'missing'}), pd.NA)
         cleaned = text.str.replace(r'[^0-9,.-]', '', regex=True)
-        comma_only_mask = cleaned.str.contains(',', na=False) & ~cleaned.str.contains('\.', na=False)
-        thousands_mask = comma_only_mask & cleaned.str.contains(',\d{3}$', regex=True, na=False)
+        comma_only_mask = cleaned.str.contains(',', na=False) & ~cleaned.str.contains(r'\.', na=False)
+        thousands_mask = comma_only_mask & cleaned.str.contains(r',\d{3}$', regex=True, na=False)
         decimal_comma_mask = comma_only_mask & ~thousands_mask
         if thousands_mask.any():
             cleaned.loc[thousands_mask] = cleaned.loc[thousands_mask].str.replace(',', '', regex=False)
@@ -356,8 +356,16 @@ class IngestionPhase:
             type_validation: Dict[str, Any] = {'loan_id': str, 'amount': (int, float), 'status': str}
             type_errors = []
             for col, expected_type in type_validation.items():
-                if col in df.columns and (not all((isinstance(val, expected_type) for val in df[col].dropna()))):
-                    type_errors.append(col)
+                if col not in df.columns:
+                    continue
+                if col == 'amount':
+                    # Use dtype-level check so numpy 2.x scalar types (int64/float64)
+                    # are correctly recognized as numeric without isinstance per-value.
+                    if not pd.api.types.is_numeric_dtype(df[col]):
+                        type_errors.append(col)
+                else:
+                    if not all((isinstance(val, expected_type) for val in df[col].dropna())):
+                        type_errors.append(col)
             if type_errors:
                 error_msg = f'CRITICAL: SCHEMA VALIDATION FAILED: Type validation failed for columns: {type_errors}'
                 logger.error(error_msg)
