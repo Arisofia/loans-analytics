@@ -1,6 +1,6 @@
 ﻿# Observability & Monitoring Setup
 
-> **Deployment scope note (2026-03-28):** Canonical production deployment is `deploy-free-tier.yml` (GHCR + Render/Railway/Fly). Any Azure references in this document are historical implementation notes, not an active deployment path.
+> **Deployment scope note (2026-03-28):** This repository does not currently include a checked-in deployment workflow. Treat any cloud-platform snippets in this document as historical notes unless they match the checked-in Docker and compose configuration.
 
 **Last Updated:** 2026-01-29  
 **Status:** âœ… **PRODUCTION READY**
@@ -43,10 +43,7 @@ cd n8n
 docker-compose up -d
 ```
 
-This starts:
-
-- **Grafana** on `https://jenineferderas.grafana.net`
-- **n8n** on `http://localhost:5678`
+This starts your local observability stack. Verify actual bind addresses from your local compose output and environment.
 
 ### 2. Configure Credentials
 
@@ -56,22 +53,21 @@ Copy environment template:
 cp n8n/.env.example n8n/.env
 ```
 
-Get Supabase credentials from:
-https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/settings/api
+Get Supabase credentials from your own Supabase project dashboard.
 
 Required variables:
 
-- `SUPABASE_URL=https://sddviizcgheusvwqpthm.supabase.co`
+- `SUPABASE_URL=https://<your-project-ref>.supabase.co`
 - `SUPABASE_ANON_KEY=<your-anon-key>`
 - `SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>`
 
 ### 3. Access Dashboards
 
-| Service             | URL                                                         | Default Credentials |
-| ------------------- | ----------------------------------------------------------- | ------------------- |
-| **Grafana**         | https://jenineferderas.grafana.net                                       | admin / admin123    |
-| **n8n**             | http://localhost:5678                                       | admin / changeme123 |
-| **Supabase Studio** | https://supabase.com/dashboard/project/sddviizcgheusvwqpthm | SSO Login           |
+| Service             | URL | Credentials |
+| ------------------- | --- | ----------- |
+| **Grafana**         | Your configured local or hosted Grafana URL | Use the secret configured in your environment |
+| **n8n**             | Your configured local or hosted n8n URL | Use the secret configured in your environment |
+| **Supabase Studio** | Your Supabase project dashboard | SSO Login |
 
 ---
 
@@ -112,12 +108,12 @@ Monitors:
 Configured automatically via provisioning:
 
 1. **Supabase PostgreSQL** (Primary)
-   - Direct connection to `db.sddviizcgheusvwqpthm.supabase.co:5432`
+  - Direct connection to `db.<your-project-ref>.supabase.co:5432`
    - Queries: `monitoring.kpi_definitions`, `monitoring.kpi_values`, `public.historical_kpis`
    - SSL: Required
 
 2. **Supabase REST API** (Secondary)
-   - REST endpoint: `https://sddviizcgheusvwqpthm.supabase.co/rest/v1`
+  - REST endpoint: `https://<your-project-ref>.supabase.co/rest/v1`
    - Auth: Bearer token with SUPABASE_ANON_KEY
 
 3. **Azure Monitor** (Optional)
@@ -194,7 +190,7 @@ Add to **Azure Key Vault: aiagent-secrets-kv**
 
 | Secret Name                 | Value                                      | Purpose              |
 | --------------------------- | ------------------------------------------ | -------------------- |
-| `SUPABASE-URL`              | `https://sddviizcgheusvwqpthm.supabase.co` | Supabase project URL |
+| `SUPABASE-URL`              | `https://<your-project-ref>.supabase.co` | Supabase project URL |
 | `SUPABASE-ANON-KEY`         | `<anon-key>`                               | Public API key       |
 | `SUPABASE-SERVICE-ROLE-KEY` | `<service-role-key>`                       | Admin operations     |
 | `GRAFANA-ADMIN-PASSWORD`    | `<secure-password>`                        | Grafana login        |
@@ -209,7 +205,7 @@ az account set --subscription <subscription-id>
 # Add secrets to Key Vault
 az keyvault secret set --vault-name aiagent-secrets-kv \
   --name SUPABASE-URL \
-  --value "https://sddviizcgheusvwqpthm.supabase.co"
+  --value "https://<your-project-ref>.supabase.co"
 
 az keyvault secret set --vault-name aiagent-secrets-kv \
   --name SUPABASE-ANON-KEY \
@@ -250,7 +246,7 @@ Expected output:
 ```
 ðŸ” Testing Supabase Connection...
 
-ðŸ“ Supabase URL: https://sddviizcgheusvwqpthm.supabase.co
+Supabase URL: https://<your-project-ref>.supabase.co
 ðŸ”‘ API Key: eyJhbGciOiJIUzI1NiIs...xHte
 
 ðŸ§ª Test 1: Querying monitoring.kpi_definitions...
@@ -267,7 +263,7 @@ Expected output:
 
 ### 2. Test Grafana Datasource
 
-1. Open Grafana: https://jenineferderas.grafana.net
+1. Open your configured Grafana instance
 2. Navigate to: Configuration â†’ Data Sources â†’ Supabase PostgreSQL
 3. Click "Test" button
 4. Expected: âœ… "Data source is working"
@@ -300,7 +296,7 @@ Expected output:
 
 **Solution:**
 
-1. Regenerate Supabase keys: https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/settings/api
+1. Regenerate Supabase keys from your Supabase project dashboard settings
 2. Update `n8n/.env` with new `SUPABASE_ANON_KEY`
 3. Restart n8n: `docker-compose restart n8n`
 
@@ -337,7 +333,7 @@ docker-compose up -d
 
 ## ðŸ“š Additional Resources
 
-- **Supabase Dashboard:** https://supabase.com/dashboard/project/sddviizcgheusvwqpthm
+- **Supabase Dashboard:** https://supabase.com/dashboard/project/<your-project-ref>
 - **Grafana Docs:** https://grafana.com/docs/
 - **n8n Docs:** https://docs.n8n.io/
 - **Azure Monitor:** https://learn.microsoft.com/azure/azure-monitor/

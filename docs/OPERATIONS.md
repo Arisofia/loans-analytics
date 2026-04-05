@@ -11,10 +11,10 @@ This runbook covers deployment, execution, monitoring, incident response, and re
 ## Prerequisites
 
 - Python 3.10+
-- `pip install -r requirements.lock.txt` (or the project-standard install)
+- `make setup` or `pip install -r requirements.txt && pip install -r requirements-dev.txt`
 - Environment variables:
   - `AZURE_STORAGE_CONNECTION_STRING` (optional)
-  - `SUPABASE_URL` and `SUPABASE_KEY` (for database connectivity)
+  - `SUPABASE_URL` and `SUPABASE_ANON_KEY` or `SUPABASE_SERVICE_ROLE_KEY` (for database connectivity)
 
 ## Execution
 

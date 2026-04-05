@@ -16,6 +16,7 @@ import pandas as pd
 
 from backend.loans_analytics.kpis.ltv import calculate_ltv_sintetico
 from backend.src.kpi_engine.engine import run_metric_engine
+from backend.src.kpi_engine import risk
 
 
 class KPIEngineV2:
@@ -43,7 +44,38 @@ class KPIEngineV2:
         portfolio = df if isinstance(df, pd.DataFrame) else self.df
         if not isinstance(portfolio, pd.DataFrame):
             portfolio = pd.DataFrame()
-        return {"portfolio_mart": portfolio}
+        if "provision_expense" in portfolio.columns:
+            finance = portfolio[["provision_expense"]].copy()
+        elif portfolio.empty:
+            finance = pd.DataFrame()
+        else:
+            finance = pd.DataFrame({"provision_expense": [0]})
+        return {"portfolio_mart": portfolio, "finance_mart": finance}
+
+    def _compatibility_metric_values(self, df: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
+        portfolio = df if isinstance(df, pd.DataFrame) else self.df
+        if not isinstance(portfolio, pd.DataFrame) or portfolio.empty:
+            return {}
+
+        finance = self._as_marts(portfolio).get("finance_mart", pd.DataFrame())
+        metrics: Dict[str, Any] = {}
+        metric_fns = {
+            "par30": lambda: risk.compute_par30(portfolio),
+            "par60": lambda: risk.compute_par60(portfolio),
+            "par90": lambda: risk.compute_par90(portfolio),
+            "expected_loss": lambda: risk.compute_expected_loss(portfolio),
+            "npl_ratio": lambda: risk.compute_npl_ratio(portfolio),
+            "default_rate_by_count": lambda: risk.compute_default_rate_by_count(portfolio),
+            "default_rate_by_balance": lambda: risk.compute_default_rate_by_balance(portfolio),
+            "provision_coverage_ratio": lambda: risk.compute_provision_coverage_ratio(portfolio, finance),
+        }
+
+        for metric_id, compute in metric_fns.items():
+            try:
+                metrics[metric_id] = compute()
+            except ValueError:
+                continue
+        return metrics
 
     def get_audit_trail(self) -> pd.DataFrame:
         """Return an empty audit trail — full audit is in the canonical engine."""
@@ -56,12 +88,15 @@ class KPIEngineV2:
             DeprecationWarning,
             stacklevel=2,
         )
-        result = run_metric_engine(self._as_marts(df))
-        metric_map: Dict[str, Any] = {}
-        for section in ("risk_metrics", "pricing_metrics", "executive_metrics"):
-            for metric in result.get(section, []):
-                metric_map[metric.metric_id] = metric.value
-        return metric_map
+        try:
+            result = run_metric_engine(self._as_marts(df))
+            metric_map: Dict[str, Any] = {}
+            for section in ("risk_metrics", "pricing_metrics", "executive_metrics"):
+                for metric in result.get(section, []):
+                    metric_map[metric.metric_id] = metric.value
+            return metric_map
+        except Exception:
+            return self._compatibility_metric_values(df)
 
     def calculate_all(
         self, kpi_definitions: Optional[Dict[str, Any]] = None
@@ -74,16 +109,29 @@ class KPIEngineV2:
             DeprecationWarning,
             stacklevel=2,
         )
-        result = run_metric_engine(self._as_marts())
         normalized: Dict[str, Dict[str, Any]] = {}
-        for section in ("risk_metrics", "pricing_metrics", "executive_metrics"):
-            for metric in result.get(section, []):
-                normalized[metric.metric_id] = {
-                    "value": metric.value,
+
+        try:
+            result = run_metric_engine(self._as_marts())
+            for section in ("risk_metrics", "pricing_metrics", "executive_metrics"):
+                for metric in result.get(section, []):
+                    normalized[metric.metric_id] = {
+                        "value": metric.value,
+                        "context": {
+                            "type": "run_metric_engine",
+                            "domain": metric.source_mart,
+                            "owner": metric.owner,
+                        },
+                    }
+            return normalized
+        except Exception:
+            for metric_id, value in self._compatibility_metric_values().items():
+                normalized[metric_id] = {
+                    "value": value,
                     "context": {
-                        "type": "run_metric_engine",
-                        "domain": metric.source_mart,
-                        "owner": metric.owner,
+                        "type": "compatibility_fallback",
+                        "domain": "portfolio",
+                        "owner": "risk",
                     },
                 }
         return normalized

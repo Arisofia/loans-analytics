@@ -1,6 +1,6 @@
 # API Security Guide
 
-> **Deployment scope note (2026-03-28):** Canonical production deployment is `deploy-free-tier.yml` (GHCR + Render/Railway/Fly). Any Azure references in this document are historical implementation notes, not an active deployment path.
+> **Deployment scope note (2026-03-28):** This repository does not currently include a checked-in deployment workflow. Validate any deployment guidance in this document against the workflows and Dockerfiles actually present in the repository.
 
 ## Overview
 
@@ -330,7 +330,7 @@ def create_loan():
 # ✅ SAFE (parameterized)
 from supabase import create_client
 
-supabase = create_client(supabase_url, supabase_key)
+supabase = create_client(supabase_url, supabase_anon_key)
 result = supabase.table("fact_loans") \
     .select("*") \
     .eq("borrower_name", user_input) \

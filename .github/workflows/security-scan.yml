@@ -6,14 +6,12 @@ on:
       - main
       - develop
     paths-ignore:
-      - frontend/**
       - '**/*.md'
       - docs/**
   pull_request:
     branches:
       - main
     paths-ignore:
-      - frontend/**
       - '**/*.md'
       - docs/**
   workflow_dispatch:
@@ -32,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["python"]
+        language: ["python", "javascript-typescript"]
 
     steps:
       - name: Checkout repository

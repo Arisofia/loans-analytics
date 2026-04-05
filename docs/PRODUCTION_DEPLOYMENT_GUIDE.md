@@ -2,11 +2,13 @@
 
 ## Canonical Production Path (Single Source of Truth)
 
-This repository supports **one canonical production deployment path**:
+This repository currently ships **validation and security workflows**, but it does **not** contain a checked-in deployment workflow.
+
+The canonical production procedure is therefore:
 
 1. Build immutable container images from `Dockerfile` and `Dockerfile.dashboard`.
-2. Push images to GHCR via `.github/workflows/deploy-free-tier.yml`.
-3. Deploy those exact images to **one** free-tier target (`render`, `railway`, or `fly`) using the same workflow.
+2. Publish those exact images in your deployment system of record.
+3. Deploy those exact image digests to your chosen runtime target.
 
 Historical Azure/AWS/GCP examples were removed from this guide because they are not active in this repository.
 
@@ -47,39 +49,19 @@ OTEL_EXPORTER_OTLP_ENDPOINT=https://<collector>:4318
 
 ---
 
-## GitHub Secrets Required for Deploy Workflow
+## Deployment Credentials
 
-Set only the secrets required by your chosen target:
+Store only the credentials required by your chosen deployment platform in that platform's secret manager.
 
-### Always required
-
-- `GITHUB_TOKEN` (provided by Actions runtime)
-
-### Render deployment
-
-- `RENDER_API_KEY`
-- `RENDER_SERVICE_ID`
-
-### Railway deployment
-
-- `RAILWAY_TOKEN`
-- `RAILWAY_PROJECT_ID`
-
-### Fly.io deployment
-
-- `FLY_API_TOKEN`
+This repository does not currently define a canonical GitHub Actions deployment workflow, so platform-specific deployment secrets should not be documented as required repository workflow inputs until such a workflow exists.
 
 ---
 
 ## Deployment Procedure
 
-### 1) Trigger workflow
+### 1) Build and publish images
 
-Run `.github/workflows/deploy-free-tier.yml` via `workflow_dispatch`:
-
-- `target`: `ghcr`, `render`, `railway`, `fly`, or `all`
-- `service`: `api`, `dashboard`, or `pipeline`
-
+Build the API and dashboard images from the checked-in Dockerfiles and publish them through your deployment pipeline.
 
 ### 2) Verify image publication
 

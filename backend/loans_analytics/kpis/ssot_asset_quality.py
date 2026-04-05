@@ -20,16 +20,10 @@ _METRIC_ALIAS_TO_ID: dict[str, str] = {
     "par_60": "par_60",
     "par90": "par_90",
     "par_90": "par_90",
-    "npl": "npl",
-    "npl90": "npl_90_proxy",
-    "npl_90_ratio": "npl_90_proxy",
+    "npl": "npl_ratio",
+    "npl90": "npl_90_ratio",
+    "npl_90_ratio": "npl_90_ratio",
     "npl180": "npl_180_proxy",
-    # "default_rate" in the SSOT context is the balance-weighted severe-default
-    # exposure rate (dpd>=180 OR status=defaulted). This is NOT the same as the
-    # catalog COUNT-based default_rate (COUNT(status=defaulted)/COUNT(loans)*100).
-    # The SSOT "default_rate" is used by the engine dispatch table and is the
-    # correct metric for provisioning and ECL calculations.
-    # For the COUNT-based version, use KPIService._calculate_default_rate().
     "default_rate": "npl_180_proxy",
     "default_rate_by_balance": "npl_180_proxy",
 }
@@ -46,44 +40,6 @@ _METRIC_ALIAS_TO_ID: dict[str, str] = {
 #
 # PAR30 / PAR60 / PAR90 remain strictly DPD-threshold metrics (no status gate).
 # ──────────────────────────────────────────────────────────────────────────────
-
-_ASSET_QUALITY_REGISTRY = {
-    "version": "asset-quality-ssot-1.4",
-    "asset_quality_kpis": {
-        "par_30": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100",
-            "unit": "percentage",
-        },
-        "par_60": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 60) / SUM(outstanding_balance) * 100",
-            "unit": "percentage",
-        },
-        "par_90": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 90) / SUM(outstanding_balance) * 100",
-            "unit": "percentage",
-        },
-        # NPL = severe delinquency per Basel-II/III: 90+ DPD or explicitly defaulted.
-        # Prior value (dpd >= 30) was semantically wrong — that is PAR30.
-        "npl": {
-            "formula": (
-                "SUM(outstanding_balance WHERE dpd >= 90 OR status = 'defaulted')"
-                " / SUM(outstanding_balance) * 100"
-            ),
-            "unit": "percentage",
-        },
-        "npl_90_proxy": {
-            "formula": "SUM(outstanding_balance WHERE dpd >= 90) / SUM(outstanding_balance) * 100",
-            "unit": "percentage",
-        },
-        "npl_180_proxy": {
-            "formula": (
-                "SUM(outstanding_balance WHERE dpd >= 180 OR status = 'defaulted')"
-                " / SUM(outstanding_balance) * 100"
-            ),
-            "unit": "percentage",
-        },
-    },
-}
 
 
 def _to_numeric_strict(series: pd.Series, *, field_name: str) -> pd.Series:
@@ -130,7 +86,7 @@ def calculate_asset_quality_metrics(
         )
     if float(normalized_df["outstanding_balance"].sum()) <= 0:
         raise ValueError("CRITICAL: Sum(outstanding_balance) must be > 0 for asset-quality KPIs.")
-    engine = KPIFormulaEngine(normalized_df, actor=actor, registry_data=_ASSET_QUALITY_REGISTRY)
+    engine = KPIFormulaEngine(normalized_df, actor=actor)
     values: dict[str, float] = {}
     for alias in metric_aliases:
         metric_id = _METRIC_ALIAS_TO_ID.get(alias)

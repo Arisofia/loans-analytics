@@ -13,7 +13,7 @@ Single source of truth for script execution paths. Use only these commands.
 - Setup guide: See `docs/GOOGLE_SHEETS_SETUP.md`
 - Credentials: `credentials/google-service-account.json` (gitignored; provide your own)
 - Configuration: `config/pipeline.yml` (google_sheets and targets sections)
-- Data spreadsheet: `1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o`
+- Data spreadsheet: configure your own sheet ID in environment or config; do not hardcode environment-specific identifiers here
 
 ## Zero-Cost ETL (DuckDB + Parquet — replaces Azure)
 

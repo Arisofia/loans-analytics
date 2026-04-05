@@ -145,8 +145,12 @@ up:
 	@echo "Starting local stack (API + Dashboard)..."
 	docker compose up --build api dashboard
 
+zero-cost-up: up
+
 down:
 	docker compose down
+
+zero-cost-down: down
 
 pipeline-run:
 	@echo "Running ETL pipeline (Docker)..."

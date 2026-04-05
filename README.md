@@ -139,7 +139,7 @@ All KPIs computed across 7 dimensions: Company, Credit Line, KAM Hunter, KAM Far
 |--------|-----------|--------|
 | Google Sheets | Service Account (pipeline SA) via Spreadsheet ID | Production |
 | CSV Upload | Pipeline `--input` flag or Streamlit upload | Production |
-| Supabase | PostgreSQL via `SUPABASE_URL` + `SUPABASE_KEY` | Optional |
+| Supabase | PostgreSQL via `SUPABASE_URL` + `SUPABASE_ANON_KEY` or `SUPABASE_SERVICE_ROLE_KEY` | Optional |
 
 **Pipeline ingestion requires explicit real input. Dummy/sample fallback is disabled.**
 

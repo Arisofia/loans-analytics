@@ -2,23 +2,22 @@
 
 ## Overview
 
-This guide explains how to complete the Google Sheets data integration for the Loans Analytics pipeline. The spreadsheet ID `1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o` has been configured, but you need to provide valid Google Cloud service account credentials.
+This guide explains how to complete the Google Sheets data integration for the Loans Analytics pipeline. Configure your own spreadsheet ID and Google Cloud service account credentials before using this path.
 
 ## Credentials Status
 
-**Configured:**
-- ✅ Spreadsheet ID: `1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o`
-- ✅ Project ID: `cedar-league-465204-j0`
-- ✅ Service Account: `116019572223403136263`
-- ✅ Private Key ID: `857fc4c9a2ee38a7ceb2c02bcb1f7724078d7511`
-- ⏳ **PENDING:** Complete private key file (in JSON format)
+**Required:**
+- Spreadsheet ID for your source workbook
+- Google Cloud project with Sheets API enabled
+- Service account with access to the workbook
+- Downloaded JSON key file stored outside version control
 
 ## Step 1: Generate Google Cloud Service Account Key
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Select project **cedar-league-465204-j0**
+2. Select your Google Cloud project
 3. Navigate to **IAM & Admin → Service Accounts**
-4. Find service account: `loans-sheets-adapter@cedar-league-465204-j0.iam.gserviceaccount.com` (or create it if missing)
+4. Find the service account you want to use for Sheets access (or create one if missing)
 5. Click **Keys** tab → **Add Key** → **Create new key**
 6. Choose **JSON** format
 7. Download the key file
@@ -29,7 +28,7 @@ Replace the placeholder in `credentials/google-service-account.json`:
 
 ```bash
 # Copy your downloaded JSON file
-cp ~/Downloads/cedar-league-465204-j0-*.json credentials/google-service-account.json
+cp ~/Downloads/<your-service-account-key>.json credentials/google-service-account.json
 ```
 
 The file should contain:
@@ -58,7 +57,7 @@ ingestion:
   google_sheets:
     enabled: true
     credentials_path: "credentials/google-service-account.json"
-    spreadsheet_id: "1JbbiNC495Nr4u9jioZrHMK1C8s7olvTf2CMAdwhe-6o"
+    spreadsheet_id: "<your-spreadsheet-id>"
     worksheet: "DESEMBOLSOS"
 ```
 

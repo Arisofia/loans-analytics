@@ -25,6 +25,7 @@ if ENVIRONMENT == 'production':
         'MOCK': os.environ.get('MOCK', 'false'),
         'HISTORICAL_CONTEXT_MODE': os.environ.get('HISTORICAL_CONTEXT_MODE', 'REAL'),
         'API_RELOAD': os.environ.get('API_RELOAD', 'false'),
+        'API_JWT_ENABLED': os.environ.get('API_JWT_ENABLED', '0'),
     }
     if _mock_flags['MOCK'].lower() == 'true':
         raise RuntimeError('MOCK=true is not permitted in ENVIRONMENT=production.')
@@ -34,6 +35,8 @@ if ENVIRONMENT == 'production':
         )
     if _mock_flags['API_RELOAD'].lower() == 'true':
         raise RuntimeError('API_RELOAD=true (uvicorn hot-reload) is not permitted in production.')
+    if _mock_flags['API_JWT_ENABLED'] != '1':
+        raise RuntimeError('API_JWT_ENABLED=1 is required in ENVIRONMENT=production.')
 
 logger.info('API startup: environment=%s', ENVIRONMENT)
 

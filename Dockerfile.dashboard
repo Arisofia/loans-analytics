@@ -1,5 +1,5 @@
 # Stage 1: Builder
-FROM python:3.12-slim AS builder
+FROM python:3.12.12-slim-bookworm AS builder
 
 # Set build-time environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -11,7 +11,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Install system dependencies needed for building Python packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -24,7 +24,7 @@ RUN pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt
 
 
 # Stage 2: Runtime
-FROM python:3.12-slim AS runtime
+FROM python:3.12.12-slim-bookworm AS runtime
 
 # Set runtime environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -36,7 +36,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Install runtime system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     libpq5 \
     ca-certificates \
     curl \

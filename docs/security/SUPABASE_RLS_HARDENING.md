@@ -159,7 +159,7 @@ ALTER FUNCTION public.loan_data_broadcast_trigger()
 ### Prerequisites
 
 1. Supabase CLI installed: `npm install -g supabase`
-2. Linked to project: `supabase link --project-ref sddviizcgheusvwqpthm`
+2. Linked to project: `supabase link --project-ref <your-project-ref>`
 3. Service role key available in `.env`
 
 ### Apply Migrations
@@ -170,7 +170,7 @@ cd /path/to/loans-loans-analytics
 supabase db push
 
 # Method 2: Manual via SQL Editor
-# 1. Go to https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/sql
+# 1. Go to https://supabase.com/dashboard/project/<your-project-ref>/sql
 # 2. Copy contents of each migration file in order:
 #    - db/migrations/20260204_enable_rls.sql
 #    - db/migrations/20260204_rls_policies.sql

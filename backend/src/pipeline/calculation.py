@@ -12,7 +12,7 @@ from sklearn.preprocessing import RobustScaler
 getcontext().rounding = ROUND_HALF_UP
 
 from backend.loans_analytics.kpis.ltv import calculate_ltv_sintetico
-from backend.loans_analytics.kpis.engine import KPIEngineV2
+from backend.loans_analytics.kpis.formula_engine import KPIFormulaEngine
 from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics
 from backend.src.kpi_engine.risk import compute_default_rate_by_count
 try:
@@ -72,7 +72,7 @@ class CalculationPhase:
     def __init__(self, config: Dict[str, Any], kpi_definitions: Dict[str, Any]):
         self.config = config
         self.kpi_definitions = kpi_definitions
-        self.engine = KPIEngineV2(kpi_definitions=kpi_definitions)
+        self.engine = None
 
     @staticmethod
     def _log_and_raise_critical_error(error_msg: str) -> None:
@@ -374,10 +374,11 @@ class CalculationPhase:
         return next((c for c in candidates if c in df.columns), None)
 
     def _run_unified_kpi_calculation(self, df: pd.DataFrame) -> Dict[str, Any]:
-        return self._calculate_unified_kpis(df)
-
-    def _calculate_unified_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
-        return self.engine.calculate(df)
+        self.engine = KPIFormulaEngine(df, registry_data=self.kpi_definitions)
+        kpi_results = self.engine.calculate_all()
+        # Convert Decimals to float for compatibility with parts of the pipeline that expect floats
+        # while keeping the high-precision audit trail in self.engine.
+        return {k: float(v) if isinstance(v, Decimal) else v for k, v in kpi_results.items()}
 
     def _calculate_expected_loss(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Calculate Expected Loss (EL = PD × LGD × EAD) per loan and portfolio total."""

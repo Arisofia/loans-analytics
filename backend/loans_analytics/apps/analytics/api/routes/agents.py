@@ -43,7 +43,7 @@ async def list_agents():
             AgentEntry(
                 id=a["id"],
                 name=a.get("name", a["id"]),
-                layer=a.get("layer", 0),
+                layer=a["layer"],
                 priority=a.get("priority", 99),
                 dependencies=a.get("dependencies", []),
             )

@@ -106,6 +106,14 @@ asset_quality_kpis:
       warning: 5
       critical: 10
 
+  npl_180_proxy:
+    formula: "SUM(outstanding_balance WHERE dpd >= 180 OR status = 'defaulted') / SUM(outstanding_balance) * 100"
+    unit: "percentage"
+    description: "Severe NPL ratio - balance-weighted exposure to loans with 180+ DPD or defaulted status"
+    thresholds:
+      warning: 8
+      critical: 15
+
   default_rate:
     formula: "COUNT(loan_id WHERE status = 'defaulted') / COUNT(loan_id) * 100"
     unit: "percentage"

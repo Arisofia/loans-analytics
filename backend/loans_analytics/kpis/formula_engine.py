@@ -65,34 +65,85 @@ class KPIFormulaEngine:
     def calculate_kpi(self, kpi_name: str, *, strict_comparison_errors: bool = False) -> dict:
         start = datetime.now(timezone.utc)
         formula_version = self._registry_version()
-        kpi_definition = self._get_kpi_definition(kpi_name)
-        formula = str(kpi_definition.get("formula", "")).strip()
-        if not formula:
-            raise KPIFormulaError(f"KPI '{kpi_name}' has no formula in registry")
-        value = self.calculate(formula, strict_comparison_errors=strict_comparison_errors)
-        self._validate_kpi_value(kpi_name, value)
-        thresholds = self._normalize_thresholds(kpi_definition.get("thresholds"))
-        threshold_status = self._evaluate_threshold_status(value, thresholds)
-        columns_used = self._extract_columns_used(formula)
-        end = datetime.now(timezone.utc)
-        execution_time_ms = max(int((end - start).total_seconds() * 1000), 0)
-        result = {
-            "value": value,
-            "unit": str(kpi_definition.get("unit", "unknown")),
-            "formula_version": formula_version,
-            "execution_time_ms": execution_time_ms,
-            "data_rows": int(len(self.df)),
-            "actor": self.actor,
-            "timestamp": end.isoformat(),
-            "kpi_name": kpi_name,
-            "run_id": self.run_id,
-            "thresholds": thresholds,
-            "threshold_status": threshold_status,
-            "status": "success",
-            "columns_used": columns_used,
-        }
-        self._record_audit(kpi_name=kpi_name, formula=formula, result=result)
-        return result
+        try:
+            kpi_definition = self._get_kpi_definition(kpi_name)
+            formula = str(kpi_definition.get("formula", "")).strip()
+            if not formula:
+                raise KPIFormulaError(f"KPI '{kpi_name}' has no formula in registry")
+            
+            value = self.calculate(formula, strict_comparison_errors=strict_comparison_errors)
+            self._validate_kpi_value(kpi_name, value)
+            
+            thresholds = self._normalize_thresholds(kpi_definition.get("thresholds"))
+            threshold_status = self._evaluate_threshold_status(value, thresholds)
+            columns_used = self._extract_columns_used(formula)
+            
+            end = datetime.now(timezone.utc)
+            execution_time_ms = max(int((end - start).total_seconds() * 1000), 0)
+            
+            result = {
+                "value": value,
+                "unit": str(kpi_definition.get("unit", "unknown")),
+                "formula_version": formula_version,
+                "execution_time_ms": execution_time_ms,
+                "data_rows": int(len(self.df)),
+                "actor": self.actor,
+                "timestamp": end.isoformat(),
+                "kpi_name": kpi_name,
+                "run_id": self.run_id,
+                "thresholds": thresholds,
+                "threshold_status": threshold_status,
+                "status": "success",
+                "columns_used": columns_used,
+            }
+            self._record_audit(kpi_name=kpi_name, formula=formula, result=result)
+            return result
+        except Exception as e:
+            end = datetime.now(timezone.utc)
+            execution_time_ms = max(int((end - start).total_seconds() * 1000), 0)
+            error_result = {
+                "value": Decimal("0"),
+                "unit": "error",
+                "formula_version": formula_version,
+                "execution_time_ms": execution_time_ms,
+                "data_rows": int(len(self.df)),
+                "actor": self.actor,
+                "timestamp": end.isoformat(),
+                "kpi_name": kpi_name,
+                "run_id": self.run_id,
+                "thresholds": {},
+                "threshold_status": "error",
+                "status": "failed",
+                "error": str(e),
+                "columns_used": [],
+            }
+            self._record_audit(kpi_name=kpi_name, formula="error", result=error_result)
+            logger.error(f"KPI calculation failed for {kpi_name}: {e}")
+            raise
+
+    def calculate_all(self) -> Dict[str, Any]:
+        """
+        Calculate all KPIs defined in the registry.
+        Returns a dict mapping KPI names to their calculated values.
+        """
+        results = {}
+        index = self._build_registry_index()
+        for kpi_name in index:
+            try:
+                kpi_result = self.calculate_kpi(kpi_name)
+                results[kpi_name] = kpi_result["value"]
+            except Exception:
+                # Individual KPI failures are already logged and audited in calculate_kpi
+                continue
+        return results
+
+    def get_audit_trail(self) -> pd.DataFrame:
+        """
+        Return audit records as a pandas DataFrame for compatibility with OutputPhase.
+        """
+        if not self._audit_records:
+            return pd.DataFrame(columns=["kpi_name", "status", "value", "timestamp"])
+        return pd.DataFrame(self._audit_records)
 
     def get_audit_records(self) -> List[dict]:
         return list(self._audit_records)

@@ -1,6 +1,6 @@
 # 🚀 Setup Guide - Consolidated
 
-> **Deployment scope note (2026-03-28):** Canonical production deployment is `deploy-free-tier.yml` (GHCR + Render/Railway/Fly). Any Azure references in this document are historical implementation notes, not an active deployment path.
+> **Deployment scope note (2026-03-28):** This repository does not currently include a checked-in deployment workflow. Any deployment instructions must be validated against the workflows and Dockerfiles actually present in the repository.
 
 > **Purpose**: Single source of truth for all project setup procedures  
 > **Replaces**: 12 scattered SETUP files (2,478 lines total)  
@@ -102,9 +102,9 @@ deactivate
 
 ### Dependencies
 
-- **Production**: `requirements.txt`
-- **Development**: `requirements-dev.txt`
-- **Lock file**: `requirements.lock.txt` (frozen versions)
+- **Production**: `requirements.prod.lock.txt`
+- **Development**: `requirements.txt` and `requirements-dev.txt`
+- **Pinned container build input**: `requirements.prod.lock.txt`
 
 ### Common Issues
 
@@ -112,7 +112,7 @@ deactivate
 **Solution**: Ensure virtual environment is activated, reinstall dependencies
 
 **Issue**: Version conflicts  
-**Solution**: Use `requirements.lock.txt`: `pip install -r requirements.lock.txt`
+**Solution**: Recreate the virtual environment and reinstall from `requirements.txt` and `requirements-dev.txt`, or use `requirements.prod.lock.txt` for pinned production/container builds.
 
 ---
 
