@@ -139,15 +139,15 @@ async def _resolve_analysis_kpis(request: 'LoanPortfolioRequest', service: 'KPIS
             return kpis
     return await service.get_latest_kpis()
 
-def _get_kpi_value(kpis: list[Any], candidates: list[str], default: Optional[float] = 0.0) -> Optional[float]:
+def _get_kpi_value(kpis: list[Any], candidates: list[str], default: float = 0.0) -> float:
     candidate_set = {candidate.lower() for candidate in candidates}
     value = next((kpi.value for kpi in kpis if (kpi.id or '').lower() in candidate_set), None)
     if value is None:
-        return default
+        return float(default)
     try:
         return float(value)
     except (ValueError, TypeError):
-        return default
+        return float(default)
 
 def _safe_divide(numerator: float, denominator: float, fallback: float = 0.0) -> float:
     """Safe division with explicit fallback for zero denominator."""

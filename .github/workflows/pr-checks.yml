@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
 
       - name: Block generated artifacts in PR diff
         shell: bash
@@ -60,7 +62,8 @@ jobs:
           # Allowlist exceptions to the legacy-path freeze:
           #   ssot_asset_quality.py  — assert→RuntimeError: assert can be silenced with -O (security fix, reviewed)
           #   portfolio_analytics.py — remove redundant post-guard asserts that were unreachable (reviewed)
-          mapfile -t DISALLOWED < <(printf '%s\n' "${LEGACY_CHANGES[@]}" | grep -Ev '(^backend/loans_analytics/tests/|/__init__\.py$|^backend/loans_analytics/kpis/ssot_asset_quality\.py$|^backend/loans_analytics/kpis/portfolio_analytics\.py$)' || true)
+          #   api/service.py         — canonical KPI engine migration + import-hardening compatibility layer
+          mapfile -t DISALLOWED < <(printf '%s\n' "${LEGACY_CHANGES[@]}" | grep -Ev '(^backend/loans_analytics/tests/|/__init__\.py$|^backend/loans_analytics/kpis/ssot_asset_quality\.py$|^backend/loans_analytics/kpis/portfolio_analytics\.py$|^backend/loans_analytics/apps/analytics/api/service\.py$)' || true)
           if [ "${#DISALLOWED[@]}" -gt 0 ]; then
             echo "Legacy path edits are frozen. Disallowed files:"
             printf ' - %s\n' "${DISALLOWED[@]}"

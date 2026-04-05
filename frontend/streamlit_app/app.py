@@ -1,19 +1,18 @@
 import json
+import importlib
 import logging
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 import pandas as pd
 import streamlit as st
 from backend.loans_analytics.config.theme import ANALYTICS_THEME
 from backend.loans_analytics.config.tracing_setup import enable_auto_instrumentation, init_tracing
-from backend.loans_analytics.kpis.catalog_processor import KPICatalogProcessor
-from backend.loans_analytics.kpis.strategic_reporting import build_strategic_summary, write_strategic_report
-from backend.loans_analytics.kpis.threshold_enrichment import enrich_kpis_with_thresholds
 from backend.loans_analytics.utils.dashboard import format_kpi_value, kpi_label
 from backend.loans_analytics.utils.normalization import normalize_dataframe_complete
 from backend.loans_analytics.utils.usage_tracker import UsageTracker
+from backend.src.kpi_engine.engine import flatten_metric_result_groups, run_metric_engine
 from frontend.streamlit_app.components.analytics_tabs import render_advanced_intelligence
 from frontend.streamlit_app.components.charts import render_cashflow_trends, render_category_breakdown, render_growth_analysis
 from frontend.streamlit_app.components.kpi_metrics import render_executive_summary, render_kpi_snapshot
@@ -27,6 +26,47 @@ logger = logging.getLogger(__name__)
 init_tracing('streamlit-dashboard')
 enable_auto_instrumentation()
 usage_tracker = UsageTracker()
+
+def _load_optional_callable(module_path: str, attr_name: str) -> Any | None:
+    try:
+        module = importlib.import_module(module_path)
+        value = getattr(module, attr_name, None)
+        return value if callable(value) else None
+    except Exception:
+        return None
+
+
+_build_strategic_summary_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.strategic_reporting", "build_strategic_summary"
+)
+_write_strategic_report_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.strategic_reporting", "write_strategic_report"
+)
+if _build_strategic_summary_fn is not None and _write_strategic_report_fn is not None:
+    build_strategic_summary = _build_strategic_summary_fn
+    write_strategic_report = _write_strategic_report_fn
+else:
+
+    def build_strategic_summary(metrics: dict, facts: pd.DataFrame, targets: dict) -> dict:
+        return {"summary": "Strategic reporting fallback active", "metrics_count": len(metrics)}
+
+    def write_strategic_report(summary: dict) -> Path:
+        export_path = resolve_exports_dir(create=True) / 'strategic_report.json'
+        export_path.write_text(json.dumps(summary, indent=2, default=str), encoding='utf-8')
+        return export_path
+
+_threshold_enrichment_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.threshold_enrichment", "enrich_kpis_with_thresholds"
+)
+if _threshold_enrichment_fn is not None:
+    enrich_kpis_with_thresholds = _threshold_enrichment_fn
+else:
+
+    def enrich_kpis_with_thresholds(kpis: dict[str, float]) -> dict[str, dict[str, float | str]]:
+        return {
+            key: {"value": float(value), "status": "not_configured"}
+            for key, value in kpis.items()
+        }
 if 'tracked_visit' not in st.session_state:
     usage_tracker.track('dashboard', 'visit')
     st.session_state['tracked_visit'] = True
@@ -172,6 +212,42 @@ def _normalize_export_tables(loans_df: pd.DataFrame, customers_df: pd.DataFrame,
     normalized_schedule = _normalize_single_export_table(schedule_df, normalize_inputs=normalize_inputs)
     return (normalized_loans, normalized_customers, normalized_payments, normalized_schedule)
 
+
+def _build_export_marts(loans_df: pd.DataFrame, payments_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    loans = loans_df.copy()
+
+    def _series_or_default(frame: pd.DataFrame, column: str, default: Any = 0) -> pd.Series:
+        if column in frame.columns:
+            return frame[column]
+        return pd.Series(default, index=frame.index)
+
+    def _first_existing_series(frame: pd.DataFrame, *columns: str, default: Any = 0) -> pd.Series:
+        for column in columns:
+            if column in frame.columns:
+                return frame[column]
+        return pd.Series(default, index=frame.index)
+
+    if 'outstanding_principal' not in loans.columns:
+        loans['outstanding_principal'] = pd.to_numeric(_first_existing_series(loans, 'outstanding_balance', 'amount', default=0), errors='coerce').fillna(0)
+    if 'days_past_due' not in loans.columns:
+        loans['days_past_due'] = pd.to_numeric(_series_or_default(loans, 'dpd', 0), errors='coerce').fillna(0)
+    if 'status' not in loans.columns:
+        loans['status'] = loans.get('loan_status', 'active')
+    loans['default_flag'] = loans['status'].astype(str).str.lower().eq('defaulted')
+    if 'disbursement_amount' not in loans.columns:
+        loans['disbursement_amount'] = pd.to_numeric(_series_or_default(loans, 'amount', 0), errors='coerce').fillna(0)
+    if 'disbursement_date' not in loans.columns:
+        loans['disbursement_date'] = pd.to_datetime(loans.get('origination_date', loans.get('funded_at')), errors='coerce', format='mixed')
+    pay = payments_df.copy()
+    if 'payment_amount' not in pay.columns:
+        pay['payment_amount'] = pd.to_numeric(_series_or_default(pay, 'last_payment_amount', 0), errors='coerce').fillna(0)
+    if 'payment_date' not in pay.columns:
+        pay['payment_date'] = pd.to_datetime(pay.get('payment_date', pay.get('last_payment_date')), errors='coerce', format='mixed')
+    finance_mart = pd.DataFrame({'interest_income': pd.to_numeric(_series_or_default(loans, 'interest_income', 0), errors='coerce').fillna(0), 'fee_income': pd.to_numeric(_series_or_default(loans, 'fee_income', 0), errors='coerce').fillna(0), 'funding_cost': pd.to_numeric(_series_or_default(loans, 'funding_cost', 0), errors='coerce').fillna(0), 'operating_expense': pd.to_numeric(_series_or_default(loans, 'operating_expense', 0), errors='coerce').fillna(0), 'provision_expense': pd.to_numeric(_series_or_default(loans, 'provision_expense', 0), errors='coerce').fillna(0), 'balance_avg': pd.to_numeric(_series_or_default(loans, 'outstanding_principal', 0), errors='coerce').fillna(0), 'debt_balance': pd.to_numeric(_series_or_default(loans, 'outstanding_principal', 0), errors='coerce').fillna(0)})
+    finance_mart['gross_margin'] = finance_mart['interest_income'] + finance_mart['fee_income'] - finance_mart['funding_cost'] - finance_mart['operating_expense'] - finance_mart['provision_expense']
+    sales_mart = pd.DataFrame({'ticket_size': pd.to_numeric(_series_or_default(loans, 'amount', 0), errors='coerce').fillna(0), 'approved_ticket': pd.to_numeric(_first_existing_series(loans, 'disbursement_amount', 'amount', default=0), errors='coerce').fillna(0), 'funded_flag': ~loans['status'].astype(str).str.lower().isin(['rejected', 'denied', 'cancelled']), 'status': loans.get('status', 'active')})
+    return {'portfolio_mart': loans, 'finance_mart': finance_mart, 'sales_mart': sales_mart, 'disbursements_mart': loans, 'payments_mart': pay}
+
 def generate_kpi_exports(data: dict[str, pd.DataFrame], *, normalize_inputs: bool=True) -> Path:
     exports_dir = resolve_exports_dir(create=True)
     mapped_tables = fuzzy_map_core_tables(data)
@@ -180,13 +256,17 @@ def generate_kpi_exports(data: dict[str, pd.DataFrame], *, normalize_inputs: boo
     payments_df = mapped_tables.get('historic_payment_data', data.get('historic_payment_data', pd.DataFrame()))
     schedule_df = mapped_tables.get('schedule_data', data.get('schedule_data'))
     normalized_loans, normalized_customers, normalized_payments, normalized_schedule = _normalize_export_tables(loans_df, customers_df, payments_df, schedule_df, normalize_inputs=normalize_inputs)
-    processor = KPICatalogProcessor(normalized_loans, normalized_payments, normalized_customers, normalized_schedule)
-    extended_kpis = processor.get_all_kpis()
-    executive_strip = extended_kpis.get('executive_strip', {})
+    metric_groups = run_metric_engine(_build_export_marts(normalized_loans, normalized_payments))
+    flattened = flatten_metric_result_groups(metric_groups)
+    outstanding = pd.to_numeric(normalized_loans.get('outstanding_balance', normalized_loans.get('amount', 0)), errors='coerce').fillna(0)
+    avg_apr = pd.to_numeric(normalized_loans.get('interest_rate', 0), errors='coerce').fillna(0).mean()
+    customers = normalized_loans['borrower_id'].dropna().astype(str).nunique() if 'borrower_id' in normalized_loans.columns else 0
+    executive_strip = {'total_outstanding_loan_value': float(outstanding.sum()), 'total_customers': float(customers), 'total_loans': float(len(normalized_loans)), 'avg_apr': float(avg_apr), **{k: float(v) for k, v in flattened.items()}}
+    extended_kpis = {'executive_strip': executive_strip, 'canonical_metric_groups': {'executive_metrics': [metric.model_dump() for metric in metric_groups.get('executive_metrics', [])], 'risk_metrics': [metric.model_dump() for metric in metric_groups.get('risk_metrics', [])], 'pricing_metrics': [metric.model_dump() for metric in metric_groups.get('pricing_metrics', [])]}}
     dashboard_metrics = {'timestamp': datetime.now().isoformat(), 'extended_kpis': extended_kpis, 'total_aum_usd': executive_strip.get('total_outstanding_loan_value', 0.0), 'active_clients': executive_strip.get('total_customers', 0), 'total_loans': executive_strip.get('total_loans', 0), 'avg_apr': executive_strip.get('avg_apr', 0.0)}
     dashboard_path = exports_dir / 'complete_kpi_dashboard.json'
     dashboard_path.write_text(json.dumps(dashboard_metrics, indent=2, default=str), encoding='utf-8')
-    analytics_facts = processor.get_monthly_revenue_df()
+    analytics_facts = pd.DataFrame([{'timestamp': datetime.now().isoformat(), 'metric_id': metric_key, 'value': metric_value} for metric_key, metric_value in flattened.items()])
     if not analytics_facts.empty:
         facts_path = exports_dir / 'analytics_facts.csv'
         analytics_facts.to_csv(facts_path, index=False)

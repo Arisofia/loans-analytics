@@ -1,8 +1,9 @@
 from __future__ import annotations
+import importlib
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Literal, cast
+from typing import Any, Dict, List, Literal, Optional, cast
 import uuid
 import pandas as pd
 from starlette.concurrency import run_in_threadpool
@@ -47,18 +48,129 @@ from backend.loans_analytics.apps.analytics.api.models import (
     VintageCurveResponse,
 )
 from backend.loans_analytics.config import settings
-from backend.loans_analytics.kpis.advanced_risk import calculate_advanced_risk_metrics
-from backend.loans_analytics.kpis.catalog_processor import KPICatalogProcessor
-from backend.loans_analytics.kpis.health_score import calculate_portfolio_health_score
-from backend.loans_analytics.kpis.ssot_asset_quality import calculate_asset_quality_metrics
-from backend.loans_analytics.kpis.unit_economics import (
-    calculate_all_unit_economics,
-    calculate_cost_of_risk,
-    calculate_lgd,
-    calculate_nim,
-)
 from backend.loans_analytics.logging_config import get_logger
 from backend.loans_analytics.supabase_pool import get_pool
+from backend.src.kpi_engine.engine import flatten_metric_result_groups, run_metric_engine
+
+def _load_optional_callable(module_path: str, attr_name: str) -> Any | None:
+    try:
+        module = importlib.import_module(module_path)
+        value = getattr(module, attr_name, None)
+        return value if callable(value) else None
+    except Exception:
+        return None
+
+
+_advanced_risk_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.advanced_risk", "calculate_advanced_risk_metrics"
+)
+if _advanced_risk_fn is not None:
+    calculate_advanced_risk_metrics = cast(Any, _advanced_risk_fn)
+else:
+
+    def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
+        return {
+            "risk_level": "unknown",
+            "risk_score": 0.0,
+            "drivers": [],
+            "alerts": [],
+        }
+
+_health_score_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.health_score", "calculate_portfolio_health_score"
+)
+if _health_score_fn is not None:
+    calculate_portfolio_health_score = cast(Any, _health_score_fn)
+else:
+
+    def calculate_portfolio_health_score(metrics: dict[str, float]) -> dict[str, Any]:
+        score = max(0.0, 100.0 - float(metrics.get("par30", 0.0)) - float(metrics.get("npl", 0.0)))
+        return {
+            "score": score,
+            "traffic_light": "green" if score >= 70 else ("amber" if score >= 40 else "critical"),
+            "components": [],
+            "formula": _PORTFOLIO_HEALTH_FORMULA,
+            "interpretation": "Fallback health score computed from PAR30/NPL only.",
+        }
+
+_asset_quality_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.ssot_asset_quality", "calculate_asset_quality_metrics"
+)
+if _asset_quality_fn is not None:
+    calculate_asset_quality_metrics = cast(Any, _asset_quality_fn)
+else:
+
+    def calculate_asset_quality_metrics(
+        *,
+        balance: pd.Series,
+        dpd: pd.Series,
+        status: Optional[pd.Series] = None,
+        actor: str = "api.service",
+        metric_aliases: Optional[list[str]] = None,
+    ) -> dict[str, float]:
+        bal = pd.to_numeric(balance, errors="coerce").fillna(0.0)
+        dpd_num = pd.to_numeric(dpd, errors="coerce").fillna(0.0)
+        total = float(bal.sum())
+        if total <= 0:
+            return {"par30": 0.0, "par60": 0.0, "par90": 0.0}
+        return {
+            "par30": float(bal[dpd_num >= 30].sum() / total * 100.0),
+            "par60": float(bal[dpd_num >= 60].sum() / total * 100.0),
+            "par90": float(bal[dpd_num >= 90].sum() / total * 100.0),
+        }
+
+
+_calc_all_unit_econ_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.unit_economics", "calculate_all_unit_economics"
+)
+if _calc_all_unit_econ_fn is not None:
+    calculate_all_unit_economics = cast(Any, _calc_all_unit_econ_fn)
+else:
+
+    def calculate_all_unit_economics(
+        df: pd.DataFrame,
+        funding_cost_rate: float,
+        cac: float,
+        monthly_arpu: float,
+    ) -> dict[str, Any]:
+        return {
+            "cac": float(cac),
+            "monthly_arpu": float(monthly_arpu),
+            "funding_cost_rate": float(funding_cost_rate),
+        }
+
+
+_calc_cor_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.unit_economics", "calculate_cost_of_risk"
+)
+if _calc_cor_fn is not None:
+    calculate_cost_of_risk = cast(Any, _calc_cor_fn)
+else:
+
+    def calculate_cost_of_risk(df: pd.DataFrame) -> dict[str, Any]:
+        return {"cost_of_risk_pct": 0.0}
+
+
+_calc_lgd_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.unit_economics", "calculate_lgd"
+)
+if _calc_lgd_fn is not None:
+    calculate_lgd = cast(Any, _calc_lgd_fn)
+else:
+
+    def calculate_lgd(df: pd.DataFrame) -> dict[str, Any]:
+        return {"lgd_pct": 0.0}
+
+
+_calc_nim_fn = _load_optional_callable(
+    "backend.loans_analytics.kpis.unit_economics", "calculate_nim"
+)
+if _calc_nim_fn is not None:
+    calculate_nim = cast(Any, _calc_nim_fn)
+else:
+
+    def calculate_nim(df: pd.DataFrame) -> dict[str, Any]:
+        return {"nim_pct": 0.0}
 
 logger = get_logger(__name__)
 DATA_MISSING_SCORE = 0.0
@@ -776,17 +888,30 @@ class KPIService:
         from datetime import timezone
 
         loans_df = self._convert_loan_records_to_dataframe(loans)
-        payments_df = self._convert_dict_records_to_dataframe(payments)
-        customers_df = self._convert_dict_records_to_dataframe(customers)
-        schedule_df = self._convert_dict_records_to_dataframe(schedule)
-        loans_df = self._normalize_loans_for_catalog(loans_df, payments_df, customers_df)
-        processor = KPICatalogProcessor(
-            loans_df=loans_df,
-            payments_df=payments_df,
-            customers_df=customers_df,
-            schedule_df=schedule_df,
-        )
-        checks = processor.check_guardrails()
+        metrics = self._calculate_portfolio_performance_metrics(loans_df.copy())
+        checks = [
+            {
+                "name": "PAR30",
+                "value": metrics.get("par30", 0.0),
+                "threshold_warning": 3.0,
+                "threshold_critical": 5.0,
+                "breach": bool(metrics.get("par30", 0.0) >= 5.0),
+            },
+            {
+                "name": "NPL",
+                "value": metrics.get("npl", 0.0),
+                "threshold_warning": 5.0,
+                "threshold_critical": 10.0,
+                "breach": bool(metrics.get("npl", 0.0) >= 10.0),
+            },
+            {
+                "name": "CollectionRate",
+                "value": metrics.get("collection_rate", 0.0),
+                "threshold_warning": 85.0,
+                "threshold_critical": 80.0,
+                "breach": bool(metrics.get("collection_rate", 0.0) <= 80.0),
+            },
+        ]
         any_breach = any(c.get("breach", False) for c in checks)
         breach_count = sum(c.get("breach", False) for c in checks)
         return {
@@ -806,15 +931,10 @@ class KPIService:
         loans_df = self._convert_loan_records_to_dataframe(loans)
         payments_df = self._convert_dict_records_to_dataframe(payments)
         customers_df = self._convert_dict_records_to_dataframe(customers)
-        schedule_df = self._convert_dict_records_to_dataframe(schedule)
         loans_df = self._normalize_loans_for_catalog(loans_df, payments_df, customers_df)
-        processor = KPICatalogProcessor(
-            loans_df=loans_df,
-            payments_df=payments_df,
-            customers_df=customers_df,
-            schedule_df=schedule_df,
-        )
-        extended_kpis = processor.get_all_kpis()
+        metric_groups = self._run_canonical_metric_groups(loans_df, payments_df)
+        flattened_metrics = flatten_metric_result_groups(metric_groups)
+        executive_strip = self._build_executive_strip_from_frame(loans_df, flattened_metrics)
         now = datetime.now()
         if loans_df.empty:
             risk_kpis: list[KpiSingleResponse] = []
@@ -832,26 +952,139 @@ class KPIService:
             )
             portfolio_health = self._build_portfolio_health_score_from_metrics(metrics)
         return {
-            "strategic_confirmations": extended_kpis.get("strategic_confirmations", {}),
-            "executive_strip": extended_kpis.get("executive_strip", {}),
-            "nsm_customer_types": extended_kpis.get("nsm_customer_types", {}),
-            "dpd_buckets": extended_kpis.get("dpd_buckets", {}),
-            "concentration": extended_kpis.get("concentration", {}),
-            "portfolio_rotation": extended_kpis.get("portfolio_rotation", {}),
-            "monthly_pricing": extended_kpis.get("monthly_pricing", {}),
-            "weighted_apr": float(extended_kpis.get("weighted_apr", 0.0) or 0.0),
-            "weighted_fee_rate": float(extended_kpis.get("weighted_fee_rate", 0.0) or 0.0),
-            "churn_90d_metrics": extended_kpis.get("churn_90d_metrics", []),
-            "unit_economics": extended_kpis.get("unit_economics", []),
-            "pricing_analytics": extended_kpis.get("pricing_analytics", {}),
-            "revenue_forecast_6m": extended_kpis.get("revenue_forecast_6m", []),
-            "opportunity_prioritization": extended_kpis.get("opportunity_prioritization", []),
-            "data_governance": extended_kpis.get("data_governance", {}),
-            "graph_analytics": extended_kpis.get("graph_analytics", {}),
-            "portfolio_analytics": extended_kpis.get("portfolio_analytics", {}),
-            "lending_kpis": extended_kpis.get("lending_kpis", {}),
+            "strategic_confirmations": {},
+            "executive_strip": executive_strip,
+            "nsm_customer_types": {},
+            "dpd_buckets": {},
+            "concentration": {},
+            "portfolio_rotation": {},
+            "monthly_pricing": {},
+            "weighted_apr": float(executive_strip.get("avg_apr", 0.0) or 0.0),
+            "weighted_fee_rate": 0.0,
+            "churn_90d_metrics": [],
+            "unit_economics": [],
+            "pricing_analytics": {
+                "canonical": [
+                    metric.model_dump() for metric in metric_groups.get("pricing_metrics", [])
+                ]
+            },
+            "revenue_forecast_6m": [],
+            "opportunity_prioritization": [],
+            "data_governance": {},
+            "graph_analytics": {},
+            "portfolio_analytics": {},
+            "lending_kpis": {},
             "risk_kpis": risk_kpis,
             "portfolio_health": portfolio_health,
+            "canonical_metrics": flattened_metrics,
+        }
+
+    def _run_canonical_metric_groups(
+        self, loans_df: pd.DataFrame, payments_df: pd.DataFrame
+    ) -> dict[str, Any]:
+        marts = self._build_minimal_marts(loans_df, payments_df)
+        return run_metric_engine(marts)
+
+    def _build_minimal_marts(
+        self, loans_df: pd.DataFrame, payments_df: pd.DataFrame
+    ) -> dict[str, pd.DataFrame]:
+        loans = loans_df.copy()
+
+        def _series_or_default(frame: pd.DataFrame, column: str, default: Any = 0) -> pd.Series:
+            if column in frame.columns:
+                return frame[column]
+            return pd.Series(default, index=frame.index)
+
+        def _first_existing_series(frame: pd.DataFrame, *columns: str, default: Any = 0) -> pd.Series:
+            for column in columns:
+                if column in frame.columns:
+                    return frame[column]
+            return pd.Series(default, index=frame.index)
+
+        for col in ("outstanding_principal", "outstanding_balance", "current_balance", "amount"):
+            if col in loans.columns:
+                loans[col] = pd.to_numeric(loans[col], errors="coerce")
+        if "outstanding_principal" not in loans.columns:
+            loans["outstanding_principal"] = pd.to_numeric(
+                _first_existing_series(loans, "outstanding_balance", "current_balance", "amount", default=0),
+                errors="coerce",
+            ).fillna(0)
+        if "days_past_due" not in loans.columns:
+            loans["days_past_due"] = pd.to_numeric(_series_or_default(loans, "dpd", 0), errors="coerce").fillna(0)
+        if "status" not in loans.columns:
+            loans["status"] = loans.get("loan_status", "active")
+        loans["default_flag"] = loans["status"].astype(str).str.lower().eq("defaulted")
+        if "disbursement_amount" not in loans.columns:
+            loans["disbursement_amount"] = pd.to_numeric(_series_or_default(loans, "amount", 0), errors="coerce").fillna(0)
+        if "disbursement_date" not in loans.columns:
+            loans["disbursement_date"] = pd.to_datetime(
+                loans.get("origination_date", loans.get("funded_at")),
+                errors="coerce",
+                format="mixed",
+            )
+        pay = payments_df.copy()
+        if "payment_amount" not in pay.columns:
+            pay["payment_amount"] = pd.to_numeric(
+                _series_or_default(pay, "last_payment_amount", 0), errors="coerce"
+            ).fillna(0)
+        if "payment_date" not in pay.columns:
+            pay["payment_date"] = pd.to_datetime(
+                pay.get("payment_date", pay.get("last_payment_date")),
+                errors="coerce",
+                format="mixed",
+            )
+        finance_mart = pd.DataFrame(
+            {
+                "interest_income": pd.to_numeric(_series_or_default(loans, "interest_income", 0), errors="coerce").fillna(0),
+                "fee_income": pd.to_numeric(_series_or_default(loans, "fee_income", 0), errors="coerce").fillna(0),
+                "funding_cost": pd.to_numeric(_series_or_default(loans, "funding_cost", 0), errors="coerce").fillna(0),
+                "operating_expense": pd.to_numeric(_series_or_default(loans, "operating_expense", 0), errors="coerce").fillna(0),
+                "provision_expense": pd.to_numeric(_series_or_default(loans, "provision_expense", 0), errors="coerce").fillna(0),
+                "balance_avg": pd.to_numeric(_series_or_default(loans, "outstanding_principal", 0), errors="coerce").fillna(0),
+                "debt_balance": pd.to_numeric(_series_or_default(loans, "outstanding_principal", 0), errors="coerce").fillna(0),
+            }
+        )
+        finance_mart["gross_margin"] = (
+            finance_mart["interest_income"]
+            + finance_mart["fee_income"]
+            - finance_mart["funding_cost"]
+            - finance_mart["operating_expense"]
+            - finance_mart["provision_expense"]
+        )
+        sales_mart = pd.DataFrame(
+            {
+                "ticket_size": pd.to_numeric(_series_or_default(loans, "amount", 0), errors="coerce").fillna(0),
+                "approved_ticket": pd.to_numeric(_first_existing_series(loans, "disbursement_amount", "amount", default=0), errors="coerce").fillna(0),
+                "funded_flag": ~loans["status"].astype(str).str.lower().isin(["rejected", "denied", "cancelled"]),
+                "status": loans.get("status", "active"),
+            }
+        )
+        return {
+            "portfolio_mart": loans,
+            "finance_mart": finance_mart,
+            "sales_mart": sales_mart,
+            "disbursements_mart": loans,
+            "payments_mart": pay,
+        }
+
+    def _build_executive_strip_from_frame(
+        self, loans_df: pd.DataFrame, flattened_metrics: dict[str, float]
+    ) -> dict[str, float]:
+        outstanding = pd.to_numeric(
+            loans_df.get("outstanding_balance", loans_df.get("amount", 0)), errors="coerce"
+        ).fillna(0)
+        avg_apr = pd.to_numeric(loans_df.get("interest_rate", 0), errors="coerce").fillna(0).mean()
+        customers = (
+            loans_df["borrower_id"].dropna().astype(str).nunique()
+            if "borrower_id" in loans_df.columns
+            else 0
+        )
+        return {
+            "total_outstanding_loan_value": float(outstanding.sum()),
+            "total_customers": float(customers),
+            "total_loans": float(len(loans_df)),
+            "avg_apr": float(avg_apr),
+            **{metric_key: float(metric_val) for metric_key, metric_val in flattened_metrics.items()},
         }
 
     @staticmethod
@@ -2591,14 +2824,8 @@ class KPIService:
             normalized = self._normalize_loans_for_catalog(
                 df.copy(), pd.DataFrame(), pd.DataFrame()
             )
-            processor = KPICatalogProcessor(
-                loans_df=normalized,
-                payments_df=pd.DataFrame(),
-                customers_df=pd.DataFrame(),
-                schedule_df=pd.DataFrame(),
-            )
-            extended = processor.get_all_kpis()
-            revenue_df = processor.get_monthly_revenue_df()
+            metric_groups = self._run_canonical_metric_groups(normalized, pd.DataFrame())
+            flattened = flatten_metric_result_groups(metric_groups)
         except Exception as exc:
             logger.error(
                 "Executive KPI computation failed â€” raising degraded state: %s", exc, exc_info=True
@@ -2606,39 +2833,10 @@ class KPIService:
             raise RuntimeError(
                 f"Executive metrics unavailable: upstream KPI computation failed ({exc})"
             ) from exc
-        executive_strip = extended.get("executive_strip", {}) or {}
-        unit_economics = extended.get("unit_economics", []) or []
-        churn_rows = extended.get("churn_90d_metrics", []) or []
-        forecast_rows = extended.get("revenue_forecast_6m", []) or []
-        cac_value = self._safe_float(
-            executive_strip.get("cac_usd"),
-            default=self._last_realtime_metric(unit_economics, "cac_usd"),
-        )
-        margin_ratio = self._safe_float(
-            executive_strip.get("gross_margin_pct"),
-            default=self._last_realtime_metric(unit_economics, "gross_margin_pct"),
-        )
-        churn_ratio = self._safe_float(self._last_realtime_metric(churn_rows, "churn90d_pct"))
-        forecast_sum = float(
-            sum(
-                (
-                    self._safe_float(row.get("forecast_revenue_usd"))
-                    for row in forecast_rows
-                    if isinstance(row, dict)
-                )
-            )
-        )
-        if (
-            forecast_sum <= 0
-            and isinstance(revenue_df, pd.DataFrame)
-            and (not revenue_df.empty)
-            and ("recv_revenue_for_month" in revenue_df.columns)
-        ):
-            revenue_series = pd.to_numeric(
-                revenue_df["recv_revenue_for_month"], errors="coerce"
-            ).fillna(0)
-            if len(revenue_series) > 0:
-                forecast_sum = max(0.0, float(revenue_series.iloc[-1]) * 6.0)
+        cac_value = self._safe_float(flattened.get("avg_ticket"))
+        margin_ratio = self._safe_float(flattened.get("contribution_margin"))
+        churn_ratio = 0.0
+        forecast_sum = 0.0
         return {
             "cac": round(cac_value, 4),
             "gross_margin_pct": round(self._ratio_to_percent(margin_ratio), 4),

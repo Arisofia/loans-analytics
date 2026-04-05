@@ -156,7 +156,15 @@ class TransformationPhase:
         output_path = None
         if run_dir:
             output_path = run_dir / "clean_data.parquet"
-            df.to_parquet(output_path, index=False)
+            try:
+                df.to_parquet(output_path, index=False)
+            except Exception as parquet_error:
+                logger.warning(
+                    "Parquet write failed on transformed frame; applying Arrow-safe coercion. Error: %s",
+                    parquet_error,
+                )
+                df = self._make_arrow_safe(df)
+                df.to_parquet(output_path, index=False)
             logger.info("Saved clean data to %s", output_path)
         results = {
             "status": "success",
@@ -181,6 +189,28 @@ class TransformationPhase:
         if not raw_data_path.exists():
             raise ValueError("No data provided for transformation")
         return pd.read_parquet(raw_data_path)
+
+    def _make_arrow_safe(self, df: pd.DataFrame) -> pd.DataFrame:
+        safe = df.copy()
+        safe.columns = [str(col) for col in safe.columns]
+        for col in safe.columns:
+            series = safe[col]
+            if str(series.dtype) == "object":
+                safe[col] = series.map(self._to_nullable_string).astype("string")
+        return safe
+
+    @staticmethod
+    def _to_nullable_string(value: Any) -> Any:
+        if pd.isna(value):
+            return pd.NA
+        if isinstance(value, bytes):
+            for encoding in ("utf-8", "latin-1"):
+                try:
+                    return value.decode(encoding)
+                except UnicodeDecodeError:
+                    continue
+            raise ValueError(f"CRITICAL: decode failure for bytes value {repr(value)}. Aborting batch.")
+        return str(value)
 
     def _run_transformation_pipeline(
         self, df: pd.DataFrame, payments_df: Optional[pd.DataFrame] = None
@@ -390,6 +420,21 @@ class TransformationPhase:
             if principal.notna().any():
                 df["funded_amount"] = principal
                 derived.append("funded_amount")
+
+        alias_specs = {
+            "principal_amount": ["principal_amount", "funded_amount", "approved_value", "amount"],
+            "outstanding_balance": ["outstanding_balance", "outstanding_principal", "current_balance", "totalsaldovigente", "amount"],
+            "current_balance": ["current_balance", "outstanding_balance", "outstanding_principal", "amount"],
+            "disbursement_amount": ["disbursement_amount", "funded_amount", "principal_amount", "amount"],
+            "debt_balance": ["debt_balance", "outstanding_balance", "outstanding_principal", "current_balance"],
+        }
+        for target, candidates in alias_specs.items():
+            if target in df.columns and df[target].notna().any():
+                continue
+            alias_series = self._coalesce_numeric_columns(df, candidates)
+            if alias_series.notna().any():
+                df[target] = alias_series
+                derived.append(target)
 
         # --- interest_rate from tasainteres ("1.50%" → 0.015) ---
         if "interest_rate" not in df.columns or df["interest_rate"].isna().all():

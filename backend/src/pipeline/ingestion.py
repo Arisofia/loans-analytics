@@ -146,7 +146,7 @@ class IngestionPhase:
         text = series.astype('string').str.strip()
         text = text.mask(text.isin({'', 'nan', 'none', 'null', 'missing'}), pd.NA)
         cleaned = text.str.replace(r'[^0-9,.-]', '', regex=True)
-        comma_only_mask = cleaned.str.contains(',', na=False) & ~cleaned.str.contains('.', regex=False, na=False)
+        comma_only_mask = cleaned.str.contains(',', na=False) & ~cleaned.str.contains(r'\.', na=False)
         thousands_mask = comma_only_mask & cleaned.str.contains(r',\d{3}$', regex=True, na=False)
         decimal_comma_mask = comma_only_mask & ~thousands_mask
         if thousands_mask.any():
@@ -156,7 +156,7 @@ class IngestionPhase:
         other_mask = ~comma_only_mask
         if other_mask.any():
             cleaned.loc[other_mask] = cleaned.loc[other_mask].str.replace(',', '', regex=False)
-        return pd.to_numeric(cleaned, errors='coerce')
+        return pd.to_numeric(cleaned, errors='coerce').astype(float)
 
     @staticmethod
     def _coerce_datetime_loose(series: pd.Series) -> pd.Series:

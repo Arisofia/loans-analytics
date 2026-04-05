@@ -200,6 +200,24 @@ class TestControlMoraDerivations:
         with pytest.raises(ValueError, match='requires either as_of_date-like columns'):
             transformer._derive_control_mora_fields(df)
 
+
+class TestCanonicalFinancialAliases:
+
+    def test_derive_canonical_financial_columns_populates_formula_aliases(self, default_config):
+        transformer = TransformationPhase(default_config)
+        df = pd.DataFrame({
+            'amount': [10000.0],
+            'approved_value': [10000.0],
+            'totalsaldovigente': [7500.0],
+        })
+        out = transformer._derive_canonical_financial_columns(df)
+        assert out.loc[0, 'funded_amount'] == pytest.approx(10000.0)
+        assert out.loc[0, 'principal_amount'] == pytest.approx(10000.0)
+        assert out.loc[0, 'outstanding_balance'] == pytest.approx(7500.0)
+        assert out.loc[0, 'current_balance'] == pytest.approx(7500.0)
+        assert out.loc[0, 'debt_balance'] == pytest.approx(7500.0)
+        assert out.loc[0, 'disbursement_amount'] == pytest.approx(10000.0)
+
 class TestCustomRules:
 
     def test_valid_column_mapping_rule(self, default_config):

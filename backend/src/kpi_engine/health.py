@@ -143,7 +143,9 @@ def compute_portfolio_health_score(
         },
     ]
 
-    critical_dims = [c["dimension"] for c in components if c["status"] == "critical"]
+    critical_dims: list[str] = [
+        str(c["dimension"]) for c in components if c["status"] == "critical"
+    ]
     if critical_dims:
         interpretation = f"Critical condition. Action required on: {', '.join(critical_dims)}"
     elif any(c["status"] in ("at_risk", "warning") for c in components):
