@@ -23,8 +23,8 @@ Production-focused lending analytics repository with:
 
 ### KPI & Risk
 
-- KPI engine (SSoT): `backend/loans_analytics/kpis/engine.py`
-- Asset quality formulas (PAR/NPL): `backend/loans_analytics/kpis/ssot_asset_quality.py`
+- KPI engine (SSoT): `backend/src/kpi_engine/engine.py`
+- Asset quality formulas (PAR/NPL): `backend/src/kpi_engine/risk.py`
 - KPI definitions config: `config/kpis/kpi_definitions.yaml`
 - Default risk model (XGBoost): `backend/loans_analytics/models/default_risk_model.py`
 
@@ -99,7 +99,7 @@ For data pipeline, ML, monitoring, validation, and all other commands:
 ### LLM & Agents
 
 - For LLM-facing workflows, sanitize/redact inputs with `backend/loans_analytics/multi_agent/guardrails.py`.
-- Import agents from `backend.loans_analytics.multi_agent` — not the deprecated shim at `backend.src.agents.multi_agent`.
+- Import agents from `backend.loans_analytics.multi_agent`.
 - Multi-agent tests require `HISTORICAL_CONTEXT_MODE=MOCK`; they are excluded from standard CI runs by default.
 
 ### Database
@@ -202,11 +202,9 @@ Test paths configured in `pyproject.toml`: `backend/loans_analytics/tests` and `
 
 ## Deprecated Components
 
-| Component | Deprecated Path | Correct Path | Removal Target |
-|-----------|----------------|--------------|----------------|
-| Multi-agent shim | `backend.src.agents.multi_agent` | `backend.loans_analytics.multi_agent` | Q2 2026 |
+No tracked deprecated compatibility shims remain under `backend/src/agents/multi_agent/`.
 
-The deprecated shim issues a `DeprecationWarning` on import. PR checks (`pr-checks.yml`) actively block new `backend.loans_analytics.multi_agent._llm_agents` imports and module-level `orchestrator` imports.
+PR checks (`pr-checks.yml`) actively block new `backend.loans_analytics.multi_agent._llm_agents` imports and module-level `orchestrator` imports.
 
 ## CI/CD Workflows in Active Use
 

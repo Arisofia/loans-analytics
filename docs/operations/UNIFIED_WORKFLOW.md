@@ -1,384 +1,142 @@
-# 🔄 UNIFIED PRODUCTION WORKFLOW
+# Unified Production Workflow
 
-**Status**: ✅ ACTIVE (Production) | **Version**: v2.0 | **Updated**: January 29, 2026
+Status: active production reference for the current repository layout.
 
----
+## Process Overview
 
-## 📊 PROCESS OVERVIEW
-
-**Single Sequential Pipeline** from data ingestion to dashboard visualization.
-
-```
-INPUT                PHASE 1          PHASE 2            PHASE 3               PHASE 4             OUTPUT
-CSV/API         Ingestion &      Transformation     KPI Calculation      Output Layer        Dashboard
-                Validation       & Normalization    & Enrichment         (Persistence)       Visualization
-  ↓                  ↓                  ↓                  ↓                   ↓                  ↓
-[Cascade]  →   [Raw Data]   →   [Clean Data]  →  [Analytics Ready] → [Supabase/Files] → [Frontend/Streamlit]
- Export         with audit         normalized       with lineage         with metadata      KPI metrics
-             checksum & logs       validated        aggregated            and freshness       Portfolio
-                                  deduplicated      timestamped           SLA monitored       Health Risk
-```
-
----
-
-## 🎯 ACTIVE FOLDERS (PRODUCTION WORKFLOW)
-
-### 1️⃣ **EXECUTION ENTRY POINT**
-
-- **File**: `scripts/data/run_data_pipeline.py`
-- **Purpose**: Main CLI entry point for pipeline execution
-- **Triggers**: Manual execution, GitHub Actions, scheduled jobs, webhooks
-- **Canonical Commands**: See [SCRIPT_CANONICAL_MAP.md#data-pipeline](./SCRIPT_CANONICAL_MAP.md#data-pipeline)
-  
-  **Quick example:**
-  ```bash
-  python scripts/data/run_data_pipeline.py --input data/raw/loan_data.csv
-  ```
-
-### 2️⃣ **CORE PIPELINE ORCHESTRATION**
-
-- **Location**: `src/pipeline/`
-- **Modules**:
-  - `orchestrator.py` - Coordinates all 4 phases
-  - `ingestion.py` - Data collection (Phase 1)
-  - `transformation.py` - Data cleaning (Phase 2)
-  - `calculation.py` - KPI computation (Phase 3)
-  - `output.py` - Result distribution (Phase 4)
-  - `config.py` - Configuration management
-
-### 3️⃣ **PHASE 1: INGESTION**
-
-- **Active File**: `src/pipeline/ingestion.py`
-- **Support**: `python/models/cascade_schemas.py`
-- **Configuration**: `config/pipeline.yml` (endpoints, auth, validation)
-
-**Flow**:
+The platform has one canonical analytics flow driven by `scripts/data/run_data_pipeline.py`.
+Execution can route either through the standard pipeline or the zero-cost DuckDB/Parquet path depending on the input type.
 
 ```
-1. Read config (endpoints, auth tokens, validation rules)
-2. Make HTTP request to Cascade API with retries & rate limiting
-3. Validate response schema against Pydantic models
-4. Check for duplicates using immutable hashes
-5. Persist raw data with timestamp + checksum
-6. Log all operations (trace_id, run_id) as structured JSON
+INPUT                         ROUTING                    PROCESSING                            OUTPUTS
+CSV / Google Sheets /   ->   pipeline_router      ->   Phases 1-4 pipeline            ->   Parquet / JSON / audit
+loan tape / control           (when applicable)        + optional Phase 5                    metadata / Supabase sync
+de mora CSV                                                decision intelligence                + API / Streamlit views
 ```
 
-**Output**: `data/raw/<timestamp>_raw.parquet` (with metadata)
-
----
+## Canonical Entry Points
 
-### 4️⃣ **PHASE 2: TRANSFORMATION**
-
-- **Active File**: `src/pipeline/transformation.py`
-- **Support**: `config/business_rules.yaml`
-- **Models**: `python/models/` (Pydantic schemas)
-
-**Flow**:
+- CLI entry: `scripts/data/run_data_pipeline.py`
+- Standard orchestrator: `backend/src/pipeline/orchestrator.py`
+- Standard phases:
+  - `backend/src/pipeline/ingestion.py`
+  - `backend/src/pipeline/transformation.py`
+  - `backend/src/pipeline/calculation.py`
+  - `backend/src/pipeline/output.py`
+- Decision intelligence: `backend/src/pipeline/decision_phase.py`
+- Zero-cost router: `backend/src/zero_cost/pipeline_router.py`
+- API entry: `backend/loans_analytics/apps/analytics/api/main.py`
+- Streamlit entry: `frontend/streamlit_app/app.py`
 
-```
-1. Load raw data from Phase 1
-2. Apply business rules (status mappings, bucket calculations)
-3. Handle null values, outliers, type conversions
-4. Validate referential integrity (loans ↔ cashflows ↔ customers)
-5. Mask PII if required
-6. Generate transformation audit log
-```
+Use `docs/operations/SCRIPT_CANONICAL_MAP.md` for all supported commands. This file documents architecture and operational flow, not command duplication.
 
-**Output**: `data/clean/<timestamp>_clean.parquet` (normalized, deduplicated)
-
----
-
-### 5️⃣ **PHASE 3: KPI CALCULATION & ENRICHMENT**
-
-- **Active Files**:
-  - `src/pipeline/calculation.py`
-  - `src/kpi_engine_v2.py`
-- **KPI Definitions**: `config/kpis/kpi_definitions.yaml` (SOURCE OF TRUTH)
-- **AI Enhancement**: `python/multi_agent/orchestrator.py`
+## Runtime Flow
 
-**Flow**:
+### 1. Ingestion
 
-```
-1. Load clean data from Phase 2
-2. Read KPI formulas from config/kpis/kpi_definitions.yaml
-3. Calculate all metrics:
-   - Portfolio health scores
-   - Risk rankings
-   - Growth projections
-   - Time-series aggregations (daily/weekly/monthly)
-4. Detect anomalies vs historical baselines
-5. Enrich with AI agent insights (optional)
-6. Generate calculation manifest with lineage & thresholds
-```
+`backend/src/pipeline/ingestion.py` validates incoming data, normalizes raw inputs, and prepares Arrow-safe structures for downstream phases.
 
-**Output**: `data/metrics/<timestamp>_kpi_manifest.json` (with full lineage)
+Supported live input modes include:
 
----
+- local CSV inputs
+- Google Sheets-backed ingestion paths
+- standard pipeline datasets
+- loan tape / control-de-mora files routed through `backend/src/zero_cost/pipeline_router.py`
 
-### 6️⃣ **PHASE 4: OUTPUT & DISTRIBUTION**
+### 2. Transformation
 
-- **Active Files**:
-  - `src/pipeline/output.py`
-  - `apps/analytics/api/main.py` (FastAPI)
-  - `streamlit_app.py` (Dashboard)
+`backend/src/pipeline/transformation.py` applies semantic mapping, null-handling policy, type normalization, and deterministic cleaning rules.
 
-**Flow**:
+Primary supporting configuration:
 
-```
-1. Format results (Parquet, CSV, JSON)
-2. Write to Supabase database (transactional, idempotent)
-3. Trigger dashboard refresh endpoints
-4. Generate audit/compliance reports
-5. Monitor SLA timers and alert if breached
-6. Store all artifacts in logs/runs/<timestamp>/
-```
+- `config/business_rules.yaml`
+- `config/business_parameters.yml`
+- `config/pipeline.yml`
 
-**Outputs**:
+### 3. Calculation
 
-- `logs/runs/<timestamp>/` - Run directory with all artifacts
-- Supabase tables - For persistent storage & historical trending
-- `streamlit_app.py` - Live dashboard refresh
+`backend/src/pipeline/calculation.py` computes KPIs and related analytics.
 
----
+Canonical KPI authority:
 
-## 📁 MASTER CONFIGURATION (SINGLE SOURCE OF TRUTH)
+- engine runner: `backend/src/kpi_engine/engine.py`
+- risk formulas: `backend/src/kpi_engine/risk.py`
+- revenue formulas: `backend/src/kpi_engine/revenue.py`
+- KPI registry: `config/kpis/kpi_definitions.yaml`
 
-### `config/pipeline.yml`
+Independent financial KPI math outside `backend/src/kpi_engine/` is not part of the target architecture.
 
-```yaml
-endpoints:
-  cascade:
-    url: "https://api.cascade.com/..."
-    auth: "${CASCADE_API_TOKEN}" # From env
-    rate_limit: 100 # req/sec
-    retry_count: 3
+### 4. Output
 
-validation:
-  ingestion:
-    strict: true
-  transformation:
-    enforce_types: true
-  calculation:
-    precision: 2 decimal places
+`backend/src/pipeline/output.py` exports run artifacts and audit metadata and can persist outputs for downstream consumers.
 
-kpi_formulas:
-  portfolio_health: "calculation.py::compute_portfolio_health"
-  risk_score: "kpi_engine_v2.py::calculate_risk"
+Typical outputs include:
 
-outputs:
-  formats: ["parquet", "csv", "json"]
-  supabase:
-    enabled: true
-    tables: ["kpi_results", "audit_logs"]
-```
+- parquet exports
+- JSON payloads
+- audit metadata
+- optional Supabase synchronization
 
-### `config/business_rules.yaml`
+### 5. Decision Intelligence
 
-- Status mappings (Active, Delinquent, Charged-Off, etc.)
-- Bucket definitions (Loan amounts, terms)
-- Constants and thresholds
+`backend/src/pipeline/decision_phase.py` is a non-blocking Phase 5 step that builds marts and features, runs decision agents, and produces decision-center artifacts when enabled.
 
-### `config/kpis/kpi_definitions.yaml`
+### 6. Consumption Layers
 
-- **EVERY KPI FORMULA DEFINED HERE**
-- Example:
-  ```yaml
-  portfolio_health:
-    formula: "avg(risk_score) weighted by loan_amount"
-    owner: "Data Team"
-    threshold: 75
-    alert_on_breach: true
-  ```
+- FastAPI routes under `backend/loans_analytics/apps/analytics/api/routes/`
+- Streamlit dashboards under `frontend/streamlit_app/pages/`
+- Multi-agent analysis under `backend/loans_analytics/multi_agent/`
 
----
+## Triggering The Workflow
 
-## 🚀 HOW TO TRIGGER PIPELINE
+For exact commands, use `docs/operations/SCRIPT_CANONICAL_MAP.md`.
 
-### **Option 1: Manual CLI**
+Common trigger families:
 
-```bash
-cd /Users/jenineferderas/loans-loans-analytics
-source .venv/bin/activate
-python scripts/data/run_data_pipeline.py
-```
+- pipeline execution
+- zero-cost ETL execution
+- monitoring start / health checks
+- validation and migration checks
+- ML training workflows
 
-### **Option 2: GitHub Actions (Scheduled)**
+## Viewing Results
 
-- **Workflow**: `.github/workflows/`
-- **Trigger**: Daily at 02:00 UTC
-- **Status**: Check GitHub Actions tab
+- Streamlit application: `frontend/streamlit_app/app.py`
+- FastAPI application: `backend/loans_analytics/apps/analytics/api/main.py`
+- generated run artifacts under the configured output locations
+- Supabase tables when database sync is enabled
 
-### **Option 3: API Endpoint**
+## Testing And Validation
 
-```bash
-curl -X POST http://localhost:8000/api/pipeline/trigger \
-  -H "Content-Type: application/json"
-```
+Use the canonical commands documented in `docs/operations/SCRIPT_CANONICAL_MAP.md` for:
 
-### **Option 4: Webhook (Cascade)**
-
-- Configured in `config/pipeline.yml`
-- Triggers on Cascade data updates
-
----
-
-## 📊 VIEWING RESULTS
-
-### **Option 1: Streamlit Dashboard**
-
-```bash
-streamlit run streamlit_app.py
-# Opens http://localhost:8501
-```
-
-### **Option 2: FastAPI Endpoints**
-
-```bash
-# Start API service
-python apps/analytics/run_report.py
-
-# Fetch latest KPIs
-curl http://localhost:8000/api/kpis/latest
-
-# Trigger new run
-curl -X POST http://localhost:8000/api/pipeline/trigger
-```
-
-### **Option 3: Raw Artifacts**
-
-- **All run outputs**: `logs/runs/<TIMESTAMP>/`
-- **Latest KPI results**: `data/metrics/` (Parquet/CSV/JSON)
-- **Supabase database**: Direct query via Supabase Studio
-
----
-
-## 🔍 MONITORING & OBSERVABILITY
-
-### **Logging**
-
-- **Location**: `logs/runs/<run_id>/`
-- **Format**: Structured JSON (trace_id, span_id, severity)
-- **Tool**: `python/logging_config.py` configures all logging
-
-### **Distributed Tracing**
-
-- **Tool**: OpenTelemetry + Azure Application Insights
-- **Setup**: See `docs/OBSERVABILITY.md`
-- **Traces all**: Ingestion, transformation, calculation, output phases
-
-### **Metrics & Alerts**
-
-- **SLA Timers**: Enforced in Phase 4
-- **Data Quality Scores**: Included in every run manifest
-- **Alert Thresholds**: Defined in `config/kpis/kpi_definitions.yaml`
-
----
-
-## 🔧 UPDATING KPI FORMULAS
-
-### **No code changes needed!**
-
-1. Edit: `config/kpis/kpi_definitions.yaml`
-2. Add/modify KPI formula
-3. Restart pipeline → Automatically loads new config
-4. Done ✅
-
-**Example**:
-
-```yaml
-new_metric:
-  formula: "custom_calculation(column_a, column_b)"
-  owner: "Your Name"
-  threshold: 50
-  alert_on_breach: true
-```
-
----
-
-## 📝 TESTING
-
-### **Unit Tests**
-
-```bash
-pytest tests/ -v
-pytest tests/test_ingestion_extra.py  # Phase 1
-pytest tests/test_transformation.py   # Phase 2
-pytest tests/test_kpi_calculation.py  # Phase 3
-```
-
-### **Integration Tests**
-
-```bash
-pytest tests/integration/ -v
-```
-
-### **Pipeline Validation**
-
-See [SCRIPT_CANONICAL_MAP.md#validation](./SCRIPT_CANONICAL_MAP.md#validation) for all validation commands.
-
----
-
-## ⚠️ OPERATIONAL RUNBOOKS
-
-See: `docs/OPERATIONS.md`
-
-### **Common Issues**
-
-| Issue                | Location           | Solution                            |
-| -------------------- | ------------------ | ----------------------------------- |
-| Pipeline fails       | `logs/runs/<id>/`  | Check error logs + Phase logs       |
-| KPI mismatch         | `config/kpis/`     | Verify formula in YAML              |
-| Supabase write fails | Phase 4 logs       | Check credentials in `.env`         |
-| Dashboard won't load | `streamlit_app.py` | Restart + check Supabase connection |
-| API timeout          | `apps/analytics/`  | Increase `timeout` in config        |
-
----
-
-## 📚 ARCHITECTURE DOCUMENTATION
-
-- **System Overview**: `docs/architecture/CLAUDE.md`
-- **Pipeline Spec**: `docs/OPERATIONS.md`
-- **Operations Guide**: `docs/OPERATIONS.md`
-- **Monitoring Setup**: `docs/OBSERVABILITY.md`
-- **Data Dictionary**: `docs/DATA_DICTIONARY.md`
-
----
-
-## 🗂️ ORGANIZED STRUCTURE
-
-### ✅ ACTIVE (Production Workflow)
-
-```
-/
-├── src/pipeline/              ← Core pipeline (phases 1-4)
-├── python/                    ← Utilities, models, agents
-├── config/                    ← Master configuration
-├── scripts/                   ← Entry points
-├── apps/                      ← Frontend + API
-├── data/                      ← Raw input & processed output
-├── logs/                      ← Run artifacts
-└── tests/                     ← Test suites
-```
-
-### 📦 Legacy Content Policy
-
-- Legacy scripts are removed from the active tree.
-- Use git history for forensic recovery when strictly necessary.
-
----
-
-## ✨ SUMMARY
-
-| Component       | Location                         | Purpose             | Trigger             |
-| --------------- | -------------------------------- | ------------------- | ------------------- |
-| **Entry Point** | `scripts/data/run_data_pipeline.py`   | Start pipeline      | Manual/API/Schedule |
-| **Ingestion**   | `src/pipeline/ingestion.py`      | Fetch data          | Phase 1             |
-| **Transform**   | `src/pipeline/transformation.py` | Clean data          | Phase 2             |
-| **Calculate**   | `src/pipeline/calculation.py`    | Compute KPIs        | Phase 3             |
-| **Output**      | `src/pipeline/output.py`         | Distribute results  | Phase 4             |
-| **Config**      | `config/pipeline.yml`            | Master settings     | All phases          |
-| **Dashboard**   | `streamlit_app.py`               | View results        | Manual              |
-| **API**         | `apps/analytics/`                | Programmatic access | Always running      |
+- formatting and linting
+- type checking
+- unit and integration-safe tests
+- monitoring validation
+- migration validation
+
+Multi-agent tests require `HISTORICAL_CONTEXT_MODE=MOCK` and are not part of the default safe CI path.
+
+## Related Documentation
+
+- `docs/OPERATIONS.md` for the operational runbook
+- `docs/OBSERVABILITY.md` for monitoring and telemetry
+- `docs/FINANCIAL_PRECISION_GOVERNANCE.md` for monetary precision requirements
+- `docs/DATA_GOVERNANCE.md` for deterministic data handling policy
+- `REPO_MAP.md` for the current repository structure
+
+## Summary
+
+| Component | Canonical Path | Role |
+| --- | --- | --- |
+| Entry point | `scripts/data/run_data_pipeline.py` | Starts pipeline execution |
+| Routing | `backend/src/zero_cost/pipeline_router.py` | Selects standard vs zero-cost path |
+| Orchestration | `backend/src/pipeline/orchestrator.py` | Coordinates pipeline phases |
+| KPI engine | `backend/src/kpi_engine/engine.py` | Canonical metric execution |
+| Output | `backend/src/pipeline/output.py` | Exports artifacts and audit metadata |
+| API | `backend/loans_analytics/apps/analytics/api/main.py` | Programmatic access |
+| Streamlit | `frontend/streamlit_app/app.py` | Dashboard UI |
 
 ---
 

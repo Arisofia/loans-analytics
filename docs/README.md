@@ -5,7 +5,7 @@ This index contains only active documentation paths for the Loans Analytics plat
 ## Start Here
 
 - [SETUP_GUIDE_CONSOLIDATED.md](SETUP_GUIDE_CONSOLIDATED.md) - Local setup and bootstrap flow
-- [OPERATIONS.md](OPERATIONS.md) - Day-to-day operations guidance
+- [OPERATIONS.md](OPERATIONS.md) - Day-to-day operational runbook
 - [GOVERNANCE.md](GOVERNANCE.md) - Repository governance and quality controls
 - [OBSERVABILITY.md](OBSERVABILITY.md) - Monitoring, alerts, and telemetry
 
@@ -23,8 +23,8 @@ This index contains only active documentation paths for the Loans Analytics plat
 
 ## Operations
 
-- [operations/UNIFIED_WORKFLOW.md](operations/UNIFIED_WORKFLOW.md)
-- [operations/SCRIPT_CANONICAL_MAP.md](operations/SCRIPT_CANONICAL_MAP.md)
+- [operations/UNIFIED_WORKFLOW.md](operations/UNIFIED_WORKFLOW.md) - Current runtime architecture and flow
+- [operations/SCRIPT_CANONICAL_MAP.md](operations/SCRIPT_CANONICAL_MAP.md) - Canonical command source of truth
 
 ## Security
 

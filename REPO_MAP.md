@@ -30,8 +30,9 @@
   - Utility-only module retained for legacy/test support; not the KPI SSoT owner.
 
 #### `loans_analytics/` — Python application layer (`backend/loans_analytics/`)
-- `kpis/` — **KPI engine (SSoT)** — all KPI computation routes through here
-  - `engine.py` — KPIEngineV2 (standard & derived KPIs)
+  - `kpis/` — KPI compatibility and supplemental KPI modules
+    - Canonical KPI execution lives under `backend/src/kpi_engine/`
+    - `engine.py` — KPIEngineV2 compatibility shim (deprecated)
   - `ssot_asset_quality.py` — PAR/NPL canonical formulas
   - `formula_engine.py` — SQL-like KPI formula parser
   - `lending_kpis.py` — Lending-specific ratio computations

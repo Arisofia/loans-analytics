@@ -16,8 +16,8 @@ This reference defines:
 
 - KPI definitions registry: config/kpis/kpi_definitions.yaml
 - Formula execution engine: backend/loans_analytics/kpis/formula_engine.py
-- Core KPI calculations: backend/loans_analytics/kpis/engine.py
-- Risk-focused SSOT module: backend/loans_analytics/kpis/ssot_asset_quality.py
+- Core KPI calculations: backend/src/kpi_engine/engine.py
+- Risk-focused SSOT module: backend/src/kpi_engine/risk.py
 - Data lineage reference: docs/kpi_lineage.md
 
 ## KPI Domains

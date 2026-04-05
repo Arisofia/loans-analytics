@@ -362,10 +362,10 @@ st.markdown(user_comment, unsafe_allow_html=False)  # safe=False is default
 
 ### Guardrails in Multi-Agent System
 
-**PII redaction** is enforced in LLM-facing flows via `python/multi_agent/guardrails.py`:
+**PII redaction** is enforced in LLM-facing flows via `backend/loans_analytics/multi_agent/guardrails.py`:
 
 ```python
-from python.multi_agent.guardrails import Guardrails
+from backend.loans_analytics.multi_agent.guardrails import Guardrails
 
 # Before sending text to an LLM
 safe_prompt = Guardrails.redact_pii(user_query)
@@ -376,7 +376,7 @@ safe_prompt = Guardrails.redact_pii(user_query)
 ```
 
 For pipeline-side transformations, use the masking/normalization rules implemented in
-`src/pipeline/transformation.py` and keep those rules aligned with security policy.
+`backend/src/pipeline/transformation.py` and keep those rules aligned with security policy.
 
 ### Audit Logging
 

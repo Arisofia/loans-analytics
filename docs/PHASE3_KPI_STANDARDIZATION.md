@@ -1,5 +1,7 @@
 # Phase 3 - Data and KPI Standardization
 
+> Historical reference: this document captures the Phase 3 standardization work and target architecture. For live runtime commands and current operational execution, use `docs/operations/SCRIPT_CANONICAL_MAP.md` and the canonical modules under `backend/src/kpi_engine/` and `backend/src/pipeline/`.
+
 ## A. Canonical KPI Architecture Definition
 
 Canonical execution engine: `backend/src/kpi_engine/engine.py::run_metric_engine`

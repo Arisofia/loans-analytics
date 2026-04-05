@@ -4,7 +4,7 @@ import os
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set
+from typing import Any, Dict, Optional, Protocol, Set
 import pandas as pd
 from backend.loans_analytics.logging_config import get_logger
 from backend.src.kpi_engine.revenue import compute_portfolio_yield
@@ -19,8 +19,6 @@ try:
 except ImportError:
     Client = None  # type: ignore[assignment,misc]
     create_client = None  # type: ignore[assignment]
-if TYPE_CHECKING:
-    from backend.loans_analytics.kpis.engine import KPIEngineV2
 logger = get_logger(__name__)
 KPI_DEFINITIONS_TABLE = "monitoring.kpi_definitions"
 _BOOL_ENV_TRUE = frozenset({"1", "true", "yes", "on"})
@@ -52,6 +50,10 @@ _NON_NEGATIVE_KPI_KEYS = frozenset(
         "total_aum",
     }
 )
+
+
+class KPIAuditProvider(Protocol):
+    def get_audit_trail(self) -> pd.DataFrame: ...
 
 
 def _parse_bool_env(var_name: str, default: bool = True) -> bool:
@@ -91,7 +93,7 @@ class OutputPhase:
         self,
         kpi_results: Dict[str, Any],
         run_dir: Optional[Path] = None,
-        kpi_engine: Optional["KPIEngineV2"] = None,
+        kpi_engine: Optional[KPIAuditProvider] = None,
         segment_kpis: Optional[Dict[str, Any]] = None,
         time_series: Optional[Dict[str, Any]] = None,
         anomalies: Optional[list] = None,
@@ -147,7 +149,7 @@ class OutputPhase:
         *,
         kpi_results: Dict[str, Any],
         run_dir: Optional[Path],
-        kpi_engine: Optional["KPIEngineV2"],
+        kpi_engine: Optional[KPIAuditProvider],
         segment_kpis: Optional[Dict[str, Any]],
         time_series: Optional[Dict[str, Any]],
         anomalies: Optional[list],
@@ -1009,7 +1011,7 @@ class OutputPhase:
         self,
         kpi_results: Dict[str, Any],
         exports: Dict[str, str],
-        kpi_engine: Optional["KPIEngineV2"] = None,
+        kpi_engine: Optional[KPIAuditProvider] = None,
         transformation_metrics: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         payload: Dict[str, Any] = {
@@ -1047,7 +1049,7 @@ class OutputPhase:
         return opaque_counts
 
     def _attach_kpi_engine_audit_summary(
-        self, payload: Dict[str, Any], kpi_engine: Optional["KPIEngineV2"]
+        self, payload: Dict[str, Any], kpi_engine: Optional[KPIAuditProvider]
     ) -> None:
         if kpi_engine is None:
             return
@@ -1073,7 +1075,7 @@ class OutputPhase:
         self,
         kpi_results: Dict[str, Any],
         exports: Dict[str, str],
-        kpi_engine: Optional["KPIEngineV2"] = None,
+        kpi_engine: Optional[KPIAuditProvider] = None,
     ) -> Dict[str, Any]:
         quality_score = self._calculate_quality_score(kpi_results, kpi_engine)
         sla_met = self._check_sla(kpi_results, kpi_engine)
@@ -1094,7 +1096,7 @@ class OutputPhase:
         return audit_info
 
     def _calculate_quality_score(
-        self, kpi_results: Dict[str, Any], kpi_engine: Optional["KPIEngineV2"] = None
+        self, kpi_results: Dict[str, Any], kpi_engine: Optional[KPIAuditProvider] = None
     ) -> float:
         if not kpi_results:
             return 0.0
@@ -1112,7 +1114,7 @@ class OutputPhase:
         return 0.0
 
     def _check_sla(
-        self, kpi_results: Dict[str, Any], kpi_engine: Optional["KPIEngineV2"] = None
+        self, kpi_results: Dict[str, Any], kpi_engine: Optional[KPIAuditProvider] = None
     ) -> bool:
         if not kpi_results:
             return False

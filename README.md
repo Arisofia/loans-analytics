@@ -234,7 +234,7 @@ backend/
 │   └── engine.py           # run_quality_engine() facade
 ├── loans_analytics/
 │   ├── kpis/
-│   │   ├── engine.py              # KPIEngineV2 (SSOT, Decimal, audit trail)
+│   │   ├── engine.py              # KPIEngineV2 compatibility shim (deprecated)
 │   │   ├── ssot_asset_quality.py  # Single Source of Truth PAR/NPL
 │   │   ├── unit_economics.py      # NPL, LGD, Cost of Risk, NIM
 │   │   ├── holding_financial_indicators.py  # EEFF: PPC/PPP, covenants

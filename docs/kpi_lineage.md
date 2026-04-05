@@ -180,14 +180,8 @@ CSV Input File
 
 ### Deprecations
 
-1. **`backend/src/agents/multi_agent/__init__.py`** (Deprecated 2026-03)
-   - Old import path: `from backend.src.agents.multi_agent import ...`
-    - New import path: `from backend.loans_analytics.multi_agent import ...`
-   - Removal target: Q2 2026
-   - Status: Explicit imports with DeprecationWarning
-
-2. **`backend/data-processor/`** (Deprecated 2026-01)
-   - Use `src/pipeline/` (canonical) instead
+1. **`backend/data-processor/`** (Deprecated 2026-01)
+    - Use `backend/src/pipeline/` (canonical) instead
    - Removal target: Q1 2026
 
 ### Formula Version History

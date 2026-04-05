@@ -440,7 +440,7 @@ After setup:
 1. **Run the pipeline**: See [Canonical Script Map - Data Pipeline](./operations/SCRIPT_CANONICAL_MAP.md#data-pipeline)
 2. **Start monitoring**: `make monitoring-start`
 3. **Explore dashboards**: <http://localhost:3001> (Grafana)
-4. **Run multi-agent**: See `python/multi_agent/README.md`
+4. **Run multi-agent**: Use the modules under `backend/loans_analytics/multi_agent/` and the guidance in `REPO_MAP.md`
 5. **Read architecture**: `REPO_MAP.md`
 
 ---

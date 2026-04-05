@@ -19,11 +19,7 @@ INCOMPATIBLE_MIGRATIONS = {
 }
 
 # Prefix migration rules attempted after exact mappings.
-PREFIX_RULES = (
-    ("backend.loans_analytics.multi_agent.", "backend.src.agents.multi_agent."),
-    ("backend.loans_analytics.apps.analytics.api.", "backend.src.analytics.api."),
-    ("backend.loans_analytics.models.", "backend.src.models."),
-)
+PREFIX_RULES: tuple[tuple[str, str], ...] = ()
 
 MODULE_PATTERN = re.compile(r"backend\.loans_analytics(?:\.[a-zA-Z_][a-zA-Z0-9_]*)+")
 
