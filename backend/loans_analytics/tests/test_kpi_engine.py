@@ -11,7 +11,6 @@ These tests verify:
 """
 from __future__ import annotations
 
-import decimal
 import unittest
 import warnings
 from decimal import ROUND_HALF_UP, getcontext
