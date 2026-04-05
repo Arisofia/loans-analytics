@@ -16,6 +16,9 @@ class RiskAgent(DecisionAgent):
         alerts = []
         recs = []
 
+        if portfolio.empty:
+            return self._build_output(summary="No portfolio data for risk analysis.", confidence=0.0)
+
         par30 = float(compute_par30(portfolio))
         el = compute_expected_loss(portfolio)
 

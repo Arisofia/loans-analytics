@@ -89,7 +89,10 @@ def compute_default_rate_by_count(portfolio_mart: pd.DataFrame) -> Decimal:
 
 def compute_default_rate_by_balance(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return ComparableDecimal("0.0")
+        raise ValueError(
+            "CRITICAL: default_rate_by_balance() received empty portfolio. "
+            "Provide at least one valid loan record."
+        )
     balance = _numeric_series(portfolio_mart, ("outstanding_principal", "outstanding_balance", "principal_balance", "current_balance", "amount"))
     active_mask = _active_loan_mask(portfolio_mart)
     total_balance = Decimal(str(balance.loc[active_mask].sum()))
@@ -145,7 +148,10 @@ def compute_par30(portfolio_mart: pd.DataFrame) -> Decimal:
 
 def compute_par60(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return ComparableDecimal("0.0")
+        raise ValueError(
+            "CRITICAL: par60() received empty portfolio. "
+            "Provide at least one valid loan record."
+        )
     total = Decimal(str(portfolio_mart["outstanding_principal"].fillna(0).sum()))
     if total == 0:
         return ComparableDecimal("0.0")
@@ -158,7 +164,10 @@ def compute_par60(portfolio_mart: pd.DataFrame) -> Decimal:
 
 def compute_par90(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return ComparableDecimal("0.0")
+        raise ValueError(
+            "CRITICAL: par90() received empty portfolio. "
+            "Provide at least one valid loan record."
+        )
     total = Decimal(str(portfolio_mart["outstanding_principal"].fillna(0).sum()))
     if total == 0:
         return ComparableDecimal("0.0")
