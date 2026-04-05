@@ -16,10 +16,15 @@ def xirr(cashflows: list[float], dates: list[_DateLike], guess: float=_INITIAL_G
     if len(cashflows) < 2:
         raise ValueError('At least two cash flows are required')
     cfs_raw = np.array(cashflows, dtype=float)
-    parsed_dates = [_to_date(d) for d in dates]
+    parsed_dates = pd.to_datetime(pd.Series(dates), errors='coerce', format='mixed')
+    valid_mask = parsed_dates.notna().to_numpy()
+    cfs_raw = cfs_raw[valid_mask]
+    parsed_dates = parsed_dates[valid_mask]
+    if len(cfs_raw) < 2:
+        raise ValueError('XIRR requires at least two cashflows with valid dates')
     order = np.argsort(np.array(parsed_dates, dtype='datetime64[D]'))
     cfs = cfs_raw[order]
-    parsed_dates = [parsed_dates[i] for i in order]
+    parsed_dates = parsed_dates.iloc[order].dt.date.tolist()
     t0 = parsed_dates[0]
     years = np.array([(d - t0).days / 365.0 for d in parsed_dates])
     if not (np.any(cfs > 0) and np.any(cfs < 0)):

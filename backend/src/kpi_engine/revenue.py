@@ -129,7 +129,10 @@ def compute_portfolio_irr_true(disbursements_df: pd.DataFrame, payments_df: pd.D
     # Import lazily to avoid adding XIRR dependency to unrelated code paths.
     from backend.src.zero_cost.xirr import xirr
 
-    irr_value = xirr(cashflows, dates)
+    try:
+        irr_value = xirr(cashflows, dates)
+    except ValueError:
+        return None
     if pd.isna(irr_value):
         return None
     return Decimal(str(irr_value)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
