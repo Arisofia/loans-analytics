@@ -30,8 +30,10 @@ def test_par30_basic(portfolio_mart: pd.DataFrame) -> None:
 
 
 def test_par30_empty() -> None:
+    """PAR30 now raises ValueError on empty portfolio (fail-fast design)."""
     df = pd.DataFrame(columns=["loan_id", "days_past_due"])
-    assert compute_par30(df) == 0.0
+    with pytest.raises(ValueError, match="CRITICAL: par30.*empty portfolio"):
+        compute_par30(df)
 
 
 def test_expected_loss_defaults(portfolio_mart: pd.DataFrame) -> None:

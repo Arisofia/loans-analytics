@@ -14,13 +14,15 @@ class ComparableDecimal(Decimal):
         return super().__new__(cls, value)
 
     def __sub__(self, other: Any):
+        # FIXED: Never mix float and Decimal — preserve decimal precision
         if isinstance(other, float):
-            return float(self) - other
+            other = Decimal(str(other))
         return Decimal(self) - other
 
     def __rsub__(self, other: Any):
+        # FIXED: Never mix float and Decimal — preserve decimal precision
         if isinstance(other, float):
-            return other - float(self)
+            other = Decimal(str(other))
         return other - Decimal(self)
 
 _LGD_FLOOR = Decimal("0.40")
@@ -73,7 +75,10 @@ def _quantize_ratio(value: Decimal) -> ComparableDecimal:
 
 def compute_default_rate_by_count(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return ComparableDecimal("0.0")
+        raise ValueError(
+            "CRITICAL: default_rate_by_count() received empty portfolio. "
+            "Provide at least one valid loan record."
+        )
     active_mask = _active_loan_mask(portfolio_mart)
     active_count = int(active_mask.sum())
     if active_count == 0:
@@ -96,7 +101,10 @@ def compute_default_rate_by_balance(portfolio_mart: pd.DataFrame) -> Decimal:
 
 def compute_npl_ratio(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return ComparableDecimal("0.0")
+        raise ValueError(
+            "CRITICAL: npl_ratio() received empty portfolio. "
+            "Provide at least one valid loan record."
+        )
     balance = _numeric_series(portfolio_mart, ("outstanding_principal", "outstanding_balance", "principal_balance", "current_balance", "amount"))
     dpd = _numeric_series(portfolio_mart, ("days_past_due", "dpd", "dpd_adjusted"))
     active_mask = _active_loan_mask(portfolio_mart)
@@ -121,7 +129,10 @@ def compute_delinquency_rate_by_balance(portfolio_mart: pd.DataFrame) -> Decimal
 
 def compute_par30(portfolio_mart: pd.DataFrame) -> Decimal:
     if portfolio_mart.empty:
-        return ComparableDecimal("0.0")
+        raise ValueError(
+            "CRITICAL: par30() received empty portfolio. "
+            "Provide at least one valid loan record."
+        )
     total = Decimal(str(portfolio_mart["outstanding_principal"].fillna(0).sum()))
     if total == 0:
         return ComparableDecimal("0.0")
@@ -165,9 +176,15 @@ def compute_provision_coverage_ratio(
     """
     Compute Provision Coverage Ratio.
     Formula: SUM(provision_expense) / SUM(outstanding_principal WHERE dpd >= 90 OR default_flag = True)
+    
+    FIXED: Fail-fast on empty input or zero NPL balance.
+    Returns Decimal("[0.0, 999.9]" representing coverage %. Never returns nonsensical 100% when NPL=0.
     """
     if portfolio_mart.empty or finance_mart.empty:
-        return Decimal("0.0")
+        raise ValueError(
+            "CRITICAL: provision_coverage_ratio() received empty portfolio or finance data. "
+            "Provide complete portfolio and finance datasets."
+        )
 
     provision_col = "provision_expense" if "provision_expense" in finance_mart.columns else None
     total_provisions = Decimal(str(finance_mart[provision_col].fillna(0).sum())) if provision_col else Decimal("0.0")
@@ -179,8 +196,11 @@ def compute_provision_coverage_ratio(
     dpd = _numeric_series(portfolio_mart, ("days_past_due", "dpd", "dpd_adjusted"))
     npl_balance = Decimal(str(balance.loc[(dpd >= 90) | _defaulted_mask(portfolio_mart)].sum()))
 
-    if npl_balance == 0:
-        return Decimal("1.0") if total_provisions > 0 else Decimal("0.0")
+    if npl_balance <= 0:
+        raise ValueError(
+            f"CRITICAL: NPL balance must be > 0 to compute provision coverage. "
+            f"Got NPL balance = {npl_balance}. This suggests no non-performing loans exist."
+        )
 
     return (total_provisions / npl_balance).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 

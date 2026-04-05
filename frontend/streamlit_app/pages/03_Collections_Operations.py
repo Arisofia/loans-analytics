@@ -366,7 +366,13 @@ def calculate_days_past_due(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _safe_pct(numerator: float, denominator: float) -> float:
-    return numerator / denominator * 100 if denominator > 0 else 0.0
+    if denominator <= 0:
+        raise ValueError(
+            f"ERROR: Cannot compute percentage with zero or negative denominator. "
+            f"Numerator={numerator}, Denominator={denominator}. "
+            f"This indicates a data quality issue or empty dataset."
+        )
+    return numerator / denominator * 100
 
 
 def _compute_borrower_metrics(portfolio_df: pd.DataFrame) -> tuple[int, float]:
