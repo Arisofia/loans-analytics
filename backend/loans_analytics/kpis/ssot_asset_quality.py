@@ -55,7 +55,9 @@ class KPIFormulaEngine:
 
     def calculate_kpi(self, kpi_name: str) -> dict[str, float]:
         result = calculate_asset_quality_metrics(
-            balance=self.df.get("outstanding_principal", self.df.get("balance", pd.Series(dtype=float))),
+            balance=self.df.get(
+                "outstanding_principal", self.df.get("balance", pd.Series(dtype=float))
+            ),
             dpd=self.df.get("days_past_due", self.df.get("dpd", pd.Series(dtype=float))),
             status=self.df.get("loan_status", self.df.get("status", pd.Series(dtype=str))),
             actor=self.actor,
@@ -110,16 +112,22 @@ def calculate_asset_quality_metrics(
 
     def _par(threshold: int) -> float:
         bal = Decimal(str(balance_series.where(dpd_series.fillna(0) >= threshold, 0).sum()))
-        return float(((bal / total) * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+        return float(
+            ((bal / total) * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        )
 
     def _npl(threshold: int) -> float:
         mask = (dpd_series.fillna(0) >= threshold) | status_series.str.contains("default")
         bal = Decimal(str(balance_series.where(mask, 0).sum()))
-        return float(((bal / total) * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+        return float(
+            ((bal / total) * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        )
 
     default_mask = (dpd_series.fillna(0) >= 90) | status_series.str.contains("default")
     default_bal = Decimal(str(balance_series.where(default_mask, 0).sum()))
-    default_rate = float(((default_bal / total) * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    default_rate = float(
+        ((default_bal / total) * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    )
 
     canonical = {
         "par30": _par(30),

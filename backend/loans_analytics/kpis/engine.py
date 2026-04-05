@@ -3,6 +3,7 @@
 This module is kept only for backwards-compatible imports while the canonical
 engine lives in backend.src.kpi_engine.engine.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

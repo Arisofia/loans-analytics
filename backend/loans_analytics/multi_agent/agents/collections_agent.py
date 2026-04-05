@@ -10,7 +10,11 @@ from typing import Any, Dict, List
 
 import pandas as pd
 
-from backend.loans_analytics.multi_agent.agents.decision_agent_base import AgentContext, AgentOutput, DecisionAgent
+from backend.loans_analytics.multi_agent.agents.decision_agent_base import (
+    AgentContext,
+    AgentOutput,
+    DecisionAgent,
+)
 from backend.src.kpi_engine.risk import compute_par30
 from backend.src.kpi_engine.cohorts import compute_roll_rates
 
@@ -23,23 +27,51 @@ def _compute_collection_rate(collections: pd.DataFrame, portfolio: pd.DataFrame)
     """
     # --- collections mart path ---
     if not collections.empty:
-        sched_col = next((c for c in ("total_scheduled", "scheduled_amount", "monto_programado") if c in collections.columns), None)
-        recv_col = next((c for c in ("last_payment_amount", "payment_amount", "monto_pagado") if c in collections.columns), None)
+        sched_col = next(
+            (
+                c
+                for c in ("total_scheduled", "scheduled_amount", "monto_programado")
+                if c in collections.columns
+            ),
+            None,
+        )
+        recv_col = next(
+            (
+                c
+                for c in ("last_payment_amount", "payment_amount", "monto_pagado")
+                if c in collections.columns
+            ),
+            None,
+        )
         if sched_col and recv_col:
-            scheduled = float(pd.to_numeric(collections[sched_col], errors="coerce").fillna(0).sum())
+            scheduled = float(
+                pd.to_numeric(collections[sched_col], errors="coerce").fillna(0).sum()
+            )
             received = float(pd.to_numeric(collections[recv_col], errors="coerce").fillna(0).sum())
             rate = received / scheduled if scheduled > 0 else 0.0
-            return {"collection_rate": rate, "collections_received": received, "collections_scheduled": scheduled}
+            return {
+                "collection_rate": rate,
+                "collections_received": received,
+                "collections_scheduled": scheduled,
+            }
 
     # --- portfolio mart fallback ---
     if not portfolio.empty:
-        sched_col = next((c for c in ("total_scheduled", "scheduled_amount") if c in portfolio.columns), None)
-        recv_col = next((c for c in ("last_payment_amount", "payment_amount") if c in portfolio.columns), None)
+        sched_col = next(
+            (c for c in ("total_scheduled", "scheduled_amount") if c in portfolio.columns), None
+        )
+        recv_col = next(
+            (c for c in ("last_payment_amount", "payment_amount") if c in portfolio.columns), None
+        )
         if sched_col and recv_col:
             scheduled = float(pd.to_numeric(portfolio[sched_col], errors="coerce").fillna(0).sum())
             received = float(pd.to_numeric(portfolio[recv_col], errors="coerce").fillna(0).sum())
             rate = received / scheduled if scheduled > 0 else 0.0
-            return {"collection_rate": rate, "collections_received": received, "collections_scheduled": scheduled}
+            return {
+                "collection_rate": rate,
+                "collections_received": received,
+                "collections_scheduled": scheduled,
+            }
 
     return {}
 
@@ -54,7 +86,14 @@ def _compute_cure_rate(portfolio: pd.DataFrame) -> Dict[str, Any]:
     if portfolio.empty:
         return {}
 
-    status_col = next((c for c in ("status", "loan_status", "current_status", "estado") if c in portfolio.columns), None)
+    status_col = next(
+        (
+            c
+            for c in ("status", "loan_status", "current_status", "estado")
+            if c in portfolio.columns
+        ),
+        None,
+    )
     dpd_col = next((c for c in ("days_past_due", "dpd") if c in portfolio.columns), None)
 
     if status_col is None or dpd_col is None:
@@ -70,7 +109,11 @@ def _compute_cure_rate(portfolio: pd.DataFrame) -> Dict[str, Any]:
     cured_count = int(cured.sum())
     cure_rate = cured_count / total_delinquent if total_delinquent > 0 else 0.0
 
-    return {"cure_rate": cure_rate, "cured_count": cured_count, "total_delinquent": total_delinquent}
+    return {
+        "cure_rate": cure_rate,
+        "cured_count": cured_count,
+        "total_delinquent": total_delinquent,
+    }
 
 
 class CollectionsAgent(DecisionAgent):
@@ -105,37 +148,53 @@ class CollectionsAgent(DecisionAgent):
         min_coll = guardrails.get("min_collection_rate", 0.985)
         rate = col_rate.get("collection_rate", 0)
         if rate and rate < min_coll:
-            alerts.append(self._alert(
-                "collection_below_min", "critical",
-                f"Collection rate {rate:.2%} < {min_coll:.1%}",
-                "Fund covenant requires minimum collection rate.",
-                metric_id="collection_rate",
-                current_value=rate, threshold=min_coll,
-            ))
-            actions.append(self._action(
-                "intensify_collections", "Deploy intensive collection campaign",
-                owner="operations", urgency="high", impact="high",
-                details="Focus on 30-60 DPD bucket where cure probability is highest.",
-            ))
+            alerts.append(
+                self._alert(
+                    "collection_below_min",
+                    "critical",
+                    f"Collection rate {rate:.2%} < {min_coll:.1%}",
+                    "Fund covenant requires minimum collection rate.",
+                    metric_id="collection_rate",
+                    current_value=rate,
+                    threshold=min_coll,
+                )
+            )
+            actions.append(
+                self._action(
+                    "intensify_collections",
+                    "Deploy intensive collection campaign",
+                    owner="operations",
+                    urgency="high",
+                    impact="high",
+                    details="Focus on 30-60 DPD bucket where cure probability is highest.",
+                )
+            )
 
         # ── Cure rate analysis ──────────────────────────────────────────
         cure_val = cure.get("cure_rate", 0)
         if cure_val and cure_val < 0.40:
-            recommendations.append(self._recommendation(
-                "low_cure", "Cure rate critically low",
-                rationale=f"Only {cure_val:.1%} of delinquent loans are curing.",
-                expected_impact="Consider restructuring or write-off programs.",
-            ))
+            recommendations.append(
+                self._recommendation(
+                    "low_cure",
+                    "Cure rate critically low",
+                    rationale=f"Only {cure_val:.1%} of delinquent loans are curing.",
+                    expected_impact="Consider restructuring or write-off programs.",
+                )
+            )
 
         # ── Roll rate analysis ──────────────────────────────────────────
         bucket_90_plus = rolls.get("bucket_90_180", 0) + rolls.get("bucket_180_plus", 0)
         if bucket_90_plus > 0.05:
-            alerts.append(self._alert(
-                "high_90plus", "warning",
-                f"90+ DPD = {bucket_90_plus:.2%} of portfolio",
-                "High proportion of severely delinquent loans.",
-                current_value=bucket_90_plus, threshold=0.05,
-            ))
+            alerts.append(
+                self._alert(
+                    "high_90plus",
+                    "warning",
+                    f"90+ DPD = {bucket_90_plus:.2%} of portfolio",
+                    "High proportion of severely delinquent loans.",
+                    current_value=bucket_90_plus,
+                    threshold=0.05,
+                )
+            )
 
         # ── Priority worklist ───────────────────────────────────────────
         if not collections.empty and "dpd" in collections.columns:

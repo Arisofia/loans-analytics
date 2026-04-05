@@ -52,6 +52,7 @@ from backend.loans_analytics.logging_config import get_logger
 from backend.loans_analytics.supabase_pool import get_pool
 from backend.src.kpi_engine.engine import flatten_metric_result_groups, run_metric_engine
 
+
 def _load_optional_callable(module_path: str, attr_name: str) -> Any | None:
     try:
         module = importlib.import_module(module_path)
@@ -76,6 +77,7 @@ else:
             "alerts": [],
         }
 
+
 _health_score_fn = _load_optional_callable(
     "backend.loans_analytics.kpis.health_score", "calculate_portfolio_health_score"
 )
@@ -98,6 +100,7 @@ else:
             "formula": _PORTFOLIO_HEALTH_FORMULA,
             "interpretation": "Fallback health score computed from PAR30/NPL only.",
         }
+
 
 _asset_quality_fn = _load_optional_callable(
     "backend.loans_analytics.kpis.ssot_asset_quality", "calculate_asset_quality_metrics"
@@ -177,6 +180,7 @@ else:
 
     def calculate_nim(df: pd.DataFrame) -> dict[str, Any]:
         return {"nim_pct": 0.0}
+
 
 logger = get_logger(__name__)
 DATA_MISSING_SCORE = 0.0
@@ -957,9 +961,11 @@ class KPIService:
                 metrics, sample_size=len(loans_df), timestamp=now
             )
             portfolio_health = self._build_portfolio_health_score_from_metrics(metrics)
-        quality_profile = self._calculate_data_quality_metrics(loans_df) if not loans_df.empty else {
-            "data_quality_score": 0.0
-        }
+        quality_profile = (
+            self._calculate_data_quality_metrics(loans_df)
+            if not loans_df.empty
+            else {"data_quality_score": 0.0}
+        )
         forecast_6m = [
             {
                 "month": (now + pd.DateOffset(months=i + 1)).strftime("%Y-%m"),
@@ -1027,7 +1033,9 @@ class KPIService:
                 return frame[column]
             return pd.Series(default, index=frame.index)
 
-        def _first_existing_series(frame: pd.DataFrame, *columns: str, default: Any = 0) -> pd.Series:
+        def _first_existing_series(
+            frame: pd.DataFrame, *columns: str, default: Any = 0
+        ) -> pd.Series:
             for column in columns:
                 if column in frame.columns:
                     return frame[column]
@@ -1038,16 +1046,22 @@ class KPIService:
                 loans[col] = pd.to_numeric(loans[col], errors="coerce")
         if "outstanding_principal" not in loans.columns:
             loans["outstanding_principal"] = pd.to_numeric(
-                _first_existing_series(loans, "outstanding_balance", "current_balance", "amount", default=0),
+                _first_existing_series(
+                    loans, "outstanding_balance", "current_balance", "amount", default=0
+                ),
                 errors="coerce",
             ).fillna(0)
         if "days_past_due" not in loans.columns:
-            loans["days_past_due"] = pd.to_numeric(_series_or_default(loans, "dpd", 0), errors="coerce").fillna(0)
+            loans["days_past_due"] = pd.to_numeric(
+                _series_or_default(loans, "dpd", 0), errors="coerce"
+            ).fillna(0)
         if "status" not in loans.columns:
             loans["status"] = loans.get("loan_status", "active")
         loans["default_flag"] = loans["status"].astype(str).str.lower().eq("defaulted")
         if "disbursement_amount" not in loans.columns:
-            loans["disbursement_amount"] = pd.to_numeric(_series_or_default(loans, "amount", 0), errors="coerce").fillna(0)
+            loans["disbursement_amount"] = pd.to_numeric(
+                _series_or_default(loans, "amount", 0), errors="coerce"
+            ).fillna(0)
         if "disbursement_date" not in loans.columns:
             loans["disbursement_date"] = pd.to_datetime(
                 loans.get("origination_date", loans.get("funded_at")),
@@ -1067,13 +1081,27 @@ class KPIService:
             )
         finance_mart = pd.DataFrame(
             {
-                "interest_income": pd.to_numeric(_series_or_default(loans, "interest_income", 0), errors="coerce").fillna(0),
-                "fee_income": pd.to_numeric(_series_or_default(loans, "fee_income", 0), errors="coerce").fillna(0),
-                "funding_cost": pd.to_numeric(_series_or_default(loans, "funding_cost", 0), errors="coerce").fillna(0),
-                "operating_expense": pd.to_numeric(_series_or_default(loans, "operating_expense", 0), errors="coerce").fillna(0),
-                "provision_expense": pd.to_numeric(_series_or_default(loans, "provision_expense", 0), errors="coerce").fillna(0),
-                "balance_avg": pd.to_numeric(_series_or_default(loans, "outstanding_principal", 0), errors="coerce").fillna(0),
-                "debt_balance": pd.to_numeric(_series_or_default(loans, "outstanding_principal", 0), errors="coerce").fillna(0),
+                "interest_income": pd.to_numeric(
+                    _series_or_default(loans, "interest_income", 0), errors="coerce"
+                ).fillna(0),
+                "fee_income": pd.to_numeric(
+                    _series_or_default(loans, "fee_income", 0), errors="coerce"
+                ).fillna(0),
+                "funding_cost": pd.to_numeric(
+                    _series_or_default(loans, "funding_cost", 0), errors="coerce"
+                ).fillna(0),
+                "operating_expense": pd.to_numeric(
+                    _series_or_default(loans, "operating_expense", 0), errors="coerce"
+                ).fillna(0),
+                "provision_expense": pd.to_numeric(
+                    _series_or_default(loans, "provision_expense", 0), errors="coerce"
+                ).fillna(0),
+                "balance_avg": pd.to_numeric(
+                    _series_or_default(loans, "outstanding_principal", 0), errors="coerce"
+                ).fillna(0),
+                "debt_balance": pd.to_numeric(
+                    _series_or_default(loans, "outstanding_principal", 0), errors="coerce"
+                ).fillna(0),
             }
         )
         finance_mart["gross_margin"] = (
@@ -1085,9 +1113,17 @@ class KPIService:
         )
         sales_mart = pd.DataFrame(
             {
-                "ticket_size": pd.to_numeric(_series_or_default(loans, "amount", 0), errors="coerce").fillna(0),
-                "approved_ticket": pd.to_numeric(_first_existing_series(loans, "disbursement_amount", "amount", default=0), errors="coerce").fillna(0),
-                "funded_flag": ~loans["status"].astype(str).str.lower().isin(["rejected", "denied", "cancelled"]),
+                "ticket_size": pd.to_numeric(
+                    _series_or_default(loans, "amount", 0), errors="coerce"
+                ).fillna(0),
+                "approved_ticket": pd.to_numeric(
+                    _first_existing_series(loans, "disbursement_amount", "amount", default=0),
+                    errors="coerce",
+                ).fillna(0),
+                "funded_flag": ~loans["status"]
+                .astype(str)
+                .str.lower()
+                .isin(["rejected", "denied", "cancelled"]),
                 "status": loans.get("status", "active"),
             }
         )
@@ -1116,7 +1152,10 @@ class KPIService:
             "total_customers": float(customers),
             "total_loans": float(len(loans_df)),
             "avg_apr": float(avg_apr),
-            **{metric_key: float(metric_val) for metric_key, metric_val in flattened_metrics.items()},
+            **{
+                metric_key: float(metric_val)
+                for metric_key, metric_val in flattened_metrics.items()
+            },
         }
 
     @staticmethod
@@ -1460,7 +1499,9 @@ class KPIService:
                 build_kpi_response("LOSS_RATE", "Loss Rate", results["loss_rate"], "%"),
                 build_kpi_response("RECOVERY_RATE", "Recovery Rate", results["recovery_rate"], "%"),
                 build_kpi_response("NPL", "Non-Performing Loans", results["npl"], "%"),
-                build_kpi_response("NPL_90", "Non-Performing Loans (90+ DPD)", results["npl_90"], "%"),
+                build_kpi_response(
+                    "NPL_90", "Non-Performing Loans (90+ DPD)", results["npl_90"], "%"
+                ),
                 build_kpi_response("LGD", "Loss Given Default", lgd_data["lgd_pct"], "%"),
                 build_kpi_response("COR", "Cost of Risk", cor_data["cost_of_risk_pct"], "%"),
                 build_kpi_response("CURERATE", "Cure Rate", cure_rate, "%"),
@@ -1777,7 +1818,9 @@ class KPIService:
             )
         df = df.copy()
         now = pd.Timestamp.now().normalize()
-        origination = pd.to_datetime(df["origination_date"], errors="coerce", format="mixed").dt.tz_localize(None)
+        origination = pd.to_datetime(
+            df["origination_date"], errors="coerce", format="mixed"
+        ).dt.tz_localize(None)
         if origination.isna().any():
             missing_count = int(origination.isna().sum())
             logger.warning(
@@ -2541,7 +2584,9 @@ class KPIService:
         default_mask = status_series.str.contains(STATUS_PATTERN_DEFAULT, case=False, na=False)
         default_rate_by_count = default_mask.sum() / len(df) * 100 if len(df) > 0 else 0
         defaulted_balance = float(df.loc[default_mask, "principal_balance"].sum())
-        default_rate_by_balance = defaulted_balance / total_outstanding * 100 if total_outstanding > 0 else 0
+        default_rate_by_balance = (
+            defaulted_balance / total_outstanding * 100 if total_outstanding > 0 else 0
+        )
         loss_rate = defaulted_balance / total_originated * 100 if total_originated > 0 else 0
         status_defaulted_mask = default_mask
         weighted_interest = float((df["interest_rate"] * df["principal_balance"]).sum())
@@ -2860,7 +2905,9 @@ class KPIService:
             flattened = flatten_metric_result_groups(metric_groups)
         except Exception as exc:
             logger.error(
-                "Executive KPI computation failed â€” raising degraded state: %s", exc, exc_info=True
+                "Executive KPI computation failed â€” raising degraded state: %s",
+                exc,
+                exc_info=True,
             )
             raise RuntimeError(
                 f"Executive metrics unavailable: upstream KPI computation failed ({exc})"

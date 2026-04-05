@@ -3,12 +3,12 @@
 Used by the zero-cost ETL path (backend.src.zero_cost) to build monthly
 PAR/DPD snapshots from loan tape tables.
 """
+
 from __future__ import annotations
 
 from typing import List, Union
 
 import pandas as pd
-
 
 _DEFAULT_PAR_THRESHOLDS: List[int] = [1, 30, 60, 90, 180]
 
@@ -24,7 +24,9 @@ class DPDCalculator:
     """
 
     def __init__(self, par_thresholds: List[int] | None = None) -> None:
-        self.par_thresholds: List[int] = par_thresholds if par_thresholds is not None else _DEFAULT_PAR_THRESHOLDS
+        self.par_thresholds: List[int] = (
+            par_thresholds if par_thresholds is not None else _DEFAULT_PAR_THRESHOLDS
+        )
 
     # ------------------------------------------------------------------
     # Public API
@@ -64,8 +66,12 @@ class DPDCalculator:
 
         # Normalise date columns once
         sched = fact_schedule.copy()
-        sched["scheduled_date"] = pd.to_datetime(sched["scheduled_date"], errors="coerce", format="mixed")
-        sched["scheduled_principal"] = pd.to_numeric(sched["scheduled_principal"], errors="coerce").fillna(0.0)
+        sched["scheduled_date"] = pd.to_datetime(
+            sched["scheduled_date"], errors="coerce", format="mixed"
+        )
+        sched["scheduled_principal"] = pd.to_numeric(
+            sched["scheduled_principal"], errors="coerce"
+        ).fillna(0.0)
 
         pays = fact_real_payment.copy()
         pays["payment_date"] = pd.to_datetime(pays["payment_date"], errors="coerce", format="mixed")
@@ -108,20 +114,13 @@ class DPDCalculator:
         4. The first instalment that cannot be fully covered is the
            overdue anchor; DPD = (month_end - anchor_date).days.
         """
-        loan_sched = (
-            sched[
-                (sched["loan_id"] == loan_id)
-                & (sched["scheduled_date"] <= month_end)
-            ]
-            .sort_values("scheduled_date")
-        )
+        loan_sched = sched[
+            (sched["loan_id"] == loan_id) & (sched["scheduled_date"] <= month_end)
+        ].sort_values("scheduled_date")
         if loan_sched.empty:
             return 0
 
-        loan_pays = pays[
-            (pays["loan_id"] == loan_id)
-            & (pays["payment_date"] <= month_end)
-        ]
+        loan_pays = pays[(pays["loan_id"] == loan_id) & (pays["payment_date"] <= month_end)]
         paid_credit = float(loan_pays["paid_principal"].sum())
 
         for _, row in loan_sched.iterrows():

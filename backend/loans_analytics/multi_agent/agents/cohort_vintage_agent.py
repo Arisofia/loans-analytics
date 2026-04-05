@@ -10,7 +10,11 @@ from typing import Any, Dict, List
 
 import pandas as pd
 
-from backend.loans_analytics.multi_agent.agents.decision_agent_base import AgentContext, AgentOutput, DecisionAgent
+from backend.loans_analytics.multi_agent.agents.decision_agent_base import (
+    AgentContext,
+    AgentOutput,
+    DecisionAgent,
+)
 
 
 def _compute_vintages(portfolio: pd.DataFrame) -> Dict[str, Any]:
@@ -21,7 +25,11 @@ def _compute_vintages(portfolio: pd.DataFrame) -> Dict[str, Any]:
     - ``worst_vintage``: the entry with the highest default_rate
     """
     date_col = next(
-        (c for c in ("origination_date", "disbursement_date", "fecha_desembolso") if c in portfolio.columns),
+        (
+            c
+            for c in ("origination_date", "disbursement_date", "fecha_desembolso")
+            if c in portfolio.columns
+        ),
         None,
     )
     if date_col is None:
@@ -40,17 +48,32 @@ def _compute_vintages(portfolio: pd.DataFrame) -> Dict[str, Any]:
         (c for c in ("outstanding_principal", "outstanding_balance", "amount") if c in df.columns),
         None,
     )
-    status_col = next((c for c in ("status", "loan_status", "current_status", "estado") if c in df.columns), None)
+    status_col = next(
+        (c for c in ("status", "loan_status", "current_status", "estado") if c in df.columns), None
+    )
 
     vintages: Dict[str, Any] = {}
     for vintage, grp in df.groupby("_vintage"):
         count = len(grp)
-        avg_dpd = float(pd.to_numeric(grp[dpd_col], errors="coerce").fillna(0).mean()) if dpd_col else 0.0
-        total_bal = float(pd.to_numeric(grp[bal_col], errors="coerce").fillna(0).sum()) if bal_col else 0.0
+        avg_dpd = (
+            float(pd.to_numeric(grp[dpd_col], errors="coerce").fillna(0).mean()) if dpd_col else 0.0
+        )
+        total_bal = (
+            float(pd.to_numeric(grp[bal_col], errors="coerce").fillna(0).sum()) if bal_col else 0.0
+        )
         if status_col:
-            default_rate = float((grp[status_col].astype(str).str.lower().isin({"defaulted", "default", "charged_off"})).sum()) / max(count, 1)
+            default_rate = float(
+                (
+                    grp[status_col]
+                    .astype(str)
+                    .str.lower()
+                    .isin({"defaulted", "default", "charged_off"})
+                ).sum()
+            ) / max(count, 1)
         elif dpd_col:
-            default_rate = float((pd.to_numeric(grp[dpd_col], errors="coerce").fillna(0) >= 90).sum()) / max(count, 1)
+            default_rate = float(
+                (pd.to_numeric(grp[dpd_col], errors="coerce").fillna(0) >= 90).sum()
+            ) / max(count, 1)
         else:
             default_rate = 0.0
         vintages[str(vintage)] = {
@@ -61,7 +84,9 @@ def _compute_vintages(portfolio: pd.DataFrame) -> Dict[str, Any]:
             "total_balance": total_bal,
         }
 
-    worst: Dict[str, Any] = max(vintages.values(), key=lambda v: v["default_rate"]) if vintages else {}
+    worst: Dict[str, Any] = (
+        max(vintages.values(), key=lambda v: v["default_rate"]) if vintages else {}
+    )
     return {"vintages": vintages, "worst_vintage": worst}
 
 
@@ -81,7 +106,9 @@ class CohortVintageAgent(DecisionAgent):
         metrics: Dict[str, Any] = {}
 
         if portfolio.empty:
-            return self._build_output(summary="No portfolio data for cohort analysis.", confidence=0.0)
+            return self._build_output(
+                summary="No portfolio data for cohort analysis.", confidence=0.0
+            )
 
         # ── Vintage analysis ──────────────────────────────────────────────
         cohorts = _compute_vintages(portfolio)
@@ -93,18 +120,25 @@ class CohortVintageAgent(DecisionAgent):
             worst_name = worst.get("vintage", "unknown")
             worst_default = worst.get("default_rate", 0)
             if worst_default > 0.10:
-                alerts.append(self._alert(
-                    "toxic_vintage", "critical",
-                    f"Vintage {worst_name}: {worst_default:.1%} default rate",
-                    "This vintage has severe underwriting quality issues.",
-                    metric_id="vintage_default_rate",
-                    current_value=worst_default, threshold=0.10,
-                ))
-                recommendations.append(self._recommendation(
-                    "investigate_vintage", f"Investigate vintage {worst_name}",
-                    rationale=f"Default rate {worst_default:.1%} is 2.5x the portfolio target.",
-                    expected_impact="Identify underwriting criteria that failed.",
-                ))
+                alerts.append(
+                    self._alert(
+                        "toxic_vintage",
+                        "critical",
+                        f"Vintage {worst_name}: {worst_default:.1%} default rate",
+                        "This vintage has severe underwriting quality issues.",
+                        metric_id="vintage_default_rate",
+                        current_value=worst_default,
+                        threshold=0.10,
+                    )
+                )
+                recommendations.append(
+                    self._recommendation(
+                        "investigate_vintage",
+                        f"Investigate vintage {worst_name}",
+                        rationale=f"Default rate {worst_default:.1%} is 2.5x the portfolio target.",
+                        expected_impact="Identify underwriting criteria that failed.",
+                    )
+                )
 
         # ── Trend detection ─────────────────────────────────────────────
         vintages = cohorts.get("vintages", {})
@@ -112,16 +146,22 @@ class CohortVintageAgent(DecisionAgent):
             sorted_vintages = sorted(vintages.items())
             recent_3 = [v[1].get("default_rate", 0) for v in sorted_vintages[-3:]]
             if all(recent_3[i] < recent_3[i + 1] for i in range(len(recent_3) - 1)):
-                alerts.append(self._alert(
-                    "deteriorating_trend", "warning",
-                    "Default rate rising across last 3 vintages",
-                    f"Rates: {', '.join(f'{r:.2%}' for r in recent_3)}",
-                ))
-                recommendations.append(self._recommendation(
-                    "tighten_underwriting", "Tighten underwriting standards",
-                    rationale="Three consecutive vintages with rising defaults.",
-                    expected_impact="Stabilize future vintage performance.",
-                ))
+                alerts.append(
+                    self._alert(
+                        "deteriorating_trend",
+                        "warning",
+                        "Default rate rising across last 3 vintages",
+                        f"Rates: {', '.join(f'{r:.2%}' for r in recent_3)}",
+                    )
+                )
+                recommendations.append(
+                    self._recommendation(
+                        "tighten_underwriting",
+                        "Tighten underwriting standards",
+                        rationale="Three consecutive vintages with rising defaults.",
+                        expected_impact="Stabilize future vintage performance.",
+                    )
+                )
 
         return self._build_output(
             summary=f"Cohort: {len(vintages)} vintages analysed. Worst={worst.get('vintage', 'N/A')}. {len(alerts)} alerts.",

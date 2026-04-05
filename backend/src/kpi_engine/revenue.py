@@ -13,7 +13,9 @@ def _first_existing_column(df: pd.DataFrame, candidates: tuple[str, ...]) -> Opt
 def compute_net_yield(finance_mart: pd.DataFrame) -> Decimal:
     if finance_mart.empty:
         return Decimal("0.0")
-    income = Decimal(str(finance_mart["interest_income"].sum())) + Decimal(str(finance_mart["fee_income"].sum()))
+    income = Decimal(str(finance_mart["interest_income"].sum())) + Decimal(
+        str(finance_mart["fee_income"].sum())
+    )
     debt = Decimal(str(finance_mart["debt_balance"].mean()))
     if debt == 0:
         return Decimal("0.0")
@@ -23,7 +25,9 @@ def compute_net_yield(finance_mart: pd.DataFrame) -> Decimal:
 def compute_spread(finance_mart: pd.DataFrame) -> Decimal:
     if finance_mart.empty:
         return Decimal("0.0")
-    income = Decimal(str(finance_mart["interest_income"].sum())) + Decimal(str(finance_mart["fee_income"].sum()))
+    income = Decimal(str(finance_mart["interest_income"].sum())) + Decimal(
+        str(finance_mart["fee_income"].sum())
+    )
     cost = Decimal(str(finance_mart["funding_cost"].sum()))
     debt = Decimal(str(finance_mart["debt_balance"].mean()))
     if debt == 0:
@@ -61,7 +65,13 @@ def compute_portfolio_yield(portfolio_mart: pd.DataFrame) -> Decimal:
     rate_col = _first_existing_column(portfolio_mart, ("interest_rate", "apr", "interest_rate_apr"))
     balance_col = _first_existing_column(
         portfolio_mart,
-        ("outstanding_principal", "outstanding_balance", "principal_balance", "current_balance", "amount"),
+        (
+            "outstanding_principal",
+            "outstanding_balance",
+            "principal_balance",
+            "current_balance",
+            "amount",
+        ),
     )
     if rate_col is None:
         return Decimal("0.0")
@@ -76,7 +86,9 @@ def compute_portfolio_yield(portfolio_mart: pd.DataFrame) -> Decimal:
     if total_balance == 0:
         return Decimal("0.0")
     weighted_rate_sum = Decimal(str((rate_series * balance_series).sum()))
-    return ((weighted_rate_sum / total_balance) * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return ((weighted_rate_sum / total_balance) * Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
 
 
 def compute_portfolio_irr(finance_mart: pd.DataFrame) -> Decimal:
@@ -92,22 +104,55 @@ def compute_portfolio_irr_proxy(finance_mart: pd.DataFrame) -> Decimal:
     if finance_mart.empty:
         return Decimal("0.0")
 
-    income = Decimal(str(finance_mart["interest_income"].sum())) + Decimal(str(finance_mart["fee_income"].sum()))
+    income = Decimal(str(finance_mart["interest_income"].sum())) + Decimal(
+        str(finance_mart["fee_income"].sum())
+    )
     avg_debt = Decimal(str(finance_mart["debt_balance"].mean()))
     if avg_debt == 0:
         return Decimal("0.0")
     return (income / avg_debt).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 
 
-def compute_portfolio_irr_true(disbursements_df: pd.DataFrame, payments_df: pd.DataFrame) -> Optional[Decimal]:
+def compute_portfolio_irr_true(
+    disbursements_df: pd.DataFrame, payments_df: pd.DataFrame
+) -> Optional[Decimal]:
     """Compute true portfolio IRR from dated cashflows when available."""
     if disbursements_df.empty or payments_df.empty:
         return None
 
-    disb_date_col = next((c for c in ("disbursement_date", "origination_date", "funded_at") if c in disbursements_df.columns), None)
-    disb_amt_col = next((c for c in ("original_principal", "principal_amount", "funded_amount", "amount", "outstanding_principal") if c in disbursements_df.columns), None)
-    pay_date_col = next((c for c in ("payment_date", "paid_at", "date") if c in payments_df.columns), None)
-    pay_amt_col = next((c for c in ("paid_total", "payment_amount", "amount", "last_payment_amount") if c in payments_df.columns), None)
+    disb_date_col = next(
+        (
+            c
+            for c in ("disbursement_date", "origination_date", "funded_at")
+            if c in disbursements_df.columns
+        ),
+        None,
+    )
+    disb_amt_col = next(
+        (
+            c
+            for c in (
+                "original_principal",
+                "principal_amount",
+                "funded_amount",
+                "amount",
+                "outstanding_principal",
+            )
+            if c in disbursements_df.columns
+        ),
+        None,
+    )
+    pay_date_col = next(
+        (c for c in ("payment_date", "paid_at", "date") if c in payments_df.columns), None
+    )
+    pay_amt_col = next(
+        (
+            c
+            for c in ("paid_total", "payment_amount", "amount", "last_payment_amount")
+            if c in payments_df.columns
+        ),
+        None,
+    )
 
     if not all([disb_date_col, disb_amt_col, pay_date_col, pay_amt_col]):
         return None
@@ -123,7 +168,9 @@ def compute_portfolio_irr_true(disbursements_df: pd.DataFrame, payments_df: pd.D
     if disb.empty or pays.empty:
         return None
 
-    cashflows: list[float] = [-float(v) for v in disb[disb_amt_col].tolist()] + [float(v) for v in pays[pay_amt_col].tolist()]
+    cashflows: list[float] = [-float(v) for v in disb[disb_amt_col].tolist()] + [
+        float(v) for v in pays[pay_amt_col].tolist()
+    ]
     dates = disb[disb_date_col].tolist() + pays[pay_date_col].tolist()
 
     # Import lazily to avoid adding XIRR dependency to unrelated code paths.
@@ -195,9 +242,7 @@ def compute_growth_vs_targets(
         df = portfolio[[period_col, balance_col]].copy()
         df[balance_col] = pd.to_numeric(df[balance_col], errors="coerce").fillna(0)
         df[period_col] = df[period_col].astype(str).str[:7]  # normalise to YYYY-MM
-        actual_by_month: Dict[str, float] = (
-            df.groupby(period_col)[balance_col].sum().to_dict()
-        )
+        actual_by_month: Dict[str, float] = df.groupby(period_col)[balance_col].sum().to_dict()
     else:
         actual_by_month = {}
 
@@ -227,14 +272,16 @@ def compute_growth_vs_targets(
             else:
                 status = "AT_RISK"
 
-        rows.append({
-            "month": month,
-            "actual_usd": round(actual_val, 2),
-            "target_usd": round(target_val, 2),
-            "gap_usd": gap_usd,
-            "gap_pct": gap_pct,
-            "status": status,
-        })
+        rows.append(
+            {
+                "month": month,
+                "actual_usd": round(actual_val, 2),
+                "target_usd": round(target_val, 2),
+                "gap_usd": gap_usd,
+                "gap_pct": gap_pct,
+                "status": status,
+            }
+        )
 
     return rows
 
@@ -268,9 +315,7 @@ def compute_nim_proxy(
     with open(resolved_path) as fh:
         params = yaml.safe_load(fh)
 
-    funding_cost_rate = Decimal(
-        str(params["financial_assumptions"]["funding_cost_rate"])
-    )
+    funding_cost_rate = Decimal(str(params["financial_assumptions"]["funding_cost_rate"]))
     nim = (avg_interest_rate - funding_cost_rate) * Decimal("100")
     return nim.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
