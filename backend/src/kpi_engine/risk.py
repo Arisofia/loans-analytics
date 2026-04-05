@@ -281,24 +281,24 @@ def compute_pd(
 
     Returns
     -------
-    pd.Series : PD values as float.
+    pd.Series : PD values as Decimal.
     """
     source = assignment_config.get("source", "dpd_bucket")
     buckets = assignment_config.get("dpd_buckets", {})
 
     # Default mapping logic for buckets
-    def _map_bucket_pd(dpd: float, status: str = "") -> float:
+    def _map_bucket_pd(dpd: float, status: str = "") -> Decimal:
         if status == "defaulted":
-            return float(buckets.get("defaulted", 1.0))
+            return Decimal(str(buckets.get("defaulted", 1.0)))
         if dpd >= 180:
-            return float(buckets.get("dpd_180", 0.70))
+            return Decimal(str(buckets.get("dpd_180", 0.70)))
         if dpd >= 90:
-            return float(buckets.get("dpd_90", 0.35))
+            return Decimal(str(buckets.get("dpd_90", 0.35)))
         if dpd >= 60:
-            return float(buckets.get("dpd_60", 0.15))
+            return Decimal(str(buckets.get("dpd_60", 0.15)))
         if dpd >= 30:
-            return float(buckets.get("dpd_30", 0.05))
-        return float(buckets.get("current", 0.005))
+            return Decimal(str(buckets.get("dpd_30", 0.05)))
+        return Decimal(str(buckets.get("current", 0.005)))
 
     dpd_pd = df.apply(
         lambda x: _map_bucket_pd(
@@ -314,14 +314,14 @@ def compute_pd(
         scorecard_values = df[scorecard_pd_col]
     else:
         scorecard_values = pd.Series(index=df.index, dtype=float)
-    sc_pd = pd.to_numeric(scorecard_values, errors="coerce").fillna(dpd_pd)
+    sc_pd = pd.to_numeric(scorecard_values, errors="coerce").fillna(dpd_pd.apply(float)).apply(lambda x: Decimal(str(x)))
 
     if source == "scorecard":
         return sc_pd
 
     if source == "blend":
-        w_sc = float(assignment_config.get("blend_weight_scorecard", 0.7))
-        w_dpd = float(assignment_config.get("blend_weight_dpd", 0.3))
+        w_sc = Decimal(str(assignment_config.get("blend_weight_scorecard", 0.7)))
+        w_dpd = Decimal(str(assignment_config.get("blend_weight_dpd", 0.3)))
         return (sc_pd * w_sc) + (dpd_pd * w_dpd)
 
     return dpd_pd
@@ -331,7 +331,7 @@ def compute_expected_loss(
     portfolio_mart: pd.DataFrame,
     scorecard_df: pd.DataFrame | None = None,
     business_params: Dict[str, Any] | None = None,
-) -> float:
+) -> Decimal:
     """
     Compute Expected Loss (EL = PD * LGD * EAD).
 
@@ -342,7 +342,7 @@ def compute_expected_loss(
     df = portfolio_mart.copy()
 
     if df.empty:
-        return 0.0
+        return Decimal("0.0")
 
     if business_params is None and scorecard_df is None:
         ead = pd.to_numeric(df.get("outstanding_principal"), errors="coerce").fillna(0).sum()
@@ -352,14 +352,14 @@ def compute_expected_loss(
             "Pass business_params from config/business_parameters.yml or a scorecard_df "
             "to obtain an auditable expected-loss estimate. Run ID unknown at this call site."
         )
-        return float(Decimal(str(ead)) * Decimal("0.03") * Decimal("0.45"))
+        return Decimal(str(ead)) * Decimal("0.03") * Decimal("0.45")
 
     if scorecard_df is not None and {"loan_id", "pd", "lgd"}.issubset(scorecard_df.columns) and "loan_id" in df.columns:
         merged = df.merge(scorecard_df[["loan_id", "pd", "lgd"]], on="loan_id", how="left")
-        ead = pd.to_numeric(merged.get("outstanding_principal"), errors="coerce").fillna(0.0)
-        pd_values = pd.to_numeric(merged.get("pd"), errors="coerce").fillna(0.0)
-        lgd_values = pd.to_numeric(merged.get("lgd"), errors="coerce").fillna(0.45)
-        return float((ead * pd_values * lgd_values).sum())
+        ead = pd.to_numeric(merged.get("outstanding_principal"), errors="coerce").fillna(0.0).apply(lambda x: Decimal(str(x)))
+        pd_values = pd.to_numeric(merged.get("pd"), errors="coerce").fillna(0.0).apply(lambda x: Decimal(str(x)))
+        lgd_values = pd.to_numeric(merged.get("lgd"), errors="coerce").fillna(0.45).apply(lambda x: Decimal(str(x)))
+        return (ead * pd_values * lgd_values).sum()
 
     # Load business parameters if not provided
     if business_params is None:
@@ -433,7 +433,7 @@ def compute_expected_loss(
     else:
         df["ead"] = df["ead"].apply(lambda x: Decimal(str(x)))
 
-    return float((df["pd_final"] * df["lgd_final"] * df["ead"]).sum())
+    return (df["pd_final"] * df["lgd_final"] * df["ead"]).sum()
 
 
 def classify_dpd_buckets(
