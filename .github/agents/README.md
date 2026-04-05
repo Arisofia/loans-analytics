@@ -133,9 +133,9 @@ In GitHub Copilot Chat (VS Code):
 
 **Test Artifacts Generated:**
 
-- Test Plans: `docs/testing/test_plans/[feature]_test_plan.md`
-- Test Cases: `docs/testing/test_cases/[feature]_test_cases.md`
-- Test Scripts: `tests/` or `python/tests/` (pytest format)
+- Test Plans: project docs only when explicitly requested
+- Test Cases: under real suite folders in `tests/` (unit/integration/e2e/phase/zero_cost)
+- Test Scripts: `tests/` (pytest format)
 
 ## Agent Configuration Format
 
