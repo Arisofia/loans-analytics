@@ -358,9 +358,11 @@ class IngestionPhase:
             for col, expected_type in type_validation.items():
                 if col not in df.columns:
                     continue
-                if col == 'amount':
-                    # Use dtype-level check so numpy 2.x scalar types (int64/float64)
-                    # are correctly recognized as numeric without isinstance per-value.
+                # Use dtype-level check for any column that expects a numeric type.
+                # isinstance() per-value fails for numpy 2.x scalars (int64/float64 no
+                # longer subclass Python int/float in NumPy 2.0+).
+                _is_numeric = expected_type == (int, float) or expected_type in (int, float)
+                if _is_numeric:
                     if not pd.api.types.is_numeric_dtype(df[col]):
                         type_errors.append(col)
                 else:
