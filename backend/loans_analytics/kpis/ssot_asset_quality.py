@@ -7,10 +7,11 @@ from backend.loans_analytics.kpis.formula_engine import KPIFormulaEngine
 # Enforce decimal context at import time — not at function call time.
 # Any module-level misconfiguration of the decimal context is caught immediately.
 _CTX = getcontext()
-assert _CTX.rounding == ROUND_HALF_UP, (
-    f"FATAL: Decimal rounding mode is '{_CTX.rounding}', expected ROUND_HALF_UP. "
-    "Call decimal.getcontext().rounding = ROUND_HALF_UP before importing this module."
-)
+if _CTX.rounding != ROUND_HALF_UP:
+    raise RuntimeError(
+        f"FATAL: Decimal rounding mode is '{_CTX.rounding}', expected ROUND_HALF_UP. "
+        "Call decimal.getcontext().rounding = ROUND_HALF_UP before importing this module."
+    )
 
 _METRIC_ALIAS_TO_ID: dict[str, str] = {
     "par30": "par_30",

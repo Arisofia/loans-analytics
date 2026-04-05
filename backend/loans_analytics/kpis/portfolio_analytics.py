@@ -134,9 +134,13 @@ def _build_loans_meta(loans_df: pd.DataFrame, customer_df: pd.DataFrame | None, 
     if agent_col and agent_col in loans_df.columns:
         meta_cols.append(agent_col)
     loans_meta = loans_df[meta_cols].copy()
-    has_customer_agent = customer_df is not None and agent_col and (loan_id in customer_df.columns) and (agent_col in customer_df.columns)
-    if has_customer_agent and agent_col not in loans_meta.columns:
-        assert customer_df is not None and agent_col is not None
+    if (
+        customer_df is not None
+        and agent_col is not None
+        and loan_id in customer_df.columns
+        and agent_col in customer_df.columns
+        and agent_col not in loans_meta.columns
+    ):
         agent_lookup = customer_df[[loan_id, agent_col]].drop_duplicates(loan_id)
         loans_meta = loans_meta.merge(agent_lookup, on=loan_id, how='left')
     return loans_meta
@@ -167,9 +171,8 @@ def collection_efficiency_by_segment(loans_df: pd.DataFrame, payments_df: pd.Dat
     real_amt = _col(payments_df, ['true_total_payment', 'payment_amount'])
     cat_col = _col(loans_df, ['categorialineacredito', 'credit_line_category'])
     agent_col = _col(loans_df, ['sales_agent', 'kam']) or (_col(customer_df, ['sales_agent']) if customer_df is not None else None)
-    if not all([loan_id, sched_amt, real_amt]):
+    if loan_id is None or sched_amt is None or real_amt is None:
         return {'status': 'missing_columns'}
-    assert loan_id is not None and sched_amt is not None and real_amt is not None
     sched_agg = _aggregate_numeric_sum(schedule_df, loan_id, sched_amt, 'sched')
     real_agg = _aggregate_numeric_sum(payments_df, loan_id, real_amt, 'real')
     ce = sched_agg.to_frame().join(real_agg, how='outer').fillna(0)
